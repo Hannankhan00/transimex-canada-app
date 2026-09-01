@@ -13,6 +13,9 @@ export interface IUser extends Document {
   googleId?: string;
   avatar?: string;
   provider?: string;
+  isVerified?: boolean;
+  verificationToken?: string;
+  verificationTokenExpires?: Date;
   resetToken?: string;
   resetTokenExpires?: Date;
   createdAt: Date;
@@ -78,6 +81,16 @@ const UserSchema = new Schema<IUser>(
     provider: {
       type: String,
       default: "credentials",
+    },
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
+    verificationToken: {
+      type: String,
+    },
+    verificationTokenExpires: {
+      type: Date,
     },
     resetToken: {
       type: String,

@@ -24,7 +24,6 @@ export function getTransporter() {
   const secure = process.env.SMTP_SECURE === "true" || port === 465;
 
   if (!host || !user || !pass) {
-    // If SMTP credentials aren't provided in .env, create an ethereal or simulated logger
     return null;
   }
 
@@ -43,7 +42,7 @@ export function getTransporter() {
 }
 
 export async function sendEmail({ to, subject, html, text }: SendEmailParams): Promise<{ success: boolean; messageId?: string }> {
-  const from = process.env.SMTP_FROM || `"Transimex Canada Logistics" <${process.env.SMTP_USER || "no-reply@transimex-canada.com"}>`;
+  const from = process.env.SMTP_FROM || `"Transimex Canada Logistics" <${process.env.SMTP_USER || "notifications@transimex-canada.com"}>`;
   const transporter = getTransporter();
 
   if (!transporter) {
@@ -92,6 +91,7 @@ function emailTemplateWrapper(contentHtml: string, previewText: string = "Transi
     .h1 { font-family: 'Georgia', serif; font-size: 22px; color: #0B2545; font-weight: 700; margin: 0 0 16px 0; }
     .btn { display: inline-block; background-color: #d21f27; color: #ffffff !important; text-decoration: none; padding: 13px 26px; border-radius: 10px; font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; margin: 22px 0; }
     .alert-box { background-color: #f8fafc; border-left: 4px solid #d21f27; border-radius: 6px; padding: 14px; margin: 18px 0; font-size: 12px; color: #475569; }
+    .cred-box { background-color: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 8px; padding: 16px; margin: 18px 0; font-family: monospace; font-size: 13px; color: #0f172a; }
     .footer { background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 22px 30px; text-align: center; font-size: 11px; color: #94a3b8; }
   </style>
 </head>
@@ -118,7 +118,7 @@ function emailTemplateWrapper(contentHtml: string, previewText: string = "Transi
 }
 
 /**
- * Send Password Reset Recovery Email
+ * 1. Send Password Reset Recovery Email
  */
 export async function sendPasswordResetEmail({
   to,
@@ -160,39 +160,92 @@ export async function sendPasswordResetEmail({
 }
 
 /**
- * Send Account Application & Verification Email
+ * 2. Send Account Application & Email Verification Email
  */
 export async function sendVerificationEmail({
   to,
   name,
   companyName,
+  token,
 }: {
   to: string;
   name: string;
   companyName: string;
+  token?: string;
+}) {
+  const appUrl = getAppUrl();
+  const verifyUrl = token
+    ? `${appUrl}/verify-email?token=${encodeURIComponent(token)}`
+    : `${appUrl}/login`;
+
+  const content = `
+    <h1 class="h1">Verify Your Corporate Logistics Account</h1>
+    <p>Dear <strong>${name}</strong>,</p>
+    <p>Thank you for submitting a commercial registration for <strong>${companyName}</strong> with Transimex Canada Logistics.</p>
+    <p>To confirm your email address and verify your dispatch permissions, please click the verification button below:</p>
+
+    <div style="text-align: center;">
+      <a href="${verifyUrl}" class="btn" target="_blank">Verify Email &amp; Activate Portal</a>
+    </div>
+
+    <div class="alert-box">
+      <strong>Verification Link:</strong> This verification request is active for <strong>24 hours</strong>. Once confirmed, you can submit real-time freight quotes and track highway manifests across Canada.
+    </div>
+
+    <p style="font-size: 12px; color: #64748b; margin-top: 24px;">
+      Direct link: <a href="${verifyUrl}" style="color: #0B2545; word-break: break-all;">${verifyUrl}</a>
+    </p>
+  `;
+
+  return sendEmail({
+    to,
+    subject: "Verify Your Transimex Canada Logistics Account",
+    html: emailTemplateWrapper(content, "Verify your corporate email for Transimex Canada"),
+    text: `Verify your Transimex account by visiting: ${verifyUrl}`,
+  });
+}
+
+/**
+ * 3. Send Sub-Admin / Staff Invitation Email
+ */
+export async function sendStaffInvitationEmail({
+  to,
+  name,
+  temporaryPassword,
+  role,
+}: {
+  to: string;
+  name: string;
+  temporaryPassword: string;
+  role: string;
 }) {
   const appUrl = getAppUrl();
   const loginUrl = `${appUrl}/login`;
 
   const content = `
-    <h1 class="h1">Corporate Account Application Received</h1>
-    <p>Dear <strong>${name}</strong>,</p>
-    <p>Thank you for registering <strong>${companyName}</strong> with Transimex Canada Logistics.</p>
-    <p>Our commercial dispatch and compliance team is reviewing your company credentials. You can access your client portal dashboard to begin submitting preliminary freight quote requests and reviewing highway corridor schedules.</p>
+    <h1 class="h1">Staff Access Granted: Transimex Admin Console</h1>
+    <p>Hello <strong>${name}</strong>,</p>
+    <p>You have been granted <strong>${role.toUpperCase()}</strong> permissions for the Transimex Canada Enterprise Portal.</p>
+    
+    <div class="cred-box">
+      <div><strong>Login Email:</strong> ${to}</div>
+      <div style="margin-top: 6px;"><strong>Temporary Password:</strong> ${temporaryPassword}</div>
+      <div style="margin-top: 6px;"><strong>Role:</strong> ${role.toUpperCase()}</div>
+    </div>
 
     <div style="text-align: center;">
-      <a href="${loginUrl}" class="btn" target="_blank">Access Client Portal</a>
+      <a href="${loginUrl}" class="btn" target="_blank">Sign In to Admin Console</a>
     </div>
 
     <div class="alert-box">
-      <strong>Need expedited dispatch?</strong> You can contact your dedicated logistics account manager 24/7 at <strong>+1 (800) 555-TXMX</strong>.
+      <strong>Security Notice:</strong> Please sign in and change your password in your Account Settings immediately upon first login.
     </div>
   `;
 
   return sendEmail({
     to,
-    subject: "Welcome to Transimex Canada Logistics Portal",
-    html: emailTemplateWrapper(content, "Welcome to Transimex Canada Commercial Client Portal"),
-    text: `Welcome to Transimex Canada! Access your portal at: ${loginUrl}`,
+    subject: "Your Transimex Canada Staff Account Credentials",
+    html: emailTemplateWrapper(content, "Your staff account credentials for Transimex Canada"),
+    text: `Your Transimex Staff account is ready. Login at: ${loginUrl} with email: ${to} and temporary password: ${temporaryPassword}`,
   });
 }
