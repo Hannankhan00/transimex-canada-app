@@ -6,6 +6,9 @@ export interface IUser extends Document {
   password?: string;
   companyName: string;
   role?: string;
+  googleId?: string;
+  avatar?: string;
+  provider?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -26,7 +29,7 @@ const UserSchema = new Schema<IUser>(
     },
     password: {
       type: String,
-      required: [true, "Password is required"],
+      required: false,
       minlength: 6,
       select: false, // Don't return password by default
     },
@@ -38,8 +41,19 @@ const UserSchema = new Schema<IUser>(
     },
     role: {
       type: String,
-      enum: ["client", "admin", "dispatcher"],
+      enum: ["client", "admin", "superadmin", "subadmin", "dispatcher"],
       default: "client",
+    },
+    googleId: {
+      type: String,
+      sparse: true,
+    },
+    avatar: {
+      type: String,
+    },
+    provider: {
+      type: String,
+      default: "credentials",
     },
   },
   {

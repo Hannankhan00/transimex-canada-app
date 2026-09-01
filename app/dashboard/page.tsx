@@ -216,6 +216,17 @@ export default function DashboardPage() {
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
         {/* Top Navigation Bar */}
         <header className="h-16 px-8 flex items-center justify-end gap-5 bg-transparent">
+          {/* Admin Switcher Shortcut */}
+          {(user.role === "superadmin" || user.role === "admin" || user.role === "subadmin") && (
+            <Link
+              href="/admin"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#0B2545] text-white text-xs font-semibold rounded-lg hover:bg-[#123156] transition-colors shadow-xs"
+            >
+              <Shield className="w-3.5 h-3.5 text-[#D21F27]" />
+              <span>Admin Console →</span>
+            </Link>
+          )}
+
           {/* Language Switcher */}
           <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-600">
             <button

@@ -22,7 +22,8 @@ function AuthComponent() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const urlError = searchParams.get("error");
+  const [error, setError] = useState<string | null>(urlError || null);
 
   // Form states
   const [fullName, setFullName] = useState("");
@@ -31,8 +32,6 @@ function AuthComponent() {
   const [password, setPassword] = useState("");
   const [agreeTerms, setAgreeTerms] = useState(true);
   const [rememberMe, setRememberMe] = useState(true);
-
-
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,7 +54,12 @@ function AuthComponent() {
         localStorage.setItem("transimex_user", JSON.stringify(data.user));
       }
 
-      router.push("/dashboard");
+      const role = data.user?.role;
+      if (role === "superadmin" || role === "admin" || role === "subadmin") {
+        router.push("/admin");
+      } else {
+        router.push("/dashboard");
+      }
     } catch (err: any) {
       setError(err.message || "Failed to log in");
     } finally {
@@ -103,32 +107,11 @@ function AuthComponent() {
     }
   };
 
-  const handleGoogleAuth = async () => {
+  const handleGoogleAuth = () => {
     setGoogleLoading(true);
     setError(null);
-    try {
-      // Mock Google SSO sign-in / registration
-      const mockGoogleUser = {
-        userId: "google_client_demo",
-        name: fullName || "Marc Tremblay",
-        email: email || "dispatch@laurentianglobal.ca",
-        companyName: companyName || "Laurentian Global Logistics Ltd.",
-        role: "client",
-        provider: "google",
-      };
-
-      if (typeof window !== "undefined") {
-        localStorage.setItem("transimex_user", JSON.stringify(mockGoogleUser));
-      }
-
-      // Simulate authentication delay for smooth UX
-      setTimeout(() => {
-        router.push("/dashboard");
-      }, 600);
-    } catch (err: any) {
-      setError("Google authentication failed. Please try with email/password.");
-      setGoogleLoading(false);
-    }
+    // Redirect to the server-side Google OAuth handler
+    window.location.href = "/api/auth/google";
   };
 
   return (
@@ -209,54 +192,48 @@ function AuthComponent() {
         {/* Right Side: Authentication Form */}
         <div className="w-full md:w-1/2 flex items-center justify-center p-6 sm:p-10 md:p-12 bg-white overflow-y-auto">
           <div className="w-full max-w-md my-auto py-6">
-            {/* Title & Subtitle with Synchronized Sliding Track */}
-            <div className="relative overflow-hidden w-full mb-6 min-h-[82px]">
+            {/* Title & Subtitle with Synchronized Slide Transition */}
+            <div className="relative w-full mb-6">
+              {/* Sign In Title & Description */}
               <div
-                className={`flex w-[200%] transition-transform duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-                  activeTab === "login" ? "translate-x-0" : "-translate-x-1/2"
+                className={`transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                  activeTab === "login"
+                    ? "opacity-100 translate-x-0 relative z-10"
+                    : "opacity-0 -translate-x-4 absolute top-0 left-0 right-0 pointer-events-none -z-10"
                 }`}
               >
-                {/* Sign In Title & Description */}
-                <div
-                  className={`w-1/2 shrink-0 px-0.5 transition-all duration-300 ${
-                    activeTab === "login"
-                      ? "opacity-100 scale-100"
-                      : "opacity-0 scale-[0.98] pointer-events-none"
-                  }`}
+                <h2
+                  className="text-3xl sm:text-[34px] font-bold text-[#0B2545] tracking-tight leading-tight"
+                  style={{
+                    fontFamily: "var(--font-playfair), 'Playfair Display', serif",
+                  }}
                 >
-                  <h2
-                    className="text-3xl sm:text-[34px] font-bold text-[#0B2545] tracking-tight leading-tight"
-                    style={{
-                      fontFamily: "var(--font-playfair), 'Playfair Display', serif",
-                    }}
-                  >
-                    Sign In to Portal
-                  </h2>
-                  <p className="text-sm text-slate-500 mt-2 leading-relaxed">
-                    Access your Transimex corporate logistics dashboard and shipments.
-                  </p>
-                </div>
+                  Sign In to Portal
+                </h2>
+                <p className="text-sm text-slate-500 mt-2 leading-relaxed">
+                  Access your Transimex corporate logistics dashboard and shipments.
+                </p>
+              </div>
 
-                {/* Create Account Title & Description */}
-                <div
-                  className={`w-1/2 shrink-0 px-0.5 transition-all duration-300 ${
-                    activeTab === "signup"
-                      ? "opacity-100 scale-100"
-                      : "opacity-0 scale-[0.98] pointer-events-none"
-                  }`}
+              {/* Create Account Title & Description */}
+              <div
+                className={`transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                  activeTab === "signup"
+                    ? "opacity-100 translate-x-0 relative z-10"
+                    : "opacity-0 translate-x-4 absolute top-0 left-0 right-0 pointer-events-none -z-10"
+                }`}
+              >
+                <h2
+                  className="text-3xl sm:text-[34px] font-bold text-[#0B2545] tracking-tight leading-tight"
+                  style={{
+                    fontFamily: "var(--font-playfair), 'Playfair Display', serif",
+                  }}
                 >
-                  <h2
-                    className="text-3xl sm:text-[34px] font-bold text-[#0B2545] tracking-tight leading-tight"
-                    style={{
-                      fontFamily: "var(--font-playfair), 'Playfair Display', serif",
-                    }}
-                  >
-                    Create Client Account
-                  </h2>
-                  <p className="text-sm text-slate-500 mt-2 leading-relaxed">
-                    Register your corporate logistics account to start shipping with Transimex.
-                  </p>
-                </div>
+                  Create Client Account
+                </h2>
+                <p className="text-sm text-slate-500 mt-2 leading-relaxed">
+                  Register your corporate logistics account to start shipping with Transimex.
+                </p>
               </div>
             </div>
 
@@ -309,271 +286,211 @@ function AuthComponent() {
               </div>
             )}
 
-            {/* Form Carousel Slider Container */}
-            <div className="relative overflow-hidden w-full">
+            {/* Smooth Adaptive Form with Butter-Smooth Vertical Glide */}
+            <form
+              onSubmit={activeTab === "login" ? handleLogin : handleSignUp}
+              className="space-y-4"
+            >
+              {/* Smooth Expandable Top Fields for Create Account */}
               <div
-                className={`flex w-[200%] transition-transform duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-                  activeTab === "login" ? "translate-x-0" : "-translate-x-1/2"
-                }`}
+                className="grid transition-[grid-template-rows,opacity] duration-400 ease-[cubic-bezier(0.16,1,0.3,1)]"
+                style={{
+                  gridTemplateRows: activeTab === "signup" ? "1fr" : "0fr",
+                  opacity: activeTab === "signup" ? 1 : 0,
+                }}
               >
-                {/* ----------------- SIGN IN PANE ----------------- */}
-                <div
-                  className={`w-1/2 shrink-0 px-0.5 transition-all duration-300 ${
-                    activeTab === "login"
-                      ? "opacity-100 scale-100"
-                      : "opacity-0 scale-[0.98] pointer-events-none"
-                  }`}
-                >
-                  <form onSubmit={handleLogin} className="space-y-4">
-                    {/* Corporate Email Address */}
-                    <div>
-                      <label
-                        htmlFor="loginEmail"
-                        className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5"
-                      >
-                        Corporate Email Address
-                      </label>
-                      <div className="relative flex items-center">
-                        <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                        <input
-                          id="loginEmail"
-                          type="email"
-                          required={activeTab === "login"}
-                          placeholder="dispatch@laurentianglobal.ca"
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          className="w-full bg-[#f8fafc] border border-slate-200 focus:border-[#d21f27] focus:bg-white focus:ring-2 focus:ring-[#d21f27]/10 rounded-xl pl-10 pr-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-all"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Password */}
-                    <div>
-                      <label
-                        htmlFor="loginPassword"
-                        className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5"
-                      >
-                        Password
-                      </label>
-                      <div className="relative flex items-center">
-                        <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                        <input
-                          id="loginPassword"
-                          type={showPassword ? "text" : "password"}
-                          required={activeTab === "login"}
-                          placeholder="••••••••••••"
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                          className="w-full bg-[#f8fafc] border border-slate-200 focus:border-[#d21f27] focus:bg-white focus:ring-2 focus:ring-[#d21f27]/10 rounded-xl pl-10 pr-10 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-all"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 cursor-pointer"
-                        >
-                          {showPassword ? (
-                            <Eye className="w-4 h-4" />
-                          ) : (
-                            <EyeOff className="w-4 h-4" />
-                          )}
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Remember Me & Forgot Password */}
-                    <div className="flex items-center justify-between pt-1">
-                      <label className="flex items-center space-x-2 cursor-pointer select-none group">
-                        <input
-                          type="checkbox"
-                          checked={rememberMe}
-                          onChange={(e) => setRememberMe(e.target.checked)}
-                          className="rounded border-slate-300 text-[#d21f27] focus:ring-[#d21f27]/30 w-4 h-4 cursor-pointer accent-[#d21f27]"
-                        />
-                        <span className="text-xs text-slate-600 group-hover:text-slate-900 transition-colors">
-                          Remember me
-                        </span>
-                      </label>
-                      <a
-                        href="#"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          alert("Please contact dispatch support at support@transimex.ca");
-                        }}
-                        className="text-xs text-[#d21f27] hover:text-[#b51a21] font-semibold transition-colors"
-                      >
-                        Forgot password?
-                      </a>
-                    </div>
-
-                    {/* Submit Button */}
-                    <button
-                      type="submit"
-                      disabled={loading}
-                      className="w-full bg-[#d21f27] hover:bg-[#b51a21] active:scale-[0.99] text-white font-semibold py-3.5 px-6 rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 text-sm cursor-pointer disabled:opacity-60 mt-4"
+                <div className="overflow-hidden space-y-4">
+                  {/* Full Name */}
+                  <div className="pt-0.5">
+                    <label
+                      htmlFor="fullName"
+                      className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5"
                     >
-                      {loading ? (
-                        <span>Signing In...</span>
-                      ) : (
-                        <>
-                          <span>Sign In &amp; Open Portal</span>
-                          <ArrowRight className="w-4 h-4" />
-                        </>
-                      )}
-                    </button>
-                  </form>
-                </div>
-
-                {/* ----------------- SIGN UP PANE ----------------- */}
-                <div
-                  className={`w-1/2 shrink-0 px-0.5 transition-all duration-300 ${
-                    activeTab === "signup"
-                      ? "opacity-100 scale-100"
-                      : "opacity-0 scale-[0.98] pointer-events-none"
-                  }`}
-                >
-                  <form onSubmit={handleSignUp} className="space-y-4">
-                    {/* Full Name */}
-                    <div>
-                      <label
-                        htmlFor="fullName"
-                        className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5"
-                      >
-                        Full Name
-                      </label>
-                      <div className="relative flex items-center">
-                        <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                        <input
-                          id="fullName"
-                          type="text"
-                          required={activeTab === "signup"}
-                          placeholder="e.g. Marc Tremblay"
-                          value={fullName}
-                          onChange={(e) => setFullName(e.target.value)}
-                          className="w-full bg-[#f8fafc] border border-slate-200 focus:border-[#d21f27] focus:bg-white focus:ring-2 focus:ring-[#d21f27]/10 rounded-xl pl-10 pr-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-all"
-                        />
-                      </div>
+                      Full Name
+                    </label>
+                    <div className="relative flex items-center">
+                      <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                      <input
+                        id="fullName"
+                        type="text"
+                        required={activeTab === "signup"}
+                        placeholder="e.g. Marc Tremblay"
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                        className="w-full bg-[#f8fafc] border border-slate-200 focus:border-[#d21f27] focus:bg-white focus:ring-2 focus:ring-[#d21f27]/10 rounded-xl pl-10 pr-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-all"
+                      />
                     </div>
+                  </div>
 
-                    {/* Company Name */}
-                    <div>
-                      <label
-                        htmlFor="companyName"
-                        className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5"
-                      >
-                        Company Name
-                      </label>
-                      <div className="relative flex items-center">
-                        <Building2 className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                        <input
-                          id="companyName"
-                          type="text"
-                          required={activeTab === "signup"}
-                          placeholder="e.g. Laurentian Global Logistics Ltd."
-                          value={companyName}
-                          onChange={(e) => setCompanyName(e.target.value)}
-                          className="w-full bg-[#f8fafc] border border-slate-200 focus:border-[#d21f27] focus:bg-white focus:ring-2 focus:ring-[#d21f27]/10 rounded-xl pl-10 pr-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-all"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Corporate Email Address */}
-                    <div>
-                      <label
-                        htmlFor="signupEmail"
-                        className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5"
-                      >
-                        Corporate Email Address
-                      </label>
-                      <div className="relative flex items-center">
-                        <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                        <input
-                          id="signupEmail"
-                          type="email"
-                          required={activeTab === "signup"}
-                          placeholder="dispatch@laurentianglobal.ca"
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          className="w-full bg-[#f8fafc] border border-slate-200 focus:border-[#d21f27] focus:bg-white focus:ring-2 focus:ring-[#d21f27]/10 rounded-xl pl-10 pr-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-all"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Password */}
-                    <div>
-                      <label
-                        htmlFor="signupPassword"
-                        className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5"
-                      >
-                        Password
-                      </label>
-                      <div className="relative flex items-center">
-                        <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                        <input
-                          id="signupPassword"
-                          type={showPassword ? "text" : "password"}
-                          required={activeTab === "signup"}
-                          placeholder="••••••••••••"
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                          className="w-full bg-[#f8fafc] border border-slate-200 focus:border-[#d21f27] focus:bg-white focus:ring-2 focus:ring-[#d21f27]/10 rounded-xl pl-10 pr-10 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-all"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 cursor-pointer"
-                        >
-                          {showPassword ? (
-                            <Eye className="w-4 h-4" />
-                          ) : (
-                            <EyeOff className="w-4 h-4" />
-                          )}
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Terms Agreement */}
-                    <div className="pt-1">
-                      <label className="flex items-center space-x-2.5 cursor-pointer select-none group">
-                        <input
-                          type="checkbox"
-                          checked={agreeTerms}
-                          onChange={(e) => setAgreeTerms(e.target.checked)}
-                          className="rounded border-slate-300 text-[#d21f27] focus:ring-[#d21f27]/30 w-4 h-4 cursor-pointer accent-[#d21f27]"
-                        />
-                        <span className="text-xs text-slate-600">
-                          I agree to{" "}
-                          <a
-                            href="https://www.transimex-canada.com/terms"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={(e) => e.stopPropagation()}
-                            className="text-[#d21f27] hover:underline font-semibold"
-                          >
-                            Transimex Canada Terms &amp; Services
-                          </a>
-                        </span>
-                      </label>
-                    </div>
-
-                    {/* Submit Button */}
-                    <button
-                      type="submit"
-                      disabled={loading}
-                      className="w-full bg-[#d21f27] hover:bg-[#b51a21] active:scale-[0.99] text-white font-semibold py-3.5 px-6 rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 text-sm cursor-pointer disabled:opacity-60 mt-4"
+                  {/* Company Name */}
+                  <div className="pb-0.5">
+                    <label
+                      htmlFor="companyName"
+                      className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5"
                     >
-                      {loading ? (
-                        <span>Creating Account...</span>
-                      ) : (
-                        <>
-                          <span>Create Account &amp; Open Portal</span>
-                          <ArrowRight className="w-4 h-4" />
-                        </>
-                      )}
-                    </button>
-                  </form>
+                      Company Name
+                    </label>
+                    <div className="relative flex items-center">
+                      <Building2 className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                      <input
+                        id="companyName"
+                        type="text"
+                        required={activeTab === "signup"}
+                        placeholder="e.g. Laurentian Global Logistics Ltd."
+                        value={companyName}
+                        onChange={(e) => setCompanyName(e.target.value)}
+                        className="w-full bg-[#f8fafc] border border-slate-200 focus:border-[#d21f27] focus:bg-white focus:ring-2 focus:ring-[#d21f27]/10 rounded-xl pl-10 pr-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-all"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
+
+              {/* Corporate Email Address */}
+              <div>
+                <label
+                  htmlFor="email"
+                  className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5"
+                >
+                  Corporate Email Address
+                </label>
+                <div className="relative flex items-center">
+                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                  <input
+                    id="email"
+                    type="email"
+                    required
+                    placeholder="dispatch@laurentianglobal.ca"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full bg-[#f8fafc] border border-slate-200 focus:border-[#d21f27] focus:bg-white focus:ring-2 focus:ring-[#d21f27]/10 rounded-xl pl-10 pr-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-all"
+                  />
+                </div>
+              </div>
+
+              {/* Password */}
+              <div>
+                <label
+                  htmlFor="password"
+                  className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5"
+                >
+                  Password
+                </label>
+                <div className="relative flex items-center">
+                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                  <input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    required
+                    placeholder="••••••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full bg-[#f8fafc] border border-slate-200 focus:border-[#d21f27] focus:bg-white focus:ring-2 focus:ring-[#d21f27]/10 rounded-xl pl-10 pr-10 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 cursor-pointer"
+                  >
+                    {showPassword ? (
+                      <Eye className="w-4 h-4" />
+                    ) : (
+                      <EyeOff className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Bottom Row: Remember Me / Forgot Password vs Terms Agreement */}
+              <div className="relative min-h-[24px]">
+                {/* Remember Me & Forgot Password */}
+                <div
+                  className={`transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                    activeTab === "login"
+                      ? "opacity-100 translate-x-0 relative z-10"
+                      : "opacity-0 -translate-x-4 absolute top-0 left-0 right-0 pointer-events-none -z-10"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <label className="flex items-center space-x-2 cursor-pointer select-none group">
+                      <input
+                        type="checkbox"
+                        checked={rememberMe}
+                        onChange={(e) => setRememberMe(e.target.checked)}
+                        className="rounded border-slate-300 text-[#d21f27] focus:ring-[#d21f27]/30 w-4 h-4 cursor-pointer accent-[#d21f27]"
+                      />
+                      <span className="text-xs text-slate-600 group-hover:text-slate-900 transition-colors">
+                        Remember me
+                      </span>
+                    </label>
+                    <a
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        alert("Please contact dispatch support at support@transimex.ca");
+                      }}
+                      className="text-xs text-[#d21f27] hover:text-[#b51a21] font-semibold transition-colors"
+                    >
+                      Forgot password?
+                    </a>
+                  </div>
+                </div>
+
+                {/* Terms Agreement */}
+                <div
+                  className={`transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                    activeTab === "signup"
+                      ? "opacity-100 translate-x-0 relative z-10"
+                      : "opacity-0 translate-x-4 absolute top-0 left-0 right-0 pointer-events-none -z-10"
+                  }`}
+                >
+                  <label className="flex items-center space-x-2.5 cursor-pointer select-none group">
+                    <input
+                      type="checkbox"
+                      checked={agreeTerms}
+                      onChange={(e) => setAgreeTerms(e.target.checked)}
+                      className="rounded border-slate-300 text-[#d21f27] focus:ring-[#d21f27]/30 w-4 h-4 cursor-pointer accent-[#d21f27]"
+                    />
+                    <span className="text-xs text-slate-600">
+                      I agree to{" "}
+                      <a
+                        href="https://www.transimex-canada.com/terms"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="text-[#d21f27] hover:underline font-semibold"
+                      >
+                        Transimex Canada Terms &amp; Services
+                      </a>
+                    </span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Submit Button */}
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-[#d21f27] hover:bg-[#b51a21] active:scale-[0.99] text-white font-semibold py-3.5 px-6 rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 text-sm cursor-pointer disabled:opacity-60 mt-4"
+              >
+                {loading ? (
+                  <span>
+                    {activeTab === "signup"
+                      ? "Creating Account..."
+                      : "Signing In..."}
+                  </span>
+                ) : (
+                  <>
+                    <span>
+                      {activeTab === "signup"
+                        ? "Create Account & Open Portal"
+                        : "Sign In & Open Portal"}
+                    </span>
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
+              </button>
+            </form>
 
             {/* Divider */}
             <div className="relative my-6 flex items-center justify-center">
