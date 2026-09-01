@@ -13,16 +13,12 @@ import {
   Building2,
   Mail,
   Lock,
-  Phone,
   ArrowRight,
   Shield,
   Globe2,
   CheckCircle2,
   Sparkles,
-  MapPin,
-  Briefcase,
 } from "lucide-react";
-import { IndustryType, ProvinceType } from "@/lib/validations/auth";
 
 function AuthComponent() {
   const router = useRouter();
@@ -38,20 +34,13 @@ function AuthComponent() {
   const [error, setError] = useState<string | null>(urlError || null);
   const [registerSuccess, setRegisterSuccess] = useState(false);
 
-  // Sign In Form States
-  const [loginEmail, setLoginEmail] = useState("");
-  const [loginPassword, setLoginPassword] = useState("");
-  const [rememberMe, setRememberMe] = useState(true);
-
-  // Sign Up Form States
-  const [fullName, setFullName] = useState("");
+  // Form Fields
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [companyName, setCompanyName] = useState("");
-  const [signupEmail, setSignupEmail] = useState("");
-  const [signupPassword, setSignupPassword] = useState("");
-  const [phone, setPhone] = useState("");
-  const [industry, setIndustry] = useState<IndustryType>("Industrial");
-  const [city, setCity] = useState("Montreal");
-  const [province, setProvince] = useState<ProvinceType>("QC");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(true);
   const [agreeTerms, setAgreeTerms] = useState(true);
 
   useEffect(() => {
@@ -73,7 +62,7 @@ function AuthComponent() {
     return score;
   };
 
-  const strength = getPasswordStrength(signupPassword);
+  const strength = getPasswordStrength(password);
   const strengthLabels = ["Weak", "Fair", "Good", "Strong"];
   const strengthColors = ["bg-red-500", "bg-amber-500", "bg-blue-500", "bg-emerald-500"];
 
@@ -85,8 +74,8 @@ function AuthComponent() {
 
     try {
       const res = await api.auth.login({
-        email: loginEmail,
-        password: loginPassword,
+        email,
+        password,
         rememberMe,
       });
 
@@ -116,11 +105,11 @@ function AuthComponent() {
     setError(null);
 
     if (!agreeTerms) {
-      setError("Please agree to the Transimex Terms & Commercial Policy");
+      setError("Please agree to the Transimex Terms of Service & Compliance Policies");
       return;
     }
 
-    if (signupPassword.length < 8) {
+    if (password.length < 8) {
       setError("Password must be at least 8 characters");
       return;
     }
@@ -128,15 +117,16 @@ function AuthComponent() {
     setLoading(true);
 
     try {
+      const fullName = `${firstName.trim()} ${lastName.trim()}`.trim() || "Marc Tremblay";
       const res = await api.auth.register({
-        fullName: fullName.trim() || "Marc Tremblay",
-        email: signupEmail,
-        password: signupPassword,
+        fullName,
+        email,
+        password,
         companyName: companyName.trim() || "Laurentian Global Logistics Ltd.",
-        phone: phone || "+1 (514) 555-0199",
-        industry,
-        city: city || "Montreal",
-        province,
+        phone: "+1 (514) 555-0199",
+        industry: "Industrial",
+        city: "Montreal",
+        province: "QC",
         terms: agreeTerms,
       });
 
@@ -155,11 +145,11 @@ function AuthComponent() {
   const fillMock = (type: "client" | "admin") => {
     setActiveTab("login");
     if (type === "client") {
-      setLoginEmail("client@transimex.ca");
-      setLoginPassword("Transimex2026!");
+      setEmail("client@transimex.ca");
+      setPassword("Transimex2026!");
     } else {
-      setLoginEmail("admin@transimex.ca");
-      setLoginPassword("Transimex2026!");
+      setEmail("admin@transimex.ca");
+      setPassword("Transimex2026!");
     }
     setError(null);
   };
@@ -189,10 +179,10 @@ function AuthComponent() {
           {/* Heavy Navy Overlay */}
           <div className="absolute inset-0 bg-[#0B2545]/85 z-10" />
 
-          <div className="relative z-20 flex flex-col justify-between h-full p-8 lg:p-12">
+          <div className="relative z-20 flex flex-col justify-between h-full p-10 lg:p-14">
             {/* Logo and Brand */}
-            <div className="flex items-center gap-3.5">
-              <div className="h-11 w-11 bg-white rounded-xl p-1.5 flex items-center justify-center shadow-xs">
+            <div className="flex items-center gap-4">
+              <div className="h-12 w-12 bg-white rounded-xl p-1.5 flex items-center justify-center shadow-xs">
                 <svg
                   viewBox="0 0 100 100"
                   fill="none"
@@ -227,44 +217,44 @@ function AuthComponent() {
             </div>
 
             {/* Core Value Statement */}
-            <div className="max-w-xl pb-4">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-white text-[11px] font-semibold uppercase tracking-wider mb-3">
+            <div className="max-w-xl pb-6">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-white text-[11px] font-semibold uppercase tracking-wider mb-4">
                 <Shield className="w-3.5 h-3.5 text-[#d21f27]" />
                 Institutional Logistics Portal
               </span>
               <h2
-                className="text-3xl lg:text-[40px] font-bold text-white mb-3 text-balance leading-[1.15] tracking-[-0.02em]"
+                className="text-4xl lg:text-[44px] font-bold text-white mb-4 text-balance leading-[1.1] tracking-[-0.02em]"
                 style={{
                   fontFamily: "var(--font-playfair), 'Playfair Display', serif",
                 }}
               >
                 Global Reach. Personal Touch.
               </h2>
-              <p className="text-slate-300 text-xs sm:text-sm leading-relaxed max-w-md">
+              <p className="text-slate-300 text-sm leading-relaxed max-w-md">
                 Institutional-grade freight management, cross-border customs compliance, and full visibility cargo logistics across North America.
               </p>
             </div>
 
             {/* Bottom Certifications */}
-            <div className="pt-4 border-t border-white/10 flex items-center justify-between text-xs text-slate-400">
+            <div className="pt-6 border-t border-white/10 flex items-center justify-between text-xs text-slate-400">
               <span>PIP &bull; C-TPAT &bull; CBSA Verified</span>
               <span>&copy; {new Date().getFullYear()} Transimex Canada</span>
             </div>
           </div>
         </div>
 
-        {/* Right Side: Interactive Compact Sliding Form */}
-        <div className="w-full md:w-1/2 flex flex-col justify-center items-center px-4 sm:px-8 lg:px-12 py-4 bg-white overflow-y-auto min-h-screen">
-          <div className="w-full max-w-[490px] my-auto py-2">
+        {/* Right Side: Authentication Form */}
+        <div className="w-full md:w-1/2 flex items-center justify-center p-6 sm:p-10 md:p-14 bg-white overflow-y-auto min-h-screen">
+          <div className="w-full max-w-[420px] my-auto py-6">
             {/* Top Bar on Mobile & Language Switcher */}
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-8">
               <div className="md:hidden">
-                <div className="flex items-center gap-2">
-                  <div className="h-8 w-8 bg-[#0B2545] rounded-lg p-1 flex items-center justify-center">
-                    <span className="text-white font-bold text-xs">T</span>
+                <div className="flex items-center gap-2.5">
+                  <div className="h-9 w-9 bg-[#0B2545] rounded-lg p-1 flex items-center justify-center">
+                    <span className="text-white font-bold text-sm">T</span>
                   </div>
                   <span
-                    className="font-bold text-base text-[#0B2545]"
+                    className="font-bold text-lg text-[#0B2545]"
                     style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
                   >
                     Transimex
@@ -274,7 +264,7 @@ function AuthComponent() {
               <button
                 type="button"
                 onClick={toggleLanguage}
-                className="ml-auto flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-slate-200 hover:bg-slate-50 text-[11px] font-semibold text-slate-700 transition shadow-2xs cursor-pointer"
+                className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-xs font-semibold text-slate-700 transition shadow-xs cursor-pointer"
               >
                 <Globe2 className="w-3.5 h-3.5 text-[#0B2545]" />
                 <span>{language.toUpperCase()}</span>
@@ -283,9 +273,9 @@ function AuthComponent() {
 
             {registerSuccess ? (
               /* Success State Screen */
-              <div className="text-center py-6 space-y-4 animate-in fade-in zoom-in-95">
-                <div className="w-14 h-14 bg-emerald-50 border border-emerald-200 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-sm">
-                  <CheckCircle2 className="w-7 h-7" />
+              <div className="text-center py-8 space-y-5 animate-in fade-in zoom-in-95">
+                <div className="w-16 h-16 bg-emerald-50 border border-emerald-200 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-sm">
+                  <CheckCircle2 className="w-8 h-8" />
                 </div>
                 <div>
                   <h2
@@ -294,8 +284,8 @@ function AuthComponent() {
                   >
                     {t.auth.checkEmailTitle}
                   </h2>
-                  <p className="text-xs text-slate-600 mt-2 max-w-xs mx-auto leading-relaxed">
-                    {t.auth.checkEmailDesc} <strong>{signupEmail}</strong>. {t.auth.checkEmailInfo}
+                  <p className="text-xs sm:text-sm text-slate-600 mt-2 max-w-xs mx-auto leading-relaxed">
+                    {t.auth.checkEmailDesc} <strong>{email}</strong>. {t.auth.checkEmailInfo}
                   </p>
                 </div>
                 <button
@@ -303,9 +293,8 @@ function AuthComponent() {
                   onClick={() => {
                     setRegisterSuccess(false);
                     setActiveTab("login");
-                    setLoginEmail(signupEmail);
                   }}
-                  className="w-full py-3 bg-[#0B2545] hover:bg-[#123661] text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-sm transition flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full py-3.5 bg-[#0B2545] hover:bg-[#123661] text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-sm transition flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <span>{t.auth.returnToLogin}</span>
                   <ArrowRight className="w-4 h-4" />
@@ -313,9 +302,9 @@ function AuthComponent() {
               </div>
             ) : (
               <>
-                {/* Dynamic Title with Sliding Transitions */}
-                <div className="relative mb-3 min-h-[52px]">
-                  {/* Sign In Header */}
+                {/* Title & Description with Smooth Slide Transitions */}
+                <div className="relative mb-6 min-h-[72px]">
+                  {/* Sign In Title */}
                   <div
                     className={`transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
                       activeTab === "login"
@@ -324,19 +313,19 @@ function AuthComponent() {
                     }`}
                   >
                     <h2
-                      className="text-2xl sm:text-[26px] font-bold text-[#0B2545] tracking-tight leading-tight"
+                      className="text-3xl font-bold text-[#0B2545] tracking-tight leading-tight"
                       style={{
                         fontFamily: "var(--font-playfair), 'Playfair Display', serif",
                       }}
                     >
                       {t.auth.welcomeBack}
                     </h2>
-                    <p className="text-xs text-slate-500 mt-0.5">
+                    <p className="text-xs sm:text-sm text-slate-500 mt-2">
                       {t.auth.welcomeSubtitle}
                     </p>
                   </div>
 
-                  {/* Create Account Header */}
+                  {/* Create Account Title */}
                   <div
                     className={`transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
                       activeTab === "signup"
@@ -345,21 +334,21 @@ function AuthComponent() {
                     }`}
                   >
                     <h2
-                      className="text-2xl sm:text-[26px] font-bold text-[#0B2545] tracking-tight leading-tight"
+                      className="text-3xl font-bold text-[#0B2545] tracking-tight leading-tight"
                       style={{
                         fontFamily: "var(--font-playfair), 'Playfair Display', serif",
                       }}
                     >
                       {t.auth.createAccount}
                     </h2>
-                    <p className="text-xs text-slate-500 mt-0.5">
+                    <p className="text-xs sm:text-sm text-slate-500 mt-2">
                       {t.auth.createSubtitle}
                     </p>
                   </div>
                 </div>
 
                 {/* Sliding Segmented Tab Controller */}
-                <div className="relative flex p-1 mb-3 bg-slate-100 rounded-xl select-none">
+                <div className="relative flex p-1 mb-6 bg-slate-100 rounded-xl select-none">
                   {/* Sliding Pill Indicator */}
                   <div
                     className={`absolute top-1 bottom-1 w-[calc(50%-4px)] bg-white rounded-lg shadow-sm transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
@@ -375,7 +364,7 @@ function AuthComponent() {
                       setActiveTab("login");
                       setError(null);
                     }}
-                    className={`relative z-10 flex-1 py-1.5 text-center text-xs font-semibold rounded-lg transition-colors duration-200 cursor-pointer ${
+                    className={`relative z-10 flex-1 py-2 text-center text-xs sm:text-sm font-semibold rounded-lg transition-colors duration-200 cursor-pointer ${
                       activeTab === "login"
                         ? "text-[#0B2545] font-bold"
                         : "text-slate-500 hover:text-slate-800"
@@ -390,7 +379,7 @@ function AuthComponent() {
                       setActiveTab("signup");
                       setError(null);
                     }}
-                    className={`relative z-10 flex-1 py-1.5 text-center text-xs font-semibold rounded-lg transition-colors duration-200 cursor-pointer ${
+                    className={`relative z-10 flex-1 py-2 text-center text-xs sm:text-sm font-semibold rounded-lg transition-colors duration-200 cursor-pointer ${
                       activeTab === "signup"
                         ? "text-[#0B2545] font-bold"
                         : "text-slate-500 hover:text-slate-800"
@@ -400,10 +389,10 @@ function AuthComponent() {
                   </button>
                 </div>
 
-                {/* Quick Test Logins Helper (only in login mode) */}
+                {/* Quick Test Logins Helper (only in login tab) */}
                 {activeTab === "login" && (
-                  <div className="mb-3 p-2.5 bg-slate-50 border border-slate-200/90 rounded-xl animate-in fade-in duration-200">
-                    <div className="flex items-center justify-between text-[11px] font-semibold text-slate-500 mb-1.5">
+                  <div className="mb-5 p-3 bg-slate-50 border border-slate-200/90 rounded-xl animate-in fade-in duration-200">
+                    <div className="flex items-center justify-between text-[11px] font-semibold text-slate-500 mb-2">
                       <span className="flex items-center gap-1">
                         <Sparkles className="w-3.5 h-3.5 text-[#d21f27]" />
                         Quick Test Logins:
@@ -430,291 +419,214 @@ function AuthComponent() {
 
                 {/* Error Banner */}
                 {error && (
-                  <div className="mb-3 p-2.5 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs flex items-center gap-2 animate-in fade-in">
+                  <div className="mb-5 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs flex items-center gap-2 animate-in fade-in">
                     <span className="font-semibold">{t.common.error}:</span> {error}
                   </div>
                 )}
 
-                {/* Unified Form */}
+                {/* Form */}
                 <form
                   onSubmit={activeTab === "login" ? handleLogin : handleSignUp}
-                  className="space-y-2.5"
+                  className="space-y-4"
                   noValidate
                 >
-                  {/* SIGN IN FORM (Single Column) */}
-                  {activeTab === "login" && (
-                    <div className="space-y-2.5 animate-in fade-in duration-200">
-                      {/* Email Field */}
-                      <div>
-                        <label className="block text-xs font-semibold text-slate-700 mb-1">
-                          {t.auth.email} *
-                        </label>
-                        <div className="relative">
-                          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                          <input
-                            type="email"
-                            value={loginEmail}
-                            onChange={(e) => setLoginEmail(e.target.value)}
-                            placeholder="corporate@company.ca"
-                            required
-                            className="w-full pl-9 pr-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-[#0B2545] focus:ring-1 focus:ring-[#0B2545] outline-none transition"
-                          />
+                  {/* Collapsible Signup Additional Fields */}
+                  <div
+                    className="grid transition-[grid-template-rows,opacity] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
+                    style={{
+                      gridTemplateRows: activeTab === "signup" ? "1fr" : "0fr",
+                      opacity: activeTab === "signup" ? 1 : 0,
+                    }}
+                  >
+                    <div className="overflow-hidden space-y-4">
+                      {/* Name Fields (2 Columns) */}
+                      <div className="grid grid-cols-2 gap-3 pt-0.5">
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                            First Name *
+                          </label>
+                          <div className="relative flex items-center">
+                            <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                            <input
+                              type="text"
+                              required={activeTab === "signup"}
+                              placeholder="Marc"
+                              value={firstName}
+                              onChange={(e) => setFirstName(e.target.value)}
+                              className="w-full bg-[#f8fafc] border border-slate-200 focus:border-[#d21f27] focus:bg-white focus:ring-2 focus:ring-[#d21f27]/10 rounded-xl pl-10 pr-3.5 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-all"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                            Last Name *
+                          </label>
+                          <div className="relative flex items-center">
+                            <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                            <input
+                              type="text"
+                              required={activeTab === "signup"}
+                              placeholder="Tremblay"
+                              value={lastName}
+                              onChange={(e) => setLastName(e.target.value)}
+                              className="w-full bg-[#f8fafc] border border-slate-200 focus:border-[#d21f27] focus:bg-white focus:ring-2 focus:ring-[#d21f27]/10 rounded-xl pl-10 pr-3.5 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-all"
+                            />
+                          </div>
                         </div>
                       </div>
 
-                      {/* Password Field */}
+                      {/* Company Name */}
                       <div>
-                        <label className="block text-xs font-semibold text-slate-700 mb-1">
-                          {t.auth.password} *
+                        <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                          {t.auth.companyName} *
                         </label>
-                        <div className="relative">
-                          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                        <div className="relative flex items-center">
+                          <Building2 className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                           <input
-                            type={showPassword ? "text" : "password"}
-                            value={loginPassword}
-                            onChange={(e) => setLoginPassword(e.target.value)}
-                            placeholder="••••••••••••"
-                            required
-                            className="w-full pl-9 pr-9 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-[#0B2545] focus:ring-1 focus:ring-[#0B2545] outline-none transition"
+                            type="text"
+                            required={activeTab === "signup"}
+                            placeholder="e.g. Laurentian Global Logistics Ltd."
+                            value={companyName}
+                            onChange={(e) => setCompanyName(e.target.value)}
+                            className="w-full bg-[#f8fafc] border border-slate-200 focus:border-[#d21f27] focus:bg-white focus:ring-2 focus:ring-[#d21f27]/10 rounded-xl pl-10 pr-3.5 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-all"
                           />
-                          <button
-                            type="button"
-                            onClick={() => setShowPassword(!showPassword)}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition cursor-pointer"
-                          >
-                            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                          </button>
                         </div>
                       </div>
+                    </div>
+                  </div>
 
-                      {/* Remember Me & Forgot Password */}
-                      <div className="flex items-center justify-between pt-0.5">
-                        <label className="flex items-center gap-2 cursor-pointer select-none text-xs text-slate-600">
+                  {/* Email Field (Shared) */}
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                      {t.auth.email} *
+                    </label>
+                    <div className="relative flex items-center">
+                      <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                      <input
+                        type="email"
+                        required
+                        placeholder="corporate@company.ca"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="w-full bg-[#f8fafc] border border-slate-200 focus:border-[#d21f27] focus:bg-white focus:ring-2 focus:ring-[#d21f27]/10 rounded-xl pl-10 pr-3.5 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Password Field (Shared) */}
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                      {t.auth.password} *
+                    </label>
+                    <div className="relative flex items-center">
+                      <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        required
+                        placeholder="••••••••••••"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="w-full bg-[#f8fafc] border border-slate-200 focus:border-[#d21f27] focus:bg-white focus:ring-2 focus:ring-[#d21f27]/10 rounded-xl pl-10 pr-10 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-all"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 cursor-pointer"
+                      >
+                        {showPassword ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                      </button>
+                    </div>
+
+                    {/* Password Strength Indicator (in Create Account) */}
+                    {activeTab === "signup" && password.length > 0 && (
+                      <div className="mt-2 space-y-1 animate-in fade-in">
+                        <div className="flex items-center justify-between text-[10px] text-slate-500">
+                          <span>{language === "fr" ? "Robustesse:" : "Password Strength:"}</span>
+                          <span className="font-semibold">{strengthLabels[strength - 1] || "Weak"}</span>
+                        </div>
+                        <div className="grid grid-cols-4 gap-1 h-1.5">
+                          {[1, 2, 3, 4].map((step) => (
+                            <div
+                              key={step}
+                              className={`rounded-full transition-all duration-300 ${
+                                strength >= step ? strengthColors[strength - 1] : "bg-slate-200"
+                              }`}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Sub Actions: Remember Me vs Terms */}
+                  <div className="relative min-h-[24px]">
+                    {/* Remember Me & Forgot Password */}
+                    <div
+                      className={`transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                        activeTab === "login"
+                          ? "opacity-100 translate-x-0 relative z-10"
+                          : "opacity-0 -translate-x-4 absolute top-0 left-0 right-0 pointer-events-none -z-10"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <label className="flex items-center space-x-2 cursor-pointer select-none group">
                           <input
                             type="checkbox"
                             checked={rememberMe}
                             onChange={(e) => setRememberMe(e.target.checked)}
-                            className="w-3.5 h-3.5 rounded border-slate-300 text-[#0B2545] focus:ring-[#0B2545]"
+                            className="rounded border-slate-300 text-[#d21f27] focus:ring-[#d21f27]/30 w-4 h-4 cursor-pointer accent-[#d21f27]"
                           />
-                          <span>{t.auth.rememberMe}</span>
+                          <span className="text-xs text-slate-600 group-hover:text-slate-900 transition-colors">
+                            {t.auth.rememberMe}
+                          </span>
                         </label>
                         <Link
                           href="/forgot-password"
-                          className="text-xs font-semibold text-[#d21f27] hover:underline"
+                          className="text-xs text-[#d21f27] hover:text-[#b51a21] font-semibold transition-colors"
                         >
                           {t.auth.forgotPassword}
                         </Link>
                       </div>
                     </div>
-                  )}
 
-                  {/* SIGN UP FORM (Space-Efficient 2-Column Grid Layout) */}
-                  {activeTab === "signup" && (
-                    <div className="space-y-2.5 animate-in fade-in duration-200">
-                      {/* Row 1: Full Name & Company Name */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                        <div>
-                          <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-                            {t.auth.fullName} *
-                          </label>
-                          <div className="relative">
-                            <User className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-                            <input
-                              type="text"
-                              value={fullName}
-                              onChange={(e) => setFullName(e.target.value)}
-                              placeholder="Marc Tremblay"
-                              required
-                              className="w-full pl-8 pr-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-[#0B2545] outline-none transition"
-                            />
-                          </div>
-                        </div>
-                        <div>
-                          <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-                            {t.auth.companyName} *
-                          </label>
-                          <div className="relative">
-                            <Building2 className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-                            <input
-                              type="text"
-                              value={companyName}
-                              onChange={(e) => setCompanyName(e.target.value)}
-                              placeholder="Laurentian Logistics"
-                              required
-                              className="w-full pl-8 pr-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-[#0B2545] outline-none transition"
-                            />
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Row 2: Corporate Email & Phone */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                        <div>
-                          <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-                            {t.auth.email} *
-                          </label>
-                          <div className="relative">
-                            <Mail className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-                            <input
-                              type="email"
-                              value={signupEmail}
-                              onChange={(e) => setSignupEmail(e.target.value)}
-                              placeholder="dispatch@company.ca"
-                              required
-                              className="w-full pl-8 pr-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-[#0B2545] outline-none transition"
-                            />
-                          </div>
-                        </div>
-                        <div>
-                          <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-                            {t.auth.phoneNumber} *
-                          </label>
-                          <div className="relative">
-                            <Phone className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-                            <input
-                              type="tel"
-                              value={phone}
-                              onChange={(e) => setPhone(e.target.value)}
-                              placeholder="+1 (514) 555-0199"
-                              className="w-full pl-8 pr-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-[#0B2545] outline-none transition"
-                            />
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Row 3: Password & Industry */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                        <div>
-                          <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-                            {t.auth.password} *
-                          </label>
-                          <div className="relative">
-                            <Lock className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-                            <input
-                              type={showPassword ? "text" : "password"}
-                              value={signupPassword}
-                              onChange={(e) => setSignupPassword(e.target.value)}
-                              placeholder="Min. 8 chars"
-                              required
-                              className="w-full pl-8 pr-7 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-[#0B2545] outline-none transition"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => setShowPassword(!showPassword)}
-                              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
-                            >
-                              {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                            </button>
-                          </div>
-                          {/* Password Strength Meter */}
-                          {signupPassword.length > 0 && (
-                            <div className="mt-1 space-y-0.5">
-                              <div className="flex items-center justify-between text-[9px] text-slate-500">
-                                <span>Strength:</span>
-                                <span className="font-semibold">{strengthLabels[strength - 1] || "Weak"}</span>
-                              </div>
-                              <div className="grid grid-cols-4 gap-1 h-1">
-                                {[1, 2, 3, 4].map((step) => (
-                                  <div
-                                    key={step}
-                                    className={`rounded-full transition-all duration-300 ${
-                                      strength >= step ? strengthColors[strength - 1] : "bg-slate-200"
-                                    }`}
-                                  />
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                        <div>
-                          <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-                            {t.auth.industry}
-                          </label>
-                          <div className="relative">
-                            <Briefcase className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
-                            <select
-                              value={industry}
-                              onChange={(e) => setIndustry(e.target.value as IndustryType)}
-                              className="w-full pl-8 pr-6 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 focus:bg-white focus:border-[#0B2545] outline-none transition cursor-pointer"
-                            >
-                              <option value="Automotive">Automotive</option>
-                              <option value="Manufacturing">Manufacturing</option>
-                              <option value="Pharma">Pharma</option>
-                              <option value="Retail">Retail</option>
-                              <option value="Food">Food &amp; Beverage</option>
-                              <option value="Industrial">Industrial</option>
-                              <option value="Other">Other</option>
-                            </select>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Row 4: City & Province */}
-                      <div className="grid grid-cols-2 gap-2.5">
-                        <div>
-                          <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-                            {t.auth.city}
-                          </label>
-                          <div className="relative">
-                            <MapPin className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-                            <input
-                              type="text"
-                              value={city}
-                              onChange={(e) => setCity(e.target.value)}
-                              placeholder="Montreal"
-                              className="w-full pl-8 pr-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-[#0B2545] outline-none transition"
-                            />
-                          </div>
-                        </div>
-                        <div>
-                          <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-                            {t.auth.province}
-                          </label>
-                          <select
-                            value={province}
-                            onChange={(e) => setProvince(e.target.value as ProvinceType)}
-                            className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 focus:bg-white focus:border-[#0B2545] outline-none transition cursor-pointer"
-                          >
-                            <option value="QC">QC - Quebec</option>
-                            <option value="ON">ON - Ontario</option>
-                            <option value="BC">BC - British Columbia</option>
-                            <option value="AB">AB - Alberta</option>
-                            <option value="MB">MB - Manitoba</option>
-                            <option value="SK">SK - Saskatchewan</option>
-                            <option value="NB">NB - New Brunswick</option>
-                            <option value="NS">NS - Nova Scotia</option>
-                          </select>
-                        </div>
-                      </div>
-
-                      {/* Terms Agreement */}
-                      <div className="pt-0.5">
-                        <label className="flex items-start gap-2 cursor-pointer select-none text-[11px] text-slate-600">
-                          <input
-                            type="checkbox"
-                            checked={agreeTerms}
-                            onChange={(e) => setAgreeTerms(e.target.checked)}
-                            className="w-3.5 h-3.5 rounded border-slate-300 text-[#0B2545] focus:ring-[#0B2545] mt-0.5"
-                          />
-                          <span className="leading-tight">
-                            I agree to Transimex Canada's Terms of Service &amp; Compliance Policy.
-                          </span>
-                        </label>
-                      </div>
+                    {/* Terms Agreement */}
+                    <div
+                      className={`transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                        activeTab === "signup"
+                          ? "opacity-100 translate-x-0 relative z-10"
+                          : "opacity-0 translate-x-4 absolute top-0 left-0 right-0 pointer-events-none -z-10"
+                      }`}
+                    >
+                      <label className="flex items-center space-x-2.5 cursor-pointer select-none group">
+                        <input
+                          type="checkbox"
+                          checked={agreeTerms}
+                          onChange={(e) => setAgreeTerms(e.target.checked)}
+                          className="rounded border-slate-300 text-[#d21f27] focus:ring-[#d21f27]/30 w-4 h-4 cursor-pointer accent-[#d21f27]"
+                        />
+                        <span className="text-xs text-slate-600">
+                          {t.auth.agreeTerms}
+                        </span>
+                      </label>
                     </div>
-                  )}
+                  </div>
 
-                  {/* Submit CTA Button */}
+                  {/* Submit Button */}
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full py-2.5 bg-[#d21f27] hover:bg-[#b0181f] text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-sm transition transform active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70 mt-1"
+                    className="w-full bg-[#d21f27] hover:bg-[#b51a21] active:scale-[0.99] text-white font-semibold py-3.5 px-6 rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 text-sm cursor-pointer disabled:opacity-60 mt-4"
                   >
                     {loading ? (
                       <span>{t.common.loading}</span>
                     ) : (
                       <>
-                        <span>{activeTab === "login" ? t.auth.signInButton : t.auth.registerButton}</span>
+                        <span>
+                          {activeTab === "signup"
+                            ? t.auth.registerButton
+                            : t.auth.signInButton}
+                        </span>
                         <ArrowRight className="w-4 h-4" />
                       </>
                     )}
@@ -722,21 +634,19 @@ function AuthComponent() {
                 </form>
 
                 {/* Divider */}
-                <div className="relative my-3 text-center">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-slate-200" />
-                  </div>
-                  <span className="relative px-3 bg-white text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                <div className="relative my-6 flex items-center justify-center">
+                  <div className="w-full border-t border-slate-200" />
+                  <span className="bg-white px-3 text-[11px] uppercase tracking-wider text-slate-400 font-semibold absolute">
                     {language === "fr" ? "Ou continuer avec" : "Or continue with"}
                   </span>
                 </div>
 
-                {/* Google SSO Button */}
+                {/* Continue with Google Button */}
                 <button
                   type="button"
                   onClick={handleGoogleAuth}
                   disabled={googleLoading}
-                  className="w-full py-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 transition flex items-center justify-center gap-2.5 shadow-2xs cursor-pointer disabled:opacity-70"
+                  className="w-full flex items-center justify-center gap-3 py-3 px-4 bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 active:scale-[0.99] text-slate-700 font-semibold text-sm rounded-xl transition-all shadow-xs cursor-pointer disabled:opacity-60"
                 >
                   <svg className="w-4 h-4" viewBox="0 0 24 24">
                     <path
@@ -756,7 +666,13 @@ function AuthComponent() {
                       d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
                     />
                   </svg>
-                  <span>{googleLoading ? t.common.loading : language === "fr" ? "Continuer avec Google" : "Continue with Google"}</span>
+                  <span>
+                    {googleLoading
+                      ? t.common.loading
+                      : language === "fr"
+                      ? "Continuer avec Google"
+                      : "Continue with Google"}
+                  </span>
                 </button>
               </>
             )}
