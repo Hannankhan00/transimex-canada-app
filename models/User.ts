@@ -4,11 +4,17 @@ export interface IUser extends Document {
   name: string;
   email: string;
   password?: string;
+  phone?: string;
   companyName: string;
+  industry?: string;
+  city?: string;
+  province?: string;
   role?: string;
   googleId?: string;
   avatar?: string;
   provider?: string;
+  resetToken?: string;
+  resetTokenExpires?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -33,15 +39,33 @@ const UserSchema = new Schema<IUser>(
       minlength: 6,
       select: false, // Don't return password by default
     },
+    phone: {
+      type: String,
+      trim: true,
+    },
     companyName: {
       type: String,
       required: [true, "Company name is required"],
       trim: true,
       default: "Laurentian Global Logistics Ltd.",
     },
+    industry: {
+      type: String,
+      enum: ["Automotive", "Manufacturing", "Pharma", "Retail", "Food", "Industrial", "Other"],
+      default: "Industrial",
+    },
+    city: {
+      type: String,
+      trim: true,
+    },
+    province: {
+      type: String,
+      trim: true,
+      default: "QC",
+    },
     role: {
       type: String,
-      enum: ["client", "admin", "superadmin", "subadmin", "dispatcher"],
+      enum: ["client", "user", "admin", "superadmin", "subadmin", "dispatcher"],
       default: "client",
     },
     googleId: {
@@ -54,6 +78,12 @@ const UserSchema = new Schema<IUser>(
     provider: {
       type: String,
       default: "credentials",
+    },
+    resetToken: {
+      type: String,
+    },
+    resetTokenExpires: {
+      type: Date,
     },
   },
   {

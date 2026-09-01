@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Playfair_Display, Noto_Serif } from "next/font/google";
 import "./globals.css";
+import { LanguageProvider } from "@/lib/i18n/LanguageContext";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -22,7 +23,7 @@ const notoSerif = Noto_Serif({
 
 export const metadata: Metadata = {
   title: "Transimex Canada Logistics | Client Portal",
-  description: "Secure logistics management for global freight. Transimex Canada Logistics Client Portal.",
+  description: "Secure institutional logistics management for global freight. Transimex Canada Logistics Client Portal.",
 };
 
 export default function RootLayout({
@@ -36,7 +37,7 @@ export default function RootLayout({
       className={`${inter.variable} ${playfair.variable} ${notoSerif.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col font-sans antialiased text-[#111c2d] bg-[#f9f9ff]">
-        {children}
+        <LanguageProvider>{children}</LanguageProvider>
       </body>
     </html>
   );
