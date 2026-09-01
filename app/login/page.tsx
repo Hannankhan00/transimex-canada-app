@@ -197,8 +197,8 @@ function AuthComponent() {
               {/* Sign In Title & Description */}
               <div
                 className={`transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${activeTab === "login"
-                    ? "opacity-100 translate-x-0 relative z-10"
-                    : "opacity-0 -translate-x-4 absolute top-0 left-0 right-0 pointer-events-none -z-10"
+                  ? "opacity-100 translate-x-0 relative z-10"
+                  : "opacity-0 -translate-x-4 absolute top-0 left-0 right-0 pointer-events-none -z-10"
                   }`}
               >
                 <h2
@@ -217,8 +217,8 @@ function AuthComponent() {
               {/* Create Account Title & Description */}
               <div
                 className={`transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${activeTab === "signup"
-                    ? "opacity-100 translate-x-0 relative z-10"
-                    : "opacity-0 translate-x-4 absolute top-0 left-0 right-0 pointer-events-none -z-10"
+                  ? "opacity-100 translate-x-0 relative z-10"
+                  : "opacity-0 translate-x-4 absolute top-0 left-0 right-0 pointer-events-none -z-10"
                   }`}
               >
                 <h2
@@ -240,8 +240,8 @@ function AuthComponent() {
               {/* Sliding Pill Indicator */}
               <div
                 className={`absolute top-1 bottom-1 w-[calc(50%-4px)] bg-white rounded-lg shadow-sm transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${activeTab === "login"
-                    ? "left-1 translate-x-0"
-                    : "left-1 translate-x-[calc(100%+0px)]"
+                  ? "left-1 translate-x-0"
+                  : "left-1 translate-x-[calc(100%+0px)]"
                   }`}
               />
 
@@ -252,8 +252,8 @@ function AuthComponent() {
                   setError(null);
                 }}
                 className={`relative z-10 flex-1 py-2 text-center text-xs sm:text-sm font-semibold rounded-lg transition-colors duration-200 cursor-pointer ${activeTab === "login"
-                    ? "text-[#0B2545] font-bold"
-                    : "text-slate-500 hover:text-slate-800"
+                  ? "text-[#0B2545] font-bold"
+                  : "text-slate-500 hover:text-slate-800"
                   }`}
               >
                 Sign In
@@ -266,11 +266,11 @@ function AuthComponent() {
                   setError(null);
                 }}
                 className={`relative z-10 flex-1 py-2 text-center text-xs sm:text-sm font-semibold rounded-lg transition-colors duration-200 cursor-pointer ${activeTab === "signup"
-                    ? "text-[#0B2545] font-bold"
-                    : "text-slate-500 hover:text-slate-800"
+                  ? "text-[#0B2545] font-bold"
+                  : "text-slate-500 hover:text-slate-800"
                   }`}
               >
-                Create Accountttttttt
+                Create Account
               </button>
             </div>
 
@@ -401,8 +401,8 @@ function AuthComponent() {
                 {/* Remember Me & Forgot Password */}
                 <div
                   className={`transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${activeTab === "login"
-                      ? "opacity-100 translate-x-0 relative z-10"
-                      : "opacity-0 -translate-x-4 absolute top-0 left-0 right-0 pointer-events-none -z-10"
+                    ? "opacity-100 translate-x-0 relative z-10"
+                    : "opacity-0 -translate-x-4 absolute top-0 left-0 right-0 pointer-events-none -z-10"
                     }`}
                 >
                   <div className="flex items-center justify-between">
@@ -433,8 +433,8 @@ function AuthComponent() {
                 {/* Terms Agreement */}
                 <div
                   className={`transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${activeTab === "signup"
-                      ? "opacity-100 translate-x-0 relative z-10"
-                      : "opacity-0 translate-x-4 absolute top-0 left-0 right-0 pointer-events-none -z-10"
+                    ? "opacity-100 translate-x-0 relative z-10"
+                    : "opacity-0 translate-x-4 absolute top-0 left-0 right-0 pointer-events-none -z-10"
                     }`}
                 >
                   <label className="flex items-center space-x-2.5 cursor-pointer select-none group">
