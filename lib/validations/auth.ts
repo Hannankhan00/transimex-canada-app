@@ -14,6 +14,9 @@ export const industriesEnum = [
   "Other",
 ] as const;
 
+export type IndustryType = (typeof industriesEnum)[number];
+export type ProvinceType = (typeof provincesEnum)[number];
+
 export const registerSchema = z.object({
   fullName: z
     .string()
