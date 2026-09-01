@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   LayoutGrid,
@@ -24,6 +24,9 @@ import {
   Building2,
   RefreshCw,
   Key,
+  MoreVertical,
+  Check,
+  Zap,
 } from "lucide-react";
 import TransimexLogo from "@/components/TransimexLogo";
 
@@ -64,6 +67,21 @@ export default function AdminPortalPage() {
   const [subAdminsList, setSubAdminsList] = useState<SubAdminItem[]>([]);
   const [loadingAdmins, setLoadingAdmins] = useState(false);
 
+  const loadSubAdmins = useCallback(async () => {
+    setLoadingAdmins(true);
+    try {
+      const res = await fetch("/api/admin/subadmins");
+      const data = await res.json();
+      if (res.ok && data.admins) {
+        setSubAdminsList(data.admins);
+      }
+    } catch {
+      // Fallback
+    } finally {
+      setLoadingAdmins(false);
+    }
+  }, []);
+
   // Check auth & role on mount
   useEffect(() => {
     fetch("/api/auth/me")
@@ -98,22 +116,7 @@ export default function AdminPortalPage() {
       .catch(() => {
         router.push("/login");
       });
-  }, [router]);
-
-  const loadSubAdmins = async () => {
-    setLoadingAdmins(true);
-    try {
-      const res = await fetch("/api/admin/subadmins");
-      const data = await res.json();
-      if (res.ok && data.admins) {
-        setSubAdminsList(data.admins);
-      }
-    } catch {
-      // Fallback
-    } finally {
-      setLoadingAdmins(false);
-    }
-  };
+  }, [router, loadSubAdmins]);
 
   const handleCreateSubAdmin = async (e: React.FormEvent) => {
     e.preventDefault();
