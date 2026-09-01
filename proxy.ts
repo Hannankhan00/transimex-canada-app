@@ -36,7 +36,7 @@ function parseJwt(token: string): DecodedToken | null {
   }
 }
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Ignore static assets, next internals, and public api routes
@@ -104,6 +104,8 @@ export function middleware(request: NextRequest) {
 
   return NextResponse.next();
 }
+
+export default proxy;
 
 export const config = {
   matcher: [
