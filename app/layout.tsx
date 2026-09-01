@@ -34,9 +34,13 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${inter.variable} ${playfair.variable} ${notoSerif.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col font-sans antialiased text-[#111c2d] bg-[#f9f9ff]">
+      <body
+        suppressHydrationWarning
+        className="min-h-full flex flex-col font-sans antialiased text-[#111c2d] bg-[#f9f9ff]"
+      >
         <LanguageProvider>{children}</LanguageProvider>
       </body>
     </html>
