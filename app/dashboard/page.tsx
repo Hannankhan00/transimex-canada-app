@@ -37,9 +37,9 @@ interface UserProfile {
 export default function DashboardPage() {
   const router = useRouter();
   const [user, setUser] = useState<UserProfile>({
-    name: "Acme Logistics Manager",
-    email: "freight@acmecorp.com",
-    companyName: "Acme Corp",
+    name: "Marc Tremblay",
+    email: "dispatch@laurentianglobal.ca",
+    companyName: "Laurentian Global Logistics Ltd.",
     role: "client",
   });
   const [activeNav, setActiveNav] = useState("dashboard");
@@ -194,10 +194,10 @@ export default function DashboardPage() {
             </div>
             <div className="min-w-0 flex-1">
               <div className="text-xs font-semibold text-white truncate">
-                {user.companyName || "Acme Corp"}
+                {user.companyName || "Laurentian Global Logistics Ltd."}
               </div>
               <div className="text-[11px] text-slate-400 truncate">
-                {user.email || "freight@acmecorp.com"}
+                {user.email || "dispatch@laurentianglobal.ca"}
               </div>
             </div>
           </div>
@@ -256,7 +256,7 @@ export default function DashboardPage() {
               className="text-4xl font-bold text-[#0F1E36] tracking-tight leading-tight"
               style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
             >
-              Welcome back, {user.companyName || "Acme Corp"}.
+              Welcome back, {user.companyName || "Laurentian Global Logistics Ltd."}.
             </h1>
             <p className="text-slate-500 text-sm mt-1">
               Here is your logistics overview for today.

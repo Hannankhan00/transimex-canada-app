@@ -36,7 +36,7 @@ export async function POST(req: Request) {
       name,
       email: email.toLowerCase(),
       password: hashedPassword,
-      companyName: companyName || "Acme Corp",
+      companyName: companyName || "Laurentian Global Logistics Ltd.",
       role: "client",
     });
 

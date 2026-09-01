@@ -34,7 +34,7 @@ const UserSchema = new Schema<IUser>(
       type: String,
       required: [true, "Company name is required"],
       trim: true,
-      default: "Acme Corp",
+      default: "Laurentian Global Logistics Ltd.",
     },
     role: {
       type: String,
