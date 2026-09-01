@@ -196,11 +196,10 @@ function AuthComponent() {
             <div className="relative w-full mb-6">
               {/* Sign In Title & Description */}
               <div
-                className={`transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-                  activeTab === "login"
+                className={`transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${activeTab === "login"
                     ? "opacity-100 translate-x-0 relative z-10"
                     : "opacity-0 -translate-x-4 absolute top-0 left-0 right-0 pointer-events-none -z-10"
-                }`}
+                  }`}
               >
                 <h2
                   className="text-3xl sm:text-[34px] font-bold text-[#0B2545] tracking-tight leading-tight"
@@ -217,11 +216,10 @@ function AuthComponent() {
 
               {/* Create Account Title & Description */}
               <div
-                className={`transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-                  activeTab === "signup"
+                className={`transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${activeTab === "signup"
                     ? "opacity-100 translate-x-0 relative z-10"
                     : "opacity-0 translate-x-4 absolute top-0 left-0 right-0 pointer-events-none -z-10"
-                }`}
+                  }`}
               >
                 <h2
                   className="text-3xl sm:text-[34px] font-bold text-[#0B2545] tracking-tight leading-tight"
@@ -241,11 +239,10 @@ function AuthComponent() {
             <div className="relative bg-[#f0f4f9] p-1 rounded-xl flex mb-6 select-none">
               {/* Sliding Pill Indicator */}
               <div
-                className={`absolute top-1 bottom-1 w-[calc(50%-4px)] bg-white rounded-lg shadow-sm transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-                  activeTab === "login"
+                className={`absolute top-1 bottom-1 w-[calc(50%-4px)] bg-white rounded-lg shadow-sm transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${activeTab === "login"
                     ? "left-1 translate-x-0"
                     : "left-1 translate-x-[calc(100%+0px)]"
-                }`}
+                  }`}
               />
 
               <button
@@ -254,11 +251,10 @@ function AuthComponent() {
                   setActiveTab("login");
                   setError(null);
                 }}
-                className={`relative z-10 flex-1 py-2 text-center text-xs sm:text-sm font-semibold rounded-lg transition-colors duration-200 cursor-pointer ${
-                  activeTab === "login"
+                className={`relative z-10 flex-1 py-2 text-center text-xs sm:text-sm font-semibold rounded-lg transition-colors duration-200 cursor-pointer ${activeTab === "login"
                     ? "text-[#0B2545] font-bold"
                     : "text-slate-500 hover:text-slate-800"
-                }`}
+                  }`}
               >
                 Sign In
               </button>
@@ -269,13 +265,12 @@ function AuthComponent() {
                   setActiveTab("signup");
                   setError(null);
                 }}
-                className={`relative z-10 flex-1 py-2 text-center text-xs sm:text-sm font-semibold rounded-lg transition-colors duration-200 cursor-pointer ${
-                  activeTab === "signup"
+                className={`relative z-10 flex-1 py-2 text-center text-xs sm:text-sm font-semibold rounded-lg transition-colors duration-200 cursor-pointer ${activeTab === "signup"
                     ? "text-[#0B2545] font-bold"
                     : "text-slate-500 hover:text-slate-800"
-                }`}
+                  }`}
               >
-                Create Account
+                Create Accountttttttt
               </button>
             </div>
 
@@ -405,11 +400,10 @@ function AuthComponent() {
               <div className="relative min-h-[24px]">
                 {/* Remember Me & Forgot Password */}
                 <div
-                  className={`transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-                    activeTab === "login"
+                  className={`transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${activeTab === "login"
                       ? "opacity-100 translate-x-0 relative z-10"
                       : "opacity-0 -translate-x-4 absolute top-0 left-0 right-0 pointer-events-none -z-10"
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center justify-between">
                     <label className="flex items-center space-x-2 cursor-pointer select-none group">
@@ -438,11 +432,10 @@ function AuthComponent() {
 
                 {/* Terms Agreement */}
                 <div
-                  className={`transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-                    activeTab === "signup"
+                  className={`transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${activeTab === "signup"
                       ? "opacity-100 translate-x-0 relative z-10"
                       : "opacity-0 translate-x-4 absolute top-0 left-0 right-0 pointer-events-none -z-10"
-                  }`}
+                    }`}
                 >
                   <label className="flex items-center space-x-2.5 cursor-pointer select-none group">
                     <input
