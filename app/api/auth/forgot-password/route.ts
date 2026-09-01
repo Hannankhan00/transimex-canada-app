@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongoose";
 import User from "@/models/User";
 import crypto from "crypto";
+import { sendPasswordResetEmail } from "@/lib/email";
 
 export async function POST(req: Request) {
   try {
@@ -16,6 +17,7 @@ export async function POST(req: Request) {
 
     const emailLower = email.toLowerCase().trim();
     const resetToken = "tx-" + crypto.randomBytes(20).toString("hex");
+    let userName: string | undefined = undefined;
 
     try {
       await connectDB();
@@ -24,14 +26,27 @@ export async function POST(req: Request) {
         user.resetToken = resetToken;
         user.resetTokenExpires = new Date(Date.now() + 3600000); // 1 hour
         await user.save();
+        userName = user.name;
       }
     } catch (dbErr) {
       console.warn("Database unavailable during forgot-password, using simulated token:", dbErr);
     }
 
+    // Trigger Nodemailer email dispatch
+    try {
+      await sendPasswordResetEmail({
+        to: emailLower,
+        name: userName,
+        token: resetToken,
+      });
+    } catch (emailErr) {
+      console.error("Failed to send password reset email via SMTP:", emailErr);
+      // We still return success to prevent email enumeration timing attacks
+    }
+
     return NextResponse.json({
       success: true,
-      message: "If an account exists for this email, a secure password recovery link has been generated.",
+      message: "If an account exists for this email, a secure password recovery link has been dispatched.",
       mockResetToken: resetToken,
     });
   } catch (err: any) {

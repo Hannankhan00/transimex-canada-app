@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongoose";
 import User from "@/models/User";
 import { hashPassword, signToken } from "@/lib/auth";
+import { sendVerificationEmail } from "@/lib/email";
 
 export async function POST(req: Request) {
   try {
@@ -35,6 +36,7 @@ export async function POST(req: Request) {
 
     let userRole = "client";
     let userId = "tx-client-" + Date.now();
+    const targetCompany = companyName || "Laurentian Global Logistics Ltd.";
 
     try {
       await connectDB();
@@ -51,7 +53,7 @@ export async function POST(req: Request) {
         name: parsedName,
         email: email.toLowerCase(),
         password: hashedPassword,
-        companyName: companyName || "Laurentian Global Logistics Ltd.",
+        companyName: targetCompany,
         phone: phone || "",
         industry: industry || "Industrial",
         city: city || "Montreal",
@@ -69,11 +71,22 @@ export async function POST(req: Request) {
       userId,
       email: email.toLowerCase(),
       name: parsedName,
-      companyName: companyName || "Laurentian Global Logistics Ltd.",
+      companyName: targetCompany,
       role: userRole,
     };
 
     const token = signToken(tokenPayload);
+
+    // Send confirmation email in background
+    try {
+      await sendVerificationEmail({
+        to: email.toLowerCase(),
+        name: parsedName,
+        companyName: targetCompany,
+      });
+    } catch (emailErr) {
+      console.error("Failed to send welcome email via SMTP:", emailErr);
+    }
 
     const response = NextResponse.json({
       success: true,
