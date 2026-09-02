@@ -374,3 +374,298 @@ export function addQuoteToStore(quote: QuoteItem): void {
 export function getClientVisibleDocuments(): VaultDocument[] {
   return INITIAL_DOCUMENTS.filter((doc) => doc.isClientVisible === true);
 }
+
+// =========================================================================
+// PHASE 4: NOTIFICATIONS INBOX DATA MODEL & STORAGE
+// =========================================================================
+
+export type NotificationCategory = "transit" | "customs" | "document" | "quote" | "system";
+
+export interface PortalNotification {
+  id: string;
+  title: string;
+  titleFr: string;
+  desc: string;
+  descFr: string;
+  time: string;
+  category: NotificationCategory;
+  link: string;
+  unread: boolean;
+  timestamp: string;
+}
+
+export const INITIAL_NOTIFICATIONS: PortalNotification[] = [
+  {
+    id: "NOTIF-01",
+    title: "CBSA Customs Action: Entry #8849-QC Inspection Staged",
+    titleFr: "Action Douanes ASFC : Entrée #8849-QC en cours d'inspection",
+    desc: "Dorval Terminal customs broker has staged paperwork. Release expected within 2 hours.",
+    descFr: "Le courtier en douane au terminal de Dorval a soumis les documents. Mainlevée prévue d'ici 2 heures.",
+    time: "25 mins ago",
+    category: "customs",
+    link: "/dashboard/shipments?id=TMX-00839",
+    unread: true,
+    timestamp: "2026-09-02T16:30:00Z",
+  },
+  {
+    id: "NOTIF-02",
+    title: "Live Telematics: Trailer #402 Departed Montreal Hub",
+    titleFr: "Télématique en direct : Unité #402 partie du Hub de Montréal",
+    desc: "Shipment TMX-00847 is on Highway 401 Westbound to Toronto. ETA today 04:15 PM.",
+    descFr: "L'expédition TMX-00847 est sur l'autoroute 401 ouest vers Toronto. Heure d'arrivée prévue aujourd'hui 16h15.",
+    time: "1 hour ago",
+    category: "transit",
+    link: "/dashboard/shipments?id=TMX-00847",
+    unread: true,
+    timestamp: "2026-09-02T15:45:00Z",
+  },
+  {
+    id: "NOTIF-03",
+    title: "Official Bill of Lading (BOL) Uploaded & Signed",
+    titleFr: "Connaissement Officiel (BOL) téléversé et signé",
+    desc: "Bill_of_Lading_TMX-00847.pdf is now available for download in your Document Vault.",
+    descFr: "Le connaissement Bill_of_Lading_TMX-00847.pdf est disponible dans votre Coffre-fort numérique.",
+    time: "3 hours ago",
+    category: "document",
+    link: "/dashboard/documents",
+    unread: true,
+    timestamp: "2026-09-02T13:30:00Z",
+  },
+  {
+    id: "NOTIF-04",
+    title: "Freight Quote QT-2026-00118 Accepted & Dispatched",
+    titleFr: "Soumission de fret QT-2026-00118 acceptée et répartie",
+    desc: "53' Dry Van carrier load from Toronto to Vancouver confirmed at $6,200.00 CAD.",
+    descFr: "Chargement fourgon 53' de Toronto à Vancouver confirmé à 6 200,00 $ CAD.",
+    time: "Yesterday",
+    category: "quote",
+    link: "/dashboard/quotes",
+    unread: false,
+    timestamp: "2026-09-01T11:00:00Z",
+  },
+  {
+    id: "NOTIF-05",
+    title: "Proof of Delivery (POD) Certified for TMX-00810",
+    titleFr: "Preuve de Livraison (POD) certifiée pour TMX-00810",
+    desc: "Receiver signature confirmed at Montreal Port Berth 42. Cargo successfully delivered.",
+    descFr: "Signature du destinataire confirmée au quai 42 du Port de Montréal. Cargaison livrée.",
+    time: "Aug 30, 2026",
+    category: "document",
+    link: "/dashboard/documents",
+    unread: false,
+    timestamp: "2026-08-30T17:15:00Z",
+  },
+];
+
+const NOTIFICATIONS_STORAGE_KEY = "transimex_notifications_v1";
+
+export function getStoredNotifications(): PortalNotification[] {
+  if (typeof window === "undefined") return INITIAL_NOTIFICATIONS;
+  try {
+    const data = localStorage.getItem(NOTIFICATIONS_STORAGE_KEY);
+    if (data) {
+      return JSON.parse(data);
+    }
+  } catch (err) {
+    console.error("Error reading notifications from storage:", err);
+  }
+  return INITIAL_NOTIFICATIONS;
+}
+
+export function saveStoredNotifications(notifs: PortalNotification[]): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(NOTIFICATIONS_STORAGE_KEY, JSON.stringify(notifs));
+    window.dispatchEvent(new CustomEvent("transimex_notifications_updated", { detail: notifs }));
+  } catch (err) {
+    console.error("Error saving notifications:", err);
+  }
+}
+
+export function markAllNotificationsRead(): PortalNotification[] {
+  const current = getStoredNotifications();
+  const updated = current.map((n) => ({ ...n, unread: false }));
+  saveStoredNotifications(updated);
+  return updated;
+}
+
+export function markNotificationRead(id: string): PortalNotification[] {
+  const current = getStoredNotifications();
+  const updated = current.map((n) => (n.id === id ? { ...n, unread: false } : n));
+  saveStoredNotifications(updated);
+  return updated;
+}
+
+export function getUnreadNotificationsCount(): number {
+  const notifs = getStoredNotifications();
+  return notifs.filter((n) => n.unread).length;
+}
+
+// =========================================================================
+// PHASE 4: SUPPORT TICKETING DATA MODEL & STORAGE
+// =========================================================================
+
+export type TicketStatus = "Open" | "In Progress" | "Resolved";
+
+export interface SupportTicket {
+  id: string; // e.g. "TKT-2026-0042"
+  subject: string;
+  category: string;
+  linkedShipmentId?: string;
+  priority: "Low" | "Medium" | "High" | "Critical Dispatch Emergency";
+  message: string;
+  status: TicketStatus;
+  statusFr: string;
+  createdAt: string;
+  updatedAt: string;
+  assignedAgent: string;
+  responses?: {
+    id: string;
+    sender: string;
+    role: "agent" | "client";
+    message: string;
+    time: string;
+  }[];
+}
+
+export const INITIAL_TICKETS: SupportTicket[] = [
+  {
+    id: "TKT-2026-0042",
+    subject: "Temperature logging request for Reefer shipment TMX-00842",
+    category: "Shipment Telematics & Tracking",
+    linkedShipmentId: "TMX-00842",
+    priority: "High",
+    message: "Could dispatch provide continuous cold-chain temperature telemetry logs for trailer unit #118 (-18°C setpoint) for pharmaceutical compliance audit?",
+    status: "In Progress",
+    statusFr: "En Cours",
+    createdAt: "Today, 10:15 AM",
+    updatedAt: "35 mins ago",
+    assignedAgent: "David Tremblay (Transimex Dispatch)",
+    responses: [
+      {
+        id: "R-1",
+        sender: "David Tremblay",
+        role: "agent",
+        message: "Telemetry sensor data received. Temperature has remained steady at -18.2°C throughout the transit corridor. Exporting calibrated PDF log for you.",
+        time: "35 mins ago",
+      },
+    ],
+  },
+  {
+    id: "TKT-2026-0038",
+    subject: "CBSA PARS customs declaration copy for Entry #8849-01",
+    category: "Customs Clearance & CBSA",
+    linkedShipmentId: "TMX-00839",
+    priority: "Medium",
+    message: "Need the stamped CBSA B3 customs clearance manifest copy for Canadian internal accounting verification.",
+    status: "Resolved",
+    statusFr: "Résolu",
+    createdAt: "Aug 31, 2026",
+    updatedAt: "Yesterday",
+    assignedAgent: "Elena Roy (Customs Brokerage)",
+    responses: [
+      {
+        id: "R-2",
+        sender: "Elena Roy",
+        role: "agent",
+        message: "Electronic clearance entry PARS-8849-QC has been verified and released by CBSA. Attached in your Documents Vault.",
+        time: "Yesterday",
+      },
+    ],
+  },
+  {
+    id: "TKT-2026-0029",
+    subject: "Inquiry regarding container demurrage free days at Douala Port",
+    category: "Billing & Tariff Invoices",
+    priority: "Low",
+    message: "Requesting confirmation of 14-day free container demurrage window for upcoming ocean FCL shipment to Douala seaport.",
+    status: "Resolved",
+    statusFr: "Résolu",
+    createdAt: "Aug 26, 2026",
+    updatedAt: "Aug 27, 2026",
+    assignedAgent: "Marc-Antoine V. (Commercial Accounts)",
+    responses: [
+      {
+        id: "R-3",
+        sender: "Marc-Antoine V.",
+        role: "agent",
+        message: "Confirmed. Standard Transimex enterprise ocean booking includes 14 free detention/demurrage days at Douala terminal.",
+        time: "Aug 27, 2026",
+      },
+    ],
+  },
+];
+
+const TICKETS_STORAGE_KEY = "transimex_support_tickets_v1";
+
+export function getStoredTickets(): SupportTicket[] {
+  if (typeof window === "undefined") return INITIAL_TICKETS;
+  try {
+    const data = localStorage.getItem(TICKETS_STORAGE_KEY);
+    if (data) {
+      return JSON.parse(data);
+    }
+  } catch (err) {
+    console.error("Error reading tickets from storage:", err);
+  }
+  return INITIAL_TICKETS;
+}
+
+export function saveStoredTickets(tickets: SupportTicket[]): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(TICKETS_STORAGE_KEY, JSON.stringify(tickets));
+  } catch (err) {
+    console.error("Error saving tickets:", err);
+  }
+}
+
+export function addSupportTicket(ticket: SupportTicket): void {
+  const current = getStoredTickets();
+  saveStoredTickets([ticket, ...current]);
+}
+
+// =========================================================================
+// PHASE 4: ACCOUNT NOTIFICATION PREFERENCES & PROFILE
+// =========================================================================
+
+export interface EmailPreferences {
+  emailShipmentUpdates: boolean;
+  emailCustomsHolds: boolean;
+  emailNewDocuments: boolean;
+  emailRateAlerts: boolean;
+  smsUrgentAlerts: boolean;
+}
+
+export const DEFAULT_PREFERENCES: EmailPreferences = {
+  emailShipmentUpdates: true,
+  emailCustomsHolds: true,
+  emailNewDocuments: true,
+  emailRateAlerts: false,
+  smsUrgentAlerts: true,
+};
+
+const PREFERENCES_STORAGE_KEY = "transimex_email_preferences_v1";
+
+export function getStoredPreferences(): EmailPreferences {
+  if (typeof window === "undefined") return DEFAULT_PREFERENCES;
+  try {
+    const data = localStorage.getItem(PREFERENCES_STORAGE_KEY);
+    if (data) {
+      return JSON.parse(data);
+    }
+  } catch (err) {
+    console.error("Error reading preferences:", err);
+  }
+  return DEFAULT_PREFERENCES;
+}
+
+export function saveStoredPreferences(prefs: EmailPreferences): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(PREFERENCES_STORAGE_KEY, JSON.stringify(prefs));
+  } catch (err) {
+    console.error("Error saving preferences:", err);
+  }
+}
+

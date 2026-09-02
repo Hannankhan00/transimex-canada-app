@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
+import { getUnreadNotificationsCount } from "@/lib/mockData";
 import PortalSidebar from "./PortalSidebar";
 import TopBar from "./TopBar";
 
@@ -13,6 +14,7 @@ interface PortalShellProps {
 export default function PortalShell({ children }: PortalShellProps) {
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [user, setUser] = useState<{
     name?: string;
     email?: string;
@@ -23,6 +25,15 @@ export default function PortalShell({ children }: PortalShellProps) {
 
   useEffect(() => {
     let isMounted = true;
+
+    // Load initial unread count
+    setUnreadCount(getUnreadNotificationsCount());
+
+    const handleNotificationsUpdate = () => {
+      setUnreadCount(getUnreadNotificationsCount());
+    };
+
+    window.addEventListener("transimex_notifications_updated", handleNotificationsUpdate);
 
     async function loadUser() {
       try {
@@ -51,6 +62,7 @@ export default function PortalShell({ children }: PortalShellProps) {
 
     return () => {
       isMounted = false;
+      window.removeEventListener("transimex_notifications_updated", handleNotificationsUpdate);
     };
   }, [router]);
 
@@ -60,7 +72,7 @@ export default function PortalShell({ children }: PortalShellProps) {
       <PortalSidebar
         mobileOpen={mobileMenuOpen}
         onCloseMobile={() => setMobileMenuOpen(false)}
-        unreadCount={3}
+        unreadCount={unreadCount}
         userRole={user?.role || "client"}
       />
 
@@ -70,7 +82,7 @@ export default function PortalShell({ children }: PortalShellProps) {
         <TopBar
           onOpenMobileMenu={() => setMobileMenuOpen(true)}
           user={user}
-          unreadCount={3}
+          unreadCount={unreadCount}
         />
 
         {/* Main Content Area */}
