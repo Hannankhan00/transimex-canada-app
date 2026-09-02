@@ -377,3 +377,80 @@ export async function sendQuoteRejectedEmail({
     text: `Your freight quote ${quoteId} could not be accepted. Reason: ${rejectionReason}. Contact dispatch at ${contactUrl}`,
   });
 }
+
+/**
+ * 6. Send Duties & Tax Payment Notice Email
+ */
+export async function sendDutiesNoticeEmail({
+  to,
+  name,
+  companyName,
+  trackingId,
+  dutiesAmount,
+  taxesAmount,
+  brokerageFee,
+  totalOwed,
+  portOfEntry,
+  cbsaPars,
+  wirePaymentInstructions,
+}: {
+  to: string;
+  name: string;
+  companyName?: string;
+  trackingId: string;
+  dutiesAmount: string;
+  taxesAmount: string;
+  brokerageFee: string;
+  totalOwed: string;
+  portOfEntry?: string;
+  cbsaPars?: string;
+  wirePaymentInstructions?: string;
+}) {
+  const appUrl = getAppUrl();
+  const paymentUrl = `${appUrl}/dashboard/shipments?id=${encodeURIComponent(trackingId)}`;
+
+  const content = `
+    <h1 class="h1">Customs Clearance: Duties &amp; Taxes Notice</h1>
+    <p>Dear <strong>${name}</strong> ${companyName ? `(${companyName})` : ""},</p>
+    <p>This is a regulatory compliance notification from the Transimex Canada Customs Brokerage Gateway regarding active shipment <strong>${trackingId}</strong>.</p>
+    
+    <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 14px; margin: 18px 0; border-radius: 4px;">
+      <div style="font-weight: bold; color: #92400e; font-size: 14px;">Regulatory Status: Customs Duties Assessment Pending Payment</div>
+      <div style="color: #78350f; font-size: 12px; margin-top: 4px;">
+        ${cbsaPars ? `<strong>CBSA Entry:</strong> ${cbsaPars} &bull; ` : ""}
+        ${portOfEntry ? `<strong>Port of Entry:</strong> ${portOfEntry}` : "Canadian Border Port of Entry"}
+      </div>
+    </div>
+
+    <div class="cred-box">
+      <div style="font-size: 16px; font-weight: bold; color: #0B2545; margin-bottom: 8px;">
+        Total Tariff &amp; Regulatory Duties Owed: <span style="color: #D21F27;">${totalOwed}</span>
+      </div>
+      <div style="font-size: 13px; line-height: 1.6;">
+        <div>&bull; <strong>Customs Tariff Duties:</strong> ${dutiesAmount}</div>
+        <div>&bull; <strong>Federal / Provincial Taxes (GST/HST):</strong> ${taxesAmount}</div>
+        <div>&bull; <strong>Brokerage &amp; Harbor Filing Fee:</strong> ${brokerageFee}</div>
+      </div>
+    </div>
+
+    <p style="margin-top: 18px;">
+      ${wirePaymentInstructions || "Payment can be executed via Electronic Funds Transfer (EFT), certified corporate cheque, or credit card directly in the client portal."}
+    </p>
+
+    <div style="text-align: center; margin-top: 24px;">
+      <a href="${paymentUrl}" class="btn" target="_blank">Review &amp; Clear Duties in Portal</a>
+    </div>
+
+    <div class="alert-box">
+      <strong>Important Border Release Notice:</strong> In accordance with CBSA &amp; CBP regulations, freight release from border customs hold will occur immediately upon settlement verification.
+    </div>
+  `;
+
+  return sendEmail({
+    to,
+    subject: `URGENT: Customs Duties Assessment for Shipment ${trackingId}`,
+    html: emailTemplateWrapper(content, `Customs duties notice for shipment ${trackingId} - Total Owed: ${totalOwed}`),
+    text: `Customs duties notice for ${trackingId}. Total owed: ${totalOwed}. Pay and clear at ${paymentUrl}`,
+  });
+}
+

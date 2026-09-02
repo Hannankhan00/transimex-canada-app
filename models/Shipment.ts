@@ -48,6 +48,17 @@ export interface IShipment extends Document {
   unitNumber?: string;
   eta?: string;
   cbsaPars?: string;
+  customsStatus?: "Pending" | "In Review" | "Released" | "Held";
+  customsBroker?: string;
+  portOfEntry?: string;
+  cbsaNotes?: string;
+  duties?: {
+    amountCad?: string;
+    taxGstHst?: string;
+    totalOwed?: string;
+    status?: "Unassessed" | "Notice Dispatched" | "Settled";
+    dispatchedAt?: string;
+  };
   timeline: IShipmentTimelineEvent[];
   createdAt: Date;
   updatedAt: Date;
@@ -108,6 +119,26 @@ const ShipmentSchema = new Schema<IShipment>(
     unitNumber: { type: String, default: "TMX-400" },
     eta: { type: String, default: "3-5 Business Days" },
     cbsaPars: { type: String, default: "" },
+    customsStatus: {
+      type: String,
+      enum: ["Pending", "In Review", "Released", "Held"],
+      default: "Pending",
+      index: true,
+    },
+    customsBroker: { type: String, default: "Transimex In-House Brokerage" },
+    portOfEntry: { type: String, default: "Ambassador Bridge (Windsor / Detroit)" },
+    cbsaNotes: { type: String, default: "" },
+    duties: {
+      amountCad: { type: String, default: "" },
+      taxGstHst: { type: String, default: "" },
+      totalOwed: { type: String, default: "" },
+      status: {
+        type: String,
+        enum: ["Unassessed", "Notice Dispatched", "Settled"],
+        default: "Unassessed",
+      },
+      dispatchedAt: { type: String, default: "" },
+    },
     timeline: [
       {
         title: { type: String, required: true },

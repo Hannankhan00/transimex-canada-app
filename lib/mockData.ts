@@ -508,11 +508,221 @@ export function rejectQuote(
   return updatedQuote;
 }
 
+// =========================================================================
+// DOCUMENT VAULT PERSISTENCE & VISIBILITY ENGINE
+// =========================================================================
+
+const DOCUMENTS_STORAGE_KEY = "transimex_vault_documents_v1";
+
+export function getStoredDocuments(): VaultDocument[] {
+  if (typeof window === "undefined") return INITIAL_DOCUMENTS;
+  try {
+    const data = localStorage.getItem(DOCUMENTS_STORAGE_KEY);
+    if (data) {
+      return JSON.parse(data);
+    }
+  } catch (err) {
+    console.error("Error reading documents from storage:", err);
+  }
+  return INITIAL_DOCUMENTS;
+}
+
+export function saveStoredDocuments(docs: VaultDocument[]): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(DOCUMENTS_STORAGE_KEY, JSON.stringify(docs));
+    window.dispatchEvent(new CustomEvent("transimex_documents_updated", { detail: docs }));
+  } catch (err) {
+    console.error("Error writing documents to storage:", err);
+  }
+}
+
+export function addDocumentToStore(doc: VaultDocument): VaultDocument {
+  const current = getStoredDocuments();
+  const updated = [doc, ...current];
+  saveStoredDocuments(updated);
+  return doc;
+}
+
+export function toggleDocumentVisibility(docId: string): VaultDocument | null {
+  const current = getStoredDocuments();
+  const index = current.findIndex((d) => d.id === docId);
+  if (index === -1) return null;
+
+  const toggled: VaultDocument = {
+    ...current[index],
+    isClientVisible: !current[index].isClientVisible,
+  };
+
+  current[index] = toggled;
+  saveStoredDocuments(current);
+  return toggled;
+}
+
 /**
  * Filter vault documents ensuring only client-visible documents are returned.
  */
 export function getClientVisibleDocuments(): VaultDocument[] {
-  return INITIAL_DOCUMENTS.filter((doc) => doc.isClientVisible === true);
+  const docs = getStoredDocuments();
+  return docs.filter((doc) => doc.isClientVisible === true);
+}
+
+// =========================================================================
+// CUSTOMS COMPLIANCE RECORD DATA MODEL & STORE
+// =========================================================================
+
+export type CustomsClearanceStatus = "Pending" | "In Review" | "Released" | "Held";
+
+export interface CustomsComplianceRecord {
+  shipmentId: string;
+  status: CustomsClearanceStatus;
+  broker: string;
+  portOfEntry: string;
+  cbsaPars: string;
+  cbsaNotes: string;
+  duties: {
+    amountCad: string;
+    taxGstHst: string;
+    brokerageFee: string;
+    totalOwed: string;
+    status: "Unassessed" | "Notice Dispatched" | "Settled";
+    dispatchedAt?: string;
+  };
+  lastUpdated: string;
+}
+
+export const INITIAL_CUSTOMS_RECORDS: Record<string, CustomsComplianceRecord> = {
+  "TMX-00839": {
+    shipmentId: "TMX-00839",
+    status: "Held",
+    broker: "Livingston International Brokerage",
+    portOfEntry: "Dorval Customs Terminal (QC)",
+    cbsaPars: "PARS-8849-QC",
+    cbsaNotes: "Secondary inspection flag: CBSA Officer #814 requesting verified B3 commercial invoice copy for Harmonized Tariff classification 8411.82.",
+    duties: {
+      amountCad: "$1,850.00 CAD",
+      taxGstHst: "$420.00 CAD",
+      brokerageFee: "$150.00 CAD",
+      totalOwed: "$2,420.00 CAD",
+      status: "Notice Dispatched",
+      dispatchedAt: "Sep 01, 2026, 14:30",
+    },
+    lastUpdated: "2026-09-02T16:30:00Z",
+  },
+  "TMX-00847": {
+    shipmentId: "TMX-00847",
+    status: "Released",
+    broker: "Transimex In-House Customs Gateway",
+    portOfEntry: "Ambassador Bridge (Windsor / Detroit)",
+    cbsaPars: "PARS-9948-ON",
+    cbsaNotes: "Cleared without examination. ACI eManifest transmitted and accepted by CBSA.",
+    duties: {
+      amountCad: "$0.00 CAD",
+      taxGstHst: "$0.00 CAD",
+      brokerageFee: "$0.00 CAD",
+      totalOwed: "$0.00 CAD",
+      status: "Settled",
+    },
+    lastUpdated: "2026-09-02T15:45:00Z",
+  },
+  "TMX-00842": {
+    shipmentId: "TMX-00842",
+    status: "In Review",
+    broker: "FedEx Trade Networks Transport & Brokerage",
+    portOfEntry: "Lacolle / Champlain Crossing (QC / NY)",
+    cbsaPars: "PARS-7721-NY",
+    cbsaNotes: "Pharma cold-chain manifest under automated FDA/CFIA electronic review.",
+    duties: {
+      amountCad: "$920.00 CAD",
+      taxGstHst: "$138.00 CAD",
+      brokerageFee: "$110.00 CAD",
+      totalOwed: "$1,168.00 CAD",
+      status: "Unassessed",
+    },
+    lastUpdated: "2026-09-02T14:15:00Z",
+  },
+  "TMX-00810": {
+    shipmentId: "TMX-00810",
+    status: "Released",
+    broker: "Cole International Customs Brokers",
+    portOfEntry: "Montreal Port Berth 42 (QC)",
+    cbsaPars: "PARS-4410-QC",
+    cbsaNotes: "Heavy haul machinery customs entry cleared. CBSA stamp confirmed.",
+    duties: {
+      amountCad: "$3,400.00 CAD",
+      taxGstHst: "$510.00 CAD",
+      brokerageFee: "$220.00 CAD",
+      totalOwed: "$4,130.00 CAD",
+      status: "Settled",
+      dispatchedAt: "Aug 30, 2026",
+    },
+    lastUpdated: "2026-08-30T17:15:00Z",
+  },
+};
+
+const CUSTOMS_STORAGE_KEY = "transimex_customs_records_v1";
+
+export function getStoredCustomsRecords(): Record<string, CustomsComplianceRecord> {
+  if (typeof window === "undefined") return INITIAL_CUSTOMS_RECORDS;
+  try {
+    const data = localStorage.getItem(CUSTOMS_STORAGE_KEY);
+    if (data) {
+      return JSON.parse(data);
+    }
+  } catch (err) {
+    console.error("Error reading customs records from storage:", err);
+  }
+  return INITIAL_CUSTOMS_RECORDS;
+}
+
+export function saveStoredCustomsRecords(records: Record<string, CustomsComplianceRecord>): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(CUSTOMS_STORAGE_KEY, JSON.stringify(records));
+  } catch (err) {
+    console.error("Error writing customs records to storage:", err);
+  }
+}
+
+export function getCustomsRecordForShipment(shipmentId: string): CustomsComplianceRecord {
+  const records = getStoredCustomsRecords();
+  if (records[shipmentId]) {
+    return records[shipmentId];
+  }
+  // Default record if newly instantiated
+  return {
+    shipmentId,
+    status: "Pending",
+    broker: "Transimex In-House Customs Gateway",
+    portOfEntry: "Canadian Highway Border Port",
+    cbsaPars: `PARS-${Math.floor(1000 + Math.random() * 9000)}-CA`,
+    cbsaNotes: "Awaiting cross-border manifest transmission.",
+    duties: {
+      amountCad: "$0.00 CAD",
+      taxGstHst: "$0.00 CAD",
+      brokerageFee: "$0.00 CAD",
+      totalOwed: "$0.00 CAD",
+      status: "Unassessed",
+    },
+    lastUpdated: new Date().toISOString(),
+  };
+}
+
+export function updateCustomsRecordForShipment(
+  shipmentId: string,
+  updates: Partial<CustomsComplianceRecord>
+): CustomsComplianceRecord {
+  const records = getStoredCustomsRecords();
+  const current = getCustomsRecordForShipment(shipmentId);
+  const updated: CustomsComplianceRecord = {
+    ...current,
+    ...updates,
+    shipmentId,
+    lastUpdated: new Date().toISOString(),
+  };
+  records[shipmentId] = updated;
+  saveStoredCustomsRecords(records);
+  return updated;
 }
 
 // =========================================================================
