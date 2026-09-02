@@ -5,25 +5,35 @@
 
 import { SavedAddress } from "./validations/address";
 
-export type QuoteStatus = "under_review" | "accepted" | "rejected" | "expired";
+export type QuoteStatus = "under_review" | "reviewing" | "accepted" | "rejected" | "expired";
 
 export interface QuoteItem {
   id: string; // e.g. "QT-2026-00124"
+  clientName?: string;
+  clientCompany?: string;
+  clientEmail?: string;
+  clientPhone?: string;
+  userId?: string;
   origin: string;
   originDetail: string;
   destination: string;
   destinationDetail: string;
   transportMode: string;
   equipment: string;
+  cargoType?: "General Freight" | "Hazardous Materials" | "Perishable / Cold-Chain" | "Heavy Haul Oversize";
   weight: string;
   palletCount?: number;
+  dimensions?: string;
   commodity: string;
+  preferredPickupDate?: string;
+  specialInstructions?: string;
   submittedDate: string;
   validUntil: string;
   status: QuoteStatus;
   statusLabelEn: string;
   statusLabelFr: string;
   priceCad?: string;
+  priceUsd?: string;
   breakdown?: {
     lineHaul: string;
     fuelSurcharge: string;
@@ -126,34 +136,77 @@ export const INITIAL_ADDRESSES: SavedAddress[] = [
 export const INITIAL_QUOTES: QuoteItem[] = [
   {
     id: "QT-2026-00124",
+    clientName: "Marc Tremblay",
+    clientCompany: "Laurentian Global Logistics Ltd.",
+    clientEmail: "dispatch@laurentianglobal.ca",
+    clientPhone: "+1 (514) 555-0199",
     origin: "Montreal (QC)",
     originDetail: "4850 Rue Saint-Patrick, Montreal, QC H4E 4N4",
     destination: "Detroit (MI)",
     destinationDetail: "8900 East Jefferson Ave, Detroit, MI 48214",
     transportMode: "Refrigerated Reefer",
     equipment: "53' Temp-Controlled Reefer (-18°C)",
-    weight: "42,000 lbs",
+    cargoType: "Perishable / Cold-Chain",
+    weight: "42,000 lbs (19,050 kg)",
     palletCount: 24,
-    commodity: "Frozen Pharmaceutical & Cold-Chain Goods",
+    dimensions: "53ft x 102in x 110in",
+    commodity: "Frozen Pharmaceutical & Cold-Chain Vaccine Precursors",
+    preferredPickupDate: "Sep 05, 2026",
+    specialInstructions: "Continuous cold-chain logging required. Temperature cannot exceed -18°C. Tailgate delivery required at destination dock 4.",
     submittedDate: "Sep 02, 2026",
     validUntil: "Sep 09, 2026",
     status: "under_review",
-    statusLabelEn: "Under Review",
-    statusLabelFr: "En Révision",
-    priceCad: "Pending Dispatch Calculation",
+    statusLabelEn: "New / Under Review",
+    statusLabelFr: "Nouvelle / En Révision",
+    priceCad: "Pending Rate Calculation",
     adminNotes: "Transimex cross-border dispatch is confirming customs bond verification and reefer unit availability.",
   },
   {
+    id: "QT-2026-00122",
+    clientName: "Sarah Jenkins",
+    clientCompany: "Ontario Precision Aerospace Inc.",
+    clientEmail: "sjenkins@ontarioprecision.ca",
+    clientPhone: "+1 (416) 555-0144",
+    origin: "Mississauga (ON)",
+    originDetail: "1200 Britannia Road East, Mississauga, ON L4W 4K5",
+    destination: "Chicago (IL)",
+    destinationDetail: "4000 West 39th St, Chicago, IL 60632",
+    transportMode: "53' Dry Van",
+    equipment: "53' Tandem Dry Van (Air-Ride Suspension)",
+    cargoType: "General Freight",
+    weight: "34,200 lbs (15,510 kg)",
+    palletCount: 20,
+    dimensions: "Standard 53ft Air-Ride Van",
+    commodity: "Machined Aircraft Hydraulic Valves & Titanium Actuators",
+    preferredPickupDate: "Sep 06, 2026",
+    specialInstructions: "High-value cargo seal required. Driver must report CBSA entry at Ambassador Bridge crossing.",
+    submittedDate: "Sep 01, 2026",
+    validUntil: "Sep 08, 2026",
+    status: "reviewing",
+    statusLabelEn: "In Staff Review",
+    statusLabelFr: "En Évaluation Staff",
+    priceCad: "Calculating Carrier Tariffs...",
+    adminNotes: "Checking with Swift Transport and Bison for backhaul capacity from Chicago.",
+  },
+  {
     id: "QT-2026-00118",
+    clientName: "David Wong",
+    clientCompany: "Pacific Gateway Distribution Corp.",
+    clientEmail: "dwong@pacificgateway.ca",
+    clientPhone: "+1 (604) 555-0182",
     origin: "Toronto (ON)",
     originDetail: "1200 Britannia Road East, Mississauga, ON L4W 4K5",
     destination: "Vancouver (BC)",
     destinationDetail: "3388 Viking Way, Richmond, BC V6V 1N6",
     transportMode: "53' Dry Van",
     equipment: "53' Tandem Dry Van (Air-Ride)",
-    weight: "36,500 lbs",
+    cargoType: "General Freight",
+    weight: "36,500 lbs (16,550 kg)",
     palletCount: 26,
+    dimensions: "53ft x 102in",
     commodity: "Consumer Electronics & Dry Retail Freight",
+    preferredPickupDate: "Aug 30, 2026",
+    specialInstructions: "Overnight cross-dock transfer. Direct highway team drivers requested.",
     submittedDate: "Aug 29, 2026",
     validUntil: "Sep 05, 2026",
     status: "accepted",
@@ -167,20 +220,28 @@ export const INITIAL_QUOTES: QuoteItem[] = [
       accessorials: "$250.00 CAD (Tailgate)",
       total: "$6,200.00 CAD",
     },
-    shipmentId: "TMX-00847",
+    shipmentId: "TMX-2026-00847",
     adminNotes: "Booking confirmed. Assigned driver Jean D. (Unit #402). Load is currently in transit.",
   },
   {
     id: "QT-2026-00105",
+    clientName: "Trevor Miller",
+    clientCompany: "Laurentian Western Industrial Hub",
+    clientEmail: "tmiller@laurentianhub.ca",
+    clientPhone: "+1 (403) 555-0177",
     origin: "Dorval Terminal (QC)",
     originDetail: "555 Boulevard Stuart-Graham, Dorval, QC H4Y 1J6",
     destination: "Halifax Port (NS)",
     destinationDetail: "1055 Marginal Road, Halifax, NS B3H 4P7",
     transportMode: "Flatbed / Heavy Haul",
     equipment: "48' Stepdeck Heavy Haul (Oversize)",
-    weight: "48,500 lbs",
+    cargoType: "Heavy Haul Oversize",
+    weight: "48,500 lbs (22,000 kg)",
     palletCount: 4,
+    dimensions: "48ft x 120in Wide Load",
     commodity: "Heavy Industrial Generator Turbine",
+    preferredPickupDate: "Aug 24, 2026",
+    specialInstructions: "Pilot cars required. Transport Quebec corridor oversized transit clearance.",
     submittedDate: "Aug 22, 2026",
     validUntil: "Expired",
     status: "rejected",
@@ -192,15 +253,23 @@ export const INITIAL_QUOTES: QuoteItem[] = [
   },
   {
     id: "QT-2026-00098",
+    clientName: "Marc-Antoine Villeneuve",
+    clientCompany: "Quebec Forest Products Syndicate",
+    clientEmail: "mavilleneuve@qfps.qc.ca",
+    clientPhone: "+1 (418) 555-0133",
     origin: "Quebec City (QC)",
     originDetail: "150 Rue de Courcelette, Quebec, QC G1K 4T5",
     destination: "Chicago (IL)",
     destinationDetail: "4000 West 39th St, Chicago, IL 60632",
     transportMode: "Intermodal Rail",
     equipment: "53' High-Cube Container",
-    weight: "41,000 lbs",
+    cargoType: "General Freight",
+    weight: "41,000 lbs (18,600 kg)",
     palletCount: 22,
+    dimensions: "53ft Container",
     commodity: "Paper Products & Newsprint Rolls",
+    preferredPickupDate: "Aug 16, 2026",
+    specialInstructions: "CN Rail terminal drop-off before 17:00.",
     submittedDate: "Aug 15, 2026",
     validUntil: "Aug 22, 2026",
     status: "expired",
@@ -366,6 +435,77 @@ export function saveStoredQuotes(quotes: QuoteItem[]): void {
 export function addQuoteToStore(quote: QuoteItem): void {
   const current = getStoredQuotes();
   saveStoredQuotes([quote, ...current]);
+}
+
+export function updateQuoteStatus(id: string, updates: Partial<QuoteItem>): QuoteItem | null {
+  const current = getStoredQuotes();
+  const index = current.findIndex((q) => q.id === id);
+  if (index === -1) return null;
+
+  const updated: QuoteItem = {
+    ...current[index],
+    ...updates,
+  };
+  current[index] = updated;
+  saveStoredQuotes(current);
+  return updated;
+}
+
+export function acceptQuoteAndGenerateShipment(
+  id: string,
+  priceCad: string,
+  breakdown?: QuoteItem["breakdown"],
+  adminNotes?: string
+): { quote: QuoteItem; trackingId: string } | null {
+  const current = getStoredQuotes();
+  const index = current.findIndex((q) => q.id === id);
+  if (index === -1) return null;
+
+  // Auto-generate sequential Tracking ID e.g. TMX-2026-00850
+  const randomSuffix = Math.floor(10000 + Math.random() * 90000);
+  const trackingId = `TMX-2026-${randomSuffix}`;
+
+  const updatedQuote: QuoteItem = {
+    ...current[index],
+    status: "accepted",
+    statusLabelEn: "Accepted & Dispatched",
+    statusLabelFr: "Acceptée & Expédiée",
+    priceCad,
+    breakdown: breakdown || current[index].breakdown || {
+      lineHaul: priceCad,
+      fuelSurcharge: "$0.00 CAD",
+      total: priceCad,
+    },
+    shipmentId: trackingId,
+    adminNotes: adminNotes || current[index].adminNotes,
+  };
+
+  current[index] = updatedQuote;
+  saveStoredQuotes(current);
+  return { quote: updatedQuote, trackingId };
+}
+
+export function rejectQuote(
+  id: string,
+  reason: string,
+  adminNotes?: string
+): QuoteItem | null {
+  const current = getStoredQuotes();
+  const index = current.findIndex((q) => q.id === id);
+  if (index === -1) return null;
+
+  const updatedQuote: QuoteItem = {
+    ...current[index],
+    status: "rejected",
+    statusLabelEn: "Quote Rejected",
+    statusLabelFr: "Soumission Refusée",
+    rejectionReason: reason,
+    adminNotes: adminNotes || current[index].adminNotes,
+  };
+
+  current[index] = updatedQuote;
+  saveStoredQuotes(current);
+  return updatedQuote;
 }
 
 /**

@@ -269,3 +269,111 @@ export async function sendStaffInvitationEmail({
     text: `Your Transimex Staff account is ready. Login at: ${loginUrl} with email: ${to} and temporary password: ${temporaryPassword}`,
   });
 }
+
+/**
+ * 4. Send Quote Accepted & Shipment Generated Email
+ */
+export async function sendQuoteAcceptedEmail({
+  to,
+  name,
+  companyName,
+  quoteId,
+  trackingId,
+  origin,
+  destination,
+  priceCad,
+  equipment,
+}: {
+  to: string;
+  name: string;
+  companyName?: string;
+  quoteId: string;
+  trackingId: string;
+  origin: string;
+  destination: string;
+  priceCad: string;
+  equipment?: string;
+}) {
+  const appUrl = getAppUrl();
+  const trackingUrl = `${appUrl}/dashboard/shipments?id=${encodeURIComponent(trackingId)}`;
+
+  const content = `
+    <h1 class="h1">Freight Quote Accepted &amp; Dispatched</h1>
+    <p>Dear <strong>${name}</strong> ${companyName ? `(${companyName})` : ""},</p>
+    <p>We are pleased to inform you that your freight quote request <strong>${quoteId}</strong> has been finalized, approved, and converted into an active commercial shipment.</p>
+    
+    <div class="cred-box">
+      <div style="font-size: 15px; font-weight: bold; color: #0B2545; margin-bottom: 8px;">
+        Tracking Manifest: <span style="color: #D21F27;">${trackingId}</span>
+      </div>
+      <div><strong>Agreed Freight Rate:</strong> ${priceCad}</div>
+      <div style="margin-top: 4px;"><strong>Corridor Route:</strong> ${origin} &rarr; ${destination}</div>
+      ${equipment ? `<div style="margin-top: 4px;"><strong>Assigned Equipment:</strong> ${equipment}</div>` : ""}
+      <div style="margin-top: 4px;"><strong>Initial Status:</strong> <span style="color: #10b981; font-weight: bold;">Pending Dispatch / Carrier Assigned</span></div>
+    </div>
+
+    <div style="text-align: center; margin-top: 24px;">
+      <a href="${trackingUrl}" class="btn" target="_blank">Track Shipment in Client Portal</a>
+    </div>
+
+    <div class="alert-box">
+      <strong>Live Telematics &amp; Documents:</strong> Bill of Lading (BOL), customs PARS entry, and driver milestone tracking are now available under your portal tracking dashboard.
+    </div>
+  `;
+
+  return sendEmail({
+    to,
+    subject: `Quote Approved [${quoteId}] & Shipment Created: ${trackingId}`,
+    html: emailTemplateWrapper(content, `Your freight quote ${quoteId} has been accepted and assigned tracking ID ${trackingId}`),
+    text: `Your quote ${quoteId} has been accepted at rate ${priceCad}. Track shipment ${trackingId} at ${trackingUrl}`,
+  });
+}
+
+/**
+ * 5. Send Quote Rejected Email
+ */
+export async function sendQuoteRejectedEmail({
+  to,
+  name,
+  companyName,
+  quoteId,
+  origin,
+  destination,
+  rejectionReason,
+}: {
+  to: string;
+  name: string;
+  companyName?: string;
+  quoteId: string;
+  origin: string;
+  destination: string;
+  rejectionReason: string;
+}) {
+  const appUrl = getAppUrl();
+  const contactUrl = `${appUrl}/dashboard/support`;
+
+  const content = `
+    <h1 class="h1">Freight Quote Assessment Update</h1>
+    <p>Dear <strong>${name}</strong> ${companyName ? `(${companyName})` : ""},</p>
+    <p>Thank you for submitting freight request <strong>${quoteId}</strong> for the route <strong>${origin} &rarr; ${destination}</strong>.</p>
+    <p>After review by our cross-border logistics dispatch team, we regret to inform you that we are unable to accept or service this specific quote request at this time.</p>
+    
+    <div style="background-color: #fef2f2; border-left: 4px solid #D21F27; padding: 14px; margin: 18px 0; border-radius: 4px;">
+      <div style="font-weight: bold; color: #991b1b; margin-bottom: 4px;">Reason for Decision:</div>
+      <div style="color: #7f1d1d; font-size: 13px; line-height: 1.5;">${rejectionReason}</div>
+    </div>
+
+    <p>If your cargo requirements, pickup dates, or specifications can be adjusted, please submit an updated request or contact our dispatch team directly.</p>
+
+    <div style="text-align: center; margin-top: 24px;">
+      <a href="${contactUrl}" class="btn" target="_blank">Contact Dispatch Support</a>
+    </div>
+  `;
+
+  return sendEmail({
+    to,
+    subject: `Update Regarding Freight Quote Request ${quoteId}`,
+    html: emailTemplateWrapper(content, `Status update on your Transimex freight quote ${quoteId}`),
+    text: `Your freight quote ${quoteId} could not be accepted. Reason: ${rejectionReason}. Contact dispatch at ${contactUrl}`,
+  });
+}
