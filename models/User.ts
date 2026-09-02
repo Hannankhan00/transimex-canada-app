@@ -5,6 +5,7 @@ export interface IUser extends Document {
   email: string;
   password?: string;
   phone?: string;
+  address?: string;
   companyName: string;
   industry?: string;
   city?: string;
@@ -43,6 +44,10 @@ const UserSchema = new Schema<IUser>(
       select: false, // Don't return password by default
     },
     phone: {
+      type: String,
+      trim: true,
+    },
+    address: {
       type: String,
       trim: true,
     },

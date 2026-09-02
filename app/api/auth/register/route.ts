@@ -15,6 +15,7 @@ export async function POST(req: Request) {
       password,
       companyName,
       phone,
+      address,
       industry,
       city,
       province,
@@ -57,6 +58,7 @@ export async function POST(req: Request) {
         password: hashedPassword,
         companyName: targetCompany,
         phone: phone || "",
+        address: address || "",
         industry: industry || "Industrial",
         city: city || "Montreal",
         province: province || "QC",
@@ -82,17 +84,15 @@ export async function POST(req: Request) {
 
     const token = signToken(tokenPayload);
 
-    // Send confirmation email with clickable verification link via SMTP
-    try {
-      await sendVerificationEmail({
-        to: email.toLowerCase(),
-        name: parsedName,
-        companyName: targetCompany,
-        token: verificationToken,
-      });
-    } catch (emailErr) {
+    // Send confirmation email with clickable verification link asynchronously
+    sendVerificationEmail({
+      to: email.toLowerCase(),
+      name: parsedName,
+      companyName: targetCompany,
+      token: verificationToken,
+    }).catch((emailErr) => {
       console.error("Failed to send welcome email via SMTP:", emailErr);
-    }
+    });
 
     const response = NextResponse.json({
       success: true,
@@ -100,6 +100,7 @@ export async function POST(req: Request) {
       user: {
         ...tokenPayload,
         phone,
+        address,
         industry,
         city,
         province,

@@ -15,6 +15,7 @@ export interface AuthResponse {
     companyName: string;
     role: string;
     phone?: string;
+    address?: string;
     industry?: string;
     city?: string;
     province?: string;
@@ -50,6 +51,7 @@ export const api = {
               companyName: data.companyName,
               role: "client",
               phone: data.phone,
+              address: data.address,
               industry: data.industry,
               city: data.city,
               province: data.province,

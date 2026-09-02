@@ -1,7 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, Suspense } from "react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
+import { QuoteItem, getStoredQuotes, QuoteStatus } from "@/lib/mockData";
+import QuoteDetailsModal from "@/components/portal/QuoteDetailsModal";
+import NewQuoteModal from "@/components/portal/NewQuoteModal";
 import {
   FileSpreadsheet,
   Plus,
@@ -9,57 +14,66 @@ import {
   CheckCircle2,
   Clock,
   ArrowRight,
+  ArrowUpRight,
   DollarSign,
   Calendar,
-  X,
+  AlertCircle,
+  Truck,
+  Filter,
+  Eye,
+  Info,
+  ShieldAlert,
+  Sparkles,
 } from "lucide-react";
 
-export default function QuotesPage() {
+function QuotesContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const { t, language } = useLanguage();
-  const [showModal, setShowModal] = useState(false);
+  const [quotes, setQuotes] = useState<QuoteItem[]>([]);
+  const [selectedQuote, setSelectedQuote] = useState<QuoteItem | null>(null);
+  const [detailsModalOpen, setDetailsModalOpen] = useState(false);
+  const [newQuoteModalOpen, setNewQuoteModalOpen] = useState(false);
+  const [filter, setFilter] = useState<string>("all");
+  const [search, setSearch] = useState("");
 
-  const quotes = [
-    {
-      id: "QT-2026-089",
-      origin: "Montreal (QC)",
-      destination: "Detroit (MI)",
-      equipment: "Refrigerated Reefer",
-      weight: "42,000 lbs",
-      price: "$4,850.00 CAD",
-      validUntil: "Sep 05, 2026",
-      status: "pending",
-      statusLabel: language === "fr" ? "En Attente de Confirmation" : "Action Required",
-    },
-    {
-      id: "QT-2026-085",
-      origin: "Toronto (ON)",
-      destination: "Vancouver (BC)",
-      equipment: "53' Dry Van",
-      weight: "36,500 lbs",
-      price: "$6,200.00 CAD",
-      validUntil: "Sep 02, 2026",
-      status: "accepted",
-      statusLabel: language === "fr" ? "Acceptée" : "Accepted",
-    },
-    {
-      id: "QT-2026-077",
-      origin: "Quebec City (QC)",
-      destination: "Halifax (NS)",
-      equipment: "Flatbed / Stepdeck",
-      weight: "44,000 lbs",
-      price: "$3,150.00 CAD",
-      validUntil: "Expired",
-      status: "expired",
-      statusLabel: language === "fr" ? "Expirée" : "Expired",
-    },
-  ];
+  useEffect(() => {
+    setQuotes(getStoredQuotes());
+    if (searchParams.get("action") === "new" || searchParams.get("new") === "true") {
+      setNewQuoteModalOpen(true);
+    }
+  }, [searchParams]);
+
+  const handleOpenDetails = (quote: QuoteItem) => {
+    setSelectedQuote(quote);
+    setDetailsModalOpen(true);
+  };
+
+  const handleQuoteCreated = (newQuote: QuoteItem) => {
+    setQuotes((prev) => [newQuote, ...prev.filter((q) => q.id !== newQuote.id)]);
+  };
+
+  const filteredQuotes = quotes.filter((q) => {
+    if (filter !== "all" && q.status !== filter) return false;
+    if (
+      search &&
+      !q.id.toLowerCase().includes(search.toLowerCase()) &&
+      !q.origin.toLowerCase().includes(search.toLowerCase()) &&
+      !q.destination.toLowerCase().includes(search.toLowerCase()) &&
+      !q.transportMode.toLowerCase().includes(search.toLowerCase())
+    ) {
+      return false;
+    }
+    return true;
+  });
 
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
+      {/* Header Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <span className="text-[11px] font-bold uppercase tracking-wider text-[#d21f27]">
-            {language === "fr" ? "Tarification Commerciale" : "Freight Pricing"}
+            {language === "fr" ? "Tarification & Réservations" : "Freight Pricing & Quotations"}
           </span>
           <h1
             className="text-2xl sm:text-3xl font-bold text-[#0B2545] tracking-tight leading-tight mt-1"
@@ -69,111 +83,232 @@ export default function QuotesPage() {
           </h1>
           <p className="text-slate-500 text-xs sm:text-sm mt-1">
             {language === "fr"
-              ? "Générez des estimations de fret instantanées et confirmez vos réservations de camions."
-              : "Generate instant freight estimates and confirm carrier bookings."}
+              ? "Historique centralisé de vos soumissions de fret, approbations et tarifs garantis."
+              : "Centralized history of all freight quotes, carrier approvals, and dispatch bookings."}
           </p>
         </div>
 
+        {/* Action Button opening the interactive blurred popup modal */}
         <button
           type="button"
-          onClick={() => setShowModal(true)}
-          className="px-4 py-2.5 bg-[#d21f27] hover:bg-[#b51a21] text-white rounded-xl text-xs font-bold shadow-sm transition cursor-pointer flex items-center gap-1.5"
+          onClick={() => setNewQuoteModalOpen(true)}
+          className="px-4 py-2.5 bg-[#d21f27] hover:bg-[#b51a21] active:scale-[0.98] text-white rounded-xl text-xs font-bold shadow-sm hover:shadow-md transition cursor-pointer flex items-center justify-center gap-1.5 whitespace-nowrap"
         >
           <Plus className="w-4 h-4 stroke-[3]" />
-          <span>{t.topBar.newQuote}</span>
+          <span>{language === "fr" ? "Demander une Soumission" : "Request New Freight Quote"}</span>
         </button>
       </div>
 
-      <div className="grid grid-cols-1 gap-4">
-        {quotes.map((quote) => (
-          <div
-            key={quote.id}
-            className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs hover:shadow-md transition flex flex-col md:flex-row md:items-center justify-between gap-4"
-          >
-            <div className="space-y-2">
-              <div className="flex items-center gap-3">
-                <span className="text-sm font-bold text-[#0B2545] font-mono">{quote.id}</span>
-                <span
-                  className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                    quote.status === "pending"
-                      ? "bg-red-50 text-[#d21f27] border border-red-200"
-                      : quote.status === "accepted"
-                      ? "bg-emerald-100 text-emerald-800"
-                      : "bg-slate-100 text-slate-500"
-                  }`}
-                >
-                  {quote.statusLabel}
-                </span>
-              </div>
-              <div className="text-xs text-slate-700 font-semibold">
-                {quote.origin} → {quote.destination} &bull;{" "}
-                <span className="text-slate-500 font-normal">{quote.equipment} ({quote.weight})</span>
-              </div>
-              <div className="text-[11px] text-slate-400">Valid until: {quote.validUntil}</div>
-            </div>
+      {/* Filter and Search Bar */}
+      <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="relative w-full sm:w-80">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <input
+            type="text"
+            placeholder={
+              language === "fr"
+                ? "Rechercher par no QT-, ville, équipement..."
+                : "Search quote ID, route, transport mode..."
+            }
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#0B2545] rounded-xl text-xs outline-none transition"
+          />
+        </div>
 
-            <div className="flex items-center justify-between md:justify-end gap-4 pt-3 md:pt-0 border-t md:border-t-0 border-slate-100">
-              <div className="text-right">
-                <div className="text-lg font-bold text-[#0B2545]">{quote.price}</div>
-                <div className="text-[10px] text-slate-400 uppercase font-semibold">All-Inclusive CAD</div>
-              </div>
-              {quote.status === "pending" && (
-                <button
-                  type="button"
-                  onClick={() => alert(`Quote ${quote.id} confirmed and dispatched!`)}
-                  className="px-4 py-2 bg-[#0B2545] hover:bg-[#123661] text-white text-xs font-bold rounded-xl shadow-xs transition cursor-pointer"
-                >
-                  {language === "fr" ? "Accepter et Réserver" : "Accept & Book Load"}
-                </button>
-              )}
-            </div>
-          </div>
-        ))}
+        <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto">
+          {[
+            { id: "all", label: language === "fr" ? "Toutes" : "All Quotes" },
+            { id: "under_review", label: language === "fr" ? "En Révision" : "Under Review" },
+            { id: "accepted", label: language === "fr" ? "Acceptées" : "Accepted" },
+            { id: "rejected", label: language === "fr" ? "Refusées" : "Rejected" },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setFilter(tab.id)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                filter === tab.id
+                  ? "bg-[#0B2545] text-white shadow-xs"
+                  : "text-slate-600 hover:bg-slate-100"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {showModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl animate-in fade-in zoom-in-95">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
-              <h3 className="text-xl font-bold text-[#0B2545]">
-                {language === "fr" ? "Nouvelle Soumission de Fret" : "Request Instant Freight Quote"}
-              </h3>
-              <button
-                type="button"
-                onClick={() => setShowModal(false)}
-                className="p-1 text-slate-400 hover:text-slate-600 rounded-lg cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                alert("Quote submitted! Transimex Dispatch will send guaranteed pricing within 15 minutes.");
-                setShowModal(false);
-              }}
-              className="space-y-4 mt-4"
+      {/* Quotes Table / Card Layout */}
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+        {filteredQuotes.length === 0 ? (
+          <div className="p-12 text-center space-y-3">
+            <FileSpreadsheet className="w-10 h-10 text-slate-300 mx-auto" />
+            <h4 className="text-sm font-bold text-slate-700">
+              {language === "fr" ? "Aucune soumission trouvée" : "No Freight Quotes Found"}
+            </h4>
+            <p className="text-xs text-slate-500 max-w-sm mx-auto">
+              {language === "fr"
+                ? "Aucune soumission ne correspond à vos filtres de recherche."
+                : "No quote records match your filter criteria or search query."}
+            </p>
+            <button
+              type="button"
+              onClick={() => setNewQuoteModalOpen(true)}
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#0B2545] text-white rounded-xl text-xs font-bold hover:bg-[#123661] transition cursor-pointer"
             >
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Origin City</label>
-                  <input required placeholder="Montreal, QC" className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:bg-white focus:border-[#0B2545]" />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Destination City</label>
-                  <input required placeholder="Toronto, ON" className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:bg-white focus:border-[#0B2545]" />
-                </div>
-              </div>
-              <button
-                type="submit"
-                className="w-full py-3 bg-[#d21f27] hover:bg-[#b51a21] text-white font-bold rounded-xl text-xs uppercase tracking-wider shadow-md transition cursor-pointer mt-2"
-              >
-                Submit Quote Request
-              </button>
-            </form>
+              <Plus className="w-4 h-4" />
+              <span>{language === "fr" ? "Créer une demande" : "Request First Quote"}</span>
+            </button>
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-slate-50/80 border-b border-slate-200 text-[11px] font-bold uppercase tracking-wider text-slate-500 select-none">
+                  <th className="py-3 px-4 sm:px-6">Quote Reference</th>
+                  <th className="py-3 px-4">Transport Mode</th>
+                  <th className="py-3 px-4">Logistics Route</th>
+                  <th className="py-3 px-4">Submitted</th>
+                  <th className="py-3 px-4">Status</th>
+                  <th className="py-3 px-4 text-right">Price (CAD)</th>
+                  <th className="py-3 px-4 sm:px-6 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
+                {filteredQuotes.map((quote) => {
+                  const isAccepted = quote.status === "accepted";
+                  const isRejected = quote.status === "rejected";
+                  const isPending = quote.status === "under_review";
+
+                  return (
+                    <tr
+                      key={quote.id}
+                      className="hover:bg-slate-50/80 transition group"
+                    >
+                      {/* Quote Reference */}
+                      <td className="py-4 px-4 sm:px-6 font-mono font-bold text-[#0B2545] whitespace-nowrap">
+                        <div className="flex items-center gap-2">
+                          <span>{quote.id}</span>
+                        </div>
+                      </td>
+
+                      {/* Transport Mode & Equipment */}
+                      <td className="py-4 px-4 whitespace-nowrap">
+                        <div className="font-semibold text-slate-900">{quote.transportMode}</div>
+                        <div className="text-[11px] text-slate-400">{quote.equipment}</div>
+                      </td>
+
+                      {/* Route */}
+                      <td className="py-4 px-4">
+                        <div className="font-semibold text-slate-900 flex items-center gap-1.5">
+                          <span>{quote.origin}</span>
+                          <span className="text-slate-400">→</span>
+                          <span>{quote.destination}</span>
+                        </div>
+                        <div className="text-[11px] text-slate-400">{quote.commodity} ({quote.weight})</div>
+                      </td>
+
+                      {/* Submission Date */}
+                      <td className="py-4 px-4 text-slate-500 whitespace-nowrap">
+                        <div className="flex items-center gap-1">
+                          <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                          <span>{quote.submittedDate}</span>
+                        </div>
+                      </td>
+
+                      {/* Status Badge */}
+                      <td className="py-4 px-4 whitespace-nowrap">
+                        <span
+                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                            isPending
+                              ? "bg-amber-100 text-amber-800 border border-amber-200"
+                              : isAccepted
+                              ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                              : isRejected
+                              ? "bg-red-100 text-red-800 border border-red-200"
+                              : "bg-slate-100 text-slate-500 border border-slate-200"
+                          }`}
+                        >
+                          {isPending && <Clock className="w-3 h-3 text-amber-700" />}
+                          {isAccepted && <CheckCircle2 className="w-3 h-3 text-emerald-700" />}
+                          {isRejected && <AlertCircle className="w-3 h-3 text-red-700" />}
+                          {language === "fr" ? quote.statusLabelFr : quote.statusLabelEn}
+                        </span>
+                      </td>
+
+                      {/* Price CAD */}
+                      <td className="py-4 px-4 text-right whitespace-nowrap">
+                        <div className="font-bold text-[#0B2545]">
+                          {quote.priceCad}
+                        </div>
+                        {quote.priceCad !== "Pending Dispatch Calculation" && quote.priceCad !== "N/A" && (
+                          <div className="text-[10px] text-slate-400 font-semibold">Guaranteed</div>
+                        )}
+                      </td>
+
+                      {/* Actions: Accepted -> View Shipment, Rejected -> View Reason, Pending -> View Details */}
+                      <td className="py-4 px-4 sm:px-6 text-right whitespace-nowrap">
+                        {isAccepted && quote.shipmentId ? (
+                          <Link
+                            href={`/dashboard/shipments?id=${quote.shipmentId}`}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#0B2545] hover:bg-[#123661] text-white text-xs font-bold rounded-lg shadow-xs transition cursor-pointer"
+                          >
+                            <span>{language === "fr" ? "Voir Expédition" : "View Shipment"}</span>
+                            <ArrowUpRight className="w-3.5 h-3.5" />
+                          </Link>
+                        ) : isRejected ? (
+                          <button
+                            type="button"
+                            onClick={() => handleOpenDetails(quote)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-[#d21f27] border border-red-200 text-xs font-bold rounded-lg transition cursor-pointer"
+                          >
+                            <ShieldAlert className="w-3.5 h-3.5 text-[#d21f27]" />
+                            <span>{language === "fr" ? "Motif du Refus" : "View Reason"}</span>
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleOpenDetails(quote)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg transition cursor-pointer"
+                          >
+                            <Eye className="w-3.5 h-3.5 text-slate-500" />
+                            <span>{language === "fr" ? "Détails" : "View Details"}</span>
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Quote Details & Rejection Dialog */}
+      <QuoteDetailsModal
+        quote={selectedQuote}
+        isOpen={detailsModalOpen}
+        onClose={() => {
+          setDetailsModalOpen(false);
+          setSelectedQuote(null);
+        }}
+      />
+
+      {/* Interactive New Quote Modal with Blurred Corridor Diagram */}
+      <NewQuoteModal
+        isOpen={newQuoteModalOpen}
+        onClose={() => setNewQuoteModalOpen(false)}
+        onQuoteCreated={handleQuoteCreated}
+      />
     </div>
+  );
+}
+
+export default function QuotesPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-xs text-slate-400">Loading quotes...</div>}>
+      <QuotesContent />
+    </Suspense>
   );
 }

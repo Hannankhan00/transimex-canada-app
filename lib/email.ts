@@ -27,6 +27,23 @@ export function getTransporter() {
     return null;
   }
 
+  const isGmail = host.toLowerCase().includes("gmail.com");
+
+  // For Gmail, using service: 'gmail' automatically uses port 465 with SSL,
+  // preventing port 587 ISP/firewall timeout blocks.
+  if (isGmail) {
+    return nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user,
+        pass,
+      },
+      connectionTimeout: 6000,
+      greetingTimeout: 6000,
+      socketTimeout: 8000,
+    });
+  }
+
   return nodemailer.createTransport({
     host,
     port,
@@ -38,6 +55,9 @@ export function getTransporter() {
     tls: {
       rejectUnauthorized: process.env.NODE_ENV === "production",
     },
+    connectionTimeout: 6000,
+    greetingTimeout: 6000,
+    socketTimeout: 8000,
   });
 }
 

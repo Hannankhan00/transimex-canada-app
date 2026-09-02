@@ -9,6 +9,7 @@ import {
   LayoutDashboard,
   Truck,
   FileSpreadsheet,
+  Calculator,
   FolderOpen,
   Bell,
   MapPin,
@@ -52,6 +53,12 @@ export default function PortalSidebar({
       name: t.nav.quotes,
       href: "/dashboard/quotes",
       icon: FileSpreadsheet,
+    },
+    {
+      name: t.nav.estimator,
+      href: "/dashboard/estimator",
+      icon: Calculator,
+      badge: "Instant",
     },
     {
       name: t.nav.documents,

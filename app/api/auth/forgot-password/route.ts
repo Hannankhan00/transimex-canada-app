@@ -32,17 +32,14 @@ export async function POST(req: Request) {
       console.warn("Database unavailable during forgot-password, using simulated token:", dbErr);
     }
 
-    // Trigger Nodemailer email dispatch
-    try {
-      await sendPasswordResetEmail({
-        to: emailLower,
-        name: userName,
-        token: resetToken,
-      });
-    } catch (emailErr) {
+    // Trigger Nodemailer email dispatch asynchronously
+    sendPasswordResetEmail({
+      to: emailLower,
+      name: userName,
+      token: resetToken,
+    }).catch((emailErr) => {
       console.error("Failed to send password reset email via SMTP:", emailErr);
-      // We still return success to prevent email enumeration timing attacks
-    }
+    });
 
     return NextResponse.json({
       success: true,

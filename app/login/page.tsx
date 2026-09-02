@@ -18,6 +18,8 @@ import {
   Globe2,
   CheckCircle2,
   Sparkles,
+  Phone,
+  MapPin,
 } from "lucide-react";
 
 function AuthComponent() {
@@ -38,6 +40,8 @@ function AuthComponent() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [companyName, setCompanyName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(true);
@@ -123,7 +127,8 @@ function AuthComponent() {
         email,
         password,
         companyName: companyName.trim() || "Laurentian Global Logistics Ltd.",
-        phone: "+1 (514) 555-0199",
+        phone: phone.trim() || "+1 (514) 555-0199",
+        address: address.trim() || "1250 René-Lévesque Blvd W, Montreal, QC",
         industry: "Industrial",
         city: "Montreal",
         province: "QC",
@@ -489,6 +494,42 @@ function AuthComponent() {
                             placeholder="e.g. Laurentian Global Logistics Ltd."
                             value={companyName}
                             onChange={(e) => setCompanyName(e.target.value)}
+                            className="w-full bg-[#f8fafc] border border-slate-200 focus:border-[#d21f27] focus:bg-white focus:ring-2 focus:ring-[#d21f27]/10 rounded-xl pl-10 pr-3.5 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-all"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Phone Number */}
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                          {t.auth.phoneNumber} *
+                        </label>
+                        <div className="relative flex items-center">
+                          <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                          <input
+                            type="tel"
+                            required={activeTab === "signup"}
+                            placeholder="+1 (514) 555-0199"
+                            value={phone}
+                            onChange={(e) => setPhone(e.target.value)}
+                            className="w-full bg-[#f8fafc] border border-slate-200 focus:border-[#d21f27] focus:bg-white focus:ring-2 focus:ring-[#d21f27]/10 rounded-xl pl-10 pr-3.5 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-all"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Address */}
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                          {t.auth.address} *
+                        </label>
+                        <div className="relative flex items-center">
+                          <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                          <input
+                            type="text"
+                            required={activeTab === "signup"}
+                            placeholder="e.g. 1250 René-Lévesque Blvd W, Montreal, QC"
+                            value={address}
+                            onChange={(e) => setAddress(e.target.value)}
                             className="w-full bg-[#f8fafc] border border-slate-200 focus:border-[#d21f27] focus:bg-white focus:ring-2 focus:ring-[#d21f27]/10 rounded-xl pl-10 pr-3.5 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-all"
                           />
                         </div>

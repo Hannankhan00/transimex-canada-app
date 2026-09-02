@@ -33,24 +33,20 @@ export const registerSchema = z.object({
     .regex(/[0-9]/, "Password must contain at least one number"),
   phone: z
     .string()
-    .min(7, "Please enter a valid phone number")
-    .max(20, "Phone number is too long"),
+    .optional(),
+  address: z
+    .string()
+    .optional(),
   companyName: z
     .string()
     .min(2, "Company name must be at least 2 characters")
     .max(120, "Company name is too long"),
-  industry: z.enum(industriesEnum, {
-    errorMap: () => ({ message: "Please select an industry type" }),
-  }),
+  industry: z.enum(industriesEnum).optional(),
   city: z
     .string()
-    .min(2, "City name must be at least 2 characters"),
-  province: z.enum(provincesEnum, {
-    errorMap: () => ({ message: "Please select a Canadian province/territory" }),
-  }),
-  terms: z.literal(true, {
-    errorMap: () => ({ message: "You must agree to the Terms of Service & Privacy Policy" }),
-  }),
+    .optional(),
+  province: z.enum(provincesEnum).optional(),
+  terms: z.boolean().optional(),
 });
 
 export type RegisterFormData = z.infer<typeof registerSchema>;

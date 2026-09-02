@@ -61,7 +61,7 @@ export default function TopBar({
   };
 
   const handleNewQuote = () => {
-    router.push("/dashboard/quotes?action=new");
+    router.push("/dashboard/quotes?new=true");
   };
 
   const displayName = user?.name || "Marc Tremblay";
