@@ -1019,3 +1019,411 @@ export function saveStoredPreferences(prefs: EmailPreferences): void {
   }
 }
 
+// =========================================================================
+// PHASE 5: CLIENT MANAGEMENT DIRECTORY & 360° DOSSIER DATA MODEL
+// =========================================================================
+
+export type ClientIndustry =
+  | "Manufacturing"
+  | "Automotive"
+  | "Pharmaceutical"
+  | "Retail & Consumer"
+  | "Food & Cold-Chain"
+  | "Industrial & Energy";
+
+export type ClientAccountStatus = "Active" | "Deactivated";
+
+export interface ClientProfile {
+  id: string;
+  companyName: string;
+  primaryContact: string;
+  contactTitle?: string;
+  email: string;
+  phone: string;
+  industry: ClientIndustry;
+  status: ClientAccountStatus;
+  registeredDate: string;
+  billingAddress: string;
+  city: string;
+  province: string;
+  postalCode: string;
+  country: string;
+  taxId: string;
+  paymentTerms: string;
+  accountManager: string;
+  lifetimeRevenueCad: string;
+  totalShipmentsCompleted: number;
+  activeQuotesCount: number;
+  notes?: string;
+}
+
+export const INITIAL_CLIENTS: ClientProfile[] = [
+  {
+    id: "CLI-1001",
+    companyName: "Laurentian Global Logistics Ltd.",
+    primaryContact: "Marc Tremblay",
+    contactTitle: "VP Supply Chain & Operations",
+    email: "dispatch@laurentianglobal.ca",
+    phone: "+1 (514) 555-0199",
+    industry: "Manufacturing",
+    status: "Active",
+    registeredDate: "Jan 12, 2025",
+    billingAddress: "4850 Rue Saint-Patrick, Suite 400",
+    city: "Montreal",
+    province: "QC",
+    postalCode: "H4E 4N4",
+    country: "Canada",
+    taxId: "GST-8921-9920-RT0001",
+    paymentTerms: "Net 30 Days",
+    accountManager: "Jean-Philippe Tremblay",
+    lifetimeRevenueCad: "$142,500 CAD",
+    totalShipmentsCompleted: 18,
+    activeQuotesCount: 2,
+    notes: "Tier-1 industrial manufacturing account. Regularly runs cross-border reefer and dry van corridors to Detroit and Chicago.",
+  },
+  {
+    id: "CLI-1002",
+    companyName: "Ontario Precision Aerospace Inc.",
+    primaryContact: "Sarah Jenkins",
+    contactTitle: "Director of Global Procurement",
+    email: "sjenkins@ontarioprecision.ca",
+    phone: "+1 (416) 555-0144",
+    industry: "Automotive",
+    status: "Active",
+    registeredDate: "Mar 04, 2025",
+    billingAddress: "1200 Britannia Road East",
+    city: "Mississauga",
+    province: "ON",
+    postalCode: "L4W 4K5",
+    country: "Canada",
+    taxId: "GST-4412-8819-RT0001",
+    paymentTerms: "Net 15 Days",
+    accountManager: "Éléonore Moreau",
+    lifetimeRevenueCad: "$98,400 CAD",
+    totalShipmentsCompleted: 12,
+    activeQuotesCount: 1,
+    notes: "High-value aircraft component shipper. Requires air-ride suspension and sealed trailer documentation on all loads.",
+  },
+  {
+    id: "CLI-1003",
+    companyName: "Pacific Gateway Distribution Corp.",
+    primaryContact: "David Wong",
+    contactTitle: "Logistics Routing Coordinator",
+    email: "dwong@pacificgateway.ca",
+    phone: "+1 (604) 555-0182",
+    industry: "Retail & Consumer",
+    status: "Active",
+    registeredDate: "May 19, 2025",
+    billingAddress: "3388 Viking Way",
+    city: "Richmond",
+    province: "BC",
+    postalCode: "V6V 1N6",
+    country: "Canada",
+    taxId: "GST-5510-7732-RT0001",
+    paymentTerms: "Net 30 Days",
+    accountManager: "Marc-André Bélanger",
+    lifetimeRevenueCad: "$76,200 CAD",
+    totalShipmentsCompleted: 9,
+    activeQuotesCount: 1,
+    notes: "Western Canadian consumer electronics retail hub. Regularly books cross-Canada highway corridors from Toronto.",
+  },
+  {
+    id: "CLI-1004",
+    companyName: "Quebec Forest Products Syndicate",
+    primaryContact: "Marc-Antoine Villeneuve",
+    contactTitle: "Chief Forestry Dispatcher",
+    email: "mavilleneuve@qfps.qc.ca",
+    phone: "+1 (418) 555-0133",
+    industry: "Industrial & Energy",
+    status: "Deactivated",
+    registeredDate: "Jul 22, 2025",
+    billingAddress: "150 Rue de Courcelette",
+    city: "Quebec City",
+    province: "QC",
+    postalCode: "G1K 4T5",
+    country: "Canada",
+    taxId: "GST-1102-3399-RT0001",
+    paymentTerms: "Pre-Paid Wire",
+    accountManager: "Jean-Philippe Tremblay",
+    lifetimeRevenueCad: "$24,500 CAD",
+    totalShipmentsCompleted: 4,
+    activeQuotesCount: 0,
+    notes: "Account temporarily suspended due to credit line reconciliation. Portal access revoked until accounting review.",
+  },
+  {
+    id: "CLI-1005",
+    companyName: "Apex Maritime Energy & Heavy Haul",
+    primaryContact: "Trevor Miller",
+    contactTitle: "Marine Terminal Operations Officer",
+    email: "tmiller@apexmaritime.ca",
+    phone: "+1 (403) 555-0177",
+    industry: "Industrial & Energy",
+    status: "Active",
+    registeredDate: "Nov 10, 2025",
+    billingAddress: "1055 Marginal Road",
+    city: "Halifax",
+    province: "NS",
+    postalCode: "B3H 4P7",
+    country: "Canada",
+    taxId: "GST-7740-1120-RT0001",
+    paymentTerms: "Net 45 Days",
+    accountManager: "Éléonore Moreau",
+    lifetimeRevenueCad: "$188,900 CAD",
+    totalShipmentsCompleted: 22,
+    activeQuotesCount: 1,
+    notes: "Maritime port heavy-machinery shipper. Frequently books 48ft and 53ft stepdeck flatbeds and ocean terminal transfers.",
+  },
+];
+
+const CLIENTS_STORAGE_KEY = "transimex_clients_store_v1";
+
+export function getStoredClients(): ClientProfile[] {
+  if (typeof window === "undefined") return INITIAL_CLIENTS;
+  try {
+    const data = localStorage.getItem(CLIENTS_STORAGE_KEY);
+    if (data) {
+      return JSON.parse(data);
+    }
+  } catch (err) {
+    console.error("Error reading clients from storage:", err);
+  }
+  return INITIAL_CLIENTS;
+}
+
+export function saveStoredClients(clients: ClientProfile[]): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(CLIENTS_STORAGE_KEY, JSON.stringify(clients));
+  } catch (err) {
+    console.error("Error saving clients:", err);
+  }
+}
+
+export function updateClientStatus(id: string, status: ClientAccountStatus): ClientProfile | null {
+  const clients = getStoredClients();
+  const index = clients.findIndex((c) => c.id === id || c.email.toLowerCase() === id.toLowerCase());
+  if (index === -1) return null;
+
+  clients[index] = {
+    ...clients[index],
+    status,
+  };
+  saveStoredClients(clients);
+  return clients[index];
+}
+
+// =========================================================================
+// PHASE 5: CARRIER & VENDOR DIRECTORY DATA MODEL
+// =========================================================================
+
+export type TransportModeType = "Road" | "Sea" | "Air" | "Rail";
+export type VendorStatusType = "Active" | "Under Review" | "Suspended";
+
+export interface CarrierVendor {
+  id: string;
+  name: string;
+  code: string;
+  primaryMode: TransportModeType;
+  supportedModes: TransportModeType[];
+  dispatchContact: {
+    name: string;
+    phone: string;
+    email: string;
+    emergencyPhone?: string;
+  };
+  headquarters: string;
+  operatingLanes: string[];
+  fleetSize: string;
+  rating: number;
+  totalShipmentsCompleted: number;
+  onTimeDeliveryRate: string;
+  insurance: {
+    policyNumber: string;
+    coverageAmount: string;
+    expiryDate: string;
+    isCompliant: boolean;
+  };
+  status: VendorStatusType;
+  notes?: string;
+}
+
+export const INITIAL_CARRIERS: CarrierVendor[] = [
+  {
+    id: "CAR-01",
+    name: "Bison Transport Expedited Fleet",
+    code: "BISO",
+    primaryMode: "Road",
+    supportedModes: ["Road"],
+    dispatchContact: {
+      name: "Greg Sutherland",
+      phone: "+1 (800) 555-0244",
+      email: "dispatch.bison@transimex-carrier.ca",
+      emergencyPhone: "+1 (204) 555-9110",
+    },
+    headquarters: "Winnipeg, MB",
+    operatingLanes: ["Montreal <-> Detroit", "Toronto <-> Chicago", "Calgary <-> Vancouver"],
+    fleetSize: "450+ Dry Van & Reefer Tandems",
+    rating: 4.9,
+    totalShipmentsCompleted: 312,
+    onTimeDeliveryRate: "99.1%",
+    insurance: {
+      policyNumber: "POL-BISO-99824",
+      coverageAmount: "$10,000,000 CAD",
+      expiryDate: "2027-08-30",
+      isCompliant: true,
+    },
+    status: "Active",
+    notes: "Primary Tier-1 dedicated cross-border highway partner. Highest safety rating in network.",
+  },
+  {
+    id: "CAR-02",
+    name: "Canadian National (CN) Intermodal Rail",
+    code: "CN-RAIL",
+    primaryMode: "Rail",
+    supportedModes: ["Rail", "Road"],
+    dispatchContact: {
+      name: "Line Dispatch Yard #4",
+      phone: "+1 (888) 555-0190",
+      email: "intermodal.ops@cn.ca",
+      emergencyPhone: "+1 (514) 555-9988",
+    },
+    headquarters: "Montreal, QC",
+    operatingLanes: ["Dorval Intermodal <-> Calgary Yard", "Halifax Port <-> Toronto Hub"],
+    fleetSize: "Intermodal Container Rail Network",
+    rating: 4.8,
+    totalShipmentsCompleted: 580,
+    onTimeDeliveryRate: "97.8%",
+    insurance: {
+      policyNumber: "POL-CN-CORP-4410",
+      coverageAmount: "$50,000,000 CAD",
+      expiryDate: "2028-12-31",
+      isCompliant: true,
+    },
+    status: "Active",
+    notes: "Transcontinental heavy container and long-haul rail authority.",
+  },
+  {
+    id: "CAR-03",
+    name: "CMA CGM Canada Maritime Express",
+    code: "CMACGM",
+    primaryMode: "Sea",
+    supportedModes: ["Sea"],
+    dispatchContact: {
+      name: "Isabelle Gagnon",
+      phone: "+1 (514) 555-0377",
+      email: "canada.port@cma-cgm.com",
+    },
+    headquarters: "Montreal Port Maritime Center, QC",
+    operatingLanes: ["Montreal Port <-> Antwerp / Rotterdam", "Halifax <-> Le Havre"],
+    fleetSize: "Container Container Ships & Feeder Vessels",
+    rating: 4.7,
+    totalShipmentsCompleted: 145,
+    onTimeDeliveryRate: "96.4%",
+    insurance: {
+      policyNumber: "POL-CMA-MAR-1192",
+      coverageAmount: "$25,000,000 CAD",
+      expiryDate: "2027-03-15",
+      isCompliant: true,
+    },
+    status: "Active",
+    notes: "Ocean freight partner for European import/export shipments and St. Lawrence seaway freight.",
+  },
+  {
+    id: "CAR-04",
+    name: "Cargojet Airways Dedicated Freight",
+    code: "CJT",
+    primaryMode: "Air",
+    supportedModes: ["Air"],
+    dispatchContact: {
+      name: "Flight Ops Center",
+      phone: "+1 (905) 555-0120",
+      email: "flightops@cargojet.ca",
+    },
+    headquarters: "Mississauga, ON (YYZ Airport)",
+    operatingLanes: ["Dorval (YUL) <-> Vancouver (YVR)", "Toronto (YYZ) <-> Frankfurt (FRA)"],
+    fleetSize: "Boeing 767-300F & 757-200F Freighters",
+    rating: 4.9,
+    totalShipmentsCompleted: 88,
+    onTimeDeliveryRate: "99.5%",
+    insurance: {
+      policyNumber: "POL-CJT-AV-88120",
+      coverageAmount: "$30,000,000 CAD",
+      expiryDate: "2027-11-01",
+      isCompliant: true,
+    },
+    status: "Active",
+    notes: "Next-flight-out expedited air cargo and overnight trans-Canada air freight.",
+  },
+  {
+    id: "CAR-05",
+    name: "Apex Specialized Heavy Haul & Flatbed",
+    code: "APEX-HH",
+    primaryMode: "Road",
+    supportedModes: ["Road"],
+    dispatchContact: {
+      name: "Dave Kowalski",
+      phone: "+1 (780) 555-0811",
+      email: "dispatch@apexheavyhaul.ca",
+    },
+    headquarters: "Edmonton, AB",
+    operatingLanes: ["Quebec <-> Alberta Corridors", "Ontario <-> Texas Corridor"],
+    fleetSize: "40 Specialized Multi-Axle Lowboys & Stepdecks",
+    rating: 4.6,
+    totalShipmentsCompleted: 74,
+    onTimeDeliveryRate: "95.2%",
+    insurance: {
+      policyNumber: "POL-APEX-SPEC-339",
+      coverageAmount: "$8,000,000 CAD",
+      expiryDate: "2026-09-28", // Expiring soon warning!
+      isCompliant: true,
+    },
+    status: "Active",
+    notes: "Specialized oversized turbine and industrial generator hauler with multi-province permits.",
+  },
+];
+
+const CARRIERS_STORAGE_KEY = "transimex_carriers_store_v1";
+
+export function getStoredCarriers(): CarrierVendor[] {
+  if (typeof window === "undefined") return INITIAL_CARRIERS;
+  try {
+    const data = localStorage.getItem(CARRIERS_STORAGE_KEY);
+    if (data) {
+      return JSON.parse(data);
+    }
+  } catch (err) {
+    console.error("Error reading carriers from storage:", err);
+  }
+  return INITIAL_CARRIERS;
+}
+
+export function saveStoredCarriers(carriers: CarrierVendor[]): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(CARRIERS_STORAGE_KEY, JSON.stringify(carriers));
+  } catch (err) {
+    console.error("Error saving carriers:", err);
+  }
+}
+
+export function addCarrierToStore(carrier: CarrierVendor): CarrierVendor {
+  const current = getStoredCarriers();
+  const updated = [carrier, ...current];
+  saveStoredCarriers(updated);
+  return carrier;
+}
+
+export function updateCarrierInStore(id: string, updates: Partial<CarrierVendor>): CarrierVendor | null {
+  const carriers = getStoredCarriers();
+  const index = carriers.findIndex((c) => c.id === id || c.code.toUpperCase() === id.toUpperCase());
+  if (index === -1) return null;
+
+  carriers[index] = {
+    ...carriers[index],
+    ...updates,
+  };
+  saveStoredCarriers(carriers);
+  return carriers[index];
+}
+
+
