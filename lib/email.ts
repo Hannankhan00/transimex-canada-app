@@ -454,3 +454,110 @@ export async function sendDutiesNoticeEmail({
   });
 }
 
+/**
+ * 7. Send Contact Inquiry Reply Email
+ */
+export async function sendInquiryReplyEmail({
+  to,
+  name,
+  subject,
+  originalMessage,
+  replyContent,
+  responderName,
+}: {
+  to: string;
+  name: string;
+  subject: string;
+  originalMessage: string;
+  replyContent: string;
+  responderName?: string;
+}) {
+  const appUrl = getAppUrl();
+
+  const content = `
+    <h1 class="h1">Response from Transimex Canada Logistics</h1>
+    <p>Dear <strong>${name}</strong>,</p>
+    <p>Thank you for contacting Transimex Canada. In response to your inquiry regarding <strong>${subject}</strong>, our logistics team has provided the following reply:</p>
+
+    <div style="background-color: #f8fafc; border-left: 4px solid #0B2545; padding: 16px; margin: 18px 0; border-radius: 4px;">
+      <div style="font-weight: bold; color: #0B2545; font-size: 13px; margin-bottom: 6px;">
+        Transimex Operations Response ${responderName ? `by ${responderName}` : ""}:
+      </div>
+      <div style="color: #334155; font-size: 13px; line-height: 1.6; white-space: pre-wrap;">${replyContent}</div>
+    </div>
+
+    <div style="background-color: #f1f5f9; padding: 12px; margin-top: 20px; border-radius: 4px; font-size: 12px; color: #64748b;">
+      <div style="font-weight: bold; margin-bottom: 4px;">Your Original Inquiry:</div>
+      <div style="font-style: italic;">"${originalMessage}"</div>
+    </div>
+
+    <p style="margin-top: 20px;">If you have further questions or require freight scheduling assistance, you can reply directly to this email or visit our logistics portal.</p>
+
+    <div style="text-align: center; margin-top: 24px;">
+      <a href="${appUrl}/quote" class="btn" target="_blank">Request Instant Freight Quote</a>
+    </div>
+  `;
+
+  return sendEmail({
+    to,
+    subject: `Re: ${subject} - Transimex Canada`,
+    html: emailTemplateWrapper(content, `Reply regarding your inquiry: ${subject}`),
+    text: `Reply from Transimex Canada:\n\n${replyContent}\n\nOriginal Inquiry: ${originalMessage}`,
+  });
+}
+
+/**
+ * 8. Send Support Ticket Update / Response Email
+ */
+export async function sendTicketUpdateEmail({
+  to,
+  name,
+  ticketId,
+  subject,
+  status,
+  latestMessage,
+  shipmentId,
+}: {
+  to: string;
+  name: string;
+  ticketId: string;
+  subject: string;
+  status: string;
+  latestMessage: string;
+  shipmentId?: string;
+}) {
+  const appUrl = getAppUrl();
+  const ticketUrl = `${appUrl}/dashboard/support`;
+
+  const content = `
+    <h1 class="h1">Support Ticket Update: ${ticketId}</h1>
+    <p>Dear <strong>${name}</strong>,</p>
+    <p>There has been a new response to your support ticket regarding <strong>${subject}</strong>.</p>
+
+    <div class="cred-box">
+      <div><strong>Ticket Reference:</strong> ${ticketId}</div>
+      <div><strong>Status:</strong> <span style="color: #D21F27; font-weight: bold;">${status}</span></div>
+      ${shipmentId ? `<div><strong>Associated Shipment:</strong> ${shipmentId}</div>` : ""}
+    </div>
+
+    <div style="background-color: #f8fafc; border-left: 4px solid #D21F27; padding: 16px; margin: 18px 0; border-radius: 4px;">
+      <div style="font-weight: bold; color: #0B2545; font-size: 13px; margin-bottom: 6px;">
+        Latest Dispatcher Response:
+      </div>
+      <div style="color: #334155; font-size: 13px; line-height: 1.6; white-space: pre-wrap;">${latestMessage}</div>
+    </div>
+
+    <div style="text-align: center; margin-top: 24px;">
+      <a href="${ticketUrl}" class="btn" target="_blank">View Conversation in Client Portal</a>
+    </div>
+  `;
+
+  return sendEmail({
+    to,
+    subject: `[${ticketId}] Support Update: ${subject}`,
+    html: emailTemplateWrapper(content, `Support update on ticket ${ticketId}`),
+    text: `Support ticket ${ticketId} update (${status}):\n\n${latestMessage}\n\nView at ${ticketUrl}`,
+  });
+}
+
+

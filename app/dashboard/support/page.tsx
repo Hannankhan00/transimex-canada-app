@@ -83,9 +83,16 @@ export default function SupportPage() {
     const newTicketId = `TKT-2026-${Math.floor(1000 + Math.random() * 9000)}`;
     const newTicket: SupportTicket = {
       id: newTicketId,
+      ticketId: newTicketId,
+      client: {
+        name: "Marc Tremblay",
+        companyName: "Laurentian Global Logistics Ltd.",
+        email: "dispatch@laurentianglobal.ca",
+      },
       subject: data.subject,
       category: data.category,
       linkedShipmentId: data.linkedShipmentId || undefined,
+      shipmentId: data.linkedShipmentId || undefined,
       priority: data.priority,
       message: data.message,
       status: "Open",
@@ -93,6 +100,15 @@ export default function SupportPage() {
       createdAt: "Just now",
       updatedAt: "Just now",
       assignedAgent: "Transimex Dispatch Support Desk",
+      messages: [
+        {
+          id: `MSG-${Date.now()}`,
+          sender: "client",
+          senderName: "Marc Tremblay",
+          message: data.message,
+          timestamp: "Just now",
+        },
+      ],
       responses: [
         {
           id: `R-${Date.now()}`,

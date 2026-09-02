@@ -69,23 +69,28 @@ export default function AdminSidebar({
       icon: Briefcase,
     },
     {
-      name: language === "fr" ? "Gestion CMS / Blog" : "CMS / Blog Articles",
-      href: "/admin/cms",
-      icon: FileSpreadsheet,
-    },
-    {
-      name: language === "fr" ? "Boîte de Réception" : "Operations Inbox",
-      href: "/admin/inbox",
+      name: language === "fr" ? "Messages & Formulaires" : "Inquiries & Leads",
+      href: "/admin/messages",
       icon: Mail,
-      badge: "14",
+      badge: "4 Leads",
       badgeColor: "bg-blue-500/20 text-blue-300 border border-blue-500/30",
     },
     {
       name: language === "fr" ? "Centre d'Assistance" : "Support Tickets",
       href: "/admin/support",
       icon: LifeBuoy,
-      badge: "6 Open",
+      badge: "3 Open",
       badgeColor: "bg-amber-500/20 text-amber-300 border border-amber-500/30",
+    },
+    {
+      name: language === "fr" ? "Blogue Bilingue" : "Bilingual Blog CMS",
+      href: "/admin/blog",
+      icon: FileSpreadsheet,
+    },
+    {
+      name: language === "fr" ? "Ressources & FAQ" : "Resources & FAQs",
+      href: "/admin/resources",
+      icon: FileText,
     },
     {
       name: language === "fr" ? "Analyses Logistiques" : "Logistics Analytics",

@@ -856,19 +856,44 @@ export function getUnreadNotificationsCount(): number {
 // =========================================================================
 
 export type TicketStatus = "Open" | "In Progress" | "Resolved";
+export type TicketPriority =
+  | "Low"
+  | "Medium"
+  | "High"
+  | "Critical Dispatch Emergency"
+  | "Urgent"
+  | "Normal";
+
+export interface TicketThreadMessage {
+  id: string;
+  sender: "client" | "admin";
+  senderName: string;
+  message: string;
+  timestamp: string;
+  isInternal?: boolean;
+}
 
 export interface SupportTicket {
-  id: string; // e.g. "TKT-2026-0042"
+  id: string; // e.g. "SUP-2026-0042" or "TKT-2026-0042"
+  ticketId?: string;
+  client?: {
+    name: string;
+    companyName: string;
+    email: string;
+  };
   subject: string;
   category: string;
   linkedShipmentId?: string;
-  priority: "Low" | "Medium" | "High" | "Critical Dispatch Emergency";
+  shipmentId?: string;
+  priority: TicketPriority;
   message: string;
   status: TicketStatus;
-  statusFr: string;
+  statusFr?: string;
   createdAt: string;
   updatedAt: string;
-  assignedAgent: string;
+  assignedAgent?: string;
+  internalNotes?: string;
+  messages?: TicketThreadMessage[];
   responses?: {
     id: string;
     sender: string;
@@ -880,69 +905,138 @@ export interface SupportTicket {
 
 export const INITIAL_TICKETS: SupportTicket[] = [
   {
-    id: "TKT-2026-0042",
-    subject: "Temperature logging request for Reefer shipment TMX-00842",
-    category: "Shipment Telematics & Tracking",
-    linkedShipmentId: "TMX-00842",
-    priority: "High",
-    message: "Could dispatch provide continuous cold-chain temperature telemetry logs for trailer unit #118 (-18°C setpoint) for pharmaceutical compliance audit?",
+    id: "SUP-2026-0042",
+    ticketId: "SUP-2026-0042",
+    client: {
+      name: "Marc Tremblay",
+      companyName: "Laurentian Global Logistics Ltd.",
+      email: "dispatch@laurentianglobal.ca",
+    },
+    subject: "CBSA PARS Customs Hold Status Inquiry (TMX-00839)",
+    category: "Customs Clearance & CBSA",
+    linkedShipmentId: "TMX-00839",
+    shipmentId: "TMX-00839",
+    priority: "Urgent",
+    message:
+      "Our tracking portal shows shipment TMX-00839 is on CBSA Customs Hold at Dorval Terminal. We urgently need to confirm whether additional B3 documentation or duty payments are required before release.",
     status: "In Progress",
     statusFr: "En Cours",
-    createdAt: "Today, 10:15 AM",
-    updatedAt: "35 mins ago",
-    assignedAgent: "David Tremblay (Transimex Dispatch)",
+    createdAt: "Sep 01, 2026, 14:15",
+    updatedAt: "Today, 11:30 AM",
+    assignedAgent: "Éléonore Moreau (Customs Brokerage)",
+    internalNotes:
+      "Livingston broker confirmed secondary inspection bay #3. Shippers duty payment notice dispatched at 14:30.",
+    messages: [
+      {
+        id: "MSG-1",
+        sender: "client",
+        senderName: "Marc Tremblay",
+        message:
+          "Our tracking portal shows shipment TMX-00839 is on CBSA Customs Hold at Dorval Terminal. We urgently need to confirm whether additional B3 documentation or duty payments are required before release.",
+        timestamp: "Sep 01, 2026, 14:15",
+      },
+      {
+        id: "MSG-2",
+        sender: "admin",
+        senderName: "Éléonore Moreau (Customs Brokerage)",
+        message:
+          "Hello Marc. We have submitted the verified B3 entry and Harmonized Tariff classification 8411.82 to CBSA Officer #814. We have issued the Duties Notice to your portal account. Once settled, immediate release will occur.",
+        timestamp: "Sep 01, 2026, 15:00",
+      },
+    ],
     responses: [
       {
         id: "R-1",
-        sender: "David Tremblay",
+        sender: "Éléonore Moreau",
         role: "agent",
-        message: "Telemetry sensor data received. Temperature has remained steady at -18.2°C throughout the transit corridor. Exporting calibrated PDF log for you.",
-        time: "35 mins ago",
+        message:
+          "Hello Marc. We have submitted the verified B3 entry and Harmonized Tariff classification 8411.82 to CBSA Officer #814. We have issued the Duties Notice to your portal account. Once settled, immediate release will occur.",
+        time: "Sep 01, 2026, 15:00",
       },
     ],
   },
   {
-    id: "TKT-2026-0038",
-    subject: "CBSA PARS customs declaration copy for Entry #8849-01",
-    category: "Customs Clearance & CBSA",
-    linkedShipmentId: "TMX-00839",
-    priority: "Medium",
-    message: "Need the stamped CBSA B3 customs clearance manifest copy for Canadian internal accounting verification.",
+    id: "SUP-2026-0039",
+    ticketId: "SUP-2026-0039",
+    client: {
+      name: "Sarah Jenkins",
+      companyName: "Ontario Precision Aerospace Inc.",
+      email: "sjenkins@ontarioprecision.ca",
+    },
+    subject: "Air-Ride trailer temperature telemetry report request",
+    category: "Shipment Telematics & Tracking",
+    linkedShipmentId: "TMX-00842",
+    shipmentId: "TMX-00842",
+    priority: "Normal",
+    message:
+      "Could you please supply the certified temperature sensor log from Montreal to Detroit for our ISO audit records?",
     status: "Resolved",
     statusFr: "Résolu",
-    createdAt: "Aug 31, 2026",
-    updatedAt: "Yesterday",
-    assignedAgent: "Elena Roy (Customs Brokerage)",
+    createdAt: "Aug 30, 2026",
+    updatedAt: "Aug 31, 2026",
+    assignedAgent: "Jean-Philippe Tremblay (Operations Lead)",
+    internalNotes: "Sensor log verified against Thermo King telematics feed.",
+    messages: [
+      {
+        id: "MSG-10",
+        sender: "client",
+        senderName: "Sarah Jenkins",
+        message:
+          "Could you please supply the certified temperature sensor log from Montreal to Detroit for our ISO audit records?",
+        timestamp: "Aug 30, 2026, 10:00 AM",
+      },
+      {
+        id: "MSG-11",
+        sender: "admin",
+        senderName: "Jean-Philippe Tremblay (Operations Lead)",
+        message:
+          "Hello Sarah. The ELD telematics log has been exported and uploaded into your client Document Vault under TMX-00842. Verified average temperature was -18.4°C.",
+        timestamp: "Aug 30, 2026, 12:45 PM",
+      },
+    ],
     responses: [
       {
         id: "R-2",
-        sender: "Elena Roy",
+        sender: "Jean-Philippe Tremblay",
         role: "agent",
-        message: "Electronic clearance entry PARS-8849-QC has been verified and released by CBSA. Attached in your Documents Vault.",
-        time: "Yesterday",
+        message:
+          "Hello Sarah. The ELD telematics log has been exported and uploaded into your client Document Vault under TMX-00842. Verified average temperature was -18.4°C.",
+        time: "Aug 30, 2026, 12:45 PM",
       },
     ],
   },
   {
-    id: "TKT-2026-0029",
-    subject: "Inquiry regarding container demurrage free days at Douala Port",
+    id: "SUP-2026-0031",
+    ticketId: "SUP-2026-0031",
+    client: {
+      name: "David Wong",
+      companyName: "Pacific Gateway Distribution Corp.",
+      email: "dwong@pacificgateway.ca",
+    },
+    subject: "Updated delivery appointment for Vancouver Hub",
     category: "Billing & Tariff Invoices",
-    priority: "Low",
-    message: "Requesting confirmation of 14-day free container demurrage window for upcoming ocean FCL shipment to Douala seaport.",
-    status: "Resolved",
-    statusFr: "Résolu",
-    createdAt: "Aug 26, 2026",
-    updatedAt: "Aug 27, 2026",
-    assignedAgent: "Marc-Antoine V. (Commercial Accounts)",
-    responses: [
+    linkedShipmentId: "TMX-00847",
+    shipmentId: "TMX-00847",
+    priority: "High",
+    message:
+      "Please inform driver Jean D. (Unit #402) that receiving dock #4 at the Vancouver hub has extended operating hours until 20:00 PST.",
+    status: "Open",
+    statusFr: "Ouvert",
+    createdAt: "Today, 09:15 AM",
+    updatedAt: "Today, 09:15 AM",
+    assignedAgent: "David Tremblay",
+    internalNotes: "Communicated via fleet satellite dispatch to Unit #402 driver console.",
+    messages: [
       {
-        id: "R-3",
-        sender: "Marc-Antoine V.",
-        role: "agent",
-        message: "Confirmed. Standard Transimex enterprise ocean booking includes 14 free detention/demurrage days at Douala terminal.",
-        time: "Aug 27, 2026",
+        id: "MSG-20",
+        sender: "client",
+        senderName: "David Wong",
+        message:
+          "Please inform driver Jean D. (Unit #402) that receiving dock #4 at the Vancouver hub has extended operating hours until 20:00 PST.",
+        timestamp: "Today, 09:15 AM",
       },
     ],
+    responses: [],
   },
 ];
 
@@ -973,6 +1067,44 @@ export function saveStoredTickets(tickets: SupportTicket[]): void {
 export function addSupportTicket(ticket: SupportTicket): void {
   const current = getStoredTickets();
   saveStoredTickets([ticket, ...current]);
+}
+
+export function updateTicketInStore(
+  ticketId: string,
+  updates: Partial<SupportTicket>,
+  newReplyMessage?: string,
+  responderName: string = "Transimex Operations Lead",
+  isInternal: boolean = false
+): SupportTicket | null {
+  const tickets = getStoredTickets();
+  const index = tickets.findIndex((t) => t.ticketId === ticketId || t.id === ticketId);
+  if (index === -1) return null;
+
+  const current = tickets[index];
+  const nowStr = `Today, ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+
+  const updatedMessages = [...(current.messages || [])];
+  if (newReplyMessage) {
+    updatedMessages.push({
+      id: `MSG-${Date.now()}`,
+      sender: "admin",
+      senderName: responderName,
+      message: newReplyMessage,
+      timestamp: nowStr,
+      isInternal,
+    });
+  }
+
+  const updated: SupportTicket = {
+    ...current,
+    ...updates,
+    updatedAt: nowStr,
+    messages: updatedMessages,
+  };
+
+  tickets[index] = updated;
+  saveStoredTickets(tickets);
+  return updated;
 }
 
 // =========================================================================
@@ -1425,5 +1557,553 @@ export function updateCarrierInStore(id: string, updates: Partial<CarrierVendor>
   saveStoredCarriers(carriers);
   return carriers[index];
 }
+
+// =========================================================================
+// PHASE 6: CONTACT INQUIRIES DATA MODEL & STORE
+// =========================================================================
+
+export type InquiryCategory =
+  | "General Inquiry"
+  | "Freight Quote"
+  | "Partnership"
+  | "Customs Clearance";
+
+export interface ContactInquiry {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  company: string;
+  subject: string;
+  category: InquiryCategory;
+  message: string;
+  date: string;
+  timestamp: string;
+  unread: boolean;
+  replied: boolean;
+  reply?: {
+    text: string;
+    repliedAt: string;
+    repliedBy: string;
+  };
+}
+
+export const INITIAL_INQUIRIES: ContactInquiry[] = [
+  {
+    id: "INQ-901",
+    name: "Alexandre Tremblay",
+    email: "atremblay@nordicmetals.ca",
+    phone: "+1 (514) 555-0812",
+    company: "Nordic Metals & Refining Corp.",
+    subject: "Cross-Border Reefer Capacity to Chicago Corridor",
+    category: "Freight Quote",
+    message:
+      "Hello Transimex Dispatch. We are looking to contract regular weekly reefer capacity (53' tandem at -18°C) running from our processing plant in Saint-Jérôme, QC to cold storage facilities in Chicago, IL. What are your standard transit timelines and bonded carrier credentials?",
+    date: "Today, 10:45 AM",
+    timestamp: "2026-09-02T10:45:00Z",
+    unread: true,
+    replied: false,
+  },
+  {
+    id: "INQ-902",
+    name: "Catherine Roy",
+    email: "croy@maritimegrain.com",
+    phone: "+1 (902) 555-0144",
+    company: "Maritime Grain & Agri-Trade Ltd.",
+    subject: "Intermodal Container Rail Inquiries from Halifax Port",
+    category: "General Inquiry",
+    message:
+      "We have 40ft ocean container import shipments arriving at Halifax Port Berth 31 next month that need transloading and CN Rail intermodal delivery into Montreal and Toronto. Do you provide drayage and customs clearance combined?",
+    date: "Yesterday, 16:20",
+    timestamp: "2026-09-01T16:20:00Z",
+    unread: false,
+    replied: true,
+    reply: {
+      text: "Hello Catherine. Yes, Transimex Canada operates dedicated port drayage at Halifax Port with bonded carrier authority and direct interchange agreements with CN Rail. A quote specialist has been assigned to assist you.",
+      repliedAt: "Yesterday, 17:05",
+      repliedBy: "Jean-Philippe Tremblay",
+    },
+  },
+  {
+    id: "INQ-903",
+    name: "Michael Henderson",
+    email: "mhenderson@apexautologistics.com",
+    phone: "+1 (313) 555-0992",
+    company: "Detroit Automotive Parts Group",
+    subject: "Carrier Partnership & Backhaul Capacity",
+    category: "Partnership",
+    message:
+      "We are a US carrier based out of Detroit. Looking to partner on northbound empty backhauls from Detroit/Windsor into the Greater Toronto Area. Can we be added to your approved vendor network?",
+    date: "Aug 31, 2026",
+    timestamp: "2026-08-31T14:10:00Z",
+    unread: false,
+    replied: false,
+  },
+  {
+    id: "INQ-904",
+    name: "Nathalie Gagnon",
+    email: "ngagnon@quebeccold.ca",
+    phone: "+1 (418) 555-0371",
+    company: "Quebec Cold Storage Solutions",
+    subject: "CBSA PARS / PAPS Electronic Invoicing Integration",
+    category: "Customs Clearance",
+    message:
+      "We are updating our customs broker gateway. Can your dispatch team integrate directly with Livingston International EDI 214 and CBSA ACI eManifest systems?",
+    date: "Aug 29, 2026",
+    timestamp: "2026-08-29T11:30:00Z",
+    unread: false,
+    replied: true,
+    reply: {
+      text: "Hello Nathalie. Our logistics engine natively transmits ACI eManifest and CBSA PARS entries electronically. Please review our Customs Compliance Center documentation for details.",
+      repliedAt: "Aug 29, 2026, 13:15",
+      repliedBy: "Éléonore Moreau",
+    },
+  },
+];
+
+const INQUIRIES_STORAGE_KEY = "transimex_inquiries_store_v1";
+
+export function getStoredInquiries(): ContactInquiry[] {
+  if (typeof window === "undefined") return INITIAL_INQUIRIES;
+  try {
+    const data = localStorage.getItem(INQUIRIES_STORAGE_KEY);
+    if (data) {
+      return JSON.parse(data);
+    }
+  } catch (err) {
+    console.error("Error reading inquiries from storage:", err);
+  }
+  return INITIAL_INQUIRIES;
+}
+
+export function saveStoredInquiries(inquiries: ContactInquiry[]): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(INQUIRIES_STORAGE_KEY, JSON.stringify(inquiries));
+  } catch (err) {
+    console.error("Error saving inquiries:", err);
+  }
+}
+
+export function replyToInquiry(
+  id: string,
+  replyText: string,
+  repliedBy: string = "Transimex Operations"
+): ContactInquiry | null {
+  const inquiries = getStoredInquiries();
+  const index = inquiries.findIndex((inq) => inq.id === id);
+  if (index === -1) return null;
+
+  const now = new Date();
+  const formattedTime = `Today, ${now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+
+  inquiries[index] = {
+    ...inquiries[index],
+    unread: false,
+    replied: true,
+    reply: {
+      text: replyText,
+      repliedAt: formattedTime,
+      repliedBy,
+    },
+  };
+  saveStoredInquiries(inquiries);
+  return inquiries[index];
+}
+
+// SupportTicketItem alias for Admin Helpdesk components
+export type SupportTicketItem = SupportTicket;
+
+// =========================================================================
+// PHASE 6: BILINGUAL BLOG CMS DATA MODEL & STORE
+// =========================================================================
+
+export interface BlogPostItem {
+  id: string;
+  slug: string;
+  title: {
+    en: string;
+    fr: string;
+  };
+  excerpt: {
+    en: string;
+    fr: string;
+  };
+  content: {
+    en: string;
+    fr: string;
+  };
+  author: string;
+  category: string;
+  status: "Draft" | "Published";
+  publishedDate: string;
+  views: number;
+  featuredImage: string;
+  tags: string[];
+}
+
+export const INITIAL_BLOG_POSTS: BlogPostItem[] = [
+  {
+    id: "POST-01",
+    slug: "cbsa-pars-cross-border-compliance-guide",
+    title: {
+      en: "The Essential Guide to CBSA PARS & Pre-Arrival Clearance for Canadian Shippers",
+      fr: "Le guide essentiel du PARS de l'ASFC et du dédouanement préalable pour les expéditeurs canadiens",
+    },
+    excerpt: {
+      en: "How automated pre-arrival customs verification eliminates border congestion along major Canada-US highway corridors.",
+      fr: "Comment la vérification douanière automatisée avant l'arrivée élimine les goulots d'étranglement aux frontières canado-américaines.",
+    },
+    content: {
+      en: "Cross-border freight moving between Ontario, Quebec, and the United States relies heavily on CBSA PARS (Pre-Arrival Review System) barcodes. In this guide, Transimex Canada explains how eManifest integration accelerates cargo release at high-density crossings like the Ambassador Bridge and Lacolle-Champlain.",
+      fr: "Le transport transfrontalier entre le Québec, l'Ontario et les États-Unis repose largement sur le système PARS de l'ASFC. Dans ce guide, Transimex Canada détaille comment l'intégration ACI eManifest accélère le dédouanement aux postes frontaliers stratégiques.",
+    },
+    author: "Éléonore Moreau",
+    category: "Regulatory Compliance",
+    status: "Published",
+    publishedDate: "Aug 24, 2026",
+    views: 1420,
+    featuredImage: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&q=80&w=1200",
+    tags: ["Customs", "CBSA", "Cross-Border", "PARS"],
+  },
+  {
+    id: "POST-02",
+    slug: "cold-chain-pharma-logistics-innovations",
+    title: {
+      en: "Maintaining Integrity in Pharmaceutical Cold-Chain Logistics Across North America",
+      fr: "Maintenir l'intégrité de la chaîne du froid pharmaceutique à travers l'Amérique du Nord",
+    },
+    excerpt: {
+      en: "Best practices for temperature validation, continuous satellite telematics, and multi-temp reefers.",
+      fr: "Meilleures pratiques de validation thermique, télématique par satellite continue et remorques frigorifiques multi-températures.",
+    },
+    content: {
+      en: "High-potency biologicals and temperature-sensitive medical goods demand zero deviation throughout interstate and interprovincial transport. Explore Transimex's real-time telemetry sensors and certified reefer protocols.",
+      fr: "Les produits pharmaceutiques exigent une tolérance zéro lors du transport interprovincial. Découvrez nos protocoles de surveillance en temps réel et nos unités frigorifiques certifiées.",
+    },
+    author: "Jean-Philippe Tremblay",
+    category: "Specialized Transport",
+    status: "Published",
+    publishedDate: "Aug 12, 2026",
+    views: 980,
+    featuredImage: "https://images.unsplash.com/photo-1519003722824-194d4455a60c?auto=format&fit=crop&q=80&w=1200",
+    tags: ["Reefer", "Cold-Chain", "Pharma", "Telematics"],
+  },
+  {
+    id: "POST-03",
+    slug: "sustainable-intermodal-rail-networks-2026",
+    title: {
+      en: "Sustainable Freight: Maximizing Efficiency with Intermodal Rail Corridors",
+      fr: "Fret durable : Maximiser l'efficacité énergétique avec le rail intermodal",
+    },
+    excerpt: {
+      en: "Reducing carbon emissions up to 65% by pairing highway drayage with transcontinental rail lines.",
+      fr: "Réduire les émissions de carbone jusqu'à 65 % en combinant le camionnage portuaire et le réseau ferroviaire transcontinental.",
+    },
+    content: {
+      en: "With corporate ESG mandates expanding across Canadian manufacturing, intermodal freight offers a compelling blend of cost-per-ton savings and environmental responsibility.",
+      fr: "Face aux nouvelles exigences ESG, le transport combiné rail-route offre un compromis idéal entre économies de coût à la tonne et responsabilité écologique.",
+    },
+    author: "Marc-André Bélanger",
+    category: "Sustainability",
+    status: "Draft",
+    publishedDate: "Draft",
+    views: 0,
+    featuredImage: "https://images.unsplash.com/photo-1517524008697-84bbe3c3fd98?auto=format&fit=crop&q=80&w=1200",
+    tags: ["Intermodal", "Rail", "CN", "CPKC", "Green Logistics"],
+  },
+];
+
+const BLOG_STORAGE_KEY = "transimex_blog_posts_store_v1";
+
+export function getStoredBlogPosts(): BlogPostItem[] {
+  if (typeof window === "undefined") return INITIAL_BLOG_POSTS;
+  try {
+    const data = localStorage.getItem(BLOG_STORAGE_KEY);
+    if (data) {
+      return JSON.parse(data);
+    }
+  } catch (err) {
+    console.error("Error reading blog posts from storage:", err);
+  }
+  return INITIAL_BLOG_POSTS;
+}
+
+export function saveStoredBlogPosts(posts: BlogPostItem[]): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(BLOG_STORAGE_KEY, JSON.stringify(posts));
+  } catch (err) {
+    console.error("Error saving blog posts:", err);
+  }
+}
+
+export function addBlogPostToStore(post: BlogPostItem): BlogPostItem {
+  const current = getStoredBlogPosts();
+  const updated = [post, ...current];
+  saveStoredBlogPosts(updated);
+  return post;
+}
+
+export function updateBlogPostInStore(id: string, updates: Partial<BlogPostItem>): BlogPostItem | null {
+  const posts = getStoredBlogPosts();
+  const index = posts.findIndex((p) => p.id === id || p.slug === id);
+  if (index === -1) return null;
+
+  posts[index] = {
+    ...posts[index],
+    ...updates,
+  };
+  saveStoredBlogPosts(posts);
+  return posts[index];
+}
+
+// =========================================================================
+// PHASE 6: RESOURCES & FAQ BUILDER DATA MODEL & STORE
+// =========================================================================
+
+export interface FaqItem {
+  id: string;
+  category: "Customs" | "Tracking" | "Billing" | "Operations";
+  question: {
+    en: string;
+    fr: string;
+  };
+  answer: {
+    en: string;
+    fr: string;
+  };
+  order: number;
+}
+
+export const INITIAL_FAQS: FaqItem[] = [
+  {
+    id: "FAQ-01",
+    category: "Customs",
+    question: {
+      en: "What is the difference between a PARS and PAPS number for cross-border freight?",
+      fr: "Quelle est la différence entre un numéro PARS et PAPS pour le fret transfrontalier ?",
+    },
+    answer: {
+      en: "A PARS (Pre-Arrival Review System) barcode is required for commercial shipments entering Canada through CBSA. A PAPS (Pre-Arrival Processing System) barcode is required for commercial shipments entering the United States through CBP.",
+      fr: "Un code-barres PARS est requis pour les envois commerciaux entrant au Canada via l'ASFC. Un code PAPS est requis pour les envois entrant aux États-Unis via le CBP.",
+    },
+    order: 1,
+  },
+  {
+    id: "FAQ-02",
+    category: "Tracking",
+    question: {
+      en: "How frequently does Transimex telematics update live shipment GPS coordinates?",
+      fr: "À quelle fréquence la télématique Transimex actualise-t-elle les coordonnées GPS en direct ?",
+    },
+    answer: {
+      en: "Active highway corridor units transmit satellite telemetry updates every 15 minutes, with automatic real-time milestone pings generated at border customs gates and delivery facilities.",
+      fr: "Nos unités de corridor autoroutier transmettent des coordonnées GPS toutes les 15 minutes, avec alertes automatiques aux passages frontaliers.",
+    },
+    order: 2,
+  },
+  {
+    id: "FAQ-03",
+    category: "Billing",
+    question: {
+      en: "When are import customs duties and GST/HST payable?",
+      fr: "Quand les droits de douane et les taxes TPS/TVH sont-ils payables ?",
+    },
+    answer: {
+      en: "Tariff duties and federal taxes assessed by CBSA must be remitted immediately upon assessment notice dispatch to allow customs release of detained freight.",
+      fr: "Les droits et taxes calculés par l'ASFC doivent être réglés dès réception de l'avis pour autoriser le déblocage immédiat de la marchandise.",
+    },
+    order: 3,
+  },
+];
+
+const FAQS_STORAGE_KEY = "transimex_faqs_store_v1";
+
+export function getStoredFaqs(): FaqItem[] {
+  if (typeof window === "undefined") return INITIAL_FAQS;
+  try {
+    const data = localStorage.getItem(FAQS_STORAGE_KEY);
+    if (data) {
+      return JSON.parse(data);
+    }
+  } catch (err) {
+    console.error("Error reading FAQs from storage:", err);
+  }
+  return INITIAL_FAQS;
+}
+
+export function saveStoredFaqs(faqs: FaqItem[]): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(FAQS_STORAGE_KEY, JSON.stringify(faqs));
+  } catch (err) {
+    console.error("Error saving FAQs:", err);
+  }
+}
+
+// =========================================================================
+// SHIPMENT REPOSITORY & STORAGE HELPERS
+// =========================================================================
+
+export interface MockShipmentItem {
+  id: string;
+  trackingId: string;
+  client: string;
+  origin: string;
+  destination: string;
+  equipmentType: string;
+  carrier: string;
+  mode: string;
+  status: "In Transit" | "Customs Hold" | "Delivered" | "Pending Dispatch";
+  currentStatus: string;
+  customsStatus: "Pending" | "In Review" | "Released" | "Held";
+  portOfEntry: string;
+  tariffRate: number;
+  rate: number;
+  dispatchedAt: string;
+  createdAt: string;
+  eta: string;
+  estimatedDelivery: string;
+  duties?: {
+    customsDutiesCad: number;
+    taxesCad: number;
+    brokerageFeeCad: number;
+  };
+}
+
+export const INITIAL_SHIPMENTS: MockShipmentItem[] = [
+  {
+    id: "TMX-00839",
+    trackingId: "TMX-00839",
+    client: "Laurentian Global Logistics Ltd.",
+    origin: "Dorval Terminal, QC",
+    destination: "Calgary Logistics Center, AB",
+    equipmentType: "Intermodal Rail (Container)",
+    carrier: "CP Rail Freight Corridors",
+    mode: "Rail",
+    status: "Customs Hold",
+    currentStatus: "Customs Hold",
+    customsStatus: "Held",
+    portOfEntry: "Dorval Air Cargo Hub (0396)",
+    tariffRate: 5200,
+    rate: 5200,
+    dispatchedAt: "2026-09-01",
+    createdAt: "2026-09-01",
+    eta: "2026-09-05",
+    estimatedDelivery: "2026-09-05",
+    duties: {
+      customsDutiesCad: 840,
+      taxesCad: 420,
+      brokerageFeeCad: 150,
+    },
+  },
+  {
+    id: "TMX-00847",
+    trackingId: "TMX-00847",
+    client: "Nordic Metals & Refining Corp.",
+    origin: "Montreal Hub, QC",
+    destination: "Toronto Distribution Center, ON",
+    equipmentType: "53' Tandem Dry Van",
+    carrier: "Transimex Dedicated Highway Fleet",
+    mode: "Road",
+    status: "In Transit",
+    currentStatus: "In Transit",
+    customsStatus: "Released",
+    portOfEntry: "Lacolle / Champlain (0308)",
+    tariffRate: 2450,
+    rate: 2450,
+    dispatchedAt: "2026-09-02",
+    createdAt: "2026-09-02",
+    eta: "2026-09-03",
+    estimatedDelivery: "2026-09-03",
+  },
+  {
+    id: "TMX-00842",
+    trackingId: "TMX-00842",
+    client: "Ontario Precision Aerospace Inc.",
+    origin: "Quebec City Port, QC",
+    destination: "Detroit Corridor Hub, MI",
+    equipmentType: "53' Temp-Controlled Reefer (-18°C)",
+    carrier: "Transimex Cold-Chain Logistics",
+    mode: "Road",
+    status: "In Transit",
+    currentStatus: "In Transit",
+    customsStatus: "In Review",
+    portOfEntry: "Ambassador Bridge / Windsor (0453)",
+    tariffRate: 4850,
+    rate: 4850,
+    dispatchedAt: "2026-08-31",
+    createdAt: "2026-08-31",
+    eta: "2026-09-03",
+    estimatedDelivery: "2026-09-03",
+  },
+  {
+    id: "TMX-00810",
+    trackingId: "TMX-00810",
+    client: "Maritime Grain & Agri-Trade Ltd.",
+    origin: "Halifax Port Berth 31, NS",
+    destination: "Montreal Port Berth 42, QC",
+    equipmentType: "53' Flatbed Heavy Haul",
+    carrier: "Transimex Heavy Equipment Transport",
+    mode: "Sea",
+    status: "Delivered",
+    currentStatus: "Delivered",
+    customsStatus: "Released",
+    portOfEntry: "Halifax Port (0010)",
+    tariffRate: 6400,
+    rate: 6400,
+    dispatchedAt: "2026-08-27",
+    createdAt: "2026-08-27",
+    eta: "2026-08-30",
+    estimatedDelivery: "2026-08-30",
+  },
+  {
+    id: "TMX-00855",
+    trackingId: "TMX-00855",
+    client: "Pacific Gateway Distribution Corp.",
+    origin: "Montreal Trudeau Airport (YUL), QC",
+    destination: "Frankfurt CargoCity (FRA), Germany",
+    equipmentType: "Air Cargo Pallet PMC",
+    carrier: "Air Canada Cargo",
+    mode: "Air",
+    status: "In Transit",
+    currentStatus: "In Transit",
+    customsStatus: "Pending",
+    portOfEntry: "Montreal Mirabel (0399)",
+    tariffRate: 8900,
+    rate: 8900,
+    dispatchedAt: "2026-09-02",
+    createdAt: "2026-09-02",
+    eta: "2026-09-04",
+    estimatedDelivery: "2026-09-04",
+  },
+];
+
+const SHIPMENTS_STORAGE_KEY = "transimex_shipments_store_v1";
+
+export function getStoredShipments(): MockShipmentItem[] {
+  if (typeof window === "undefined") return INITIAL_SHIPMENTS;
+  try {
+    const data = localStorage.getItem(SHIPMENTS_STORAGE_KEY);
+    if (data) {
+      return JSON.parse(data);
+    }
+  } catch (err) {
+    console.error("Error reading shipments from storage:", err);
+  }
+  return INITIAL_SHIPMENTS;
+}
+
+export function saveStoredShipments(shipments: MockShipmentItem[]): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(SHIPMENTS_STORAGE_KEY, JSON.stringify(shipments));
+  } catch (err) {
+    console.error("Error saving shipments:", err);
+  }
+}
+
+
 
 
