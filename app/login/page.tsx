@@ -88,10 +88,21 @@ function AuthComponent() {
           localStorage.setItem("transimex_user", JSON.stringify(res.user));
         }
         const role = res.user.role;
-        if (role === "superadmin" || role === "admin" || role === "subadmin") {
-          router.push("/admin");
+        const isStaff = role === "superadmin" || role === "admin" || role === "subadmin";
+        const fromParam = searchParams.get("from");
+
+        if (isStaff) {
+          if (fromParam && fromParam.startsWith("/admin")) {
+            router.push(fromParam);
+          } else {
+            router.push("/admin");
+          }
         } else {
-          router.push("/dashboard");
+          if (fromParam && fromParam.startsWith("/dashboard")) {
+            router.push(fromParam);
+          } else {
+            router.push("/dashboard");
+          }
         }
       } else {
         setError(res.error || "Invalid credentials");
