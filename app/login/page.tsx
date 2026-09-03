@@ -17,7 +17,6 @@ import {
   Shield,
   Globe2,
   CheckCircle2,
-  Sparkles,
   Phone,
   MapPin,
 } from "lucide-react";
@@ -132,14 +131,19 @@ function AuthComponent() {
     setLoading(true);
 
     try {
-      const fullName = `${firstName.trim()} ${lastName.trim()}`.trim() || "Marc Tremblay";
+      const fullName = `${firstName.trim()} ${lastName.trim()}`.trim();
+      if (!fullName) {
+        setError("Please provide your first and last name");
+        return;
+      }
+
       const res = await api.auth.register({
         fullName,
-        email,
+        email: email.trim().toLowerCase(),
         password,
-        companyName: companyName.trim() || "Laurentian Global Logistics Ltd.",
-        phone: phone.trim() || "+1 (514) 555-0199",
-        address: address.trim() || "1250 René-Lévesque Blvd W, Montreal, QC",
+        companyName: companyName.trim(),
+        phone: phone.trim(),
+        address: address.trim(),
         industry: "Industrial",
         city: "Montreal",
         province: "QC",
@@ -156,18 +160,6 @@ function AuthComponent() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const fillMock = (type: "client" | "admin") => {
-    setActiveTab("login");
-    if (type === "client") {
-      setEmail("client@transimex.ca");
-      setPassword("Transimex2026!");
-    } else {
-      setEmail("admin@transimex.ca");
-      setPassword("Transimex2026!");
-    }
-    setError(null);
   };
 
   const handleGoogleAuth = () => {
@@ -404,34 +396,6 @@ function AuthComponent() {
                     {language === "fr" ? "Créer un compte" : "Create Account"}
                   </button>
                 </div>
-
-                {/* Quick Test Logins Helper (only in login tab) */}
-                {activeTab === "login" && (
-                  <div className="mb-5 p-3 bg-slate-50 border border-slate-200/90 rounded-xl animate-in fade-in duration-200">
-                    <div className="flex items-center justify-between text-[11px] font-semibold text-slate-500 mb-2">
-                      <span className="flex items-center gap-1">
-                        <Sparkles className="w-3.5 h-3.5 text-[#d21f27]" />
-                        Quick Test Logins:
-                      </span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        type="button"
-                        onClick={() => fillMock("client")}
-                        className="px-2.5 py-1.5 bg-white hover:bg-slate-100 border border-slate-200 rounded-lg text-[11px] font-bold text-[#0B2545] text-left transition cursor-pointer shadow-xs"
-                      >
-                        🏢 {t.auth.demoClient}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => fillMock("admin")}
-                        className="px-2.5 py-1.5 bg-white hover:bg-slate-100 border border-slate-200 rounded-lg text-[11px] font-bold text-[#d21f27] text-left transition cursor-pointer shadow-xs"
-                      >
-                        🛡️ {t.auth.demoAdmin}
-                      </button>
-                    </div>
-                  </div>
-                )}
 
                 {/* Error Banner */}
                 {error && (

@@ -64,9 +64,9 @@ export default function AdminTopBar({
     router.push("/login");
   };
 
-  const displayName = user?.name || "Jean-Philippe Tremblay";
-  const displayCompany = user?.companyName || "Transimex Canada HQ - Dispatch Operations";
-  const displayEmail = user?.email || "admin@transimex.ca";
+  const displayName = user?.name || "Transimex Staff";
+  const displayCompany = user?.companyName || "Transimex Canada Operations";
+  const displayEmail = user?.email || "";
   const displayRole = (user?.role || "admin").toUpperCase();
 
   return (

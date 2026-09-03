@@ -39,16 +39,16 @@ export default function AccountSettingsPage() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [preferences, setPreferences] = useState<EmailPreferences>(getStoredPreferences());
   const [currentUser, setCurrentUser] = useState<any>({
-    name: "Marc Tremblay",
-    email: "dispatch@laurentianglobal.ca",
-    companyName: "Laurentian Global Logistics Ltd.",
-    phone: "+1 (514) 555-0199",
-    industry: "Manufacturing & Distribution",
-    city: "Montreal",
-    province: "QC",
-    jobTitle: "Senior Logistics Director",
-    department: "Supply Chain Operations",
-    clientCode: "TMX-CORP-9924",
+    name: "",
+    email: "",
+    companyName: "",
+    phone: "",
+    industry: "",
+    city: "",
+    province: "",
+    jobTitle: "",
+    department: "",
+    clientCode: "",
   });
 
   const {
@@ -59,10 +59,10 @@ export default function AccountSettingsPage() {
   } = useForm<ProfileUpdateFormData>({
     resolver: zodResolver(profileUpdateSchema) as any,
     defaultValues: {
-      name: "Marc Tremblay",
-      phone: "+1 (514) 555-0199",
-      jobTitle: "Senior Logistics Director",
-      department: "Supply Chain Operations",
+      name: "",
+      phone: "",
+      jobTitle: "",
+      department: "",
     },
   });
 
@@ -84,16 +84,16 @@ export default function AccountSettingsPage() {
     api.auth.me().then((res) => {
       if (res.user) {
         const userObj = {
-          name: res.user.name || "Marc Tremblay",
-          email: res.user.email || "dispatch@laurentianglobal.ca",
-          companyName: res.user.companyName || "Laurentian Global Logistics Ltd.",
-          phone: res.user.phone || "+1 (514) 555-0199",
-          industry: res.user.industry || "Manufacturing & Distribution",
-          city: res.user.city || "Montreal",
-          province: res.user.province || "QC",
-          jobTitle: "Senior Logistics Director",
-          department: "Supply Chain Operations",
-          clientCode: "TMX-CORP-9924",
+          name: res.user.name || "",
+          email: res.user.email || "",
+          companyName: res.user.companyName || "",
+          phone: res.user.phone || "",
+          industry: res.user.industry || "",
+          city: res.user.city || "",
+          province: res.user.province || "",
+          jobTitle: (res.user as any).jobTitle || "Logistics Coordinator",
+          department: (res.user as any).department || "Supply Chain Operations",
+          clientCode: (res.user as any).clientCode || `TMX-${(res.user.userId || "CORP").slice(-4).toUpperCase()}`,
         };
         setCurrentUser(userObj);
         resetProfile({

@@ -15,61 +15,40 @@ export async function POST(req: Request) {
     }
 
     const emailLower = email.toLowerCase().trim();
-    let tokenPayload: any = null;
-
     try {
       await connectDB();
-      const user = await User.findOne({ email: emailLower }).select("+password");
-
-      if (user && user.password) {
-        const isMatch = await comparePassword(password, user.password);
-        if (isMatch) {
-          tokenPayload = {
-            userId: user._id.toString(),
-            email: user.email,
-            name: user.name,
-            companyName: user.companyName,
-            role: user.role || "client",
-          };
-        }
-      }
-    } catch (dbErr) {
-      console.warn("DB connect issue, checking demo credentials fallback:", dbErr);
+    } catch (dbErr: any) {
+      console.error("Database connection error during login:", dbErr);
+      return NextResponse.json(
+        { error: "Database service unavailable. Please try again shortly." },
+        { status: 503 }
+      );
     }
 
-    // Mock credentials fallback for instant evaluation
-    if (!tokenPayload) {
-      if (
-        (emailLower === "client@transimex.ca" || emailLower === "user@transimex.ca") &&
-        (password === "Transimex2026!" || password === "password" || password === "Password123")
-      ) {
-        tokenPayload = {
-          userId: "mock-client-01",
-          email: "client@transimex.ca",
-          name: "Marc Tremblay",
-          companyName: "Laurentian Global Logistics Ltd.",
-          role: "client",
-        };
-      } else if (
-        (emailLower === "admin@transimex.ca" || emailLower === "superadmin@transimex.ca") &&
-        (password === "Transimex2026!" || password === "admin" || password === "Admin123")
-      ) {
-        tokenPayload = {
-          userId: "mock-admin-01",
-          email: "admin@transimex.ca",
-          name: "Jean-Philippe Tremblay",
-          companyName: "Transimex Canada HQ",
-          role: "admin",
-        };
-      }
-    }
+    const user = await User.findOne({ email: emailLower }).select("+password");
 
-    if (!tokenPayload) {
+    if (!user || !user.password) {
       return NextResponse.json(
         { error: "Invalid corporate email or password" },
         { status: 401 }
       );
     }
+
+    const isMatch = await comparePassword(password, user.password);
+    if (!isMatch) {
+      return NextResponse.json(
+        { error: "Invalid corporate email or password" },
+        { status: 401 }
+      );
+    }
+
+    const tokenPayload = {
+      userId: user._id.toString(),
+      email: user.email,
+      name: user.name,
+      companyName: user.companyName,
+      role: user.role || "client",
+    };
 
     const maxAge = rememberMe ? 60 * 60 * 24 * 30 : 60 * 60 * 24 * 7; // 30 days vs 7 days
     const token = signToken(tokenPayload);

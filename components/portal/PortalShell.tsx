@@ -42,11 +42,9 @@ export default function PortalShell({ children }: PortalShellProps) {
           if (currentUser) {
             setUser(currentUser);
           } else {
-            // Check local fallback
-            const stored = localStorage.getItem("transimex_user");
-            if (stored) {
-              setUser(JSON.parse(stored));
-            }
+            localStorage.removeItem("transimex_user");
+            router.push("/login?from=/dashboard");
+            return;
           }
         }
       } catch (err) {

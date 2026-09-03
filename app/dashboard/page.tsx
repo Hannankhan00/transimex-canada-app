@@ -27,12 +27,7 @@ export default function DashboardPage() {
     companyName?: string;
     email?: string;
     role?: string;
-  }>({
-    name: "Marc Tremblay",
-    companyName: "Laurentian Global Logistics Ltd.",
-    email: "dispatch@laurentianglobal.ca",
-    role: "client",
-  });
+  } | null>(null);
 
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
   const [isTrackModalOpen, setIsTrackModalOpen] = useState(false);
@@ -70,7 +65,9 @@ export default function DashboardPage() {
             style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
           >
             {language === "fr" ? "Bienvenue," : "Welcome back,"}{" "}
-            <span className="text-slate-900">{user.companyName || "Laurentian Global Logistics"}</span>
+            <span className="text-slate-900">
+              {user?.companyName || user?.name || (language === "fr" ? "Portail Client" : "Client Portal")}
+            </span>
           </h1>
           <p className="text-slate-500 text-xs sm:text-sm mt-1">
             {language === "fr"

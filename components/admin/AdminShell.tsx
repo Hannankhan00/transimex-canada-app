@@ -37,19 +37,9 @@ export default function AdminShell({ children }: AdminShellProps) {
             }
             setUser(currentUser);
           } else {
-            // Check local fallback
-            const stored = localStorage.getItem("transimex_user");
-            if (stored) {
-              const parsed = JSON.parse(stored);
-              if (parsed.role === "client" || parsed.role === "user") {
-                router.push("/dashboard");
-                return;
-              }
-              setUser(parsed);
-            } else {
-              router.push("/login?from=/admin");
-              return;
-            }
+            localStorage.removeItem("transimex_user");
+            router.push("/login?from=/admin");
+            return;
           }
         }
       } catch (err) {

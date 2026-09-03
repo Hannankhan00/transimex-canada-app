@@ -11,12 +11,6 @@ interface DecodedToken {
 
 function parseJwt(token: string): DecodedToken | null {
   try {
-    if (token.startsWith("mock-admin-")) {
-      return { role: "admin", email: "admin@transimex.ca", name: "Jean-Philippe Tremblay" };
-    }
-    if (token.startsWith("mock-client-") || token.startsWith("mock-user-")) {
-      return { role: "client", email: "client@transimex.ca", name: "Marc Tremblay" };
-    }
     const base64Url = token.split(".")[1];
     if (!base64Url) return null;
     const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");

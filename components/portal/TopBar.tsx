@@ -64,9 +64,9 @@ export default function TopBar({
     router.push("/dashboard/quotes?new=true");
   };
 
-  const displayName = user?.name || "Marc Tremblay";
-  const displayCompany = user?.companyName || "Laurentian Global Logistics Ltd.";
-  const displayEmail = user?.email || "dispatch@laurentianglobal.ca";
+  const displayName = user?.name || "Client User";
+  const displayCompany = user?.companyName || "Organization Account";
+  const displayEmail = user?.email || "";
   const isStaff = user?.role === "admin" || user?.role === "superadmin" || user?.role === "subadmin";
 
   return (

@@ -36,43 +36,46 @@ export async function POST(req: Request) {
       );
     }
 
-    let userRole = "client";
-    let userId = "tx-client-" + Date.now();
-    const targetCompany = companyName || "Laurentian Global Logistics Ltd.";
+    const targetCompany = (companyName || "").trim() || `${parsedName}'s Company`;
     const verificationToken = "vtx-" + crypto.randomBytes(24).toString("hex");
 
     try {
       await connectDB();
-      const existingUser = await User.findOne({ email: email.toLowerCase() });
-      if (existingUser) {
-        return NextResponse.json(
-          { error: "An account with this corporate email already exists" },
-          { status: 409 }
-        );
-      }
-
-      const hashedPassword = await hashPassword(password);
-      const user = await User.create({
-        name: parsedName,
-        email: email.toLowerCase(),
-        password: hashedPassword,
-        companyName: targetCompany,
-        phone: phone || "",
-        address: address || "",
-        industry: industry || "Industrial",
-        city: city || "Montreal",
-        province: province || "QC",
-        role: "client",
-        isVerified: false,
-        verificationToken,
-        verificationTokenExpires: new Date(Date.now() + 86400000), // 24 hours
-      });
-
-      userRole = user.role || "client";
-      userId = user._id.toString();
-    } catch (dbErr) {
-      console.warn("Database connection issue during registration, generating token with mock ID:", dbErr);
+    } catch (dbErr: any) {
+      console.error("Database connection error during registration:", dbErr);
+      return NextResponse.json(
+        { error: "Database service unavailable. Please try again shortly." },
+        { status: 503 }
+      );
     }
+
+    const existingUser = await User.findOne({ email: email.toLowerCase() });
+    if (existingUser) {
+      return NextResponse.json(
+        { error: "An account with this corporate email already exists" },
+        { status: 409 }
+      );
+    }
+
+    const hashedPassword = await hashPassword(password);
+    const user = await User.create({
+      name: parsedName,
+      email: email.toLowerCase(),
+      password: hashedPassword,
+      companyName: targetCompany,
+      phone: phone || "",
+      address: address || "",
+      industry: industry || "Industrial",
+      city: city || "Montreal",
+      province: province || "QC",
+      role: "client",
+      isVerified: false,
+      verificationToken,
+      verificationTokenExpires: new Date(Date.now() + 86400000), // 24 hours
+    });
+
+    const userRole = user.role || "client";
+    const userId = user._id.toString();
 
     const tokenPayload = {
       userId,

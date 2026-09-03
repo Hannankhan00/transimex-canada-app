@@ -26,82 +26,29 @@ export interface AuthResponse {
 export const api = {
   auth: {
     async register(data: RegisterFormData): Promise<AuthResponse> {
-      try {
-        const res = await fetch("/api/auth/register", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data),
-        });
-        const result = await res.json();
-        if (!res.ok) {
-          throw new Error(result.error || "Registration failed");
-        }
-        return result;
-      } catch (err: any) {
-        // Fallback for development if DB connection is offline
-        if (err.message?.includes("Failed to fetch") || err.message?.includes("Database")) {
-          console.warn("[API Mock Fallback] Simulating registration for:", data.email);
-          return {
-            success: true,
-            message: "Account application submitted successfully (Dev Mode).",
-            user: {
-              userId: "mock-client-new",
-              name: data.fullName,
-              email: data.email,
-              companyName: data.companyName,
-              role: "client",
-              phone: data.phone,
-              address: data.address,
-              industry: data.industry,
-              city: data.city,
-              province: data.province,
-            },
-          };
-        }
-        throw err;
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      const result = await res.json();
+      if (!res.ok) {
+        throw new Error(result.error || "Registration failed");
       }
+      return result;
     },
 
     async login(data: LoginFormData): Promise<AuthResponse> {
-      try {
-        const res = await fetch("/api/auth/login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data),
-        });
-        const result = await res.json();
-        if (!res.ok) {
-          throw new Error(result.error || "Invalid credentials");
-        }
-        return result;
-      } catch (err: any) {
-        // Mock fallback for quick demonstration
-        const emailLower = data.email.toLowerCase().trim();
-        if (
-          emailLower === "client@transimex.ca" ||
-          emailLower === "admin@transimex.ca" ||
-          data.password === "Transimex2026!"
-        ) {
-          const role = emailLower.includes("admin") ? "admin" : "client";
-          const mockUser = {
-            userId: role === "admin" ? "mock-admin-01" : "mock-client-01",
-            name: role === "admin" ? "Jean-Philippe Tremblay" : "Marc Tremblay",
-            email: emailLower,
-            companyName: role === "admin" ? "Transimex Canada HQ" : "Laurentian Global Logistics Ltd.",
-            role,
-          };
-          if (typeof window !== "undefined") {
-            localStorage.setItem("transimex_user", JSON.stringify(mockUser));
-            document.cookie = `token=mock-${role}-token; path=/; max-age=604800; SameSite=Lax`;
-          }
-          return {
-            success: true,
-            message: "Mock login successful",
-            user: mockUser,
-          };
-        }
-        throw err;
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      const result = await res.json();
+      if (!res.ok) {
+        throw new Error(result.error || "Invalid corporate email or password");
       }
+      return result;
     },
 
     async forgotPassword(data: ForgotPasswordFormData): Promise<{ success: boolean; message: string; mockResetToken?: string }> {
@@ -151,20 +98,18 @@ export const api = {
         const res = await fetch("/api/auth/me");
         if (res.ok) {
           const data = await res.json();
-          return { user: data.user || null };
-        }
-      } catch {
-        // Fallback to localStorage
-      }
-      if (typeof window !== "undefined") {
-        const stored = localStorage.getItem("transimex_user");
-        if (stored) {
-          try {
-            return { user: JSON.parse(stored) };
-          } catch {
-            return { user: null };
+          if (data.user) {
+            if (typeof window !== "undefined") {
+              localStorage.setItem("transimex_user", JSON.stringify(data.user));
+            }
+            return { user: data.user };
           }
         }
+      } catch {
+        // Network or fetch error
+      }
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("transimex_user");
       }
       return { user: null };
     },
