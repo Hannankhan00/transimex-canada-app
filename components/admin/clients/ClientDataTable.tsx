@@ -185,8 +185,8 @@ export default function ClientDataTable({
         </div>
       </div>
 
-      {/* Table */}
-      <div className="overflow-x-auto min-h-[300px]">
+      {/* Table (Preserved on Desktop) */}
+      <div className="hidden md:block overflow-x-auto min-h-[300px]">
         <table className="w-full text-left border-collapse text-xs">
           <thead>
             <tr className="border-b border-slate-200 bg-slate-50/70 text-[11px] font-bold uppercase tracking-wider text-slate-500">
@@ -352,6 +352,97 @@ export default function ClientDataTable({
             )}
           </tbody>
         </table>
+      </div>
+
+      {/* Mobile Card List for Clients */}
+      <div className="block md:hidden divide-y divide-slate-100">
+        {filteredClients.length === 0 ? (
+          <div className="p-8 text-center text-slate-400 text-xs">
+            No registered clients match your criteria.
+          </div>
+        ) : (
+          filteredClients.map((client) => {
+            const isActive = client.status === "Active";
+
+            return (
+              <div key={client.id} className="p-4 space-y-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <Link
+                      href={`/admin/clients/${encodeURIComponent(client.id)}`}
+                      className="font-bold text-[#0B2545] text-sm hover:text-[#d21f27] transition block"
+                    >
+                      {client.companyName}
+                    </Link>
+                    <span className="font-mono text-[10px] text-slate-500">
+                      {client.id} &bull; {client.city}, {client.province}
+                    </span>
+                  </div>
+
+                  {isActive ? (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 font-bold border border-emerald-200 text-[10px]">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                      <span>Active</span>
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 font-bold border border-slate-300 text-[10px]">
+                      <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                      <span>Deactivated</span>
+                    </span>
+                  )}
+                </div>
+
+                <div className="text-xs space-y-1">
+                  <div className="font-semibold text-slate-900">{client.primaryContact}</div>
+                  <div className="text-slate-500 flex items-center gap-1 text-[11px]">
+                    <Mail className="w-3 h-3 text-slate-400" />
+                    <span>{client.email}</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between text-xs pt-1">
+                  <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 font-semibold text-[10px] border border-slate-200">
+                    {client.industry}
+                  </span>
+                  <span className="font-mono font-bold text-slate-900">{client.lifetimeRevenueCad}</span>
+                </div>
+
+                <div className="pt-2 border-t border-slate-100 flex items-center gap-2">
+                  <Link
+                    href={`/admin/clients/${encodeURIComponent(client.id)}`}
+                    className="flex-1 justify-center px-3 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-[#0B2545] font-bold text-xs transition flex items-center gap-1"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5 text-[#d21f27]" />
+                    <span>Dossier</span>
+                  </Link>
+
+                  <button
+                    type="button"
+                    onClick={() => handleToggleStatus(client)}
+                    disabled={updatingId === client.id}
+                    className={`flex-1 justify-center px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer ${
+                      isActive
+                        ? "bg-red-50 text-red-700 border border-red-200"
+                        : "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                    }`}
+                  >
+                    {isActive ? (
+                      <>
+                        <UserX className="w-3.5 h-3.5" />
+                        <span>Deactivate</span>
+                      </>
+                    ) : (
+                      <>
+                        <UserCheck className="w-3.5 h-3.5" />
+                        <span>Activate</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            );
+          })
+        )}
       </div>
     </div>
   );

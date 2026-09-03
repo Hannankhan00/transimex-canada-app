@@ -209,7 +209,7 @@ export default function DashboardPage() {
 
           <div className="space-y-3.5">
             {/* Shipment In Transit */}
-            <div className="p-4 rounded-xl bg-slate-50 border-l-4 border-l-[#d21f27] border border-slate-200/80 flex items-center justify-between">
+            <div className="p-4 rounded-xl bg-slate-50 border-l-4 border-l-[#d21f27] border border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-start gap-3">
                 <div className="w-8 h-8 rounded-lg bg-red-100 text-[#d21f27] flex items-center justify-center flex-shrink-0 mt-0.5 font-bold text-xs">
                   <Truck className="w-4 h-4" />
@@ -219,19 +219,19 @@ export default function DashboardPage() {
                     Shipment #TMX-00847 &bull;{" "}
                     <span className="font-medium text-slate-600">Montreal (QC) → Toronto (ON)</span>
                   </div>
-                  <div className="text-[11px] text-slate-400 mt-0.5 flex items-center gap-1.5">
+                  <div className="text-[11px] text-slate-400 mt-0.5 flex items-center gap-1.5 flex-wrap">
                     <Clock className="w-3 h-3" />
                     <span>53' Dry Van &bull; Driver Assigned (Jean D.) &bull; 45 mins ago</span>
                   </div>
                 </div>
               </div>
-              <span className="px-2.5 py-1 rounded-full bg-blue-100 text-blue-800 text-[10px] font-bold uppercase tracking-wider">
+              <span className="px-2.5 py-1 rounded-full bg-blue-100 text-blue-800 text-[10px] font-bold uppercase tracking-wider self-start sm:self-auto">
                 In Transit
               </span>
             </div>
 
             {/* Quote Accepted */}
-            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between">
+            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-start gap-3">
                 <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center flex-shrink-0 mt-0.5 font-bold text-xs">
                   <FileSpreadsheet className="w-4 h-4" />
@@ -241,19 +241,19 @@ export default function DashboardPage() {
                     Quote #QT-2026-089 &bull;{" "}
                     <span className="font-medium text-slate-600">Cross-Border Reefer Freight</span>
                   </div>
-                  <div className="text-[11px] text-slate-400 mt-0.5 flex items-center gap-1.5">
+                  <div className="text-[11px] text-slate-400 mt-0.5 flex items-center gap-1.5 flex-wrap">
                     <Clock className="w-3 h-3" />
                     <span>$4,850.00 CAD &bull; Accepted &bull; 2 hours ago</span>
                   </div>
                 </div>
               </div>
-              <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold uppercase tracking-wider">
+              <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold uppercase tracking-wider self-start sm:self-auto">
                 Confirmed
               </span>
             </div>
 
             {/* Customs Document */}
-            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between">
+            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-start gap-3">
                 <div className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center flex-shrink-0 mt-0.5 font-bold text-xs">
                   <FileText className="w-4 h-4" />
@@ -263,13 +263,13 @@ export default function DashboardPage() {
                     CBSA PARS Customs Release &bull;{" "}
                     <span className="font-medium text-slate-600">Entry #8849-01</span>
                   </div>
-                  <div className="text-[11px] text-slate-400 mt-0.5 flex items-center gap-1.5">
+                  <div className="text-[11px] text-slate-400 mt-0.5 flex items-center gap-1.5 flex-wrap">
                     <Clock className="w-3 h-3" />
                     <span>Commercial Invoice & BOL attached &bull; Yesterday</span>
                   </div>
                 </div>
               </div>
-              <span className="px-2.5 py-1 rounded-full bg-slate-200 text-slate-800 text-[10px] font-bold uppercase tracking-wider">
+              <span className="px-2.5 py-1 rounded-full bg-slate-200 text-slate-800 text-[10px] font-bold uppercase tracking-wider self-start sm:self-auto">
                 Cleared
               </span>
             </div>
@@ -357,7 +357,7 @@ export default function DashboardPage() {
               }}
               className="space-y-4 mt-4"
             >
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
                     Origin (City / Postal)
@@ -371,7 +371,7 @@ export default function DashboardPage() {
                   <input required placeholder="Toronto, ON (M5V)" className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:bg-white focus:border-[#0B2545]" />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
                     Trailer Equipment

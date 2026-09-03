@@ -2104,6 +2104,462 @@ export function saveStoredShipments(shipments: MockShipmentItem[]): void {
   }
 }
 
+// =========================================================================
+// PHASE 8: ADMIN USER ACCESS & STAFF DIRECTORY
+// =========================================================================
+
+export type StaffRole =
+  | "Super Admin"
+  | "Dispatcher"
+  | "Customs Agent"
+  | "Support Specialist"
+  | "Auditor";
+
+export interface StaffUser {
+  id: string;
+  name: string;
+  email: string;
+  role: StaffRole;
+  department: string;
+  status: "Active" | "Revoked" | "Pending";
+  lastLogin: string;
+  createdAt: string;
+}
+
+export const INITIAL_STAFF_USERS: StaffUser[] = [
+  {
+    id: "STF-001",
+    name: "Jean-Philippe Tremblay",
+    email: "jptremblay@transimex.ca",
+    role: "Super Admin",
+    department: "Executive Logistics Operations",
+    status: "Active",
+    lastLogin: "Today, 08:15 AM",
+    createdAt: "Jan 12, 2025",
+  },
+  {
+    id: "STF-002",
+    name: "Éléonore Moreau",
+    email: "emoreau@transimex.ca",
+    role: "Customs Agent",
+    department: "CBSA & CBP Regulatory Brokerage",
+    status: "Active",
+    lastLogin: "Today, 09:30 AM",
+    createdAt: "Feb 01, 2025",
+  },
+  {
+    id: "STF-003",
+    name: "Marc-André Bélanger",
+    email: "mabelanger@transimex.ca",
+    role: "Dispatcher",
+    department: "Intermodal Rail & Highway Dispatch",
+    status: "Active",
+    lastLogin: "Yesterday, 17:45",
+    createdAt: "Mar 15, 2025",
+  },
+  {
+    id: "STF-004",
+    name: "Sophie Lefebvre",
+    email: "slefebvre@transimex.ca",
+    role: "Support Specialist",
+    department: "Client Services & Helpdesk",
+    status: "Active",
+    lastLogin: "Today, 11:10 AM",
+    createdAt: "Apr 10, 2025",
+  },
+  {
+    id: "STF-005",
+    name: "Alexandre Gauthier",
+    email: "agauthier@transimex.ca",
+    role: "Auditor",
+    department: "Finance & Regulatory Compliance",
+    status: "Active",
+    lastLogin: "Aug 29, 2026",
+    createdAt: "May 20, 2025",
+  },
+];
+
+const STAFF_STORAGE_KEY = "transimex_staff_users_store_v1";
+
+export function getStoredStaffUsers(): StaffUser[] {
+  if (typeof window === "undefined") return INITIAL_STAFF_USERS;
+  try {
+    const data = localStorage.getItem(STAFF_STORAGE_KEY);
+    if (data) {
+      return JSON.parse(data);
+    }
+  } catch (err) {
+    console.error("Error reading staff users from storage:", err);
+  }
+  return INITIAL_STAFF_USERS;
+}
+
+export function saveStoredStaffUsers(staff: StaffUser[]): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(STAFF_STORAGE_KEY, JSON.stringify(staff));
+  } catch (err) {
+    console.error("Error saving staff users:", err);
+  }
+}
+
+export function inviteStaffUser(
+  name: string,
+  email: string,
+  role: StaffRole,
+  department: string = "Logistics Operations"
+): StaffUser {
+  const staff = getStoredStaffUsers();
+  const newUser: StaffUser = {
+    id: `STF-${Date.now()}`,
+    name,
+    email,
+    role,
+    department,
+    status: "Pending",
+    lastLogin: "Never (Invited)",
+    createdAt: "Today",
+  };
+  const updated = [newUser, ...staff];
+  saveStoredStaffUsers(updated);
+  return newUser;
+}
+
+export function updateStaffUser(
+  id: string,
+  updates: Partial<StaffUser>
+): StaffUser | null {
+  const staff = getStoredStaffUsers();
+  const index = staff.findIndex((u) => u.id === id || u.email.toLowerCase() === id.toLowerCase());
+  if (index === -1) return null;
+
+  staff[index] = {
+    ...staff[index],
+    ...updates,
+  };
+  saveStoredStaffUsers(staff);
+  return staff[index];
+}
+
+// =========================================================================
+// PHASE 8: BILINGUAL EMAIL TEMPLATE EDITOR DATA MODEL & STORE
+// =========================================================================
+
+export interface EmailTemplate {
+  id: string;
+  name: string;
+  description: string;
+  category: "Quotes" | "Customs" | "Shipments" | "Support" | "Staff";
+  subject: {
+    en: string;
+    fr: string;
+  };
+  heading: {
+    en: string;
+    fr: string;
+  };
+  body: {
+    en: string;
+    fr: string;
+  };
+  placeholders: string[];
+}
+
+export const INITIAL_EMAIL_TEMPLATES: EmailTemplate[] = [
+  {
+    id: "quote-accepted",
+    name: "Quote Accepted & Converted to Shipment",
+    description: "Fires when operations accepts a quote request and instantiates an active shipment tracking manifest.",
+    category: "Quotes",
+    subject: {
+      en: "Your Freight Quote {{quoteId}} Has Been Accepted - Tracking Manifest {{trackingId}}",
+      fr: "Votre soumission {{quoteId}} a été acceptée - Manifeste de suivi {{trackingId}}",
+    },
+    heading: {
+      en: "Shipment Activated & Carrier Assigned",
+      fr: "Expédition activée et transporteur assigné",
+    },
+    body: {
+      en: "Dear {{clientName}},\n\nWe are pleased to inform you that freight request {{quoteId}} for corridor {{origin}} to {{destination}} has been assigned a confirmed rate of {{rate}}. Your live shipment is now accessible in the client portal under tracking reference {{trackingId}}.\n\nEstimated arrival time: {{eta}}.",
+      fr: "Cher(ère) {{clientName}},\n\nNous avons le plaisir de vous informer que votre soumission {{quoteId}} pour le corridor {{origin}} vers {{destination}} a été confirmée au tarif de {{rate}}. Votre expédition en direct est maintenant accessible avec la référence {{trackingId}}.\n\nArrivée estimée : {{eta}}.",
+    },
+    placeholders: ["{{clientName}}", "{{quoteId}}", "{{trackingId}}", "{{origin}}", "{{destination}}", "{{rate}}", "{{eta}}", "{{portalUrl}}"],
+  },
+  {
+    id: "quote-rejected",
+    name: "Quote Declined / Capacity Notice",
+    description: "Sent to shippers when an incoming quote is declined due to capacity constraints or equipment unavailability.",
+    category: "Quotes",
+    subject: {
+      en: "Update regarding your Transimex quote request {{quoteId}}",
+      fr: "Mise à jour concernant votre demande de soumission {{quoteId}}",
+    },
+    heading: {
+      en: "Freight Request Evaluation Notice",
+      fr: "Avis d'évaluation de la demande de fret",
+    },
+    body: {
+      en: "Dear {{clientName}},\n\nThank you for requesting freight services with Transimex Canada. Due to {{rejectionReason}}, we are currently unable to service requested route {{origin}} to {{destination}}.\n\nOur logistics specialists remain at your disposal for alternative corridors.",
+      fr: "Cher(ère) {{clientName}},\n\nMerci pour votre demande de transport. En raison de {{rejectionReason}}, nous ne pouvons actuellement pas desservir le corridor {{origin}} vers {{destination}}.\n\nNos spécialistes demeurent à votre disposition pour d'autres options.",
+    },
+    placeholders: ["{{clientName}}", "{{quoteId}}", "{{origin}}", "{{destination}}", "{{rejectionReason}}"],
+  },
+  {
+    id: "customs-duties",
+    name: "Customs Duties & Regulatory Assessment Notice",
+    description: "Urgent transactional alert to corporate clients specifying assessed CBSA customs duties and taxes.",
+    category: "Customs",
+    subject: {
+      en: "URGENT: Customs Duties & Tax Assessment for Shipment {{trackingId}}",
+      fr: "URGENT : Évaluation des droits de douane et taxes pour l'envoi {{trackingId}}",
+    },
+    heading: {
+      en: "CBSA Clearance Duties Assessment",
+      fr: "Évaluation des droits de dédouanement de l'ASFC",
+    },
+    body: {
+      en: "Dear {{clientName}},\n\nCBSA customs brokers have assessed import tariff duties and taxes on shipment {{trackingId}} for a total amount of {{totalOwed}}.\n\nPlease remit settlement immediately in your client portal to permit cargo release.",
+      fr: "Cher(ère) {{clientName}},\n\nL'ASFC a calculé les droits de douane et taxes pour l'envoi {{trackingId}} pour un montant total de {{totalOwed}}.\n\nVeuillez procéder au règlement pour autoriser la mainlevée des marchandises.",
+    },
+    placeholders: ["{{clientName}}", "{{trackingId}}", "{{totalOwed}}", "{{portOfEntry}}", "{{portalUrl}}"],
+  },
+  {
+    id: "shipment-delivered",
+    name: "Proof of Delivery (POD) & Arrival Confirmation",
+    description: "Dispatched upon driver or rail terminal signoff verifying safe final cargo receipt.",
+    category: "Shipments",
+    subject: {
+      en: "Delivered: Shipment {{trackingId}} Completed & POD Released",
+      fr: "Livré : Envoi {{trackingId}} terminé et preuve de livraison émise",
+    },
+    heading: {
+      en: "Cargo Successfully Delivered",
+      fr: "Marchandise livrée avec succès",
+    },
+    body: {
+      en: "Dear {{clientName}},\n\nWe confirm that shipment {{trackingId}} was safely received at destination facility {{destination}}.\n\nThe certified Proof of Delivery (POD) has been archived into your Document Vault.",
+      fr: "Cher(ère) {{clientName}},\n\nNous confirmons que l'envoi {{trackingId}} a été livré en toute sécurité à destination ({{destination}}).\n\nLa preuve de livraison (POD) certifiée est disponible dans votre Coffre-fort.",
+    },
+    placeholders: ["{{clientName}}", "{{trackingId}}", "{{destination}}", "{{deliveryTime}}", "{{portalUrl}}"],
+  },
+  {
+    id: "support-update",
+    name: "Support Ticket Staff Response",
+    description: "Sent to the client whenever a dispatcher responds to an authenticated helpdesk inquiry.",
+    category: "Support",
+    subject: {
+      en: "[{{ticketId}}] New Response on Your Support Request",
+      fr: "[{{ticketId}}] Nouvelle réponse à votre demande d'assistance",
+    },
+    heading: {
+      en: "Dispatcher Response Received",
+      fr: "Réponse du répartiteur reçue",
+    },
+    body: {
+      en: "Dear {{clientName}},\n\nA member of our logistics support staff has replied to ticket {{ticketId}} regarding {{subject}}.\n\nLatest message: {{latestMessage}}",
+      fr: "Cher(ère) {{clientName}},\n\nUn membre de notre équipe a répondu au billet {{ticketId}} concernant {{subject}}.\n\nDernier message : {{latestMessage}}",
+    },
+    placeholders: ["{{clientName}}", "{{ticketId}}", "{{subject}}", "{{latestMessage}}", "{{portalUrl}}"],
+  },
+];
+
+const EMAIL_TEMPLATES_STORAGE_KEY = "transimex_email_templates_store_v1";
+
+export function getStoredEmailTemplates(): EmailTemplate[] {
+  if (typeof window === "undefined") return INITIAL_EMAIL_TEMPLATES;
+  try {
+    const data = localStorage.getItem(EMAIL_TEMPLATES_STORAGE_KEY);
+    if (data) {
+      return JSON.parse(data);
+    }
+  } catch (err) {
+    console.error("Error reading email templates from storage:", err);
+  }
+  return INITIAL_EMAIL_TEMPLATES;
+}
+
+export function saveStoredEmailTemplates(templates: EmailTemplate[]): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(EMAIL_TEMPLATES_STORAGE_KEY, JSON.stringify(templates));
+  } catch (err) {
+    console.error("Error saving email templates:", err);
+  }
+}
+
+export function updateEmailTemplate(
+  id: string,
+  updates: Partial<EmailTemplate>
+): EmailTemplate | null {
+  const templates = getStoredEmailTemplates();
+  const index = templates.findIndex((t) => t.id === id);
+  if (index === -1) return null;
+
+  templates[index] = {
+    ...templates[index],
+    ...updates,
+  };
+  saveStoredEmailTemplates(templates);
+  return templates[index];
+}
+
+// =========================================================================
+// PHASE 8: SYSTEM ACTIVITY AUDIT LOG DATA MODEL & STORE
+// =========================================================================
+
+export type AuditActionType =
+  | "STATUS_UPDATE"
+  | "QUOTE_ACCEPTED"
+  | "QUOTE_REJECTED"
+  | "CUSTOMS_HOLD"
+  | "CUSTOMS_RELEASE"
+  | "DUTIES_DISPATCHED"
+  | "DOCUMENT_UPLOAD"
+  | "STAFF_INVITED"
+  | "ACCESS_REVOKED"
+  | "CARRIER_ASSIGNED";
+
+export interface AuditLogEntry {
+  id: string;
+  timestamp: string;
+  staffName: string;
+  staffEmail: string;
+  staffRole: string;
+  action: AuditActionType;
+  resourceType: "Shipment" | "Quote" | "Client" | "StaffUser" | "Document" | "Customs";
+  resourceId: string;
+  details: string;
+  ipAddress: string;
+}
+
+export const INITIAL_AUDIT_LOGS: AuditLogEntry[] = [
+  {
+    id: "AUD-9912",
+    timestamp: "Today, 11:30 AM",
+    staffName: "Éléonore Moreau",
+    staffEmail: "emoreau@transimex.ca",
+    staffRole: "Customs Agent",
+    action: "CUSTOMS_HOLD",
+    resourceType: "Customs",
+    resourceId: "TMX-00839",
+    details: "Assigned CBSA Hold reason: Secondary Inspection Bay #3 for B3 verification.",
+    ipAddress: "198.51.100.14 (Dorval Terminal Gateway)",
+  },
+  {
+    id: "AUD-9911",
+    timestamp: "Today, 10:45 AM",
+    staffName: "Jean-Philippe Tremblay",
+    staffEmail: "jptremblay@transimex.ca",
+    staffRole: "Super Admin",
+    action: "QUOTE_ACCEPTED",
+    resourceType: "Quote",
+    resourceId: "QT-2026-00124",
+    details: "Assigned rate $4,850.00 CAD. Auto-generated active shipment tracking TMX-2026-00848.",
+    ipAddress: "198.51.100.12 (Montreal Operations Center)",
+  },
+  {
+    id: "AUD-9910",
+    timestamp: "Today, 09:20 AM",
+    staffName: "Éléonore Moreau",
+    staffEmail: "emoreau@transimex.ca",
+    staffRole: "Customs Agent",
+    action: "DUTIES_DISPATCHED",
+    resourceType: "Shipment",
+    resourceId: "TMX-00839",
+    details: "Dispatched high-priority Duties Notice: $1,410.00 CAD (Customs: $840, GST: $420, Fee: $150).",
+    ipAddress: "198.51.100.14 (Dorval Terminal Gateway)",
+  },
+  {
+    id: "AUD-9909",
+    timestamp: "Yesterday, 16:40",
+    staffName: "Marc-André Bélanger",
+    staffEmail: "mabelanger@transimex.ca",
+    staffRole: "Dispatcher",
+    action: "CARRIER_ASSIGNED",
+    resourceType: "Shipment",
+    resourceId: "TMX-00847",
+    details: "Assigned carrier Transimex Dedicated Highway Fleet (Unit #402, driver Jean D.).",
+    ipAddress: "198.51.100.15 (Montreal Fleet Dispatch)",
+  },
+  {
+    id: "AUD-9908",
+    timestamp: "Aug 31, 2026",
+    staffName: "Jean-Philippe Tremblay",
+    staffEmail: "jptremblay@transimex.ca",
+    staffRole: "Super Admin",
+    action: "DOCUMENT_UPLOAD",
+    resourceType: "Document",
+    resourceId: "TMX-00842",
+    details: "Uploaded certified ELD temperature telematics sensor log (-18.4°C). Visible in Client Vault.",
+    ipAddress: "198.51.100.12 (Montreal Operations Center)",
+  },
+  {
+    id: "AUD-9907",
+    timestamp: "Aug 30, 2026",
+    staffName: "Jean-Philippe Tremblay",
+    staffEmail: "jptremblay@transimex.ca",
+    staffRole: "Super Admin",
+    action: "ACCESS_REVOKED",
+    resourceType: "Client",
+    resourceId: "CLI-005",
+    details: "Temporarily suspended portal access for Horizon Retail Logistics due to credit audit.",
+    ipAddress: "198.51.100.12 (Montreal Operations Center)",
+  },
+];
+
+const AUDIT_STORAGE_KEY = "transimex_audit_logs_store_v1";
+
+export function getStoredAuditLogs(): AuditLogEntry[] {
+  if (typeof window === "undefined") return INITIAL_AUDIT_LOGS;
+  try {
+    const data = localStorage.getItem(AUDIT_STORAGE_KEY);
+    if (data) {
+      return JSON.parse(data);
+    }
+  } catch (err) {
+    console.error("Error reading audit logs from storage:", err);
+  }
+  return INITIAL_AUDIT_LOGS;
+}
+
+export function saveStoredAuditLogs(logs: AuditLogEntry[]): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(AUDIT_STORAGE_KEY, JSON.stringify(logs));
+  } catch (err) {
+    console.error("Error saving audit logs:", err);
+  }
+}
+
+export function addAuditLogEntry(
+  staffName: string,
+  staffEmail: string,
+  staffRole: string,
+  action: AuditActionType,
+  resourceType: AuditLogEntry["resourceType"],
+  resourceId: string,
+  details: string,
+  ipAddress: string = "198.51.100.12 (Montreal Operations Center)"
+): AuditLogEntry {
+  const logs = getStoredAuditLogs();
+  const newEntry: AuditLogEntry = {
+    id: `AUD-${Date.now()}`,
+    timestamp: `Today, ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`,
+    staffName,
+    staffEmail,
+    staffRole,
+    action,
+    resourceType,
+    resourceId,
+    details,
+    ipAddress,
+  };
+  const updated = [newEntry, ...logs];
+  saveStoredAuditLogs(updated);
+  return newEntry;
+}
+
+
 
 
 

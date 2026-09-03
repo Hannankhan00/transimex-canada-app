@@ -91,7 +91,7 @@ export default function PortalSidebar({
   const isStaff = userRole === "admin" || userRole === "superadmin" || userRole === "subadmin";
 
   const sidebarContent = (
-    <div className="h-full flex flex-col justify-between bg-[#0B2545] text-slate-200 select-none">
+    <div className="h-full flex flex-col justify-between bg-[#0B2545] text-slate-200 select-none overflow-y-auto">
       {/* Top Branding Section */}
       <div>
         <div className="p-5 flex items-center justify-between border-b border-white/10">

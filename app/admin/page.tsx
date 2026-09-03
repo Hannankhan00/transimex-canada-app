@@ -815,7 +815,7 @@ export default function AdminOperationsPage() {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="font-semibold text-slate-700 block mb-1">Equipment / Mode</label>
                     <select

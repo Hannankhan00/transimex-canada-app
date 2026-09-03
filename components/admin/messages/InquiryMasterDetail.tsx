@@ -14,6 +14,7 @@ import {
   AlertCircle,
   Filter,
   UserCheck,
+  ArrowLeft,
 } from "lucide-react";
 
 interface InquiryMasterDetailProps {
@@ -28,6 +29,7 @@ export default function InquiryMasterDetail({
   const [selectedId, setSelectedId] = useState<string>(
     inquiries.length > 0 ? inquiries[0].id : ""
   );
+  const [mobileView, setMobileView] = useState<"list" | "detail">("list");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "unread" | "replied">("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
@@ -88,7 +90,7 @@ export default function InquiryMasterDetail({
       {/* ==================================================================== */}
       {/* LEFT PANE: INBOX MASTER LIST */}
       {/* ==================================================================== */}
-      <div className="w-full lg:w-96 border-r border-slate-200 flex flex-col bg-slate-50/50">
+      <div className={`w-full lg:w-96 border-r border-slate-200 flex flex-col bg-slate-50/50 ${mobileView === "detail" ? "hidden lg:flex" : "flex"}`}>
         {/* Search & Filter bar */}
         <div className="p-3.5 border-b border-slate-200 bg-white space-y-2.5">
           <div className="relative">
@@ -153,7 +155,10 @@ export default function InquiryMasterDetail({
               return (
                 <div
                   key={inq.id}
-                  onClick={() => setSelectedId(inq.id)}
+                  onClick={() => {
+                    setSelectedId(inq.id);
+                    setMobileView("detail");
+                  }}
                   className={`p-3.5 cursor-pointer transition text-xs relative ${
                     isSelected
                       ? "bg-white border-l-4 border-[#d21f27] shadow-xs"
@@ -201,11 +206,19 @@ export default function InquiryMasterDetail({
       {/* ==================================================================== */}
       {/* RIGHT PANE: FULL MESSAGE DETAILS & REPLY COMPOSER */}
       {/* ==================================================================== */}
-      <div className="flex-1 flex flex-col bg-white">
+      <div className={`flex-1 flex flex-col bg-white ${mobileView === "list" ? "hidden lg:flex" : "flex"}`}>
         {selectedInquiry ? (
           <div className="flex-1 flex flex-col">
             {/* Message Header */}
-            <div className="p-5 border-b border-slate-200 bg-slate-50/40 space-y-3">
+            <div className="p-4 sm:p-5 border-b border-slate-200 bg-slate-50/40 space-y-3">
+              <button
+                type="button"
+                onClick={() => setMobileView("list")}
+                className="lg:hidden inline-flex items-center gap-1.5 text-xs font-bold text-[#0B2545] hover:text-[#d21f27] pb-1 cursor-pointer"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span>Back to Inquiries</span>
+              </button>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <h2 className="font-bold text-lg text-[#0B2545] leading-snug">
                   {selectedInquiry.subject}

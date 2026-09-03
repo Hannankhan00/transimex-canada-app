@@ -348,7 +348,7 @@ export default function NewQuoteModal({
                     )}
                   </div>
 
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     <input
                       {...register("originCity")}
                       placeholder="Origin City (Montreal)"
@@ -394,7 +394,7 @@ export default function NewQuoteModal({
                     )}
                   </div>
 
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     <input
                       {...register("destinationCity")}
                       placeholder="Dest City (Detroit)"
@@ -457,7 +457,7 @@ export default function NewQuoteModal({
                 </div>
 
                 {/* Weight, Pallets, Pickup Date */}
-                <div className="grid grid-cols-3 gap-2 pt-1">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
                   <div>
                     <label className="block text-[10px] font-bold text-slate-600 uppercase mb-0.5">
                       Weight (lbs) *
@@ -518,7 +518,7 @@ export default function NewQuoteModal({
                       {...register("temperatureControlled")}
                       className="w-3.5 h-3.5 text-[#d21f27] rounded border-slate-300"
                     />
-                    <span>Reefer Temp-Controlled</span>
+                    <span>Refrigerated / Temperature Controlled</span>
                   </label>
 
                   <label className="flex items-center gap-1.5 cursor-pointer text-[11px] font-semibold text-slate-700">
@@ -533,11 +533,11 @@ export default function NewQuoteModal({
               </div>
 
               {/* Action Buttons */}
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+              <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2.5 pt-3 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={onClose}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition cursor-pointer"
+                  className="w-full sm:w-auto px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition cursor-pointer text-center"
                 >
                   {language === "fr" ? "Annuler" : "Cancel"}
                 </button>
@@ -545,7 +545,7 @@ export default function NewQuoteModal({
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-6 py-2.5 bg-[#d21f27] hover:bg-[#b51a21] text-white text-xs font-bold rounded-xl shadow-md hover:shadow-lg transition cursor-pointer flex items-center gap-2 disabled:opacity-50"
+                  className="w-full sm:w-auto px-6 py-2.5 bg-[#d21f27] hover:bg-[#b51a21] text-white text-xs font-bold rounded-xl shadow-md hover:shadow-lg transition cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                   <FileSpreadsheet className="w-4 h-4" />
                   <span>

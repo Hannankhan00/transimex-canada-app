@@ -92,7 +92,7 @@ export async function sendEmail({ to, subject, html, text }: SendEmailParams): P
 /**
  * Institutional Logistics Branded HTML Wrapper
  */
-function emailTemplateWrapper(contentHtml: string, previewText: string = "Transimex Canada Client Portal Notification") {
+export function emailTemplateWrapper(contentHtml: string, previewText: string = "Transimex Canada Client Portal Notification") {
   return `
 <!DOCTYPE html>
 <html lang="en">
@@ -559,5 +559,55 @@ export async function sendTicketUpdateEmail({
     text: `Support ticket ${ticketId} update (${status}):\n\n${latestMessage}\n\nView at ${ticketUrl}`,
   });
 }
+
+/**
+ * 9. Send Staff Onboarding Invitation Email
+ */
+export async function sendStaffInviteEmail({
+  to,
+  name,
+  role,
+  inviterName,
+  inviteToken,
+}: {
+  to: string;
+  name: string;
+  role: string;
+  inviterName?: string;
+  inviteToken: string;
+}) {
+  const appUrl = getAppUrl();
+  const setupUrl = `${appUrl}/login?invite=${inviteToken}&email=${encodeURIComponent(to)}`;
+
+  const content = `
+    <h1 class="h1">Welcome to the Transimex Operations Team</h1>
+    <p>Dear <strong>${name}</strong>,</p>
+    <p>You have been invited by <strong>${inviterName || "Transimex Human Resources & Dispatch"}</strong> to join the internal Transimex Canada logistics administration portal.</p>
+
+    <div class="cred-box">
+      <div><strong>Staff Account:</strong> ${to}</div>
+      <div><strong>Assigned Privilege Role:</strong> <span style="color: #0B2545; font-weight: bold;">${role}</span></div>
+      <div><strong>Security Policy:</strong> Single Sign-On / Two-Factor Authentication Enforced</div>
+    </div>
+
+    <p style="margin-top: 18px;">To activate your administrative profile, set your corporate credentials, and gain immediate console access, please click the secure link below:</p>
+
+    <div style="text-align: center; margin-top: 24px;">
+      <a href="${setupUrl}" class="btn" target="_blank">Activate Staff Account</a>
+    </div>
+
+    <div class="alert-box">
+      <strong>Confidentiality Notice:</strong> This invitation token is restricted to authorized Transimex Canada personnel. Do not share or forward this link.
+    </div>
+  `;
+
+  return sendEmail({
+    to,
+    subject: `Transimex Canada Staff Access Invitation: ${role}`,
+    html: emailTemplateWrapper(content, `Staff onboarding invitation for ${name}`),
+    text: `You have been invited to join Transimex Canada as ${role}. Activate your account at: ${setupUrl}`,
+  });
+}
+
 
 

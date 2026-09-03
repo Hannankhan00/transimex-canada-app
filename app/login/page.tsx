@@ -260,7 +260,7 @@ function AuthComponent() {
         </div>
 
         {/* Right Side: Authentication Form */}
-        <div className="w-full md:w-1/2 flex items-center justify-center p-6 sm:p-10 md:p-14 bg-white overflow-y-auto min-h-screen">
+        <div className="w-full md:w-1/2 flex items-center justify-center p-4 sm:p-8 md:p-14 bg-white overflow-y-auto min-h-screen">
           <div className="w-full max-w-[420px] my-auto py-6">
             {/* Top Bar on Mobile & Language Switcher */}
             <div className="flex items-center justify-between mb-8">
@@ -455,8 +455,8 @@ function AuthComponent() {
                     }}
                   >
                     <div className="overflow-hidden space-y-4">
-                      {/* Name Fields (2 Columns) */}
-                      <div className="grid grid-cols-2 gap-3 pt-0.5">
+                      {/* Name Fields (2 Columns on tablet/desktop) */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-0.5">
                         <div>
                           <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                             First Name *

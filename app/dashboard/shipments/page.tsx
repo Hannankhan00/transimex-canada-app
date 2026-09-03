@@ -158,7 +158,7 @@ export default function ShipmentsPage() {
           >
             {/* Left: ID & Route */}
             <div className="space-y-2 flex-1">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
                 <span className="text-sm font-bold text-[#0B2545] font-mono">{shipment.id}</span>
                 <span
                   className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
@@ -206,7 +206,7 @@ export default function ShipmentsPage() {
 
             {/* Right: Driver & Actions */}
             <div className="flex items-center justify-between lg:justify-end gap-3 pt-3 lg:pt-0 border-t lg:border-t-0 border-slate-100">
-              <div className="text-right text-xs hidden sm:block">
+              <div className="text-left sm:text-right text-xs">
                 <div className="font-semibold text-slate-900">{shipment.driver}</div>
                 <div className="text-[11px] text-slate-400">{shipment.date}</div>
               </div>

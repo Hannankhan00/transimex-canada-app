@@ -579,13 +579,13 @@ export default function QuoteReviewDrawer({
         </div>
 
         {/* Drawer Action Footer */}
-        <div className="p-4 sm:p-5 bg-slate-50 border-t border-slate-200 flex flex-wrap items-center justify-between gap-3 flex-shrink-0">
-          <div className="flex items-center gap-2">
+        <div className="p-4 sm:p-5 bg-slate-50 border-t border-slate-200 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-3 flex-shrink-0">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
             {!isRejected && (
               <button
                 type="button"
                 onClick={() => setIsRejectModalOpen(true)}
-                className="px-3.5 py-2 rounded-xl text-xs font-bold text-red-600 hover:bg-red-100/70 border border-red-200 transition cursor-pointer flex items-center gap-1.5"
+                className="flex-1 sm:flex-none justify-center px-3.5 py-2 rounded-xl text-xs font-bold text-red-600 hover:bg-red-100/70 border border-red-200 transition cursor-pointer flex items-center gap-1.5"
               >
                 <XCircle className="w-4 h-4" />
                 <span>Reject Quote</span>
@@ -596,25 +596,25 @@ export default function QuoteReviewDrawer({
               type="button"
               onClick={() => handleSaveNotes()}
               disabled={isSavingNotes}
-              className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-200 border border-slate-200 transition cursor-pointer"
+              className="flex-1 sm:flex-none justify-center px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-200 border border-slate-200 transition cursor-pointer"
             >
               {isSavingNotes ? "Saving..." : "Save Notes"}
             </button>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
             {!isAccepted ? (
               <button
                 type="button"
                 onClick={handleAcceptAndGenerateShipment}
                 disabled={isAccepting}
-                className="px-5 py-2.5 bg-[#d21f27] hover:bg-[#b51a21] text-white rounded-xl text-xs font-bold shadow-xs hover:shadow transition cursor-pointer flex items-center gap-2 disabled:opacity-50"
+                className="w-full sm:w-auto justify-center px-5 py-2.5 bg-[#d21f27] hover:bg-[#b51a21] text-white rounded-xl text-xs font-bold shadow-xs hover:shadow transition cursor-pointer flex items-center gap-2 disabled:opacity-50"
               >
                 <Sparkles className="w-4 h-4" />
                 <span>{isAccepting ? "Converting..." : "Accept & Generate Shipment"}</span>
               </button>
             ) : (
-              <div className="px-4 py-2 bg-emerald-100 text-emerald-800 rounded-xl text-xs font-bold flex items-center gap-1.5">
+              <div className="w-full sm:w-auto justify-center px-4 py-2 bg-emerald-100 text-emerald-800 rounded-xl text-xs font-bold flex items-center gap-1.5">
                 <CheckCircle2 className="w-4 h-4" />
                 <span>Accepted &amp; Dispatched</span>
               </div>

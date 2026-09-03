@@ -159,10 +159,10 @@ export default function TopBar({
         <button
           type="button"
           onClick={handleNewQuote}
-          className="flex items-center gap-1.5 px-3.5 sm:px-4 py-2 bg-[#D21F27] hover:bg-[#b51a21] active:scale-[0.98] text-white text-xs font-bold rounded-xl shadow-sm hover:shadow-md transition cursor-pointer whitespace-nowrap"
+          className="flex items-center gap-1.5 px-2.5 sm:px-4 py-2 bg-[#D21F27] hover:bg-[#b51a21] active:scale-[0.98] text-white text-xs font-bold rounded-xl shadow-sm hover:shadow-md transition cursor-pointer whitespace-nowrap"
         >
           <Plus className="w-4 h-4 stroke-[3]" />
-          <span>{t.topBar.newQuote}</span>
+          <span className="hidden xs:inline">{t.topBar.newQuote}</span>
         </button>
 
         {/* User Avatar / Profile Dropdown */}
@@ -170,9 +170,9 @@ export default function TopBar({
           <button
             type="button"
             onClick={() => setDropdownOpen(!dropdownOpen)}
-            className="flex items-center gap-2.5 p-1 rounded-xl hover:bg-slate-100/70 transition cursor-pointer"
+            className="flex items-center gap-2 p-1 rounded-xl hover:bg-slate-100/70 transition cursor-pointer"
           >
-            <div className="w-9 h-9 rounded-xl bg-[#0B2545] text-white flex items-center justify-center font-bold text-xs shadow-2xs">
+            <div className="w-8 sm:w-9 h-8 sm:h-9 rounded-xl bg-[#0B2545] text-white flex items-center justify-center font-bold text-xs shadow-2xs">
               {displayName.charAt(0)}
             </div>
             <div className="hidden lg:flex flex-col text-left">
@@ -187,7 +187,7 @@ export default function TopBar({
           </button>
 
           {dropdownOpen && (
-            <div className="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-slate-200 p-2 z-30 animate-in fade-in zoom-in-95 duration-150">
+            <div className="absolute right-0 mt-2 w-[calc(100vw-2rem)] max-w-72 sm:w-72 bg-white rounded-2xl shadow-xl border border-slate-200 p-2 z-30 animate-in fade-in zoom-in-95 duration-150">
               {/* Profile Card Summary */}
               <div className="p-3 bg-slate-50 rounded-xl mb-1 border border-slate-100">
                 <div className="flex items-center justify-between mb-1.5">

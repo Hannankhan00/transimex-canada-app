@@ -224,7 +224,7 @@ export default function PriceEstimatorPage() {
         </div>
 
         {/* Currency Switcher */}
-        <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-slate-200 shadow-2xs">
+        <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-slate-200 shadow-2xs overflow-x-auto">
           {(["CAD", "USD", "EUR", "XAF"] as CurrencyView[]).map((curr) => (
             <button
               key={curr}

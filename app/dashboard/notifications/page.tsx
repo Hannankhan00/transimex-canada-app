@@ -278,7 +278,7 @@ export default function NotificationsPage() {
               <button
                 type="button"
                 onClick={(e) => handleDeleteNotification(e, notif.id)}
-                className="p-1.5 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-lg transition opacity-0 group-hover:opacity-100 flex-shrink-0"
+                className="p-1.5 text-slate-400 sm:text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-lg transition opacity-100 sm:opacity-0 sm:group-hover:opacity-100 flex-shrink-0"
                 title="Dismiss Alert"
               >
                 <Trash2 className="w-4 h-4" />

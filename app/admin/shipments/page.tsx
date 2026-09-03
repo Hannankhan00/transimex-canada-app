@@ -262,7 +262,8 @@ export default function AdminShipmentsDirectoryPage() {
         </div>
 
         {/* SHIPMENTS TABLE */}
-        <div className="overflow-x-auto">
+        {/* Desktop Table (Preserved 100%) */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="border-b border-slate-200 bg-slate-50/70 text-[11px] font-bold uppercase tracking-wider text-slate-500">
@@ -339,6 +340,44 @@ export default function AdminShipmentsDirectoryPage() {
               ))}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile Card List (Phones View) */}
+        <div className="block md:hidden divide-y divide-slate-100">
+          {filteredShipments.map((shipment) => (
+            <div key={shipment.id} className="p-4 space-y-3">
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-mono font-bold text-[#0B2545] text-sm">{shipment.id}</span>
+                <CustomsStatusBadge status={shipment.customsStatus} size="sm" />
+              </div>
+
+              <div className="flex items-center gap-1.5 text-xs text-slate-800 font-semibold">
+                <MapPin className="w-3.5 h-3.5 text-[#d21f27] flex-shrink-0" />
+                <span>{shipment.origin}</span>
+                <span className="text-slate-400">→</span>
+                <span>{shipment.destination}</span>
+              </div>
+
+              <div className="text-[11px] text-slate-500">
+                <span className="font-medium text-slate-700">{shipment.equipment}</span> &bull; {shipment.carrier}
+              </div>
+
+              <div className="flex items-center justify-between text-[11px] text-slate-500">
+                <span>PARS: <strong className="font-mono text-slate-800">{shipment.customsPars || "None"}</strong></span>
+                <span>ETA: <strong className="text-slate-800">{shipment.eta}</strong></span>
+              </div>
+
+              <div className="pt-2 border-t border-slate-100 flex items-center justify-end">
+                <Link
+                  href={`/admin/shipments/${encodeURIComponent(shipment.id)}/customs`}
+                  className="w-full justify-center inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#0B2545] hover:bg-[#d21f27] text-white rounded-xl text-xs font-bold shadow-2xs transition"
+                >
+                  <Shield className="w-3.5 h-3.5" />
+                  <span>Open Customs Center</span>
+                </Link>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>

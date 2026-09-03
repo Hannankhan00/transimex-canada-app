@@ -120,7 +120,7 @@ export default function AdminTopBar({
               router.push("/admin/shipments?new=true");
             }
           }}
-          className="px-3.5 py-2 bg-[#d21f27] hover:bg-[#b51a21] text-white rounded-xl text-xs font-bold shadow-xs hover:shadow transition cursor-pointer flex items-center gap-1.5"
+          className="px-2.5 sm:px-3.5 py-2 bg-[#d21f27] hover:bg-[#b51a21] text-white rounded-xl text-xs font-bold shadow-xs hover:shadow transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap"
         >
           <Plus className="w-4 h-4 stroke-[3]" />
           <span className="hidden sm:inline">
@@ -133,7 +133,7 @@ export default function AdminTopBar({
           <button
             type="button"
             onClick={() => setLangMenuOpen(!langMenuOpen)}
-            className="flex items-center gap-1.5 px-2.5 py-2 rounded-xl text-xs font-bold text-slate-700 hover:text-[#0B2545] hover:bg-slate-100 border border-slate-200 transition cursor-pointer"
+            className="flex items-center gap-1.5 px-2 sm:px-2.5 py-2 rounded-xl text-xs font-bold text-slate-700 hover:text-[#0B2545] hover:bg-slate-100 border border-slate-200 transition cursor-pointer"
           >
             <Globe2 className="w-3.5 h-3.5 text-[#d21f27]" />
             <span className="uppercase">{language}</span>
@@ -177,7 +177,7 @@ export default function AdminTopBar({
           <button
             type="button"
             onClick={() => setDropdownOpen(!dropdownOpen)}
-            className="flex items-center gap-2.5 pl-2 pr-1.5 py-1 rounded-xl hover:bg-slate-100 transition border border-transparent hover:border-slate-200 cursor-pointer"
+            className="flex items-center gap-2 pl-1.5 pr-1 py-1 rounded-xl hover:bg-slate-100 transition border border-transparent hover:border-slate-200 cursor-pointer"
           >
             <div className="w-8 h-8 rounded-full bg-[#0B2545] text-white flex items-center justify-center font-bold text-xs shadow-xs border border-white/20">
               {displayName
@@ -198,7 +198,7 @@ export default function AdminTopBar({
           </button>
 
           {dropdownOpen && (
-            <div className="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-slate-100 p-2 z-50 text-xs animate-in fade-in slide-in-from-top-2 duration-150">
+            <div className="absolute right-0 mt-2 w-[calc(100vw-2rem)] max-w-72 sm:w-72 bg-white rounded-2xl shadow-xl border border-slate-100 p-2 z-50 text-xs animate-in fade-in slide-in-from-top-2 duration-150">
               {/* Header Info */}
               <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 mb-1.5">
                 <div className="flex items-center justify-between">

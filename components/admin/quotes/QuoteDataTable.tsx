@@ -20,6 +20,7 @@ import {
   AlertCircle,
   Eye,
   RefreshCw,
+  MapPin,
 } from "lucide-react";
 
 interface QuoteDataTableProps {
@@ -34,6 +35,7 @@ interface QuoteDataTableProps {
   activeTab: "all" | QuoteStatus;
   onTabChange: (tab: "all" | QuoteStatus) => void;
   onSelectQuote: (quote: QuoteItem) => void;
+  selectedQuoteId?: string;
   onRefresh?: () => void;
   isRefreshing?: boolean;
 }
@@ -44,6 +46,7 @@ export default function QuoteDataTable({
   activeTab,
   onTabChange,
   onSelectQuote,
+  selectedQuoteId,
   onRefresh,
   isRefreshing = false,
 }: QuoteDataTableProps) {
@@ -269,8 +272,8 @@ export default function QuoteDataTable({
         </div>
       </div>
 
-      {/* 2. HIGH-DENSITY DATA TABLE */}
-      <div className="overflow-x-auto">
+      {/* 2. HIGH-DENSITY DATA TABLE (Preserved on Desktop) */}
+      <div className="hidden md:block overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="border-b border-slate-200 bg-slate-50/70 text-[11px] font-bold uppercase tracking-wider text-slate-500">
@@ -318,7 +321,7 @@ export default function QuoteDataTable({
               <tr>
                 <td colSpan={8} className="py-12 text-center text-slate-400 text-xs">
                   <AlertCircle className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                  No quote requests found matching current filter or search criteria.
+                  <p>No quote requests match your current search and filter criteria.</p>
                 </td>
               </tr>
             ) : (
@@ -326,7 +329,9 @@ export default function QuoteDataTable({
                 <tr
                   key={quote.id}
                   onClick={() => onSelectQuote(quote)}
-                  className="hover:bg-slate-50/80 transition cursor-pointer group"
+                  className={`hover:bg-slate-50/80 transition cursor-pointer ${
+                    selectedQuoteId === quote.id ? "bg-red-50/40 font-medium" : ""
+                  }`}
                 >
                   {/* Ref Number */}
                   <td className="py-3.5 px-4 whitespace-nowrap">
@@ -425,6 +430,72 @@ export default function QuoteDataTable({
             )}
           </tbody>
         </table>
+      </div>
+
+      {/* Mobile Card View for Dispatchers on Phones */}
+      <div className="block md:hidden divide-y divide-slate-100">
+        {paginatedQuotes.length === 0 ? (
+          <div className="p-8 text-center text-slate-400 text-xs">
+            <AlertCircle className="w-7 h-7 text-slate-300 mx-auto mb-1.5" />
+            <p>No quotes matching current criteria.</p>
+          </div>
+        ) : (
+          paginatedQuotes.map((quote) => (
+            <div
+              key={quote.id}
+              onClick={() => onSelectQuote(quote)}
+              className={`p-4 space-y-3 cursor-pointer hover:bg-slate-50 transition ${
+                selectedQuoteId === quote.id ? "bg-red-50/40" : ""
+              }`}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-mono font-bold text-[#0B2545] text-sm">{quote.id}</span>
+                <StatusBadge status={quote.status} size="sm" />
+              </div>
+
+              <div>
+                <div className="font-bold text-slate-900 text-xs">{quote.clientName}</div>
+                <div className="text-[11px] text-slate-500">{quote.clientEmail}</div>
+              </div>
+
+              <div className="flex items-center gap-1.5 text-xs text-slate-800 font-semibold">
+                <MapPin className="w-3.5 h-3.5 text-[#d21f27] flex-shrink-0" />
+                <span>{quote.origin}</span>
+                <span className="text-slate-400">→</span>
+                <span>{quote.destination}</span>
+              </div>
+
+              <div className="text-[11px] text-slate-500">
+                {quote.transportMode} &bull; {quote.equipment} &bull; {quote.commodity}
+              </div>
+
+              <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
+                <div>
+                  <div className="text-[10px] font-bold uppercase text-slate-400">Rate Quoted</div>
+                  <div className="font-mono font-bold text-slate-900">
+                    {quote.priceCad && !quote.priceCad.includes("Pending") && !quote.priceCad.includes("Calculating") ? (
+                      quote.priceCad
+                    ) : (
+                      <span className="text-amber-600 font-semibold italic text-xs">Unquoted</span>
+                    )}
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onSelectQuote(quote);
+                  }}
+                  className="px-3.5 py-1.5 bg-[#0B2545] hover:bg-[#d21f27] text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5"
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                  <span>Review</span>
+                </button>
+              </div>
+            </div>
+          ))
+        )}
       </div>
 
       {/* 3. PAGINATION & SUMMARY FOOTER */}

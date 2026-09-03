@@ -24,6 +24,7 @@ import {
   Info,
   ShieldAlert,
   Sparkles,
+  MapPin,
 } from "lucide-react";
 
 function QuotesContent() {
@@ -161,127 +162,210 @@ function QuotesContent() {
             </button>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-50/80 border-b border-slate-200 text-[11px] font-bold uppercase tracking-wider text-slate-500 select-none">
-                  <th className="py-3 px-4 sm:px-6">Quote Reference</th>
-                  <th className="py-3 px-4">Transport Mode</th>
-                  <th className="py-3 px-4">Logistics Route</th>
-                  <th className="py-3 px-4">Submitted</th>
-                  <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4 text-right">Price (CAD)</th>
-                  <th className="py-3 px-4 sm:px-6 text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
-                {filteredQuotes.map((quote) => {
-                  const isAccepted = quote.status === "accepted";
-                  const isRejected = quote.status === "rejected";
-                  const isPending = quote.status === "under_review";
+          <>
+            {/* Desktop Table (Preserved 100%) */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-50/80 border-b border-slate-200 text-[11px] font-bold uppercase tracking-wider text-slate-500 select-none">
+                    <th className="py-3 px-4 sm:px-6">Quote Reference</th>
+                    <th className="py-3 px-4">Transport Mode</th>
+                    <th className="py-3 px-4">Logistics Route</th>
+                    <th className="py-3 px-4">Submitted</th>
+                    <th className="py-3 px-4">Status</th>
+                    <th className="py-3 px-4 text-right">Price (CAD)</th>
+                    <th className="py-3 px-4 sm:px-6 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
+                  {filteredQuotes.map((quote) => {
+                    const isAccepted = quote.status === "accepted";
+                    const isRejected = quote.status === "rejected";
+                    const isPending = quote.status === "under_review";
 
-                  return (
-                    <tr
-                      key={quote.id}
-                      className="hover:bg-slate-50/80 transition group"
-                    >
-                      {/* Quote Reference */}
-                      <td className="py-4 px-4 sm:px-6 font-mono font-bold text-[#0B2545] whitespace-nowrap">
-                        <div className="flex items-center gap-2">
-                          <span>{quote.id}</span>
-                        </div>
-                      </td>
+                    return (
+                      <tr
+                        key={quote.id}
+                        className="hover:bg-slate-50/80 transition group"
+                      >
+                        {/* Quote Reference */}
+                        <td className="py-4 px-4 sm:px-6 font-mono font-bold text-[#0B2545] whitespace-nowrap">
+                          <div className="flex items-center gap-2">
+                            <span>{quote.id}</span>
+                          </div>
+                        </td>
 
-                      {/* Transport Mode & Equipment */}
-                      <td className="py-4 px-4 whitespace-nowrap">
-                        <div className="font-semibold text-slate-900">{quote.transportMode}</div>
-                        <div className="text-[11px] text-slate-400">{quote.equipment}</div>
-                      </td>
+                        {/* Transport Mode & Equipment */}
+                        <td className="py-4 px-4 whitespace-nowrap">
+                          <div className="font-semibold text-slate-900">{quote.transportMode}</div>
+                          <div className="text-[11px] text-slate-400">{quote.equipment}</div>
+                        </td>
 
-                      {/* Route */}
-                      <td className="py-4 px-4">
-                        <div className="font-semibold text-slate-900 flex items-center gap-1.5">
-                          <span>{quote.origin}</span>
-                          <span className="text-slate-400">→</span>
-                          <span>{quote.destination}</span>
-                        </div>
-                        <div className="text-[11px] text-slate-400">{quote.commodity} ({quote.weight})</div>
-                      </td>
+                        {/* Route */}
+                        <td className="py-4 px-4">
+                          <div className="font-semibold text-slate-900 flex items-center gap-1.5">
+                            <span>{quote.origin}</span>
+                            <span className="text-slate-400">→</span>
+                            <span>{quote.destination}</span>
+                          </div>
+                          <div className="text-[11px] text-slate-400">{quote.commodity} ({quote.weight})</div>
+                        </td>
 
-                      {/* Submission Date */}
-                      <td className="py-4 px-4 text-slate-500 whitespace-nowrap">
-                        <div className="flex items-center gap-1">
-                          <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                          <span>{quote.submittedDate}</span>
-                        </div>
-                      </td>
+                        {/* Submission Date */}
+                        <td className="py-4 px-4 text-slate-500 whitespace-nowrap">
+                          <div className="flex items-center gap-1">
+                            <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                            <span>{quote.submittedDate}</span>
+                          </div>
+                        </td>
 
-                      {/* Status Badge */}
-                      <td className="py-4 px-4 whitespace-nowrap">
-                        <span
-                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                            isPending
-                              ? "bg-amber-100 text-amber-800 border border-amber-200"
-                              : isAccepted
-                              ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
-                              : isRejected
-                              ? "bg-red-100 text-red-800 border border-red-200"
-                              : "bg-slate-100 text-slate-500 border border-slate-200"
-                          }`}
+                        {/* Status Badge */}
+                        <td className="py-4 px-4 whitespace-nowrap">
+                          <span
+                            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                              isPending
+                                ? "bg-amber-100 text-amber-800 border border-amber-200"
+                                : isAccepted
+                                ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                                : isRejected
+                                ? "bg-red-100 text-red-800 border border-red-200"
+                                : "bg-slate-100 text-slate-500 border border-slate-200"
+                            }`}
+                          >
+                            {isPending && <Clock className="w-3 h-3 text-amber-700" />}
+                            {isAccepted && <CheckCircle2 className="w-3 h-3 text-emerald-700" />}
+                            {isRejected && <AlertCircle className="w-3 h-3 text-red-700" />}
+                            {language === "fr" ? quote.statusLabelFr : quote.statusLabelEn}
+                          </span>
+                        </td>
+
+                        {/* Price CAD */}
+                        <td className="py-4 px-4 text-right whitespace-nowrap">
+                          <div className="font-bold text-[#0B2545]">
+                            {quote.priceCad}
+                          </div>
+                          {quote.priceCad !== "Pending Dispatch Calculation" && quote.priceCad !== "N/A" && (
+                            <div className="text-[10px] text-slate-400 font-semibold">Guaranteed</div>
+                          )}
+                        </td>
+
+                        {/* Actions: Accepted -> View Shipment, Rejected -> View Reason, Pending -> View Details */}
+                        <td className="py-4 px-4 sm:px-6 text-right whitespace-nowrap">
+                          {isAccepted && quote.shipmentId ? (
+                            <Link
+                              href={`/dashboard/shipments?id=${quote.shipmentId}`}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#0B2545] hover:bg-[#123661] text-white text-xs font-bold rounded-lg shadow-xs transition cursor-pointer"
+                            >
+                              <span>{language === "fr" ? "Voir Expédition" : "View Shipment"}</span>
+                              <ArrowUpRight className="w-3.5 h-3.5" />
+                            </Link>
+                          ) : isRejected ? (
+                            <button
+                              type="button"
+                              onClick={() => handleOpenDetails(quote)}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-[#d21f27] border border-red-200 text-xs font-bold rounded-lg transition cursor-pointer"
+                            >
+                              <ShieldAlert className="w-3.5 h-3.5 text-[#d21f27]" />
+                              <span>{language === "fr" ? "Motif du Refus" : "View Reason"}</span>
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleOpenDetails(quote)}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg transition cursor-pointer"
+                            >
+                              <Eye className="w-3.5 h-3.5 text-slate-500" />
+                              <span>{language === "fr" ? "Détails" : "View Details"}</span>
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Card List (Responsive View for Phones) */}
+            <div className="block md:hidden divide-y divide-slate-100">
+              {filteredQuotes.map((quote) => {
+                const isAccepted = quote.status === "accepted";
+                const isRejected = quote.status === "rejected";
+                const isPending = quote.status === "under_review";
+
+                return (
+                  <div key={quote.id} className="p-4 space-y-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-mono font-bold text-sm text-[#0B2545]">{quote.id}</span>
+                      <span
+                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                          isPending
+                            ? "bg-amber-100 text-amber-800 border border-amber-200"
+                            : isAccepted
+                            ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                            : isRejected
+                            ? "bg-red-100 text-red-800 border border-red-200"
+                            : "bg-slate-100 text-slate-500 border border-slate-200"
+                        }`}
+                      >
+                        {isPending && <Clock className="w-3 h-3 text-amber-700" />}
+                        {isAccepted && <CheckCircle2 className="w-3 h-3 text-emerald-700" />}
+                        {isRejected && <AlertCircle className="w-3 h-3 text-red-700" />}
+                        {language === "fr" ? quote.statusLabelFr : quote.statusLabelEn}
+                      </span>
+                    </div>
+
+                    <div className="space-y-1 text-xs">
+                      <div className="font-semibold text-slate-900 flex items-center gap-1.5">
+                        <MapPin className="w-3.5 h-3.5 text-[#d21f27] flex-shrink-0" />
+                        <span>{quote.origin}</span>
+                        <span className="text-slate-400">→</span>
+                        <span>{quote.destination}</span>
+                      </div>
+                      <div className="text-[11px] text-slate-500 pl-5">
+                        {quote.transportMode} &bull; {quote.equipment} &bull; {quote.commodity} ({quote.weight})
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-1 text-xs border-t border-slate-100">
+                      <div>
+                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Rate CAD</div>
+                        <div className="font-bold text-[#0B2545] text-sm">{quote.priceCad}</div>
+                      </div>
+
+                      {isAccepted && quote.shipmentId ? (
+                        <Link
+                          href={`/dashboard/shipments?id=${quote.shipmentId}`}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#0B2545] hover:bg-[#123661] text-white text-xs font-bold rounded-lg shadow-xs transition"
                         >
-                          {isPending && <Clock className="w-3 h-3 text-amber-700" />}
-                          {isAccepted && <CheckCircle2 className="w-3 h-3 text-emerald-700" />}
-                          {isRejected && <AlertCircle className="w-3 h-3 text-red-700" />}
-                          {language === "fr" ? quote.statusLabelFr : quote.statusLabelEn}
-                        </span>
-                      </td>
-
-                      {/* Price CAD */}
-                      <td className="py-4 px-4 text-right whitespace-nowrap">
-                        <div className="font-bold text-[#0B2545]">
-                          {quote.priceCad}
-                        </div>
-                        {quote.priceCad !== "Pending Dispatch Calculation" && quote.priceCad !== "N/A" && (
-                          <div className="text-[10px] text-slate-400 font-semibold">Guaranteed</div>
-                        )}
-                      </td>
-
-                      {/* Actions: Accepted -> View Shipment, Rejected -> View Reason, Pending -> View Details */}
-                      <td className="py-4 px-4 sm:px-6 text-right whitespace-nowrap">
-                        {isAccepted && quote.shipmentId ? (
-                          <Link
-                            href={`/dashboard/shipments?id=${quote.shipmentId}`}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#0B2545] hover:bg-[#123661] text-white text-xs font-bold rounded-lg shadow-xs transition cursor-pointer"
-                          >
-                            <span>{language === "fr" ? "Voir Expédition" : "View Shipment"}</span>
-                            <ArrowUpRight className="w-3.5 h-3.5" />
-                          </Link>
-                        ) : isRejected ? (
-                          <button
-                            type="button"
-                            onClick={() => handleOpenDetails(quote)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-[#d21f27] border border-red-200 text-xs font-bold rounded-lg transition cursor-pointer"
-                          >
-                            <ShieldAlert className="w-3.5 h-3.5 text-[#d21f27]" />
-                            <span>{language === "fr" ? "Motif du Refus" : "View Reason"}</span>
-                          </button>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => handleOpenDetails(quote)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg transition cursor-pointer"
-                          >
-                            <Eye className="w-3.5 h-3.5 text-slate-500" />
-                            <span>{language === "fr" ? "Détails" : "View Details"}</span>
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                          <span>{language === "fr" ? "Expédition" : "Shipment"}</span>
+                          <ArrowUpRight className="w-3.5 h-3.5" />
+                        </Link>
+                      ) : isRejected ? (
+                        <button
+                          type="button"
+                          onClick={() => handleOpenDetails(quote)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-[#d21f27] border border-red-200 text-xs font-bold rounded-lg transition"
+                        >
+                          <ShieldAlert className="w-3.5 h-3.5 text-[#d21f27]" />
+                          <span>{language === "fr" ? "Motif" : "Reason"}</span>
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleOpenDetails(quote)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg transition"
+                        >
+                          <Eye className="w-3.5 h-3.5 text-slate-500" />
+                          <span>{language === "fr" ? "Détails" : "Details"}</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
         )}
       </div>
 

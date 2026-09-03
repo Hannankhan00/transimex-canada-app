@@ -45,7 +45,7 @@ export default function ForgotPasswordPage() {
   return (
     <div className="min-h-screen bg-[#f5f7fa] flex flex-col justify-between selection:bg-[#d21f27] selection:text-white">
       {/* Top Header */}
-      <header className="w-full max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
+      <header className="w-full max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-5 flex items-center justify-between">
         <Link href="/login" className="transition-opacity hover:opacity-90">
           <TransimexLogo size="md" />
         </Link>
@@ -62,10 +62,10 @@ export default function ForgotPasswordPage() {
       </header>
 
       {/* Main Container */}
-      <main className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-10">
+      <main className="flex-1 flex items-center justify-center p-3 sm:p-6 lg:p-10">
         <div className="w-full max-w-md bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
           {/* Header Banner */}
-          <div className="bg-[#0B2545] p-6 sm:p-8 text-white relative overflow-hidden">
+          <div className="bg-[#0B2545] p-5 sm:p-8 text-white relative overflow-hidden">
             <div className="absolute right-0 top-0 w-48 h-48 bg-[#d21f27]/10 rounded-full blur-2xl pointer-events-none" />
             <div className="relative z-10">
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 text-white text-[11px] font-semibold uppercase tracking-wider mb-2">
@@ -85,7 +85,7 @@ export default function ForgotPasswordPage() {
           </div>
 
           {/* Body */}
-          <div className="p-6 sm:p-8">
+          <div className="p-5 sm:p-8">
             {isSuccess ? (
               <div className="text-center py-4 animate-in fade-in zoom-in-95 duration-300">
                 <div className="w-14 h-14 bg-emerald-50 border border-emerald-200 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
