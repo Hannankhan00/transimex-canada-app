@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { addressSchema, AddressFormData, SavedAddress } from "@/lib/validations/address";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
+import { api } from "@/lib/api";
 import { X, Building2, MapPin, User, Phone, FileText, Check } from "lucide-react";
 
 interface AddressModalProps {
@@ -38,6 +39,19 @@ export default function AddressModal({
 }: AddressModalProps) {
   const { language } = useLanguage();
   const isEditing = Boolean(initialData);
+  const [currentUserCompany, setCurrentUserCompany] = useState("");
+  const [currentUserContact, setCurrentUserContact] = useState("");
+  const [currentUserPhone, setCurrentUserPhone] = useState("");
+
+  useEffect(() => {
+    api.auth.me().then((res) => {
+      if (res.user) {
+        setCurrentUserCompany(res.user.companyName || "");
+        setCurrentUserContact(res.user.name || "");
+        setCurrentUserPhone((res.user as any).phone || "");
+      }
+    });
+  }, []);
 
   const {
     register,
@@ -79,9 +93,9 @@ export default function AddressModal({
     } else {
       reset({
         alias: "",
-        company: "Laurentian Global Logistics Ltd.",
-        contactPerson: "",
-        phone: "",
+        company: currentUserCompany,
+        contactPerson: currentUserContact,
+        phone: currentUserPhone,
         street: "",
         city: "",
         province: "QC",
@@ -91,7 +105,7 @@ export default function AddressModal({
         isDefault: false,
       });
     }
-  }, [initialData, reset, isOpen]);
+  }, [initialData, reset, isOpen, currentUserCompany, currentUserContact, currentUserPhone]);
 
   if (!isOpen) return null;
 
