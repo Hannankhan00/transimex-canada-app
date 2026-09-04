@@ -8,11 +8,12 @@ import { forgotPasswordSchema, ForgotPasswordFormData } from "@/lib/validations/
 import { api } from "@/lib/api";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import TransimexLogo from "@/components/TransimexLogo";
-import { Mail, ArrowRight, CheckCircle2, KeyRound, Globe2, ArrowLeft } from "lucide-react";
+import { Mail, ArrowRight, CheckCircle2, KeyRound, Globe2, ArrowLeft, UserPlus } from "lucide-react";
 
 export default function ForgotPasswordPage() {
   const { t, language, toggleLanguage } = useLanguage();
   const [serverError, setServerError] = useState<string | null>(null);
+  const [noAccount, setNoAccount] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [submittedEmail, setSubmittedEmail] = useState("");
 
@@ -27,6 +28,7 @@ export default function ForgotPasswordPage() {
 
   const onSubmit = async (data: ForgotPasswordFormData) => {
     setServerError(null);
+    setNoAccount(false);
     try {
       const res = await api.auth.forgotPassword(data);
       if (res.success) {
@@ -36,7 +38,11 @@ export default function ForgotPasswordPage() {
         setServerError("Failed to send reset link. Please check the email address.");
       }
     } catch (err: any) {
-      setServerError(err.message || "An unexpected error occurred.");
+      if (err.code === "NO_ACCOUNT") {
+        setNoAccount(true);
+      } else {
+        setServerError(err.message || "An unexpected error occurred.");
+      }
     }
   };
 
@@ -113,6 +119,23 @@ export default function ForgotPasswordPage() {
                 {serverError && (
                   <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 font-medium">
                     {serverError}
+                  </div>
+                )}
+
+                {noAccount && (
+                  <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 animate-in fade-in">
+                    <p className="font-semibold mb-2">
+                      {language === "fr"
+                        ? "Aucun compte n'existe pour cette adresse courriel."
+                        : "You don't have an account with this email."}
+                    </p>
+                    <Link
+                      href="/login?tab=signup"
+                      className="inline-flex items-center gap-1.5 font-bold text-[#0B2545] hover:text-[#d21f27] underline"
+                    >
+                      <UserPlus className="w-3.5 h-3.5" />
+                      <span>{language === "fr" ? "Créer un compte" : "Sign up instead"}</span>
+                    </Link>
                   </div>
                 )}
 

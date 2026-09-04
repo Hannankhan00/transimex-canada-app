@@ -74,7 +74,9 @@ export const api = {
       });
       const result = await res.json();
       if (!res.ok) {
-        throw new Error(result.error || "Failed to process password reset request");
+        const err: any = new Error(result.error || "Failed to process password reset request");
+        err.code = result.code;
+        throw err;
       }
       return result;
     },

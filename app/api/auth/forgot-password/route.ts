@@ -17,32 +17,35 @@ export async function POST(req: Request) {
 
     const emailLower = email.toLowerCase().trim();
 
-    try {
-      await connectDB();
-      const user = await User.findOne({ email: emailLower });
-      if (user) {
-        const resetToken = "tx-" + crypto.randomBytes(20).toString("hex");
-        user.resetToken = resetToken;
-        user.resetTokenExpires = new Date(Date.now() + 3600000); // 1 hour
-        await user.save();
+    await connectDB();
+    const user = await User.findOne({ email: emailLower });
 
-        sendPasswordResetEmail({
-          to: emailLower,
-          name: user.name,
-          token: resetToken,
-        }).catch((emailErr) => {
-          console.error("Failed to send password reset email via SMTP:", emailErr);
-        });
-      }
-    } catch (dbErr) {
-      console.error("Database error during forgot-password:", dbErr);
+    if (!user) {
+      return NextResponse.json(
+        {
+          error: "No account exists for this email address. Please sign up first.",
+          code: "NO_ACCOUNT",
+        },
+        { status: 404 }
+      );
     }
 
-    // Always return the same neutral response, whether or not the account exists,
-    // so this endpoint can't be used to enumerate registered emails.
+    const resetToken = "tx-" + crypto.randomBytes(20).toString("hex");
+    user.resetToken = resetToken;
+    user.resetTokenExpires = new Date(Date.now() + 3600000); // 1 hour
+    await user.save();
+
+    sendPasswordResetEmail({
+      to: emailLower,
+      name: user.name,
+      token: resetToken,
+    }).catch((emailErr) => {
+      console.error("Failed to send password reset email via SMTP:", emailErr);
+    });
+
     return NextResponse.json({
       success: true,
-      message: "If an account exists for this email, a secure password recovery link has been sent to it.",
+      message: "A secure password recovery link has been sent to your email.",
     });
   } catch (err: any) {
     console.error("Forgot password error:", err);
