@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
-import { getUnreadNotificationsCount } from "@/lib/mockData";
 import PortalSidebar from "./PortalSidebar";
 import TopBar from "./TopBar";
 
@@ -26,14 +25,14 @@ export default function PortalShell({ children }: PortalShellProps) {
   useEffect(() => {
     let isMounted = true;
 
-    // Load initial unread count
-    setUnreadCount(getUnreadNotificationsCount());
-
-    const handleNotificationsUpdate = () => {
-      setUnreadCount(getUnreadNotificationsCount());
-    };
-
-    window.addEventListener("transimex_notifications_updated", handleNotificationsUpdate);
+    fetch("/api/notifications")
+      .then((res) => res.json())
+      .then((data) => {
+        if (isMounted && data.success) {
+          setUnreadCount(data.notifications.filter((n: any) => n.unread).length);
+        }
+      })
+      .catch(() => {});
 
     async function loadUser() {
       try {
@@ -60,7 +59,6 @@ export default function PortalShell({ children }: PortalShellProps) {
 
     return () => {
       isMounted = false;
-      window.removeEventListener("transimex_notifications_updated", handleNotificationsUpdate);
     };
   }, [router]);
 

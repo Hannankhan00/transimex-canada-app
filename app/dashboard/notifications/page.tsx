@@ -3,14 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
-import {
-  PortalNotification,
-  NotificationCategory,
-  getStoredNotifications,
-  saveStoredNotifications,
-  markAllNotificationsRead,
-  markNotificationRead,
-} from "@/lib/mockData";
+import { PortalNotification, NotificationCategory } from "@/lib/mockData";
 import {
   Bell,
   CheckCircle2,
@@ -37,16 +30,17 @@ export default function NotificationsPage() {
   const [filter, setFilter] = useState<string>("all");
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  useEffect(() => {
-    setNotifications(getStoredNotifications());
+  const loadNotifications = () => {
+    fetch("/api/notifications")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) setNotifications(data.notifications);
+      })
+      .catch(() => {});
+  };
 
-    const handleUpdate = (e: any) => {
-      if (e.detail) {
-        setNotifications(e.detail);
-      }
-    };
-    window.addEventListener("transimex_notifications_updated", handleUpdate);
-    return () => window.removeEventListener("transimex_notifications_updated", handleUpdate);
+  useEffect(() => {
+    loadNotifications();
   }, []);
 
   const showToast = (msg: string) => {
@@ -54,15 +48,16 @@ export default function NotificationsPage() {
     setTimeout(() => setToastMessage(null), 2500);
   };
 
-  const handleMarkAllRead = () => {
-    const updated = markAllNotificationsRead();
-    setNotifications(updated);
+  const handleMarkAllRead = async () => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, unread: false })));
+    await fetch("/api/notifications", { method: "PATCH" }).catch(() => {});
     showToast(language === "fr" ? "Toutes les alertes sont marquées comme lues" : "All notifications marked as read");
   };
 
   const handleNotificationClick = (notif: PortalNotification) => {
     if (notif.unread) {
-      markNotificationRead(notif.id);
+      setNotifications((prev) => prev.map((n) => (n.id === notif.id ? { ...n, unread: false } : n)));
+      fetch(`/api/notifications/${notif.id}`, { method: "PATCH" }).catch(() => {});
     }
     if (notif.link) {
       router.push(notif.link);
@@ -71,9 +66,8 @@ export default function NotificationsPage() {
 
   const handleDeleteNotification = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
-    const updated = notifications.filter((n) => n.id !== id);
-    setNotifications(updated);
-    saveStoredNotifications(updated);
+    setNotifications((prev) => prev.filter((n) => n.id !== id));
+    fetch(`/api/notifications/${id}`, { method: "DELETE" }).catch(() => {});
     showToast(language === "fr" ? "Notification supprimée" : "Notification removed");
   };
 

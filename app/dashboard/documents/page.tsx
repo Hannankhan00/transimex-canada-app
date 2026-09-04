@@ -1,13 +1,17 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
-import {
-  VaultDocument,
-  DocumentType,
-  getClientVisibleDocuments,
-} from "@/lib/mockData";
+interface PortalDocumentItem {
+  id: string;
+  name: string;
+  type: string;
+  shipmentId: string;
+  dateUploaded: string;
+  statusText: string;
+  customsPars?: string;
+}
 import {
   FolderOpen,
   FileText,
@@ -29,11 +33,15 @@ export default function DocumentsPage() {
   const [searchShipmentId, setSearchShipmentId] = useState("");
   const [selectedType, setSelectedType] = useState<string>("All");
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [clientVisibleDocs, setClientVisibleDocs] = useState<PortalDocumentItem[]>([]);
 
-  // CRITICAL SECURITY ENFORCEMENT:
-  // Only documents with isClientVisible: true are queried and rendered.
-  const clientVisibleDocs = useMemo(() => {
-    return getClientVisibleDocuments();
+  useEffect(() => {
+    fetch("/api/documents")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) setClientVisibleDocs(data.documents);
+      })
+      .catch(() => {});
   }, []);
 
   const filteredDocs = clientVisibleDocs.filter((doc) => {
@@ -56,13 +64,12 @@ export default function DocumentsPage() {
     return true;
   });
 
-  // Client-side PDF file download simulator that triggers authentic browser file download
-  const handleDownloadPdf = (doc: VaultDocument) => {
+  const handleDownloadPdf = async (doc: PortalDocumentItem) => {
     setDownloadingId(doc.id);
-
     try {
-      const fileContent = `%PDF-1.4\n% Transimex Canada Logistics Official Shipping Document\n% Document ID: ${doc.id}\n% Shipment ID: ${doc.shipmentId}\n% Document Type: ${doc.type}\n% Date: ${doc.dateUploaded}\n% Verification: ${doc.statusText}\n% Certified under Canadian Freight & Customs Regulations.\n%%EOF`;
-      const blob = new Blob([fileContent], { type: "application/pdf" });
+      const res = await fetch(`/api/documents/${doc.id}/download`);
+      if (!res.ok) throw new Error("Download failed");
+      const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -74,7 +81,7 @@ export default function DocumentsPage() {
     } catch (err) {
       console.error("Download error:", err);
     } finally {
-      setTimeout(() => setDownloadingId(null), 600);
+      setDownloadingId(null);
     }
   };
 
@@ -200,7 +207,7 @@ export default function DocumentsPage() {
                                 {doc.name}
                               </div>
                               <div className="text-[11px] text-slate-400 font-mono">
-                                {doc.id} &bull; {doc.size}
+                                {doc.dateUploaded}
                               </div>
                             </div>
                           </div>
@@ -279,7 +286,7 @@ export default function DocumentsPage() {
                         {doc.name}
                       </div>
                       <div className="text-[10px] text-slate-400 font-mono mt-0.5">
-                        {doc.id} &bull; {doc.size} &bull; {doc.dateUploaded}
+                        {doc.dateUploaded}
                       </div>
                     </div>
                   </div>

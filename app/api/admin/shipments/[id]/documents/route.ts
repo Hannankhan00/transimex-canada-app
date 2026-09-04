@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
-import { VaultDocument, addDocumentToStore, getStoredDocuments } from "@/lib/mockData";
+import connectDB from "@/lib/mongoose";
+import Shipment from "@/models/Shipment";
+import PortalDocument from "@/models/PortalDocument";
 
 export async function GET(
   req: Request,
@@ -7,15 +9,12 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const allDocs = getStoredDocuments();
-    // Filter docs for this shipment (or generic docs if matching)
-    const shipmentDocs = allDocs.filter(
-      (d) => d.shipmentId.toLowerCase() === id.toLowerCase()
-    );
+    await connectDB();
+    const documents = await PortalDocument.find({ shipmentId: id }).sort({ createdAt: -1 }).lean();
 
     return NextResponse.json({
       success: true,
-      documents: shipmentDocs,
+      documents: documents.map((d: any) => ({ ...d, id: d._id.toString() })),
     });
   } catch (error: any) {
     console.error("Error fetching shipment documents:", error);
@@ -33,7 +32,7 @@ export async function POST(
   try {
     const { id } = await params;
     const body = await req.json();
-    const { name, type, size, isClientVisible, statusText, downloadUrl, customsPars } = body;
+    const { name, type, isClientVisible, statusText, customsPars } = body;
 
     if (!name || !type) {
       return NextResponse.json(
@@ -42,34 +41,26 @@ export async function POST(
       );
     }
 
-    const docId = `DOC-${Math.floor(10000 + Math.random() * 90000)}`;
-    const now = new Date();
-    const formattedDate = now.toLocaleDateString("en-US", {
-      month: "short",
-      day: "2-digit",
-      year: "numeric",
-    });
+    await connectDB();
+    const shipment = await Shipment.findOne({ trackingNumber: id });
+    if (!shipment) {
+      return NextResponse.json({ error: "Shipment not found" }, { status: 404 });
+    }
 
-    const newDoc: VaultDocument = {
-      id: docId,
+    const doc = await PortalDocument.create({
+      userId: shipment.client?.userId || "",
+      shipmentId: id,
       name,
       type,
-      shipmentId: id,
-      dateUploaded: formattedDate,
-      size: size || "250 KB",
-      isClientVisible: isClientVisible === true, // Default to false (strictly internal)
-      fileFormat: "PDF",
-      downloadUrl: downloadUrl || "",
+      isClientVisible: isClientVisible === true,
       statusText: statusText || "Staff Uploaded - Broker Verified",
-      ...(customsPars && { customsPars }),
-    };
-
-    addDocumentToStore(newDoc);
+      customsPars: customsPars || "",
+    });
 
     return NextResponse.json({
       success: true,
       message: `Document ${name} successfully registered to shipment ${id}`,
-      document: newDoc,
+      document: { ...doc.toObject(), id: doc._id.toString() },
     });
   } catch (error: any) {
     console.error("Error uploading shipment document:", error);

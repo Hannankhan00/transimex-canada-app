@@ -6,11 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { quoteRequestSchema, QuoteRequestFormData } from "@/lib/validations/quote";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { api } from "@/lib/api";
-import {
-  QuoteItem,
-  addQuoteToStore,
-  getStoredAddresses,
-} from "@/lib/mockData";
+import { QuoteItem } from "@/lib/mockData";
 import { SavedAddress } from "@/lib/validations/address";
 import {
   X,
@@ -54,7 +50,6 @@ export default function NewQuoteModal({
   onQuoteCreated,
 }: NewQuoteModalProps) {
   const { language } = useLanguage();
-  const [currentUser, setCurrentUser] = useState<any>(null);
   const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [createdQuote, setCreatedQuote] = useState<QuoteItem | null>(null);
@@ -64,29 +59,28 @@ export default function NewQuoteModal({
     handleSubmit,
     setValue,
     watch,
-    reset,
     formState: { errors },
   } = useForm<QuoteRequestFormData>({
     resolver: zodResolver(quoteRequestSchema) as any,
     defaultValues: {
-      originCity: "Montreal",
-      originProvince: "QC",
-      originPostal: "H4E 4N4",
-      destinationCity: "Detroit",
-      destinationProvince: "MI",
-      destinationPostal: "48214",
+      originCity: "",
+      originProvince: "",
+      originPostal: "",
+      destinationCity: "",
+      destinationProvince: "",
+      destinationPostal: "",
       transportMode: "53' Dry Van",
-      weightLbs: "38500",
-      palletCount: "22",
+      weightLbs: "",
+      palletCount: "",
       pickupDate: new Date(Date.now() + 86400000 * 2).toISOString().split("T")[0],
-      commodityType: "Commercial Palletized Freight",
+      commodityType: "",
       temperatureControlled: false,
       hazmat: false,
       specialInstructions: "",
-      contactName: "Marc Tremblay",
-      contactEmail: "dispatch@laurentianglobal.ca",
-      contactPhone: "+1 (514) 555-0199",
-      companyName: "Laurentian Global Logistics Ltd.",
+      contactName: "",
+      contactEmail: "",
+      contactPhone: "",
+      companyName: "",
     },
   });
 
@@ -103,19 +97,26 @@ export default function NewQuoteModal({
       async function loadInfo() {
         const me = await api.auth.me();
         if (me?.user) {
-          setCurrentUser(me.user);
           if (me.user.name) setValue("contactName", me.user.name);
           if (me.user.email) setValue("contactEmail", me.user.email);
           if (me.user.companyName) setValue("companyName", me.user.companyName);
           if (me.user.phone) setValue("contactPhone", me.user.phone);
         }
-        const addrs = getStoredAddresses();
-        setSavedAddresses(addrs);
-        const defaultAddr = addrs.find((a) => a.isDefault);
-        if (defaultAddr) {
-          setValue("originCity", defaultAddr.city);
-          setValue("originProvince", defaultAddr.province);
-          setValue("originPostal", defaultAddr.postalCode);
+        try {
+          const addrRes = await fetch("/api/addresses");
+          if (addrRes.ok) {
+            const addrData = await addrRes.json();
+            const addrs: SavedAddress[] = addrData.addresses || [];
+            setSavedAddresses(addrs);
+            const defaultAddr = addrs.find((a) => a.isDefault);
+            if (defaultAddr) {
+              setValue("originCity", defaultAddr.city);
+              setValue("originProvince", defaultAddr.province);
+              setValue("originPostal", defaultAddr.postalCode);
+            }
+          }
+        } catch {
+          // Address book is optional; ignore fetch failures here.
         }
       }
       loadInfo();
@@ -142,35 +143,26 @@ export default function NewQuoteModal({
 
   const onSubmit = async (data: QuoteRequestFormData) => {
     setIsSubmitting(true);
-
-    const generatedId = `QT-2026-${Math.floor(10000 + Math.random() * 90000)}`;
-
-    const newQuote: QuoteItem = {
-      id: generatedId,
-      origin: `${data.originCity} (${data.originProvince})`,
-      originDetail: `${data.originCity}, ${data.originProvince} ${data.originPostal}`,
-      destination: `${data.destinationCity} (${data.destinationProvince})`,
-      destinationDetail: `${data.destinationCity}, ${data.destinationProvince} ${data.destinationPostal}`,
-      transportMode: data.transportMode,
-      equipment: data.transportMode,
-      weight: `${Number(data.weightLbs).toLocaleString()} lbs`,
-      palletCount: data.palletCount ? parseInt(data.palletCount, 10) : undefined,
-      commodity: data.commodityType,
-      submittedDate: "Just now",
-      validUntil: "7 Days from Dispatch",
-      status: "under_review",
-      statusLabelEn: "Under Review",
-      statusLabelFr: "En Révision",
-      priceCad: "Pending Dispatch Calculation",
-      adminNotes: "New quote request received from client portal. Transimex freight coordinator assigned for rate review.",
-    };
-
-    addQuoteToStore(newQuote);
-    if (onQuoteCreated) {
-      onQuoteCreated(newQuote);
+    try {
+      const res = await fetch("/api/quotes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      const result = await res.json();
+      if (!res.ok) {
+        throw new Error(result.error || "Failed to submit quote request");
+      }
+      const newQuote: QuoteItem = result.quote;
+      if (onQuoteCreated) {
+        onQuoteCreated(newQuote);
+      }
+      setCreatedQuote(newQuote);
+    } catch (err: any) {
+      alert(err.message || "Failed to submit quote request");
+    } finally {
+      setIsSubmitting(false);
     }
-    setCreatedQuote(newQuote);
-    setIsSubmitting(false);
   };
 
   if (!isOpen) return null;

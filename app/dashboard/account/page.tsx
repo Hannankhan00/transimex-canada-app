@@ -11,11 +11,15 @@ import {
 } from "@/lib/validations/profile";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { api } from "@/lib/api";
-import {
-  EmailPreferences,
-  getStoredPreferences,
-  saveStoredPreferences,
-} from "@/lib/mockData";
+import { EmailPreferences } from "@/lib/mockData";
+
+const DEFAULT_PREFERENCES: EmailPreferences = {
+  emailShipmentUpdates: true,
+  emailCustomsHolds: true,
+  emailNewDocuments: true,
+  emailRateAlerts: false,
+  smsUrgentAlerts: true,
+};
 import {
   Settings,
   Building2,
@@ -37,7 +41,7 @@ import {
 export default function AccountSettingsPage() {
   const { t, language, setLanguage } = useLanguage();
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [preferences, setPreferences] = useState<EmailPreferences>(getStoredPreferences());
+  const [preferences, setPreferences] = useState<EmailPreferences>(DEFAULT_PREFERENCES);
   const [currentUser, setCurrentUser] = useState<any>({
     name: "",
     email: "",
@@ -87,13 +91,13 @@ export default function AccountSettingsPage() {
           name: res.user.name || "",
           email: res.user.email || "",
           companyName: res.user.companyName || "",
-          phone: res.user.phone || "",
-          industry: res.user.industry || "",
-          city: res.user.city || "",
-          province: res.user.province || "",
-          jobTitle: (res.user as any).jobTitle || "Logistics Coordinator",
-          department: (res.user as any).department || "Supply Chain Operations",
-          clientCode: (res.user as any).clientCode || `TMX-${(res.user.userId || "CORP").slice(-4).toUpperCase()}`,
+          phone: (res.user as any).phone || "",
+          industry: (res.user as any).industry || "",
+          city: (res.user as any).city || "",
+          province: (res.user as any).province || "",
+          jobTitle: (res.user as any).jobTitle || "",
+          department: (res.user as any).department || "",
+          clientCode: `TMX-${(res.user.userId || "CORP").slice(-4).toUpperCase()}`,
         };
         setCurrentUser(userObj);
         resetProfile({
@@ -104,7 +108,13 @@ export default function AccountSettingsPage() {
         });
       }
     });
-    setPreferences(getStoredPreferences());
+
+    fetch("/api/account/preferences")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) setPreferences(data.preferences);
+      })
+      .catch(() => {});
   }, [resetProfile]);
 
   const showToast = (msg: string) => {
@@ -112,46 +122,70 @@ export default function AccountSettingsPage() {
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  const handleProfileSubmit = (data: ProfileUpdateFormData) => {
-    const updated = {
-      ...currentUser,
-      name: data.name,
-      phone: data.phone,
-      jobTitle: data.jobTitle,
-      department: data.department,
-    };
-    setCurrentUser(updated);
-    if (typeof window !== "undefined") {
-      localStorage.setItem("transimex_user", JSON.stringify(updated));
+  const handleProfileSubmit = async (data: ProfileUpdateFormData) => {
+    try {
+      const res = await fetch("/api/account/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || "Failed to update profile");
+
+      setCurrentUser((prev: any) => ({ ...prev, ...data }));
+      showToast(
+        language === "fr"
+          ? "Profil corporatif mis à jour avec succès."
+          : "Corporate profile information successfully updated."
+      );
+    } catch (err: any) {
+      showToast(err.message || "Failed to update profile");
     }
-    showToast(
-      language === "fr"
-        ? "Profil corporatif mis à jour avec succès."
-        : "Corporate profile information successfully updated."
-    );
   };
 
-  const handlePasswordSubmit = (data: PasswordChangeFormData) => {
-    resetPassword();
-    showToast(
-      language === "fr"
-        ? "Mot de passe sécurisé mis à jour."
-        : "Security password updated successfully."
-    );
+  const handlePasswordSubmit = async (data: PasswordChangeFormData) => {
+    try {
+      const res = await fetch("/api/account/password", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || "Failed to update password");
+
+      resetPassword();
+      showToast(
+        language === "fr"
+          ? "Mot de passe sécurisé mis à jour."
+          : "Security password updated successfully."
+      );
+    } catch (err: any) {
+      showToast(err.message || "Failed to update password");
+    }
   };
 
-  const handleTogglePreference = (key: keyof EmailPreferences) => {
+  const handleTogglePreference = async (key: keyof EmailPreferences) => {
     const updated = {
       ...preferences,
       [key]: !preferences[key],
     };
     setPreferences(updated);
-    saveStoredPreferences(updated);
-    showToast(
-      language === "fr"
-        ? "Préférences de notification enregistrées."
-        : "Notification preferences updated."
-    );
+    try {
+      const res = await fetch("/api/account/preferences", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ [key]: updated[key] }),
+      });
+      if (!res.ok) throw new Error("Failed to update preferences");
+      showToast(
+        language === "fr"
+          ? "Préférences de notification enregistrées."
+          : "Notification preferences updated."
+      );
+    } catch {
+      setPreferences(preferences);
+      showToast("Failed to update notification preferences");
+    }
   };
 
   return (

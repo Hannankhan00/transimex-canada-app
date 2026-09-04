@@ -18,7 +18,7 @@ export interface ISupportTicket extends Document {
   };
   subject: string;
   shipmentId?: string;
-  priority: "Urgent" | "High" | "Normal";
+  priority: "Low" | "Medium" | "High" | "Critical Dispatch Emergency" | "Urgent" | "Normal";
   status: "Open" | "In Progress" | "Resolved";
   category: string;
   messages: ISupportMessage[];
@@ -51,7 +51,7 @@ const SupportTicketSchema = new Schema<ISupportTicket>(
     shipmentId: { type: String, default: "" },
     priority: {
       type: String,
-      enum: ["Urgent", "High", "Normal"],
+      enum: ["Low", "Medium", "High", "Critical Dispatch Emergency", "Urgent", "Normal"],
       default: "Normal",
     },
     status: {

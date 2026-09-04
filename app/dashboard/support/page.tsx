@@ -11,12 +11,8 @@ import {
   ticketPrioritiesEnum,
 } from "@/lib/validations/support";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
-import {
-  SupportTicket,
-  getStoredTickets,
-  addSupportTicket,
-  saveStoredTickets,
-} from "@/lib/mockData";
+import { SupportTicket } from "@/lib/mockData";
+import { api } from "@/lib/api";
 import {
   HelpCircle,
   MessageSquare,
@@ -38,16 +34,15 @@ import {
   FileText,
 } from "lucide-react";
 
-const ACTIVE_SHIPMENTS = [
-  { id: "TMX-00847", label: "TMX-00847 - Montreal (QC) → Toronto (ON) [In Transit]" },
-  { id: "TMX-00842", label: "TMX-00842 - Quebec City (QC) → Detroit (MI) [In Transit]" },
-  { id: "TMX-00839", label: "TMX-00839 - Dorval (QC) → Calgary (AB) [Customs Hold]" },
-  { id: "TMX-00810", label: "TMX-00810 - Ottawa (ON) → Montreal Berth 42 (QC) [Delivered]" },
-];
+interface ActiveShipmentOption {
+  id: string;
+  label: string;
+}
 
 export default function SupportPage() {
   const { t, language } = useLanguage();
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
+  const [activeShipments, setActiveShipments] = useState<ActiveShipmentOption[]>([]);
   const [activeTab, setActiveTab] = useState<"form" | "history">("form");
   const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
   const [replyMessage, setReplyMessage] = useState("");
@@ -71,7 +66,26 @@ export default function SupportPage() {
   });
 
   useEffect(() => {
-    setTickets(getStoredTickets());
+    fetch("/api/support")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) setTickets(data.tickets);
+      })
+      .catch(() => {});
+
+    fetch("/api/shipments")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          setActiveShipments(
+            data.shipments.map((s: any) => ({
+              id: s.id,
+              label: `${s.id} - ${s.origin} → ${s.destination} [${s.statusLabel}]`,
+            }))
+          );
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const showToast = (msg: string) => {
@@ -79,91 +93,54 @@ export default function SupportPage() {
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  const onSubmit = (data: SupportTicketFormData) => {
-    const newTicketId = `TKT-2026-${Math.floor(1000 + Math.random() * 9000)}`;
-    const newTicket: SupportTicket = {
-      id: newTicketId,
-      ticketId: newTicketId,
-      client: {
-        name: "Marc Tremblay",
-        companyName: "Laurentian Global Logistics Ltd.",
-        email: "dispatch@laurentianglobal.ca",
-      },
-      subject: data.subject,
-      category: data.category,
-      linkedShipmentId: data.linkedShipmentId || undefined,
-      shipmentId: data.linkedShipmentId || undefined,
-      priority: data.priority,
-      message: data.message,
-      status: "Open",
-      statusFr: "Ouvert",
-      createdAt: "Just now",
-      updatedAt: "Just now",
-      assignedAgent: "Transimex Dispatch Support Desk",
-      messages: [
-        {
-          id: `MSG-${Date.now()}`,
-          sender: "client",
-          senderName: "Marc Tremblay",
-          message: data.message,
-          timestamp: "Just now",
-        },
-      ],
-      responses: [
-        {
-          id: `R-${Date.now()}`,
-          sender: "Client (You)",
-          role: "client",
-          message: data.message,
-          time: "Just now",
-        },
-      ],
-    };
+  const onSubmit = async (data: SupportTicketFormData) => {
+    try {
+      const res = await fetch("/api/support", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || "Failed to submit ticket");
 
-    addSupportTicket(newTicket);
-    setTickets((prev) => [newTicket, ...prev]);
-    reset();
-    showToast(
-      language === "fr"
-        ? `Billet ${newTicketId} ouvert. Un répartiteur a été notifié.`
-        : `Support ticket ${newTicketId} opened. Dedicated dispatch agent assigned.`
-    );
-    setActiveTab("history");
+      setTickets((prev) => [result.ticket, ...prev]);
+      reset();
+      showToast(
+        language === "fr"
+          ? `Billet ${result.ticket.id} ouvert. Un répartiteur a été notifié.`
+          : `Support ticket ${result.ticket.id} opened. Dedicated dispatch agent assigned.`
+      );
+      setActiveTab("history");
+    } catch (err: any) {
+      showToast(err.message || "Failed to submit support ticket");
+    }
   };
 
-  const handleSendReply = () => {
+  const handleSendReply = async () => {
     if (!selectedTicket || !replyMessage.trim()) return;
     setSubmittingReply(true);
+    try {
+      const res = await fetch(`/api/support/${selectedTicket.id}/reply`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: replyMessage.trim() }),
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || "Failed to send reply");
 
-    const newReply = {
-      id: `R-${Date.now()}`,
-      sender: "Client (You)",
-      role: "client" as const,
-      message: replyMessage.trim(),
-      time: "Just now",
-    };
-
-    const updated = tickets.map((t) => {
-      if (t.id === selectedTicket.id) {
-        return {
-          ...t,
-          updatedAt: "Just now",
-          responses: [...(t.responses || []), newReply],
-        };
+      const refreshed = await fetch("/api/support").then((r) => r.json());
+      if (refreshed.success) {
+        setTickets(refreshed.tickets);
+        const updatedTicket = refreshed.tickets.find((t: SupportTicket) => t.id === selectedTicket.id);
+        if (updatedTicket) setSelectedTicket(updatedTicket);
       }
-      return t;
-    });
-
-    setTickets(updated);
-    saveStoredTickets(updated);
-    setSelectedTicket({
-      ...selectedTicket,
-      updatedAt: "Just now",
-      responses: [...(selectedTicket.responses || []), newReply],
-    });
-    setReplyMessage("");
-    setSubmittingReply(false);
-    showToast(language === "fr" ? "Message envoyé au répartiteur" : "Response sent to Transimex dispatch");
+      setReplyMessage("");
+      showToast(language === "fr" ? "Message envoyé au répartiteur" : "Response sent to Transimex dispatch");
+    } catch (err: any) {
+      showToast(err.message || "Failed to send reply");
+    } finally {
+      setSubmittingReply(false);
+    }
   };
 
   return (
@@ -320,7 +297,7 @@ export default function SupportPage() {
                     className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#0B2545] rounded-xl text-xs font-medium text-slate-800 outline-none transition cursor-pointer font-mono"
                   >
                     <option value="">-- No specific shipment (General Account Inquiry) --</option>
-                    {ACTIVE_SHIPMENTS.map((ship) => (
+                    {activeShipments.map((ship) => (
                       <option key={ship.id} value={ship.id}>
                         {ship.label}
                       </option>

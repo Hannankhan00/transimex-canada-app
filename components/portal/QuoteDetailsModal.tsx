@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { QuoteItem } from "@/lib/mockData";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
@@ -32,6 +32,7 @@ export default function QuoteDetailsModal({
 }: QuoteDetailsModalProps) {
   const router = useRouter();
   const { language } = useLanguage();
+  const [expediting, setExpediting] = useState(false);
 
   if (!isOpen || !quote) return null;
 
@@ -93,7 +94,7 @@ export default function QuoteDetailsModal({
                 </span>
               </div>
               <p className="text-red-800 leading-relaxed pl-6 font-medium">
-                {quote.rejectionReason || "Quote could not be accommodated due to equipment constraints."}
+                {quote.rejectionReason || "No reason was provided."}
               </p>
             </div>
           )}
@@ -240,13 +241,37 @@ export default function QuoteDetailsModal({
             {isPending && (
               <button
                 type="button"
-                onClick={() => {
-                  alert(`Quote request ${quote.id} priority alert sent to dispatch.`);
-                  onClose();
+                disabled={expediting}
+                onClick={async () => {
+                  setExpediting(true);
+                  try {
+                    await fetch("/api/support", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        subject: `Priority expedite request for quote ${quote.id}`,
+                        category: "General Logistics Inquiry",
+                        linkedShipmentId: "",
+                        priority: "High",
+                        message: `Please expedite pricing review for freight quote ${quote.id} (${quote.origin} → ${quote.destination}).`,
+                      }),
+                    });
+                    onClose();
+                  } catch {
+                    // Non-critical: user can retry from the Support page.
+                  } finally {
+                    setExpediting(false);
+                  }
                 }}
-                className="px-4 py-2 bg-[#d21f27] hover:bg-[#b51a21] text-white text-xs font-bold rounded-xl shadow-xs transition cursor-pointer"
+                className="px-4 py-2 bg-[#d21f27] hover:bg-[#b51a21] text-white text-xs font-bold rounded-xl shadow-xs transition cursor-pointer disabled:opacity-60"
               >
-                {language === "fr" ? "Accélérer la Réponse" : "Expedite Quote"}
+                {expediting
+                  ? language === "fr"
+                    ? "Envoi..."
+                    : "Sending..."
+                  : language === "fr"
+                  ? "Accélérer la Réponse"
+                  : "Expedite Quote"}
               </button>
             )}
           </div>

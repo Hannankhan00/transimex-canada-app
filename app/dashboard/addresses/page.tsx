@@ -6,10 +6,6 @@ import {
   SavedAddress,
   AddressFormData,
 } from "@/lib/validations/address";
-import {
-  getStoredAddresses,
-  saveStoredAddresses,
-} from "@/lib/mockData";
 import AddressModal from "@/components/portal/AddressModal";
 import {
   MapPin,
@@ -37,8 +33,17 @@ export default function AddressesPage() {
   const [search, setSearch] = useState("");
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
+  const loadAddresses = () => {
+    fetch("/api/addresses")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) setAddresses(data.addresses);
+      })
+      .catch(() => {});
+  };
+
   useEffect(() => {
-    setAddresses(getStoredAddresses());
+    loadAddresses();
   }, []);
 
   const showToast = (msg: string) => {
@@ -48,61 +53,61 @@ export default function AddressesPage() {
     }, 3000);
   };
 
-  const handleSaveAddress = (data: AddressFormData, editId?: string) => {
-    let updated: SavedAddress[];
-
-    if (editId) {
-      // Edit existing
-      updated = addresses.map((addr) => {
-        if (addr.id === editId) {
-          return {
-            ...addr,
-            ...data,
-          };
-        }
-        // If the edited one is marked as default, unset others
-        if (data.isDefault) {
-          return { ...addr, isDefault: false };
-        }
-        return addr;
+  const handleSaveAddress = async (data: AddressFormData, editId?: string) => {
+    try {
+      const res = await fetch(editId ? `/api/addresses/${editId}` : "/api/addresses", {
+        method: editId ? "PATCH" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
       });
-      showToast(language === "fr" ? "Emplacement mis à jour avec succès" : "Address updated successfully");
-    } else {
-      // Create new
-      const newAddress: SavedAddress = {
-        id: `ADDR-${Date.now().toString().slice(-4)}`,
-        ...data,
-        createdAt: new Date().toISOString(),
-      };
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || "Failed to save address");
 
-      if (data.isDefault) {
-        updated = [newAddress, ...addresses.map((a) => ({ ...a, isDefault: false }))];
-      } else {
-        updated = [newAddress, ...addresses];
-      }
-      showToast(language === "fr" ? "Nouvel emplacement ajouté" : "New address location added to vault");
+      loadAddresses();
+      showToast(
+        editId
+          ? language === "fr"
+            ? "Emplacement mis à jour avec succès"
+            : "Address updated successfully"
+          : language === "fr"
+          ? "Nouvel emplacement ajouté"
+          : "New address location added to vault"
+      );
+    } catch (err: any) {
+      showToast(err.message || "Failed to save address");
     }
-
-    setAddresses(updated);
-    saveStoredAddresses(updated);
   };
 
-  const handleDelete = (id: string) => {
-    const updated = addresses.filter((a) => a.id !== id);
-    setAddresses(updated);
-    saveStoredAddresses(updated);
-    setDeleteConfirmId(null);
-    showToast(language === "fr" ? "Emplacement supprimé" : "Address removed from directory");
+  const handleDelete = async (id: string) => {
+    try {
+      const res = await fetch(`/api/addresses/${id}`, { method: "DELETE" });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || "Failed to delete address");
+
+      loadAddresses();
+      showToast(language === "fr" ? "Emplacement supprimé" : "Address removed from directory");
+    } catch (err: any) {
+      showToast(err.message || "Failed to delete address");
+    } finally {
+      setDeleteConfirmId(null);
+    }
   };
 
-  const handleSetDefault = (id: string) => {
-    const updated = addresses.map((a) => ({
-      ...a,
-      isDefault: a.id === id,
-    }));
-    setAddresses(updated);
-    saveStoredAddresses(updated);
-    showToast(language === "fr" ? "Adresse principale mise à jour" : "Primary default shipping address set");
+  const handleSetDefault = async (id: string) => {
+    try {
+      const res = await fetch(`/api/addresses/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isDefault: true }),
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || "Failed to update address");
+
+      loadAddresses();
+      showToast(language === "fr" ? "Adresse principale mise à jour" : "Primary default shipping address set");
+    } catch (err: any) {
+      showToast(err.message || "Failed to update address");
+    }
   };
 
   const filteredAddresses = addresses.filter((a) => {

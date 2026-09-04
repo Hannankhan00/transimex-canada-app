@@ -1,80 +1,44 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import {
   Truck,
   Search,
-  Filter,
-  ArrowUpRight,
   MapPin,
-  Calendar,
-  CheckCircle2,
-  Clock,
-  AlertCircle,
-  FileText,
   Download,
+  PackageOpen,
 } from "lucide-react";
+
+interface ShipmentListItem {
+  id: string;
+  origin: string;
+  destination: string;
+  equipment: string;
+  driver: string;
+  status: string;
+  statusLabel: string;
+  date: string;
+  eta: string;
+  progress: number;
+}
 
 export default function ShipmentsPage() {
   const { t, language } = useLanguage();
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
+  const [shipments, setShipments] = useState<ShipmentListItem[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const shipments = [
-    {
-      id: "TMX-00847",
-      origin: "Montreal Hub, QC",
-      destination: "Toronto Distribution Center, ON",
-      equipment: "53' Dry Van",
-      driver: "Jean D. (Unit #402)",
-      status: "in_transit",
-      statusLabel: language === "fr" ? "En Transit" : "In Transit",
-      date: "Today, 08:30 AM",
-      eta: "Today, 04:15 PM",
-      progress: 68,
-      bol: "BOL-994821",
-    },
-    {
-      id: "TMX-00842",
-      origin: "Quebec City Port, QC",
-      destination: "Detroit Corridor Hub, MI",
-      equipment: "Refrigerated Reefer (-18°C)",
-      driver: "Marc V. (Unit #118)",
-      status: "in_transit",
-      statusLabel: language === "fr" ? "En Transit" : "In Transit",
-      date: "Yesterday",
-      eta: "Tomorrow, 09:00 AM",
-      progress: 42,
-      bol: "BOL-994815",
-    },
-    {
-      id: "TMX-00839",
-      origin: "Dorval Terminal, QC",
-      destination: "Calgary Logistics Center, AB",
-      equipment: "Intermodal Rail",
-      driver: "Canadian Pacific Rail Line",
-      status: "customs",
-      statusLabel: language === "fr" ? "Dédouanement" : "CBSA Customs Inspection",
-      date: "Sep 01, 2026",
-      eta: "Sep 04, 2026",
-      progress: 25,
-      bol: "BOL-994801",
-    },
-    {
-      id: "TMX-00810",
-      origin: "Ottawa Valley Hub, ON",
-      destination: "Montreal Port Berth 42, QC",
-      equipment: "53' Flatbed Heavy",
-      driver: "Robert L. (Unit #509)",
-      status: "delivered",
-      statusLabel: language === "fr" ? "Livré" : "Delivered",
-      date: "Aug 30, 2026",
-      eta: "Delivered",
-      progress: 100,
-      bol: "BOL-994760",
-    },
-  ];
+  useEffect(() => {
+    fetch("/api/shipments")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) setShipments(data.shipments);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
 
   const filteredShipments = shipments.filter((s) => {
     if (filter !== "all" && s.status !== filter) return false;
@@ -171,7 +135,6 @@ export default function ShipmentsPage() {
                 >
                   {shipment.statusLabel}
                 </span>
-                <span className="text-[11px] text-slate-400 font-medium">BOL: {shipment.bol}</span>
               </div>
 
               <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 text-xs text-slate-700">
@@ -204,23 +167,33 @@ export default function ShipmentsPage() {
               </div>
             </div>
 
-            {/* Right: Driver & Actions */}
+            {/* Right: Driver Info */}
             <div className="flex items-center justify-between lg:justify-end gap-3 pt-3 lg:pt-0 border-t lg:border-t-0 border-slate-100">
               <div className="text-left sm:text-right text-xs">
                 <div className="font-semibold text-slate-900">{shipment.driver}</div>
                 <div className="text-[11px] text-slate-400">{shipment.date}</div>
               </div>
-              <button
-                type="button"
-                onClick={() => alert(`Showing telemetry details for ${shipment.id}`)}
-                className="px-3.5 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-bold rounded-xl transition cursor-pointer flex items-center gap-1"
-              >
-                <span>Details</span>
-                <ArrowUpRight className="w-3.5 h-3.5" />
-              </button>
             </div>
           </div>
         ))}
+
+        {!loading && filteredShipments.length === 0 && (
+          <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center space-y-3">
+            <PackageOpen className="w-10 h-10 text-slate-300 mx-auto" />
+            <h4 className="text-sm font-bold text-slate-700">
+              {language === "fr" ? "Aucune expédition trouvée" : "No Shipments Found"}
+            </h4>
+            <p className="text-xs text-slate-500 max-w-sm mx-auto">
+              {shipments.length === 0
+                ? language === "fr"
+                  ? "Vos expéditions apparaîtront ici une fois une soumission acceptée."
+                  : "Your shipments will appear here once a freight quote is accepted."
+                : language === "fr"
+                ? "Aucune expédition ne correspond à vos filtres."
+                : "No shipments match your current filter or search."}
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -19,6 +19,15 @@ export interface IUser extends Document {
   verificationTokenExpires?: Date;
   resetToken?: string;
   resetTokenExpires?: Date;
+  jobTitle?: string;
+  department?: string;
+  emailPreferences?: {
+    emailShipmentUpdates: boolean;
+    emailCustomsHolds: boolean;
+    emailNewDocuments: boolean;
+    emailRateAlerts: boolean;
+    smsUrgentAlerts: boolean;
+  };
   createdAt: Date;
   updatedAt: Date;
 }
@@ -102,6 +111,21 @@ const UserSchema = new Schema<IUser>(
     },
     resetTokenExpires: {
       type: Date,
+    },
+    jobTitle: {
+      type: String,
+      default: "",
+    },
+    department: {
+      type: String,
+      default: "",
+    },
+    emailPreferences: {
+      emailShipmentUpdates: { type: Boolean, default: true },
+      emailCustomsHolds: { type: Boolean, default: true },
+      emailNewDocuments: { type: Boolean, default: true },
+      emailRateAlerts: { type: Boolean, default: false },
+      smsUrgentAlerts: { type: Boolean, default: true },
     },
   },
   {

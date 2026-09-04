@@ -4,7 +4,7 @@ import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
-import { QuoteItem, getStoredQuotes, QuoteStatus } from "@/lib/mockData";
+import { QuoteItem } from "@/lib/mockData";
 import QuoteDetailsModal from "@/components/portal/QuoteDetailsModal";
 import NewQuoteModal from "@/components/portal/NewQuoteModal";
 import {
@@ -39,7 +39,12 @@ function QuotesContent() {
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-    setQuotes(getStoredQuotes());
+    fetch("/api/quotes")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) setQuotes(data.quotes);
+      })
+      .catch(() => {});
     if (searchParams.get("action") === "new" || searchParams.get("new") === "true") {
       setNewQuoteModalOpen(true);
     }

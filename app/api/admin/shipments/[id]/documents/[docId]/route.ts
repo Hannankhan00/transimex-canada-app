@@ -1,38 +1,29 @@
 import { NextResponse } from "next/server";
-import { toggleDocumentVisibility, getStoredDocuments, saveStoredDocuments } from "@/lib/mockData";
+import connectDB from "@/lib/mongoose";
+import PortalDocument from "@/models/PortalDocument";
 
 export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string; docId: string }> }
 ) {
   try {
-    const { id, docId } = await params;
+    const { docId } = await params;
     const body = await req.json().catch(() => ({}));
     const { isClientVisible } = body;
 
-    const allDocs = getStoredDocuments();
-    const index = allDocs.findIndex((d) => d.id === docId);
-
-    if (index === -1) {
+    await connectDB();
+    const doc = await PortalDocument.findById(docId);
+    if (!doc) {
       return NextResponse.json({ error: "Document not found" }, { status: 404 });
     }
 
-    const newVisibility =
-      typeof isClientVisible === "boolean"
-        ? isClientVisible
-        : !allDocs[index].isClientVisible;
-
-    allDocs[index] = {
-      ...allDocs[index],
-      isClientVisible: newVisibility,
-    };
-
-    saveStoredDocuments(allDocs);
+    doc.isClientVisible = typeof isClientVisible === "boolean" ? isClientVisible : !doc.isClientVisible;
+    await doc.save();
 
     return NextResponse.json({
       success: true,
-      message: `Document ${docId} visibility updated to ${newVisibility ? "Public in Client Vault" : "Internal Confidential"}`,
-      document: allDocs[index],
+      message: `Document ${docId} visibility updated to ${doc.isClientVisible ? "Public in Client Vault" : "Internal Confidential"}`,
+      document: { ...doc.toObject(), id: doc._id.toString() },
     });
   } catch (error: any) {
     console.error("Error updating document visibility:", error);
