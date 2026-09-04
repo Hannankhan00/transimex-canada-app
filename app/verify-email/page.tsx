@@ -38,8 +38,7 @@ function VerifyEmailContent() {
         }
       })
       .catch(() => {
-        // Fallback for mock dev tokens
-        setSuccess(true);
+        setErrorMessage("Something went wrong while verifying your email. Please try again.");
       })
       .finally(() => {
         setLoading(false);

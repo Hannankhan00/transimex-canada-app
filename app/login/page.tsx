@@ -33,6 +33,8 @@ function AuthComponent() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(urlError || null);
+  const [needsVerification, setNeedsVerification] = useState(false);
+  const [resendStatus, setResendStatus] = useState<"idle" | "sending" | "sent">("idle");
   const [registerSuccess, setRegisterSuccess] = useState(false);
 
   // Form Fields
@@ -73,6 +75,8 @@ function AuthComponent() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setNeedsVerification(false);
+    setResendStatus("idle");
     setLoading(true);
 
     try {
@@ -108,8 +112,21 @@ function AuthComponent() {
       }
     } catch (err: any) {
       setError(err.message || "Failed to log in");
+      if (err.code === "EMAIL_NOT_VERIFIED") {
+        setNeedsVerification(true);
+      }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    if (!email) return;
+    setResendStatus("sending");
+    try {
+      await api.auth.resendVerification(email);
+    } finally {
+      setResendStatus("sent");
     }
   };
 
@@ -371,6 +388,8 @@ function AuthComponent() {
                     onClick={() => {
                       setActiveTab("login");
                       setError(null);
+                      setNeedsVerification(false);
+                      setResendStatus("idle");
                     }}
                     className={`relative z-10 flex-1 py-2 text-center text-xs sm:text-sm font-semibold rounded-lg transition-colors duration-200 cursor-pointer ${
                       activeTab === "login"
@@ -386,6 +405,8 @@ function AuthComponent() {
                     onClick={() => {
                       setActiveTab("signup");
                       setError(null);
+                      setNeedsVerification(false);
+                      setResendStatus("idle");
                     }}
                     className={`relative z-10 flex-1 py-2 text-center text-xs sm:text-sm font-semibold rounded-lg transition-colors duration-200 cursor-pointer ${
                       activeTab === "signup"
@@ -399,8 +420,28 @@ function AuthComponent() {
 
                 {/* Error Banner */}
                 {error && (
-                  <div className="mb-5 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs flex items-center gap-2 animate-in fade-in">
-                    <span className="font-semibold">{t.common.error}:</span> {error}
+                  <div className="mb-5 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs animate-in fade-in">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold">{t.common.error}:</span> {error}
+                    </div>
+                    {needsVerification && (
+                      <div className="mt-2 pt-2 border-t border-red-200/70">
+                        {resendStatus === "sent" ? (
+                          <span className="text-emerald-700 font-medium">
+                            If that account exists, a new verification email has been sent.
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={handleResendVerification}
+                            disabled={resendStatus === "sending"}
+                            className="font-semibold text-[#0B2545] hover:text-[#d21f27] underline disabled:opacity-60 cursor-pointer"
+                          >
+                            {resendStatus === "sending" ? "Sending..." : "Resend verification email"}
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
 

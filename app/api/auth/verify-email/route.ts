@@ -13,21 +13,23 @@ export async function POST(req: Request) {
       );
     }
 
-    try {
-      await connectDB();
-      const user = await User.findOne({
-        verificationToken: token,
-      });
+    await connectDB();
+    const user = await User.findOne({
+      verificationToken: token,
+      verificationTokenExpires: { $gt: new Date() },
+    });
 
-      if (user) {
-        user.isVerified = true;
-        user.verificationToken = undefined;
-        user.verificationTokenExpires = undefined;
-        await user.save();
-      }
-    } catch (dbErr) {
-      console.warn("DB connection issue during email verification, treating as verified in dev:", dbErr);
+    if (!user) {
+      return NextResponse.json(
+        { error: "This verification link is invalid or has expired. Please request a new one." },
+        { status: 400 }
+      );
     }
+
+    user.isVerified = true;
+    user.verificationToken = undefined;
+    user.verificationTokenExpires = undefined;
+    await user.save();
 
     return NextResponse.json({
       success: true,

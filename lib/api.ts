@@ -46,51 +46,50 @@ export const api = {
       });
       const result = await res.json();
       if (!res.ok) {
-        throw new Error(result.error || "Invalid corporate email or password");
+        const err: any = new Error(result.error || "Invalid corporate email or password");
+        err.code = result.code;
+        throw err;
       }
       return result;
     },
 
-    async forgotPassword(data: ForgotPasswordFormData): Promise<{ success: boolean; message: string; mockResetToken?: string }> {
-      try {
-        const res = await fetch("/api/auth/forgot-password", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data),
-        });
-        const result = await res.json();
-        if (!res.ok) {
-          throw new Error(result.error || "Failed to process password reset request");
-        }
-        return result;
-      } catch (err: any) {
-        // Dev fallback
-        return {
-          success: true,
-          message: "Secure recovery link generated and sent.",
-          mockResetToken: "tx-token-" + Math.random().toString(36).substring(2, 10),
-        };
+    async resendVerification(email: string): Promise<{ success: boolean; message: string }> {
+      const res = await fetch("/api/auth/resend-verification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const result = await res.json();
+      if (!res.ok) {
+        throw new Error(result.error || "Failed to resend verification email");
       }
+      return result;
+    },
+
+    async forgotPassword(data: ForgotPasswordFormData): Promise<{ success: boolean; message: string }> {
+      const res = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      const result = await res.json();
+      if (!res.ok) {
+        throw new Error(result.error || "Failed to process password reset request");
+      }
+      return result;
     },
 
     async resetPassword(token: string, data: ResetPasswordFormData): Promise<{ success: boolean; message: string }> {
-      try {
-        const res = await fetch("/api/auth/reset-password", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ token, password: data.password }),
-        });
-        const result = await res.json();
-        if (!res.ok) {
-          throw new Error(result.error || "Failed to reset password");
-        }
-        return result;
-      } catch (err: any) {
-        return {
-          success: true,
-          message: "Password has been successfully updated.",
-        };
+      const res = await fetch("/api/auth/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, password: data.password }),
+      });
+      const result = await res.json();
+      if (!res.ok) {
+        throw new Error(result.error || "Failed to reset password");
       }
+      return result;
     },
 
     async me(): Promise<{ user: AuthResponse["user"] | null }> {

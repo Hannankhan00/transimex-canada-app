@@ -8,14 +8,13 @@ import { forgotPasswordSchema, ForgotPasswordFormData } from "@/lib/validations/
 import { api } from "@/lib/api";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import TransimexLogo from "@/components/TransimexLogo";
-import { Mail, ArrowRight, CheckCircle2, KeyRound, Globe2, ArrowLeft, ExternalLink } from "lucide-react";
+import { Mail, ArrowRight, CheckCircle2, KeyRound, Globe2, ArrowLeft } from "lucide-react";
 
 export default function ForgotPasswordPage() {
   const { t, language, toggleLanguage } = useLanguage();
   const [serverError, setServerError] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
   const [submittedEmail, setSubmittedEmail] = useState("");
-  const [generatedToken, setGeneratedToken] = useState<string | null>(null);
 
   const {
     register,
@@ -32,7 +31,6 @@ export default function ForgotPasswordPage() {
       const res = await api.auth.forgotPassword(data);
       if (res.success) {
         setSubmittedEmail(data.email);
-        setGeneratedToken(res.mockResetToken || "tx-secure-demo-token-2026");
         setIsSuccess(true);
       } else {
         setServerError("Failed to send reset link. Please check the email address.");
@@ -100,22 +98,6 @@ export default function ForgotPasswordPage() {
                 <p className="text-xs text-slate-600 mb-4 leading-relaxed">
                   {t.auth.resetSentDesc} (<strong>{submittedEmail}</strong>).
                 </p>
-
-                {/* Simulated Token Test Link for Evaluators */}
-                {generatedToken && (
-                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-3.5 text-left mb-5">
-                    <div className="flex items-center justify-between text-[11px] font-bold text-amber-800 uppercase tracking-wider mb-1">
-                      <span>{language === "fr" ? "Lien de test généré (1 heure)" : "Generated Token Link (1 Hour)"}</span>
-                    </div>
-                    <Link
-                      href={`/reset-password?token=${generatedToken}`}
-                      className="inline-flex items-center gap-1 text-xs text-[#0B2545] hover:text-[#d21f27] font-semibold underline break-all"
-                    >
-                      /reset-password?token={generatedToken.slice(0, 16)}...
-                      <ExternalLink className="w-3.5 h-3.5 flex-shrink-0" />
-                    </Link>
-                  </div>
-                )}
 
                 <div className="flex flex-col gap-2">
                   <Link

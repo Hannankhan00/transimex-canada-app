@@ -91,6 +91,7 @@ export async function POST(req: Request) {
       companyName: companyName || "Transimex Operations HQ",
       role: role === "admin" ? "admin" : "subadmin",
       provider: "credentials",
+      isVerified: true,
     });
 
     return NextResponse.json({

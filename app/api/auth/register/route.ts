@@ -87,19 +87,26 @@ export async function POST(req: Request) {
 
     const token = signToken(tokenPayload);
 
-    // Send confirmation email with clickable verification link asynchronously
-    sendVerificationEmail({
-      to: email.toLowerCase(),
-      name: parsedName,
-      companyName: targetCompany,
-      token: verificationToken,
-    }).catch((emailErr) => {
+    // Send confirmation email with clickable verification link
+    let emailDispatched = true;
+    try {
+      await sendVerificationEmail({
+        to: email.toLowerCase(),
+        name: parsedName,
+        companyName: targetCompany,
+        token: verificationToken,
+      });
+    } catch (emailErr) {
       console.error("Failed to send welcome email via SMTP:", emailErr);
-    });
+      emailDispatched = false;
+    }
 
     const response = NextResponse.json({
       success: true,
-      message: "Application submitted successfully. A verification email has been dispatched.",
+      message: emailDispatched
+        ? "Application submitted successfully. A verification email has been dispatched."
+        : "Application submitted successfully, but we couldn't send the verification email right now. You can request a new one from your account settings.",
+      emailDispatched,
       user: {
         ...tokenPayload,
         phone,

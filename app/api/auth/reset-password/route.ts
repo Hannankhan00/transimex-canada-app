@@ -21,22 +21,23 @@ export async function POST(req: Request) {
       );
     }
 
-    try {
-      await connectDB();
-      const user = await User.findOne({
-        resetToken: token,
-        resetTokenExpires: { $gt: new Date() },
-      });
+    await connectDB();
+    const user = await User.findOne({
+      resetToken: token,
+      resetTokenExpires: { $gt: new Date() },
+    });
 
-      if (user) {
-        user.password = await hashPassword(password);
-        user.resetToken = undefined;
-        user.resetTokenExpires = undefined;
-        await user.save();
-      }
-    } catch (dbErr) {
-      console.warn("Database unavailable during reset-password, treating as mock success:", dbErr);
+    if (!user) {
+      return NextResponse.json(
+        { error: "This reset link is invalid or has expired. Please request a new one." },
+        { status: 400 }
+      );
     }
+
+    user.password = await hashPassword(password);
+    user.resetToken = undefined;
+    user.resetTokenExpires = undefined;
+    await user.save();
 
     return NextResponse.json({
       success: true,

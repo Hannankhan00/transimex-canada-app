@@ -95,6 +95,7 @@ export async function GET(req: Request) {
         googleId: googleUser.sub,
         avatar: googleUser.picture,
         provider: "google",
+        isVerified: true,
       });
     } else {
       // Update Google ID and avatar if needed

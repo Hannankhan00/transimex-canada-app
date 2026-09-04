@@ -42,6 +42,16 @@ export async function POST(req: Request) {
       );
     }
 
+    if (!user.isVerified) {
+      return NextResponse.json(
+        {
+          error: "Please verify your email address before logging in. Check your inbox for the verification link.",
+          code: "EMAIL_NOT_VERIFIED",
+        },
+        { status: 403 }
+      );
+    }
+
     const tokenPayload = {
       userId: user._id.toString(),
       email: user.email,
