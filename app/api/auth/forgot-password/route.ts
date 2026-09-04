@@ -35,13 +35,19 @@ export async function POST(req: Request) {
     user.resetTokenExpires = new Date(Date.now() + 3600000); // 1 hour
     await user.save();
 
-    sendPasswordResetEmail({
-      to: emailLower,
-      name: user.name,
-      token: resetToken,
-    }).catch((emailErr) => {
+    try {
+      await sendPasswordResetEmail({
+        to: emailLower,
+        name: user.name,
+        token: resetToken,
+      });
+    } catch (emailErr) {
       console.error("Failed to send password reset email via SMTP:", emailErr);
-    });
+      return NextResponse.json(
+        { error: "We couldn't send the recovery email right now. Please try again shortly." },
+        { status: 502 }
+      );
+    }
 
     return NextResponse.json({
       success: true,
