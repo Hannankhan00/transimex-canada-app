@@ -24,7 +24,14 @@ import {
   Clock,
   Sparkles,
   Plane,
+  PlaneTakeoff,
   Train,
+  Ship,
+  Container,
+  Boxes,
+  Snowflake,
+  Layers,
+  Weight,
   Check,
   Zap,
 } from "lucide-react";
@@ -35,14 +42,61 @@ interface NewQuoteModalProps {
   onQuoteCreated?: (newQuote: QuoteItem) => void;
 }
 
-const TRANSPORT_MODES = [
-  { id: "53' Dry Van", name: "53' Dry Van", icon: Truck, desc: "Standard road freight" },
-  { id: "Refrigerated Reefer", name: "Temp Reefer", icon: Package, desc: "Cold-chain (-25°C to +20°C)" },
-  { id: "Intermodal Rail", name: "Intermodal Rail", icon: Train, desc: "CN / CPKC cross-country" },
-  { id: "Flatbed / Heavy Haul", name: "Flatbed Heavy", icon: Truck, desc: "Oversized & industrial" },
-  { id: "Air Freight Expedited", name: "Air Expedited", icon: Plane, desc: "Next-Flight-Out express" },
-  { id: "Cross-Border LTL", name: "Cross-Border LTL", icon: Truck, desc: "Bonded customs P&D" },
+const TRANSPORT_CATEGORIES = [
+  {
+    id: "truck",
+    name: "Truck",
+    icon: Truck,
+    modes: [
+      { id: "53' Dry Van", name: "53' Dry Van", icon: Truck, desc: "Standard road freight" },
+      { id: "Refrigerated Reefer", name: "Reefer", icon: Snowflake, desc: "Cold-chain (-25°C to +20°C)" },
+      { id: "Flatbed / Heavy Haul", name: "Flatbed", icon: Layers, desc: "Oversized & industrial" },
+      { id: "Lowboy / RGN Heavy Haul", name: "Lowboy / RGN", icon: Weight, desc: "Heavy equipment & machinery" },
+      { id: "Cross-Border LTL", name: "Cross-Border LTL", icon: Boxes, desc: "Bonded customs P&D" },
+    ],
+  },
+  {
+    id: "ship",
+    name: "Ship",
+    icon: Ship,
+    modes: [
+      { id: "20ft Container FCL", name: "20ft Container", icon: Container, desc: "Full container, up to ~28,000 kg" },
+      { id: "40ft Container FCL", name: "40ft Container", icon: Container, desc: "Full container, up to ~30,480 kg" },
+      { id: "40ft High Cube FCL", name: "40ft High Cube", icon: Container, desc: "Extra volume containerized cargo" },
+      { id: "Ocean LCL Groupage", name: "LCL / Groupage", icon: Boxes, desc: "Shared container, priced by CBM" },
+      { id: "Break Bulk / Heavy Lift", name: "Break Bulk", icon: Weight, desc: "Non-containerized, priced by weight" },
+      { id: "RoRo Vehicles & Machinery", name: "RoRo", icon: Ship, desc: "Roll-on / roll-off vehicles & equipment" },
+    ],
+  },
+  {
+    id: "plane",
+    name: "Plane",
+    icon: Plane,
+    modes: [
+      { id: "Air Freight Expedited", name: "Air Expedited", icon: PlaneTakeoff, desc: "Next-Flight-Out express" },
+      { id: "Air Freight Standard", name: "Air Standard", icon: Plane, desc: "Economical consolidated airfreight" },
+      { id: "Air Charter", name: "Air Charter", icon: Plane, desc: "Dedicated full-aircraft charter" },
+      { id: "Courier / Small Parcel", name: "Courier / Parcel", icon: Package, desc: "Documents & small parcels" },
+    ],
+  },
+  {
+    id: "rail",
+    name: "Rail",
+    icon: Train,
+    modes: [
+      { id: "Intermodal Rail", name: "Intermodal Container", icon: Container, desc: "CN / CPKC cross-country" },
+      { id: "Rail Boxcar", name: "Boxcar", icon: Package, desc: "Bulk commodities by rail" },
+      { id: "Rail Flatcar Heavy Haul", name: "Flatcar", icon: Weight, desc: "Oversized / heavy rail freight" },
+    ],
+  },
 ] as const;
+
+function findCategoryForMode(modeId: string) {
+  return (
+    TRANSPORT_CATEGORIES.find((cat) => cat.modes.some((m) => m.id === modeId)) ||
+    TRANSPORT_CATEGORIES[0]
+  );
+}
 
 export default function NewQuoteModal({
   isOpen,
@@ -53,6 +107,7 @@ export default function NewQuoteModal({
   const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [createdQuote, setCreatedQuote] = useState<QuoteItem | null>(null);
+  const [activeCategory, setActiveCategory] = useState<string>("truck");
 
   const {
     register,
@@ -94,6 +149,7 @@ export default function NewQuoteModal({
   useEffect(() => {
     if (isOpen) {
       setCreatedQuote(null);
+      setActiveCategory(findCategoryForMode("53' Dry Van").id);
       async function loadInfo() {
         const me = await api.auth.me();
         if (me?.user) {
@@ -419,21 +475,49 @@ export default function NewQuoteModal({
                   <span>2. {language === "fr" ? "Équipement & Spécifications" : "Equipment & Cargo"}</span>
                 </span>
 
-                {/* Transport Mode Chips */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {TRANSPORT_MODES.map((mode) => {
-                    const isSelected = selectedMode === mode.id;
+                {/* Transport Category Selector */}
+                <div className="grid grid-cols-4 gap-2">
+                  {TRANSPORT_CATEGORIES.map((cat) => {
+                    const isActiveCat = activeCategory === cat.id;
                     return (
-                      <label
-                        key={mode.id}
-                        className={`p-2.5 rounded-xl border transition cursor-pointer flex items-center justify-between gap-1.5 ${
-                          isSelected
+                      <button
+                        key={cat.id}
+                        type="button"
+                        onClick={() => {
+                          setActiveCategory(cat.id);
+                          if (!cat.modes.some((m) => m.id === selectedMode)) {
+                            setValue("transportMode", cat.modes[0].id, { shouldValidate: true });
+                          }
+                        }}
+                        className={`p-2.5 rounded-xl border transition cursor-pointer flex flex-col items-center justify-center gap-1 ${
+                          isActiveCat
                             ? "bg-[#0B2545] text-white border-[#0B2545] shadow-xs"
                             : "bg-white border-slate-200 text-slate-700 hover:bg-slate-100"
                         }`}
                       >
+                        <cat.icon className={`w-4 h-4 flex-shrink-0 ${isActiveCat ? "text-[#ff8f94]" : "text-slate-400"}`} />
+                        <span className="font-bold text-[11px]">{cat.name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Equipment Sub-Options for Selected Category */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {TRANSPORT_CATEGORIES.find((cat) => cat.id === activeCategory)!.modes.map((mode) => {
+                    const isSelected = selectedMode === mode.id;
+                    return (
+                      <label
+                        key={mode.id}
+                        title={mode.desc}
+                        className={`p-2.5 rounded-xl border transition cursor-pointer flex items-center justify-between gap-1.5 ${
+                          isSelected
+                            ? "bg-[#d21f27] text-white border-[#d21f27] shadow-xs"
+                            : "bg-white border-slate-200 text-slate-700 hover:bg-slate-100"
+                        }`}
+                      >
                         <div className="flex items-center gap-1.5 min-w-0">
-                          <mode.icon className={`w-3.5 h-3.5 flex-shrink-0 ${isSelected ? "text-[#ff8f94]" : "text-slate-400"}`} />
+                          <mode.icon className={`w-3.5 h-3.5 flex-shrink-0 ${isSelected ? "text-white" : "text-slate-400"}`} />
                           <span className="font-bold text-[11px] truncate">{mode.name}</span>
                         </div>
                         <input
@@ -447,6 +531,9 @@ export default function NewQuoteModal({
                     );
                   })}
                 </div>
+                {errors.transportMode && (
+                  <p className="text-[11px] text-red-600 font-semibold">{errors.transportMode.message}</p>
+                )}
 
                 {/* Weight, Pallets, Pickup Date */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">

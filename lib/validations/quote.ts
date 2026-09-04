@@ -1,12 +1,28 @@
 import { z } from "zod";
 
 export const transportModesEnum = [
+  // Truck
   "53' Dry Van",
   "Refrigerated Reefer",
-  "Intermodal Rail",
   "Flatbed / Heavy Haul",
-  "Air Freight Expedited",
+  "Lowboy / RGN Heavy Haul",
   "Cross-Border LTL",
+  // Ship
+  "20ft Container FCL",
+  "40ft Container FCL",
+  "40ft High Cube FCL",
+  "Ocean LCL Groupage",
+  "Break Bulk / Heavy Lift",
+  "RoRo Vehicles & Machinery",
+  // Plane
+  "Air Freight Expedited",
+  "Air Freight Standard",
+  "Air Charter",
+  "Courier / Small Parcel",
+  // Rail
+  "Intermodal Rail",
+  "Rail Boxcar",
+  "Rail Flatcar Heavy Haul",
 ] as const;
 
 export type TransportModeType = (typeof transportModesEnum)[number];
