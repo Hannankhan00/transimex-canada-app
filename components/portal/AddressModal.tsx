@@ -1,12 +1,13 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { addressSchema, AddressFormData, SavedAddress } from "@/lib/validations/address";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { api } from "@/lib/api";
 import { X, Building2, MapPin, User, Phone, FileText, Check } from "lucide-react";
+import CountrySelect from "@/components/ui/CountrySelect";
 
 interface AddressModalProps {
   isOpen: boolean;
@@ -14,22 +15,6 @@ interface AddressModalProps {
   onSave: (data: AddressFormData, editId?: string) => void;
   initialData?: SavedAddress | null;
 }
-
-const CANADIAN_PROVINCES = [
-  { code: "QC", name: "Quebec" },
-  { code: "ON", name: "Ontario" },
-  { code: "BC", name: "British Columbia" },
-  { code: "AB", name: "Alberta" },
-  { code: "MB", name: "Manitoba" },
-  { code: "SK", name: "Saskatchewan" },
-  { code: "NS", name: "Nova Scotia" },
-  { code: "NB", name: "New Brunswick" },
-  { code: "NL", name: "Newfoundland and Labrador" },
-  { code: "PE", name: "Prince Edward Island" },
-  { code: "NT", name: "Northwest Territories" },
-  { code: "YT", name: "Yukon" },
-  { code: "NU", name: "Nunavut" },
-];
 
 export default function AddressModal({
   isOpen,
@@ -57,6 +42,7 @@ export default function AddressModal({
     register,
     handleSubmit,
     reset,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<AddressFormData>({
     resolver: zodResolver(addressSchema) as any,
@@ -67,7 +53,7 @@ export default function AddressModal({
       phone: "",
       street: "",
       city: "",
-      province: "QC",
+      province: "",
       postalCode: "",
       country: "Canada",
       accessInstructions: "",
@@ -98,7 +84,7 @@ export default function AddressModal({
         phone: currentUserPhone,
         street: "",
         city: "",
-        province: "QC",
+        province: "",
         postalCode: "",
         country: "Canada",
         accessInstructions: "",
@@ -223,14 +209,22 @@ export default function AddressModal({
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
                 {language === "fr" ? "Pays" : "Country"} *
               </label>
-              <select
-                {...register("country")}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#0B2545] rounded-xl text-xs outline-none transition font-medium text-slate-900"
-              >
-                <option value="Canada">Canada</option>
-                <option value="United States">United States</option>
-                <option value="Mexico">Mexico</option>
-              </select>
+              <Controller
+                name="country"
+                control={control}
+                render={({ field }) => (
+                  <CountrySelect
+                    value={field.value}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    hasError={Boolean(errors.country)}
+                    placeholder={language === "fr" ? "Rechercher un pays..." : "Search country..."}
+                  />
+                )}
+              />
+              {errors.country && (
+                <p className="text-[11px] text-red-600 mt-1 font-semibold">{errors.country.message}</p>
+              )}
             </div>
           </div>
 
@@ -273,17 +267,16 @@ export default function AddressModal({
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
                 {language === "fr" ? "Province / État" : "Province / State"} *
               </label>
-              <select
+              <input
                 {...register("province")}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#0B2545] rounded-xl text-xs outline-none transition font-medium text-slate-900"
-              >
-                {CANADIAN_PROVINCES.map((p) => (
-                  <option key={p.code} value={p.code}>
-                    {p.name} ({p.code})
-                  </option>
-                ))}
-                <option value="US-Other">US State / Other</option>
-              </select>
+                placeholder="e.g. Quebec, Ontario, California"
+                className={`w-full px-3.5 py-2.5 bg-slate-50 border ${
+                  errors.province ? "border-red-500 bg-red-50/30" : "border-slate-200"
+                } focus:bg-white focus:border-[#0B2545] rounded-xl text-xs outline-none transition font-medium text-slate-900`}
+              />
+              {errors.province && (
+                <p className="text-[11px] text-red-600 mt-1 font-semibold">{errors.province.message}</p>
+              )}
             </div>
 
             <div>
