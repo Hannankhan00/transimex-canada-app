@@ -115,12 +115,15 @@ export default function PriceEstimatorPage() {
       origin,
       destination,
       mode,
-      dimensions: {
-        length_cm: metricValues.length_cm,
-        width_cm: metricValues.width_cm,
-        height_cm: metricValues.height_cm,
-      },
-      package_count: Number(packageCount) || 1,
+      dimensions:
+        mode === "air" || mode === "land"
+          ? {
+              length_cm: metricValues.length_cm,
+              width_cm: metricValues.width_cm,
+              height_cm: metricValues.height_cm,
+            }
+          : undefined,
+      package_count: mode === "air" || mode === "land" ? Number(packageCount) || 1 : 1,
       actual_weight_kg: metricValues.weight_kg,
       container_size: containerSize,
       cbm: mode === "sea_lcl" ? Number(cbmDirect) || 0 : undefined,
@@ -575,7 +578,7 @@ export default function PriceEstimatorPage() {
             </div>
 
             {/* Chargeable Weight Rule Card (Crucial specification requirement) */}
-            {mode !== "sea_fcl" && (
+            {(mode === "air" || mode === "land") && (
               <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 text-xs space-y-2">
                 <div className="flex items-center justify-between text-[11px] font-bold text-slate-700">
                   <span className="flex items-center gap-1.5">

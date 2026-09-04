@@ -122,7 +122,8 @@ export function calculateFreightEstimate(req: EstimateRequest): EstimateResult {
   }
 
   const count = Math.max(req.package_count || 1, 1);
-  const actualKg = Math.max(req.actual_weight_kg || 0, 0);
+  // actual_weight_kg is per identical piece, mirroring how dimensions are per-piece below
+  const actualKg = Math.max((req.actual_weight_kg || 0) * count, 0);
 
   // 1. Calculate Dimensions and Volume
   let volWeightKg = 0;
