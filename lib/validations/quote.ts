@@ -57,6 +57,18 @@ export const quoteRequestSchema = z.object({
   pickupDate: z
     .string()
     .min(1, "Pickup date is required"),
+  dimLengthIn: z
+    .string()
+    .min(1, "Length is required")
+    .regex(/^\d+(\.\d+)?$/, "Enter numeric length in inches"),
+  dimWidthIn: z
+    .string()
+    .min(1, "Width is required")
+    .regex(/^\d+(\.\d+)?$/, "Enter numeric width in inches"),
+  dimHeightIn: z
+    .string()
+    .min(1, "Height is required")
+    .regex(/^\d+(\.\d+)?$/, "Enter numeric height in inches"),
   commodityType: z
     .string()
     .min(2, "Commodity / Cargo description is required"),
@@ -79,7 +91,7 @@ export const quoteRequestSchema = z.object({
     .min(7, "Phone number is required"),
   companyName: z
     .string()
-    .min(2, "Company name is required"),
+    .optional(),
 });
 
 export type QuoteRequestFormData = z.infer<typeof quoteRequestSchema>;

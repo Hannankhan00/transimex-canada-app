@@ -60,7 +60,7 @@ const QuoteSchema = new Schema<IQuote>(
     },
     client: {
       name: { type: String, required: true },
-      companyName: { type: String, required: true },
+      companyName: { type: String, default: "" },
       email: { type: String, required: true, lowercase: true, trim: true },
       phone: { type: String, default: "" },
       userId: { type: String, default: "" },
@@ -77,7 +77,7 @@ const QuoteSchema = new Schema<IQuote>(
       cargoType: { type: String, default: "General Freight" },
       weight: { type: String, required: true },
       palletCount: { type: Number, default: 0 },
-      dimensions: { type: String, default: "Standard 53ft Trailer" },
+      dimensions: { type: String, default: "" },
       commodity: { type: String, required: true },
       preferredPickupDate: { type: String, default: "" },
       specialInstructions: { type: String, default: "" },

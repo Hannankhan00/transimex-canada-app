@@ -4,6 +4,7 @@ import Quote from "@/models/Quote";
 import User from "@/models/User";
 import { getCurrentUser } from "@/lib/session";
 import { formatDateLabel } from "@/lib/formatDate";
+import { sendQuoteSubmittedEmail } from "@/lib/email";
 
 function mapQuote(q: any) {
   return {
@@ -103,8 +104,12 @@ export async function POST(req: Request) {
       weightLbs,
       palletCount,
       pickupDate,
+      dimLengthIn,
+      dimWidthIn,
+      dimHeightIn,
       commodityType,
       specialInstructions,
+      companyName,
     } = body;
 
     if (!originCity || !destinationCity || !transportMode || !weightLbs || !commodityType) {
@@ -117,14 +122,16 @@ export async function POST(req: Request) {
     await connectDB();
     const user = await User.findById(currentUser.userId).lean<any>();
 
-    const refNumber = `QT-2026-${Math.floor(10000 + Math.random() * 90000)}`;
     const now = new Date();
+    const dimensions =
+      dimLengthIn && dimWidthIn && dimHeightIn
+        ? `${dimLengthIn}in x ${dimWidthIn}in x ${dimHeightIn}in`
+        : "";
 
-    const quote = await Quote.create({
-      refNumber,
+    const quoteData = {
       client: {
         name: user?.name || currentUser.name,
-        companyName: user?.companyName || currentUser.companyName,
+        companyName: companyName || user?.companyName || currentUser.companyName || "",
         email: user?.email || currentUser.email,
         phone: user?.phone || "",
         userId: currentUser.userId,
@@ -140,20 +147,50 @@ export async function POST(req: Request) {
         equipment: transportMode,
         weight: `${Number(weightLbs).toLocaleString()} lbs`,
         palletCount: palletCount ? parseInt(palletCount, 10) : 0,
+        dimensions,
         commodity: commodityType,
         preferredPickupDate: pickupDate || "",
         specialInstructions: specialInstructions || "",
       },
-      status: "under_review",
+      status: "under_review" as const,
       submittedDate: formatDateLabel(now),
       validUntil: "7 Days from Dispatch",
       adminNotes: "New quote request received from client portal. Transimex freight coordinator assigned for rate review.",
-    });
+    };
+
+    // refNumber has a unique index; retry a couple of times on collision
+    let quote;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const refNumber = `QT-2026-${Math.floor(10000 + Math.random() * 90000)}`;
+      try {
+        quote = await Quote.create({ ...quoteData, refNumber });
+        break;
+      } catch (createErr: any) {
+        if (createErr?.code === 11000 && attempt < 2) continue;
+        throw createErr;
+      }
+    }
+
+    const mapped = mapQuote(quote!.toObject());
+
+    try {
+      await sendQuoteSubmittedEmail({
+        to: mapped.clientEmail,
+        name: mapped.clientName,
+        companyName: mapped.clientCompany,
+        quoteId: mapped.id,
+        origin: mapped.origin,
+        destination: mapped.destination,
+        transportMode: mapped.transportMode,
+      });
+    } catch (mailErr) {
+      console.warn("[Email Notification] Could not send quote submission confirmation:", mailErr);
+    }
 
     return NextResponse.json({
       success: true,
-      message: `Quote request ${refNumber} submitted`,
-      quote: mapQuote(quote.toObject()),
+      message: `Quote request ${mapped.id} submitted`,
+      quote: mapped,
     });
   } catch (error: any) {
     console.error("Error creating quote:", error);

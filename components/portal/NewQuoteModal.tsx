@@ -8,6 +8,7 @@ import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { api } from "@/lib/api";
 import { QuoteItem } from "@/lib/mockData";
 import { SavedAddress } from "@/lib/validations/address";
+import { TRANSPORT_CATEGORIES, findCategoryForMode } from "@/lib/transportModes";
 import {
   X,
   Truck,
@@ -23,15 +24,6 @@ import {
   FileSpreadsheet,
   Clock,
   Sparkles,
-  Plane,
-  PlaneTakeoff,
-  Train,
-  Ship,
-  Container,
-  Boxes,
-  Snowflake,
-  Layers,
-  Weight,
   Check,
   Zap,
 } from "lucide-react";
@@ -40,62 +32,6 @@ interface NewQuoteModalProps {
   isOpen: boolean;
   onClose: () => void;
   onQuoteCreated?: (newQuote: QuoteItem) => void;
-}
-
-const TRANSPORT_CATEGORIES = [
-  {
-    id: "truck",
-    name: "Truck",
-    icon: Truck,
-    modes: [
-      { id: "53' Dry Van", name: "53' Dry Van", icon: Truck, desc: "Standard road freight" },
-      { id: "Refrigerated Reefer", name: "Reefer", icon: Snowflake, desc: "Cold-chain (-25°C to +20°C)" },
-      { id: "Flatbed / Heavy Haul", name: "Flatbed", icon: Layers, desc: "Oversized & industrial" },
-      { id: "Lowboy / RGN Heavy Haul", name: "Lowboy / RGN", icon: Weight, desc: "Heavy equipment & machinery" },
-      { id: "Cross-Border LTL", name: "Cross-Border LTL", icon: Boxes, desc: "Bonded customs P&D" },
-    ],
-  },
-  {
-    id: "ship",
-    name: "Ship",
-    icon: Ship,
-    modes: [
-      { id: "20ft Container FCL", name: "20ft Container", icon: Container, desc: "Full container, up to ~28,000 kg" },
-      { id: "40ft Container FCL", name: "40ft Container", icon: Container, desc: "Full container, up to ~30,480 kg" },
-      { id: "40ft High Cube FCL", name: "40ft High Cube", icon: Container, desc: "Extra volume containerized cargo" },
-      { id: "Ocean LCL Groupage", name: "LCL / Groupage", icon: Boxes, desc: "Shared container, priced by CBM" },
-      { id: "Break Bulk / Heavy Lift", name: "Break Bulk", icon: Weight, desc: "Non-containerized, priced by weight" },
-      { id: "RoRo Vehicles & Machinery", name: "RoRo", icon: Ship, desc: "Roll-on / roll-off vehicles & equipment" },
-    ],
-  },
-  {
-    id: "plane",
-    name: "Plane",
-    icon: Plane,
-    modes: [
-      { id: "Air Freight Expedited", name: "Air Expedited", icon: PlaneTakeoff, desc: "Next-Flight-Out express" },
-      { id: "Air Freight Standard", name: "Air Standard", icon: Plane, desc: "Economical consolidated airfreight" },
-      { id: "Air Charter", name: "Air Charter", icon: Plane, desc: "Dedicated full-aircraft charter" },
-      { id: "Courier / Small Parcel", name: "Courier / Parcel", icon: Package, desc: "Documents & small parcels" },
-    ],
-  },
-  {
-    id: "rail",
-    name: "Rail",
-    icon: Train,
-    modes: [
-      { id: "Intermodal Rail", name: "Intermodal Container", icon: Container, desc: "CN / CPKC cross-country" },
-      { id: "Rail Boxcar", name: "Boxcar", icon: Package, desc: "Bulk commodities by rail" },
-      { id: "Rail Flatcar Heavy Haul", name: "Flatcar", icon: Weight, desc: "Oversized / heavy rail freight" },
-    ],
-  },
-] as const;
-
-function findCategoryForMode(modeId: string) {
-  return (
-    TRANSPORT_CATEGORIES.find((cat) => cat.modes.some((m) => m.id === modeId)) ||
-    TRANSPORT_CATEGORIES[0]
-  );
 }
 
 export default function NewQuoteModal({
@@ -128,6 +64,9 @@ export default function NewQuoteModal({
       weightLbs: "",
       palletCount: "",
       pickupDate: new Date(Date.now() + 86400000 * 2).toISOString().split("T")[0],
+      dimLengthIn: "",
+      dimWidthIn: "",
+      dimHeightIn: "",
       commodityType: "",
       temperatureControlled: false,
       hazmat: false,
@@ -573,6 +512,41 @@ export default function NewQuoteModal({
                       } rounded-xl outline-none focus:border-[#0B2545]`}
                     />
                   </div>
+                </div>
+
+                {/* Dimensions */}
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-600 uppercase mb-0.5">
+                    Dimensions (in) *
+                  </label>
+                  <div className="grid grid-cols-3 gap-2">
+                    <input
+                      {...register("dimLengthIn")}
+                      placeholder="Length"
+                      className={`w-full px-3 py-2 bg-white border ${
+                        errors.dimLengthIn ? "border-red-500" : "border-slate-200"
+                      } rounded-xl outline-none focus:border-[#0B2545]`}
+                    />
+                    <input
+                      {...register("dimWidthIn")}
+                      placeholder="Width"
+                      className={`w-full px-3 py-2 bg-white border ${
+                        errors.dimWidthIn ? "border-red-500" : "border-slate-200"
+                      } rounded-xl outline-none focus:border-[#0B2545]`}
+                    />
+                    <input
+                      {...register("dimHeightIn")}
+                      placeholder="Height"
+                      className={`w-full px-3 py-2 bg-white border ${
+                        errors.dimHeightIn ? "border-red-500" : "border-slate-200"
+                      } rounded-xl outline-none focus:border-[#0B2545]`}
+                    />
+                  </div>
+                  {(errors.dimLengthIn || errors.dimWidthIn || errors.dimHeightIn) && (
+                    <p className="text-[10px] text-red-600 mt-1">
+                      {errors.dimLengthIn?.message || errors.dimWidthIn?.message || errors.dimHeightIn?.message}
+                    </p>
+                  )}
                 </div>
 
                 {/* Commodity Description */}

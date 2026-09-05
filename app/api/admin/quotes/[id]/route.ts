@@ -3,6 +3,55 @@ import connectDB from "@/lib/mongoose";
 import Quote from "@/models/Quote";
 import { getStoredQuotes } from "@/lib/mockData";
 
+function mapQuote(q: any) {
+  return {
+    id: q.refNumber || q._id?.toString(),
+    clientName: q.client?.name || "Client Shipper",
+    clientCompany: q.client?.companyName || "Commercial Enterprise",
+    clientEmail: q.client?.email || "shipper@transimex.ca",
+    clientPhone: q.client?.phone || "",
+    userId: q.client?.userId || "",
+    origin: q.route?.origin || "",
+    originDetail: q.route?.originDetail || "",
+    destination: q.route?.destination || "",
+    destinationDetail: q.route?.destinationDetail || "",
+    transportMode: q.cargo?.transportMode || "53' Dry Van",
+    equipment: q.cargo?.equipment || "Standard Trailer",
+    cargoType: q.cargo?.cargoType || "General Freight",
+    weight: q.cargo?.weight || "20,000 lbs",
+    palletCount: q.cargo?.palletCount || 0,
+    dimensions: q.cargo?.dimensions || "",
+    commodity: q.cargo?.commodity || "General Cargo",
+    preferredPickupDate: q.cargo?.preferredPickupDate || "",
+    specialInstructions: q.cargo?.specialInstructions || "",
+    submittedDate: q.submittedDate,
+    validUntil: q.validUntil,
+    status: q.status,
+    statusLabelEn:
+      q.status === "accepted"
+        ? "Accepted & Dispatched"
+        : q.status === "reviewing"
+        ? "In Staff Review"
+        : q.status === "rejected"
+        ? "Quote Rejected"
+        : "New / Under Review",
+    statusLabelFr:
+      q.status === "accepted"
+        ? "Acceptée & Expédiée"
+        : q.status === "reviewing"
+        ? "En Évaluation Staff"
+        : q.status === "rejected"
+        ? "Soumission Refusée"
+        : "Nouvelle / En Révision",
+    priceCad: q.priceCad,
+    priceUsd: q.priceUsd,
+    breakdown: q.breakdown,
+    shipmentId: q.shipmentId,
+    rejectionReason: q.rejectionReason,
+    adminNotes: q.adminNotes,
+  };
+}
+
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -23,52 +72,7 @@ export async function GET(
       if (dbQuote) {
         return NextResponse.json({
           success: true,
-          quote: {
-            id: dbQuote.refNumber || dbQuote._id.toString(),
-            clientName: dbQuote.client?.name || "Client Shipper",
-            clientCompany: dbQuote.client?.companyName || "Commercial Enterprise",
-            clientEmail: dbQuote.client?.email || "shipper@transimex.ca",
-            clientPhone: dbQuote.client?.phone || "",
-            userId: dbQuote.client?.userId || "",
-            origin: dbQuote.route?.origin || "",
-            originDetail: dbQuote.route?.originDetail || "",
-            destination: dbQuote.route?.destination || "",
-            destinationDetail: dbQuote.route?.destinationDetail || "",
-            transportMode: dbQuote.cargo?.transportMode || "53' Dry Van",
-            equipment: dbQuote.cargo?.equipment || "Standard Trailer",
-            cargoType: dbQuote.cargo?.cargoType || "General Freight",
-            weight: dbQuote.cargo?.weight || "20,000 lbs",
-            palletCount: dbQuote.cargo?.palletCount || 0,
-            dimensions: dbQuote.cargo?.dimensions || "",
-            commodity: dbQuote.cargo?.commodity || "General Cargo",
-            preferredPickupDate: dbQuote.cargo?.preferredPickupDate || "",
-            specialInstructions: dbQuote.cargo?.specialInstructions || "",
-            submittedDate: dbQuote.submittedDate,
-            validUntil: dbQuote.validUntil,
-            status: dbQuote.status,
-            statusLabelEn:
-              dbQuote.status === "accepted"
-                ? "Accepted & Dispatched"
-                : dbQuote.status === "reviewing"
-                ? "In Staff Review"
-                : dbQuote.status === "rejected"
-                ? "Quote Rejected"
-                : "New / Under Review",
-            statusLabelFr:
-              dbQuote.status === "accepted"
-                ? "Acceptée & Expédiée"
-                : dbQuote.status === "reviewing"
-                ? "En Évaluation Staff"
-                : dbQuote.status === "rejected"
-                ? "Soumission Refusée"
-                : "Nouvelle / En Révision",
-            priceCad: dbQuote.priceCad,
-            priceUsd: dbQuote.priceUsd,
-            breakdown: dbQuote.breakdown,
-            shipmentId: dbQuote.shipmentId,
-            rejectionReason: dbQuote.rejectionReason,
-            adminNotes: dbQuote.adminNotes,
-          },
+          quote: mapQuote(dbQuote),
         });
       }
     } catch (dbErr) {
@@ -91,6 +95,54 @@ export async function GET(
     console.error("Error fetching quote details:", error);
     return NextResponse.json(
       { error: error.message || "Failed to fetch quote" },
+      { status: 500 }
+    );
+  }
+}
+
+// Save internal admin notes and/or move status to "reviewing"
+export async function PATCH(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const body = await req.json();
+    const { adminNotes, status } = body;
+
+    if (status && status !== "reviewing") {
+      return NextResponse.json(
+        { error: "This endpoint only supports moving a quote to 'reviewing'. Use /accept or /reject for those transitions." },
+        { status: 400 }
+      );
+    }
+
+    await connectDB();
+    const existingQuote = await Quote.findOne({
+      $or: [{ refNumber: id }, { _id: id.match(/^[0-9a-fA-F]{24}$/) ? id : null }],
+    });
+
+    if (!existingQuote) {
+      return NextResponse.json({ error: "Quote not found" }, { status: 404 });
+    }
+
+    if (typeof adminNotes === "string") {
+      existingQuote.adminNotes = adminNotes;
+    }
+    if (status === "reviewing") {
+      existingQuote.status = "reviewing";
+    }
+    await existingQuote.save();
+
+    return NextResponse.json({
+      success: true,
+      message: `Quote ${id} updated`,
+      quote: mapQuote(existingQuote.toObject()),
+    });
+  } catch (error: any) {
+    console.error("Error updating quote:", error);
+    return NextResponse.json(
+      { error: error.message || "Failed to update quote" },
       { status: 500 }
     );
   }

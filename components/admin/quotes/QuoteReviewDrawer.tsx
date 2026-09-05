@@ -162,14 +162,21 @@ export default function QuoteReviewDrawer({
     setActionError(null);
     try {
       setIsSavingNotes(true);
-      const updatedQuote = {
-        ...quote,
-        adminNotes,
-        status: newStatus ? newStatus : quote.status,
-      };
+      const res = await fetch(`/api/admin/quotes/${encodeURIComponent(quote.id)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          adminNotes,
+          ...(newStatus ? { status: newStatus } : {}),
+        }),
+      });
 
-      // Call API or update local store
-      onQuoteUpdated(updatedQuote);
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to save internal notes");
+      }
+
+      onQuoteUpdated(data.quote || { ...quote, adminNotes, status: newStatus || quote.status });
     } catch (err: any) {
       setActionError(err.message || "Failed to save internal notes");
     } finally {

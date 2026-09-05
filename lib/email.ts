@@ -379,6 +379,58 @@ export async function sendQuoteRejectedEmail({
 }
 
 /**
+ * 5b. Send Quote Submission Confirmation Email
+ */
+export async function sendQuoteSubmittedEmail({
+  to,
+  name,
+  companyName,
+  quoteId,
+  origin,
+  destination,
+  transportMode,
+}: {
+  to: string;
+  name: string;
+  companyName?: string;
+  quoteId: string;
+  origin: string;
+  destination: string;
+  transportMode: string;
+}) {
+  const appUrl = getAppUrl();
+  const quotesUrl = `${appUrl}/dashboard/quotes`;
+
+  const content = `
+    <h1 class="h1">Freight Quote Request Received</h1>
+    <p>Dear <strong>${name}</strong> ${companyName ? `(${companyName})` : ""},</p>
+    <p>Thank you for submitting a freight quote request to Transimex Canada. Your request has been logged and assigned to our dispatch team for rate review.</p>
+
+    <div class="cred-box">
+      <div style="font-size: 15px; font-weight: bold; color: #0B2545; margin-bottom: 8px;">
+        Reference Number: <span style="color: #D21F27;">${quoteId}</span>
+      </div>
+      <div><strong>Corridor Route:</strong> ${origin} &rarr; ${destination}</div>
+      <div style="margin-top: 4px;"><strong>Requested Mode:</strong> ${transportMode}</div>
+      <div style="margin-top: 4px;"><strong>Status:</strong> <span style="color: #d97706; font-weight: bold;">Under Review</span></div>
+    </div>
+
+    <p>You will receive a follow-up email as soon as your guaranteed pricing is ready. You can also track the status of this request anytime from your client portal.</p>
+
+    <div style="text-align: center; margin-top: 24px;">
+      <a href="${quotesUrl}" class="btn" target="_blank">View My Quotes</a>
+    </div>
+  `;
+
+  return sendEmail({
+    to,
+    subject: `Quote Request Received [${quoteId}]`,
+    html: emailTemplateWrapper(content, `Your freight quote request ${quoteId} has been received`),
+    text: `Your quote request ${quoteId} (${origin} -> ${destination}, ${transportMode}) has been received and is under review. Track it at ${quotesUrl}`,
+  });
+}
+
+/**
  * 6. Send Duties & Tax Payment Notice Email
  */
 export async function sendDutiesNoticeEmail({
