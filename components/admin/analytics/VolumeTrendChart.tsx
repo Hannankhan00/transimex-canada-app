@@ -26,7 +26,10 @@ export default function VolumeTrendChart({ data }: VolumeTrendChartProps) {
   ];
 
   const items = data && data.length > 0 ? data : defaultData;
-  const [activeIdx, setActiveIdx] = useState<number | null>(items.length - 1);
+  const [activeIdx, setActiveIdx] = useState<number | null>(null);
+  // Clamp against the currently rendered items — activeIdx may have been set
+  // (or default-initialized) against a previous, differently-sized array.
+  const selectedIdx = activeIdx !== null && activeIdx < items.length ? activeIdx : items.length - 1;
 
   const maxVolume = Math.max(...items.map((d) => d.volume));
 
@@ -61,7 +64,7 @@ export default function VolumeTrendChart({ data }: VolumeTrendChartProps) {
 
           {items.map((item, idx) => {
             const heightPercent = Math.round((item.volume / (maxVolume * 1.15)) * 100);
-            const isSelected = activeIdx === idx;
+            const isSelected = selectedIdx === idx;
             const isHighest = item.volume === maxVolume;
 
             return (
@@ -107,11 +110,11 @@ export default function VolumeTrendChart({ data }: VolumeTrendChartProps) {
       {/* Footer Info */}
       <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
         <span>
-          Selected: <strong className="text-slate-800">{items[activeIdx ?? 0].month} 2026</strong> &bull;{" "}
-          <strong className="text-[#0B2545]">{items[activeIdx ?? 0].volume} Shipments</strong>
+          Selected: <strong className="text-slate-800">{items[selectedIdx].month} 2026</strong> &bull;{" "}
+          <strong className="text-[#0B2545]">{items[selectedIdx].volume} Shipments</strong>
         </span>
         <span className="text-emerald-700 font-semibold font-mono">
-          Revenue: ${(items[activeIdx ?? 0].revenue).toLocaleString()} CAD
+          Revenue: ${(items[selectedIdx].revenue).toLocaleString()} CAD
         </span>
       </div>
     </div>

@@ -25,7 +25,10 @@ export default function RevenueTrendChart({ data }: RevenueTrendChartProps) {
   ];
 
   const items = data && data.length > 0 ? data : defaultData;
-  const [hoveredIdx, setHoveredIdx] = useState<number | null>(items.length - 1);
+  const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
+  // Clamp against the currently rendered items — hoveredIdx may have been set
+  // (or default-initialized) against a previous, differently-sized array.
+  const selectedIdx = hoveredIdx !== null && hoveredIdx < items.length ? hoveredIdx : items.length - 1;
 
   const maxRevenue = Math.max(...items.map((d) => d.revenue));
   const minRevenue = Math.min(...items.map((d) => d.revenue));
@@ -36,7 +39,7 @@ export default function RevenueTrendChart({ data }: RevenueTrendChartProps) {
   const padding = 20;
 
   const points = items.map((d, idx) => {
-    const x = padding + (idx / (items.length - 1)) * (width - 2 * padding);
+    const x = padding + (items.length > 1 ? idx / (items.length - 1) : 0) * (width - 2 * padding);
     const y =
       height -
       padding -
@@ -100,7 +103,7 @@ export default function RevenueTrendChart({ data }: RevenueTrendChartProps) {
 
           {/* Data Points */}
           {points.map((p, idx) => {
-            const isHovered = hoveredIdx === idx;
+            const isHovered = selectedIdx === idx;
             return (
               <g key={p.month} className="cursor-pointer">
                 <circle
@@ -123,7 +126,7 @@ export default function RevenueTrendChart({ data }: RevenueTrendChartProps) {
             <span
               key={item.month}
               className={`cursor-pointer transition ${
-                hoveredIdx === idx ? "font-bold text-[#0B2545]" : ""
+                selectedIdx === idx ? "font-bold text-[#0B2545]" : ""
               }`}
               onMouseEnter={() => setHoveredIdx(idx)}
             >
@@ -136,10 +139,10 @@ export default function RevenueTrendChart({ data }: RevenueTrendChartProps) {
       {/* Footer Info */}
       <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
         <span>
-          Selected: <strong className="text-slate-800">{items[hoveredIdx ?? 0].month} 2026</strong>
+          Selected: <strong className="text-slate-800">{items[selectedIdx].month} 2026</strong>
         </span>
         <span className="text-[#0B2545] font-bold text-sm font-mono">
-          ${(items[hoveredIdx ?? 0].revenue).toLocaleString()} CAD
+          ${(items[selectedIdx].revenue).toLocaleString()} CAD
         </span>
       </div>
     </div>

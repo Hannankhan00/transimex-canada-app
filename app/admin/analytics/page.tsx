@@ -50,13 +50,7 @@ export default function AdminAnalyticsPage() {
     fetchAnalyticsData();
   }, [fetchAnalyticsData]);
 
-  const topCorridors = chartData.topCorridors || [
-    { corridor: "Montreal, QC ↔ Chicago, IL", mode: "Road Reefer", loadsMoved: 84, onTime: "99.1%", avgTransit: "22h" },
-    { corridor: "Toronto, ON ↔ Detroit, MI", mode: "Road Dry Van", loadsMoved: 72, onTime: "98.5%", avgTransit: "8h" },
-    { corridor: "Halifax Port ↔ Montreal Dorval", mode: "Rail Intermodal", loadsMoved: 56, onTime: "97.8%", avgTransit: "38h" },
-    { corridor: "Vancouver, BC ↔ Calgary, AB", mode: "Road Flatbed", loadsMoved: 48, onTime: "98.9%", avgTransit: "16h" },
-    { corridor: "Montreal Trudeau (YUL) ↔ Frankfurt (FRA)", mode: "Air Express", loadsMoved: 28, onTime: "100%", avgTransit: "9h" },
-  ];
+  const topCorridors: any[] = chartData.topCorridors && chartData.topCorridors.length > 0 ? chartData.topCorridors : [];
 
   return (
     <div className="space-y-8 animate-in fade-in duration-200">
@@ -127,39 +121,37 @@ export default function AdminAnalyticsPage() {
                 <th className="py-3.5 px-4">Freight Corridor</th>
                 <th className="py-3.5 px-4">Primary Mode / Equipment</th>
                 <th className="py-3.5 px-4">Dispatched Loads</th>
-                <th className="py-3.5 px-4">On-Time Arrival Rate</th>
-                <th className="py-3.5 px-4">Average Transit Time</th>
                 <th className="py-3.5 px-4 text-right">Regulatory Border Crossing</th>
               </tr>
             </thead>
 
             <tbody className="divide-y divide-slate-100 text-slate-700">
-              {topCorridors.map((c: any) => (
-                <tr key={c.corridor} className="hover:bg-slate-50/80 transition">
-                  <td className="py-3.5 px-4 font-bold text-[#0B2545]">
-                    {c.corridor}
-                  </td>
-                  <td className="py-3.5 px-4">
-                    <span className="px-2 py-0.5 rounded bg-slate-100 font-semibold text-slate-700 text-[11px] border border-slate-200">
-                      {c.mode}
-                    </span>
-                  </td>
-                  <td className="py-3.5 px-4 font-mono font-bold text-slate-800">
-                    {c.loadsMoved} Loads
-                  </td>
-                  <td className="py-3.5 px-4">
-                    <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 font-bold text-[10px] border border-emerald-200">
-                      {c.onTime}
-                    </span>
-                  </td>
-                  <td className="py-3.5 px-4 font-mono text-slate-600 text-[11px]">
-                    {c.avgTransit}
-                  </td>
-                  <td className="py-3.5 px-4 text-right font-mono text-[11px] text-slate-500">
-                    CBSA ACI eManifest / PARS
+              {topCorridors.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="py-8 text-center text-slate-400 text-xs">
+                    No dispatched shipments yet to compute corridor performance.
                   </td>
                 </tr>
-              ))}
+              ) : (
+                topCorridors.map((c: any) => (
+                  <tr key={c.corridor} className="hover:bg-slate-50/80 transition">
+                    <td className="py-3.5 px-4 font-bold text-[#0B2545]">
+                      {c.corridor}
+                    </td>
+                    <td className="py-3.5 px-4">
+                      <span className="px-2 py-0.5 rounded bg-slate-100 font-semibold text-slate-700 text-[11px] border border-slate-200">
+                        {c.mode}
+                      </span>
+                    </td>
+                    <td className="py-3.5 px-4 font-mono font-bold text-slate-800">
+                      {c.loadsMoved} Loads
+                    </td>
+                    <td className="py-3.5 px-4 text-right font-mono text-[11px] text-slate-500">
+                      CBSA ACI eManifest / PARS
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
