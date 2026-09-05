@@ -1,5 +1,7 @@
 import { NextRequest } from "next/server";
-import { getStoredClients } from "@/lib/mockData";
+import connectDB from "@/lib/mongoose";
+import User from "@/models/User";
+import { mapUserIndustryToClientIndustry } from "@/lib/clientTypes";
 import { serializeToCsv, createCsvDownloadResponse } from "@/lib/csvExport";
 
 export async function GET(req: NextRequest) {
@@ -7,12 +9,26 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const status = searchParams.get("status");
 
-    let clients = getStoredClients();
+    await connectDB();
+    const dbUsers = await User.find({ role: { $in: ["client", "user"] } })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    let clients = dbUsers.map((u: any) => ({
+      id: u._id.toString(),
+      companyName: u.companyName || "",
+      primaryContact: u.name,
+      email: u.email,
+      phone: u.phone || "",
+      industry: mapUserIndustryToClientIndustry(u.industry),
+      status: u.isVerified !== false ? "Active" : "Deactivated",
+      registeredDate: u.createdAt
+        ? new Date(u.createdAt).toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" })
+        : "",
+    }));
 
     if (status && status !== "all") {
-      clients = clients.filter(
-        (c) => c.status.toLowerCase() === status.toLowerCase()
-      );
+      clients = clients.filter((c) => c.status.toLowerCase() === status.toLowerCase());
     }
 
     const flatData = clients.map((c) => ({
@@ -23,11 +39,7 @@ export async function GET(req: NextRequest) {
       phone: c.phone,
       industry: c.industry,
       status: c.status,
-      totalShipments: c.totalShipmentsCompleted || 0,
-      totalSpendCad: c.lifetimeRevenueCad || "$0.00 CAD",
       registeredDate: c.registeredDate,
-      paymentTerms: c.paymentTerms || "Net 30 Days",
-      taxNumber: c.taxId || "CA-GST-99214481",
     }));
 
     const headers = [
@@ -38,10 +50,6 @@ export async function GET(req: NextRequest) {
       { key: "phone", label: "Phone" },
       { key: "industry", label: "Industry Sector" },
       { key: "status", label: "Account Access Status" },
-      { key: "totalShipments", label: "Lifetime Completed Loads" },
-      { key: "totalSpendCad", label: "Total Lifetime Spend (CAD)" },
-      { key: "paymentTerms", label: "Payment Terms" },
-      { key: "taxNumber", label: "Federal Tax / GST #" },
       { key: "registeredDate", label: "Onboarding Date" },
     ];
 

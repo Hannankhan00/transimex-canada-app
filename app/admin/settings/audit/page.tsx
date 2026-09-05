@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import SettingsNavTabs from "@/components/admin/settings/SettingsNavTabs";
-import { AuditLogEntry, AuditActionType } from "@/lib/mockData";
+import { AuditLogEntry, AuditActionType } from "@/lib/auditTypes";
 import {
   ShieldAlert,
   Search,

@@ -75,11 +75,11 @@ export default function AdminOperationsPage() {
 
   // Metrics State
   const [metrics, setMetrics] = useState<MetricData>({
-    newQuotesCount: 8,
-    activeShipmentsCount: 24,
-    customsHoldsCount: 3,
-    unreadInquiriesCount: 14,
-    openTicketsCount: 6,
+    newQuotesCount: 0,
+    activeShipmentsCount: 0,
+    customsHoldsCount: 0,
+    unreadInquiriesCount: 0,
+    openTicketsCount: 0,
   });
 
   // Activity Feed Filter
@@ -103,100 +103,21 @@ export default function AdminOperationsPage() {
   // Quick New Shipment Modal
   const [isShipmentModalOpen, setIsShipmentModalOpen] = useState(false);
   const [shipmentSuccess, setShipmentSuccess] = useState(false);
+  const [shipmentSubmitting, setShipmentSubmitting] = useState(false);
+  const [shipmentError, setShipmentError] = useState<string | null>(null);
   const [newOrigin, setNewOrigin] = useState("Montreal, QC (Hub)");
   const [newDestination, setNewDestination] = useState("Detroit, MI (Cross-Border)");
   const [newFreightMode, setNewFreightMode] = useState("53' Temperature-Controlled Reefer");
   const [newCarrier, setNewCarrier] = useState("Transimex Express Fleet #402");
+  const [newClientName, setNewClientName] = useState("");
+  const [newClientCompany, setNewClientCompany] = useState("");
+  const [newClientEmail, setNewClientEmail] = useState("");
+  const [newCommodity, setNewCommodity] = useState("");
+  const [newWeight, setNewWeight] = useState("");
+  const [newRateCad, setNewRateCad] = useState("");
 
-  // Chronological Activity Feed Data
-  const initialActivities: ActivityItem[] = [
-    {
-      id: "ACT-01",
-      category: "quote",
-      title: "Quote QT-2026-00124 Accepted & Dispatched",
-      titleFr: "Soumission QT-2026-00124 Acceptée et Assignée",
-      detail: "Marc Tremblay (Laurentian Logistics) approved $6,200 CAD Reefer load to Detroit.",
-      detailFr: "Marc Tremblay a approuvé le chargement frigorifique de 6 200 $ CAD vers Détroit.",
-      time: "12 mins ago",
-      timestamp: "2026-09-02T16:45:00Z",
-      actor: "Marc Tremblay",
-      statusText: "Booking Confirmed",
-      statusType: "success",
-      referenceId: "QT-2026-00124",
-    },
-    {
-      id: "ACT-02",
-      category: "customs",
-      title: "Customs Hold: CBSA Inspection Staged at Dorval",
-      titleFr: "Blocage Douanier: Inspection ASFC Programmée à Dorval",
-      detail: "Shipment TMX-00839 flagged for random container inspection. PARS Entry #8849-QC attached.",
-      detailFr: "Expédition TMX-00839 signalée pour vérification. Entrée PARS #8849-QC jointe.",
-      time: "28 mins ago",
-      timestamp: "2026-09-02T16:30:00Z",
-      actor: "CBSA Broker Gateway",
-      statusText: "Urgent Customs Action",
-      statusType: "danger",
-      referenceId: "TMX-00839",
-    },
-    {
-      id: "ACT-03",
-      category: "shipment",
-      title: "Shipment TMX-00847 Delivered & POD Signed",
-      titleFr: "Expédition TMX-00847 Livrée & Preuve Signée",
-      detail: "Receiver verified delivery of 26 pallets dry freight at Toronto Cross-Dock Facility.",
-      detailFr: "Réception confirmée de 26 palettes de marchandises au quai de Toronto.",
-      time: "1 hour ago",
-      timestamp: "2026-09-02T15:45:00Z",
-      actor: "Driver Jean D. (Unit #402)",
-      statusText: "Delivered",
-      statusType: "success",
-      referenceId: "TMX-00847",
-    },
-    {
-      id: "ACT-04",
-      category: "inquiry",
-      title: "New Enterprise RFQ: Bombardier Aerospace Cargo",
-      titleFr: "Nouvelle Demande RFQ: Fret Aéronautique Bombardier",
-      detail: "Public web inquiry submitted for weekly oversized engine transport Montreal to Wichita.",
-      detailFr: "Demande reçue pour transport récurrent de turbines Montréal vers Wichita.",
-      time: "2 hours ago",
-      timestamp: "2026-09-02T14:30:00Z",
-      actor: "Public Contact Gateway",
-      statusText: "Unread Lead",
-      statusType: "info",
-      referenceId: "INQ-2026-089",
-    },
-    {
-      id: "ACT-05",
-      category: "ticket",
-      title: "Ticket #TKT-2026-0042: Reefer Telemetry Requested",
-      titleFr: "Billet #TKT-2026-0042: Télémétrie Frigorifique Demandée",
-      detail: "Client requesting continuous calibrated -18°C temperature logs for pharmaceutical audit.",
-      detailFr: "Demande de journaux de température calibrés à -18°C pour audit pharmaceutique.",
-      time: "3 hours ago",
-      timestamp: "2026-09-02T13:15:00Z",
-      actor: "Laurentian Global Pharma",
-      statusText: "Awaiting Reply",
-      statusType: "warning",
-      referenceId: "TKT-2026-0042",
-    },
-    {
-      id: "ACT-06",
-      category: "shipment",
-      title: "Carrier Assigned: Swift Canadian Haulers on Load TMX-00855",
-      titleFr: "Transporteur Assigné: Swift Canadian Haulers sur TMX-00855",
-      detail: "53' Flatbed heavy machinery route dispatched from Dorval Terminal to Halifax Port.",
-      detailFr: "Plateforme 53' avec machinerie lourde expédiée de Dorval vers le Port d'Halifax.",
-      time: "4 hours ago",
-      timestamp: "2026-09-02T12:00:00Z",
-      actor: "Dispatcher Hamza K.",
-      statusText: "In Transit",
-      statusType: "info",
-      referenceId: "TMX-00855",
-    },
-  ];
-
-  const [activities, setActivities] = useState<ActivityItem[]>(initialActivities);
+  const [activities, setActivities] = useState<ActivityItem[]>([]);
+  const [loadingDashboard, setLoadingDashboard] = useState(false);
 
   const loadSubAdmins = useCallback(async () => {
     setLoadingAdmins(true);
@@ -213,15 +134,32 @@ export default function AdminOperationsPage() {
     }
   }, []);
 
+  const loadDashboard = useCallback(async () => {
+    setLoadingDashboard(true);
+    try {
+      const res = await fetch("/api/admin/dashboard/metrics");
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setMetrics(data.metrics);
+        setActivities(data.activities || []);
+      }
+    } catch {
+      // Keep last known metrics/activities on failure
+    } finally {
+      setLoadingDashboard(false);
+    }
+  }, []);
+
   useEffect(() => {
     loadSubAdmins();
-  }, [loadSubAdmins]);
+    loadDashboard();
+  }, [loadSubAdmins, loadDashboard]);
 
   const handleRefresh = () => {
     setIsRefreshing(true);
-    setTimeout(() => {
+    loadDashboard().finally(() => {
       setIsRefreshing(false);
-    }, 600);
+    });
   };
 
   const handleCreateSubAdmin = async (e: React.FormEvent) => {
@@ -260,33 +198,54 @@ export default function AdminOperationsPage() {
     }
   };
 
-  const handleQuickShipmentSubmit = (e: React.FormEvent) => {
+  const handleQuickShipmentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setShipmentSuccess(true);
-    setTimeout(() => {
-      setShipmentSuccess(false);
-      setIsShipmentModalOpen(false);
-      // Increment active shipments metric
-      setMetrics((prev) => ({
-        ...prev,
-        activeShipmentsCount: prev.activeShipmentsCount + 1,
-      }));
-      // Add new activity
-      const newAct: ActivityItem = {
-        id: `ACT-${Date.now()}`,
-        category: "shipment",
-        title: `Shipment TMX-${Math.floor(10000 + Math.random() * 90000)} Created`,
-        titleFr: `Expédition TMX-${Math.floor(10000 + Math.random() * 90000)} Créée`,
-        detail: `${newFreightMode} dispatched: ${newOrigin} to ${newDestination}.`,
-        detailFr: `${newFreightMode} expédié: ${newOrigin} vers ${newDestination}.`,
-        time: "Just now",
-        timestamp: new Date().toISOString(),
-        actor: "Staff Dispatcher",
-        statusText: "Dispatched",
-        statusType: "success",
-      };
-      setActivities((prev) => [newAct, ...prev]);
-    }, 1000);
+    setShipmentError(null);
+    setShipmentSubmitting(true);
+
+    try {
+      const res = await fetch("/api/admin/shipments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          clientName: newClientName,
+          clientCompany: newClientCompany,
+          clientEmail: newClientEmail,
+          origin: newOrigin,
+          destination: newDestination,
+          transportMode: newFreightMode,
+          equipment: newFreightMode,
+          weight: newWeight,
+          commodity: newCommodity,
+          rateCad: newRateCad,
+          assignedCarrier: newCarrier,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to create shipment");
+      }
+
+      setShipmentSuccess(true);
+      // Refresh real metrics/activity feed now that the shipment exists in the DB
+      await loadDashboard();
+
+      setTimeout(() => {
+        setShipmentSuccess(false);
+        setIsShipmentModalOpen(false);
+        setNewClientName("");
+        setNewClientCompany("");
+        setNewClientEmail("");
+        setNewCommodity("");
+        setNewWeight("");
+        setNewRateCad("");
+      }, 1200);
+    } catch (err: any) {
+      setShipmentError(err.message || "Failed to create shipment");
+    } finally {
+      setShipmentSubmitting(false);
+    }
   };
 
   // Filtered activities
@@ -332,10 +291,11 @@ export default function AdminOperationsPage() {
           <button
             type="button"
             onClick={handleRefresh}
-            className="px-3.5 py-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 shadow-2xs transition cursor-pointer flex items-center gap-1.5"
+            disabled={loadingDashboard}
+            className="px-3.5 py-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 shadow-2xs transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
             title="Refresh Live Metrics"
           >
-            <RefreshCw className={`w-3.5 h-3.5 text-slate-500 ${isRefreshing ? "animate-spin" : ""}`} />
+            <RefreshCw className={`w-3.5 h-3.5 text-slate-500 ${isRefreshing || loadingDashboard ? "animate-spin" : ""}`} />
             <span className="hidden sm:inline">{language === "fr" ? "Actualiser" : "Refresh"}</span>
           </button>
 
@@ -650,49 +610,6 @@ export default function AdminOperationsPage() {
 
         {/* Right Operations Side Column (1 col) */}
         <div className="space-y-6">
-          {/* Quick Dispatch Corridor Status Card */}
-          <div className="bg-[#0B2545] rounded-2xl p-5 text-white shadow-md border border-slate-800 space-y-4">
-            <div className="flex items-center justify-between border-b border-white/10 pb-3">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                Corridor Telematics
-              </span>
-              <span className="text-[10px] font-mono text-amber-400">HQ MONTREAL</span>
-            </div>
-
-            <div className="space-y-3 text-xs">
-              <div className="p-3 bg-white/5 rounded-xl border border-white/10 flex items-center justify-between">
-                <div>
-                  <p className="font-bold text-white">Montreal &harr; Toronto (Hwy 401)</p>
-                  <p className="text-[11px] text-slate-300">12 Active units &bull; Average speed 94 km/h</p>
-                </div>
-                <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[10px] font-bold">
-                  NORMAL
-                </span>
-              </div>
-
-              <div className="p-3 bg-white/5 rounded-xl border border-white/10 flex items-center justify-between">
-                <div>
-                  <p className="font-bold text-white">Montreal &harr; Detroit (Cross-Border)</p>
-                  <p className="text-[11px] text-slate-300">6 Active units &bull; CBSA delay 25m</p>
-                </div>
-                <span className="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[10px] font-bold">
-                  HOLD ALERT
-                </span>
-              </div>
-
-              <div className="p-3 bg-white/5 rounded-xl border border-white/10 flex items-center justify-between">
-                <div>
-                  <p className="font-bold text-white">Toronto &harr; Vancouver (Trans-Canada)</p>
-                  <p className="text-[11px] text-slate-300">4 Intermodal rail units in transit</p>
-                </div>
-                <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[10px] font-bold">
-                  ON TIME
-                </span>
-              </div>
-            </div>
-          </div>
-
           {/* Sub-Admins & Operations Team Summary */}
           <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-5 space-y-4">
             <div className="flex items-center justify-between">
@@ -701,7 +618,7 @@ export default function AdminOperationsPage() {
                   {language === "fr" ? "Équipe de Répartition" : "Dispatch Staff on Duty"}
                 </h3>
                 <p className="text-[11px] text-slate-500">
-                  {subAdminsList.length + 1} {language === "fr" ? "personnels autorisés" : "authorized staff members"}
+                  {subAdminsList.length} {language === "fr" ? "personnels autorisés" : "authorized staff members"}
                 </p>
               </div>
               <button
@@ -715,23 +632,9 @@ export default function AdminOperationsPage() {
             </div>
 
             <div className="space-y-2.5">
-              {/* Primary Admin */}
-              <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between text-xs">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-full bg-[#0B2545] text-white flex items-center justify-center font-bold text-[10px]">
-                    JP
-                  </div>
-                  <div>
-                    <p className="font-bold text-slate-900 leading-tight">Jean-Philippe Tremblay</p>
-                    <p className="text-[10px] text-slate-500">admin@transimex.ca</p>
-                  </div>
-                </div>
-                <span className="px-2 py-0.5 rounded-full bg-red-100 text-[#d21f27] text-[10px] font-bold">
-                  SUPER ADMIN
-                </span>
-              </div>
-
-              {/* Sub Admins list */}
+              {subAdminsList.length === 0 && !loadingAdmins && (
+                <p className="text-[11px] text-slate-400 text-center py-2">No authorized staff on record yet.</p>
+              )}
               {subAdminsList.map((adm) => (
                 <div
                   key={adm._id || adm.id || adm.email}
@@ -793,6 +696,46 @@ export default function AdminOperationsPage() {
               </div>
             ) : (
               <form onSubmit={handleQuickShipmentSubmit} className="space-y-4 text-xs">
+                {shipmentError && (
+                  <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-xs">
+                    {shipmentError}
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="font-semibold text-slate-700 block mb-1">Client Name</label>
+                    <input
+                      type="text"
+                      required
+                      value={newClientName}
+                      onChange={(e) => setNewClientName(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 outline-none focus:border-[#0B2545] focus:bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="font-semibold text-slate-700 block mb-1">Client Company</label>
+                    <input
+                      type="text"
+                      required
+                      value={newClientCompany}
+                      onChange={(e) => setNewClientCompany(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 outline-none focus:border-[#0B2545] focus:bg-white"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="font-semibold text-slate-700 block mb-1">Client Email</label>
+                  <input
+                    type="email"
+                    required
+                    value={newClientEmail}
+                    onChange={(e) => setNewClientEmail(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 outline-none focus:border-[#0B2545] focus:bg-white"
+                  />
+                </div>
+
                 <div>
                   <label className="font-semibold text-slate-700 block mb-1">Origin Terminal</label>
                   <input
@@ -842,6 +785,41 @@ export default function AdminOperationsPage() {
                   </div>
                 </div>
 
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="font-semibold text-slate-700 block mb-1">Commodity</label>
+                    <input
+                      type="text"
+                      required
+                      value={newCommodity}
+                      onChange={(e) => setNewCommodity(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 outline-none focus:border-[#0B2545] focus:bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="font-semibold text-slate-700 block mb-1">Weight</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. 12,500 kg"
+                      value={newWeight}
+                      onChange={(e) => setNewWeight(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 outline-none focus:border-[#0B2545] focus:bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="font-semibold text-slate-700 block mb-1">Rate (CAD)</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. 4,200"
+                      value={newRateCad}
+                      onChange={(e) => setNewRateCad(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 outline-none focus:border-[#0B2545] focus:bg-white"
+                    />
+                  </div>
+                </div>
+
                 <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
                   <button
                     type="button"
@@ -852,9 +830,10 @@ export default function AdminOperationsPage() {
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 bg-[#d21f27] hover:bg-[#b51a21] text-white rounded-xl font-bold shadow-xs transition cursor-pointer"
+                    disabled={shipmentSubmitting}
+                    className="px-4 py-2 bg-[#d21f27] hover:bg-[#b51a21] text-white rounded-xl font-bold shadow-xs transition cursor-pointer disabled:opacity-50"
                   >
-                    Dispatch Load
+                    {shipmentSubmitting ? "Dispatching..." : "Dispatch Load"}
                   </button>
                 </div>
               </form>

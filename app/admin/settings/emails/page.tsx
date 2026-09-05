@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import SettingsNavTabs from "@/components/admin/settings/SettingsNavTabs";
-import { EmailTemplate, getStoredEmailTemplates } from "@/lib/mockData";
+import { EmailTemplate } from "@/lib/emailTemplateTypes";
 import {
   Mail,
   Languages,

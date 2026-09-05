@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { QuoteItem } from "@/lib/mockData";
+import { QuoteItem } from "@/lib/quoteTypes";
 import StatusBadge from "./StatusBadge";
 import RejectionModal from "./RejectionModal";
 import {
@@ -409,7 +409,7 @@ export default function QuoteReviewDrawer({
                 <Building2 className="w-4 h-4 text-slate-400 flex-shrink-0" />
                 <div>
                   <span className="text-[10px] text-slate-400 block font-semibold">Company</span>
-                  <span className="font-bold text-slate-900">{quote.clientCompany || "Laurentian Global Logistics Ltd."}</span>
+                  <span className="font-bold text-slate-900">{quote.clientCompany || "—"}</span>
                 </div>
               </div>
 
@@ -417,7 +417,7 @@ export default function QuoteReviewDrawer({
                 <User className="w-4 h-4 text-slate-400 flex-shrink-0" />
                 <div>
                   <span className="text-[10px] text-slate-400 block font-semibold">Contact Person</span>
-                  <span className="font-bold text-slate-900">{quote.clientName || "Marc Tremblay"}</span>
+                  <span className="font-bold text-slate-900">{quote.clientName || "—"}</span>
                 </div>
               </div>
 
@@ -425,7 +425,7 @@ export default function QuoteReviewDrawer({
                 <Mail className="w-4 h-4 text-slate-400 flex-shrink-0" />
                 <div>
                   <span className="text-[10px] text-slate-400 block font-semibold">Email</span>
-                  <span className="font-semibold text-slate-800 truncate block">{quote.clientEmail || "dispatch@laurentianglobal.ca"}</span>
+                  <span className="font-semibold text-slate-800 truncate block">{quote.clientEmail || "—"}</span>
                 </div>
               </div>
 

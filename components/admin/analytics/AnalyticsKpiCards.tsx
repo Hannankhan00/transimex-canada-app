@@ -27,7 +27,7 @@ interface AnalyticsKpiCardsProps {
       benchmark: string;
     };
     onTimeDeliveryRate?: {
-      value: string;
+      value: string | null;
       status: string;
       completedLoads: number;
     };
@@ -57,10 +57,11 @@ export default function AnalyticsKpiCards({ kpis }: AnalyticsKpiCardsProps) {
     benchmark: "Industry Avg: 42%",
   };
   const onTime = kpis.onTimeDeliveryRate || {
-    value: "98.4%",
-    status: "Optimal SLA",
-    completedLoads: 14,
+    value: null,
+    status: "No Delivery Telemetry",
+    completedLoads: 0,
   };
+  const onTimeDisplayValue = onTime.value ?? "N/A";
   const customs = kpis.activeCustomsHolds || {
     value: 2,
     severity: "Normal Clearance",
@@ -131,7 +132,7 @@ export default function AnalyticsKpiCards({ kpis }: AnalyticsKpiCardsProps) {
 
         <div className="mt-3 flex items-baseline gap-2">
           <span className="text-3xl sm:text-4xl font-bold text-emerald-700 tracking-tight">
-            {onTime.value}
+            {onTimeDisplayValue}
           </span>
           <span className="text-xs font-semibold text-slate-500">at / before ETA</span>
         </div>

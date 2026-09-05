@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef } from "react";
-import { DocumentType, VaultDocument } from "@/lib/mockData";
+import { DocumentType, VaultDocument } from "@/lib/documentTypes";
 import {
   UploadCloud,
   FileText,
@@ -78,18 +78,16 @@ export default function CloudinaryUploader({
         });
       }, 150);
 
-      // Create payload for API
+      // Upload the real file bytes to the API
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("type", selectedType);
+      formData.append("isClientVisible", "false"); // Default is strictly internal confidential
+      formData.append("statusText", "Staff Uploaded - Broker Verified");
+
       const res = await fetch(`/api/admin/shipments/${encodeURIComponent(shipmentId)}/documents`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: file.name,
-          type: selectedType,
-          size: `${(file.size / 1024).toFixed(0)} KB`,
-          isClientVisible: false, // Default is strictly internal confidential
-          fileFormat: "PDF",
-          statusText: "Staff Uploaded - Broker Verified",
-        }),
+        body: formData,
       });
 
       clearInterval(progressInterval);
@@ -102,7 +100,15 @@ export default function CloudinaryUploader({
 
       setRecentUpload(file.name);
       if (data.document) {
-        onDocumentUploaded(data.document);
+        onDocumentUploaded({
+          ...data.document,
+          dateUploaded: new Date(data.document.createdAt || Date.now()).toLocaleDateString("en-US", {
+            month: "short",
+            day: "2-digit",
+            year: "numeric",
+          }),
+          size: `${((data.document.fileSize || file.size) / 1024).toFixed(0)} KB`,
+        });
       }
     } catch (err: any) {
       setErrorMessage(err.message || "Failed to process document upload");

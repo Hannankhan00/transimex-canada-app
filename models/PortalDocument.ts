@@ -16,6 +16,9 @@ export interface IPortalDocument extends Document {
   isClientVisible: boolean;
   statusText: string;
   customsPars?: string;
+  mimeType?: string;
+  fileSize?: number;
+  fileData?: Buffer;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -40,6 +43,9 @@ const PortalDocumentSchema = new Schema<IPortalDocument>(
     isClientVisible: { type: Boolean, default: false },
     statusText: { type: String, default: "Staff Uploaded - Broker Verified" },
     customsPars: { type: String, default: "" },
+    mimeType: { type: String, default: "application/pdf" },
+    fileSize: { type: Number, default: 0 },
+    fileData: { type: Buffer },
   },
   { timestamps: true }
 );

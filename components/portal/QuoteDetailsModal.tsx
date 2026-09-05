@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { QuoteItem } from "@/lib/mockData";
+import { QuoteItem } from "@/lib/quoteTypes";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import {
   X,

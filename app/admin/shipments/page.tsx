@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import CustomsStatusBadge from "@/components/admin/customs/CustomsStatusBadge";
@@ -28,7 +28,7 @@ interface AdminShipmentItem {
   equipment: string;
   driver: string;
   carrier: string;
-  status: "in_transit" | "customs" | "delivered" | "pending";
+  status: "in_transit" | "customs" | "delivered" | "pending" | "cancelled";
   customsStatus: "Pending" | "In Review" | "Released" | "Held";
   customsPars?: string;
   broker?: string;
@@ -37,87 +37,63 @@ interface AdminShipmentItem {
   progress: number;
 }
 
+interface ShipmentCounts {
+  total: number;
+  activeInTransit: number;
+  customsHolds: number;
+  completedThisMonth: number;
+  active: number;
+}
+
 export default function AdminShipmentsDirectoryPage() {
   const { language } = useLanguage();
   const [filter, setFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
+  const [shipments, setShipments] = useState<AdminShipmentItem[]>([]);
+  const [counts, setCounts] = useState<ShipmentCounts>({
+    total: 0,
+    activeInTransit: 0,
+    customsHolds: 0,
+    completedThisMonth: 0,
+    active: 0,
+  });
+  const [loading, setLoading] = useState(true);
 
-  const shipments: AdminShipmentItem[] = [
-    {
-      id: "TMX-00839",
-      origin: "Dorval Terminal, QC",
-      destination: "Calgary Logistics Center, AB",
-      equipment: "Intermodal Rail (Container)",
-      driver: "Canadian Pacific Rail Line",
-      carrier: "CP Rail Freight Corridors",
-      status: "customs",
-      customsStatus: "Held",
-      customsPars: "PARS-8849-QC",
-      broker: "Livingston International",
-      eta: "Sep 04, 2026",
-      date: "Sep 01, 2026",
-      progress: 25,
-    },
-    {
-      id: "TMX-00847",
-      origin: "Montreal Hub, QC",
-      destination: "Toronto Distribution Center, ON",
-      equipment: "53' Tandem Dry Van",
-      driver: "Jean D. (Unit #402)",
-      carrier: "Transimex Dedicated Highway Fleet",
-      status: "in_transit",
-      customsStatus: "Released",
-      customsPars: "PARS-9948-ON",
-      broker: "Transimex In-House Brokerage",
-      eta: "Today, 04:15 PM",
-      date: "Today, 08:30 AM",
-      progress: 68,
-    },
-    {
-      id: "TMX-00842",
-      origin: "Quebec City Port, QC",
-      destination: "Detroit Corridor Hub, MI",
-      equipment: "53' Temp-Controlled Reefer (-18°C)",
-      driver: "Marc V. (Unit #118)",
-      carrier: "Transimex Cold-Chain Logistics",
-      status: "customs",
-      customsStatus: "In Review",
-      customsPars: "PARS-7721-NY",
-      broker: "FedEx Trade Networks",
-      eta: "Tomorrow, 09:00 AM",
-      date: "Yesterday",
-      progress: 42,
-    },
-    {
-      id: "TMX-00810",
-      origin: "Ottawa Valley Hub, ON",
-      destination: "Montreal Port Berth 42, QC",
-      equipment: "53' Flatbed Heavy Haul",
-      driver: "Robert L. (Unit #509)",
-      carrier: "Transimex Heavy Equipment Transport",
-      status: "delivered",
-      customsStatus: "Released",
-      customsPars: "PARS-4410-QC",
-      broker: "Cole International",
-      eta: "Delivered",
-      date: "Aug 30, 2026",
-      progress: 100,
-    },
-    {
-      id: "TMX-00855",
-      origin: "Dorval Terminal, QC",
-      destination: "Halifax Port, NS",
-      equipment: "48' Stepdeck Heavy Haul",
-      driver: "Assigned Dispatch Fleet #302",
-      carrier: "Swift Canadian Haulers",
-      status: "in_transit",
-      customsStatus: "Pending",
-      broker: "Transimex In-House Brokerage",
-      eta: "Sep 05, 2026",
-      date: "Sep 02, 2026",
-      progress: 15,
-    },
-  ];
+  const loadShipments = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/admin/shipments");
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setShipments(
+          (data.shipments || []).map((s: any) => ({
+            id: s.id,
+            origin: s.origin,
+            destination: s.destination,
+            equipment: s.equipment,
+            driver: s.driver,
+            carrier: s.carrier,
+            status: s.status,
+            customsStatus: s.customsStatus,
+            customsPars: s.customsPars,
+            broker: s.broker,
+            eta: s.eta,
+            date: s.date,
+            progress: 0,
+          }))
+        );
+        if (data.counts) setCounts(data.counts);
+      }
+    } catch {
+      // Keep last known list on failure
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadShipments();
+  }, [loadShipments]);
 
   const filteredShipments = useMemo(() => {
     return shipments.filter((s) => {
@@ -181,7 +157,7 @@ export default function AdminShipmentsDirectoryPage() {
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs">
           <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Active Freight in Transit</span>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-[#0B2545]">24</span>
+            <span className="text-3xl font-bold text-[#0B2545]">{counts.activeInTransit}</span>
             <span className="text-xs font-semibold text-emerald-600">On Highway &amp; Rail</span>
           </div>
         </div>
@@ -192,7 +168,7 @@ export default function AdminShipmentsDirectoryPage() {
             <span className="px-2 py-0.5 rounded-full bg-red-600 text-white text-[10px] font-bold">URGENT</span>
           </div>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-[#d21f27]">3</span>
+            <span className="text-3xl font-bold text-[#d21f27]">{counts.customsHolds}</span>
             <span className="text-xs font-semibold text-red-700">CBSA Secondary Exam</span>
           </div>
         </div>
@@ -200,7 +176,7 @@ export default function AdminShipmentsDirectoryPage() {
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs">
           <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Completed Deliveries</span>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-slate-800">182</span>
+            <span className="text-3xl font-bold text-slate-800">{counts.completedThisMonth}</span>
             <span className="text-xs font-semibold text-slate-500">This Month</span>
           </div>
         </div>
@@ -278,7 +254,20 @@ export default function AdminShipmentsDirectoryPage() {
             </thead>
 
             <tbody className="divide-y divide-slate-100 text-slate-700">
-              {filteredShipments.map((shipment) => (
+              {loading ? (
+                <tr>
+                  <td colSpan={7} className="py-10 text-center text-slate-400 text-xs">
+                    Loading shipments...
+                  </td>
+                </tr>
+              ) : filteredShipments.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="py-10 text-center text-slate-400 text-xs">
+                    No shipments match this filter.
+                  </td>
+                </tr>
+              ) : (
+              filteredShipments.map((shipment) => (
                 <tr key={shipment.id} className="hover:bg-slate-50/80 transition">
                   {/* Tracking ID */}
                   <td className="py-3.5 px-4 font-mono font-bold text-slate-900 whitespace-nowrap">
@@ -337,14 +326,20 @@ export default function AdminShipmentsDirectoryPage() {
                     </Link>
                   </td>
                 </tr>
-              ))}
+              ))
+              )}
             </tbody>
           </table>
         </div>
 
         {/* Mobile Card List (Phones View) */}
         <div className="block md:hidden divide-y divide-slate-100">
-          {filteredShipments.map((shipment) => (
+          {loading ? (
+            <div className="p-10 text-center text-slate-400 text-xs">Loading shipments...</div>
+          ) : filteredShipments.length === 0 ? (
+            <div className="p-10 text-center text-slate-400 text-xs">No shipments match this filter.</div>
+          ) : (
+          filteredShipments.map((shipment) => (
             <div key={shipment.id} className="p-4 space-y-3">
               <div className="flex items-center justify-between gap-2">
                 <span className="font-mono font-bold text-[#0B2545] text-sm">{shipment.id}</span>
@@ -377,7 +372,8 @@ export default function AdminShipmentsDirectoryPage() {
                 </Link>
               </div>
             </div>
-          ))}
+          ))
+          )}
         </div>
       </div>
     </div>

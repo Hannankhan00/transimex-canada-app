@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { quoteRequestSchema, QuoteRequestFormData } from "@/lib/validations/quote";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { api } from "@/lib/api";
-import { QuoteItem } from "@/lib/mockData";
+import { QuoteItem } from "@/lib/quoteTypes";
 import { SavedAddress } from "@/lib/validations/address";
 import { TRANSPORT_CATEGORIES, findCategoryForMode } from "@/lib/transportModes";
 import {

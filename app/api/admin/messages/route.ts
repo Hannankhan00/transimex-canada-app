@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
-import { getStoredInquiries, ContactInquiry } from "@/lib/mockData";
+import connectDB from "@/lib/mongoose";
+import Inquiry from "@/models/Inquiry";
+import { toContactInquiry } from "@/lib/inquiryTypes";
 
 export async function GET(req: Request) {
   try {
@@ -8,7 +10,10 @@ export async function GET(req: Request) {
     const status = searchParams.get("status"); // "unread", "read", "all"
     const search = searchParams.get("q")?.toLowerCase() || "";
 
-    let inquiries: ContactInquiry[] = getStoredInquiries();
+    await connectDB();
+    const docs = await Inquiry.find({}).sort({ createdAt: -1 }).lean();
+
+    let inquiries = docs.map(toContactInquiry);
 
     if (category && category !== "all") {
       inquiries = inquiries.filter(
@@ -33,7 +38,7 @@ export async function GET(req: Request) {
       );
     }
 
-    const allInquiries = getStoredInquiries();
+    const allInquiries = docs.map(toContactInquiry);
     const counts = {
       all: allInquiries.length,
       unread: allInquiries.filter((inq) => inq.unread).length,

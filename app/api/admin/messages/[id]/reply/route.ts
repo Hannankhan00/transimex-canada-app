@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
-import { replyToInquiry, getStoredInquiries } from "@/lib/mockData";
+import connectDB from "@/lib/mongoose";
+import Inquiry from "@/models/Inquiry";
+import { toContactInquiry } from "@/lib/inquiryTypes";
 import { sendInquiryReplyEmail } from "@/lib/email";
 
 export async function PATCH(
@@ -18,18 +20,23 @@ export async function PATCH(
       );
     }
 
-    const inquiries = getStoredInquiries();
-    const originalInquiry = inquiries.find((inq) => inq.id === id);
+    await connectDB();
+    const originalInquiry = await Inquiry.findById(id);
 
     if (!originalInquiry) {
       return NextResponse.json({ error: "Inquiry not found" }, { status: 404 });
     }
 
-    const updated = replyToInquiry(
-      id,
-      replyText,
-      responderName || "Transimex Operations Dispatch"
-    );
+    const repliedBy = responderName || "Transimex Operations Dispatch";
+
+    originalInquiry.reply = {
+      text: replyText,
+      repliedAt: new Date(),
+      repliedBy,
+    };
+    originalInquiry.replied = true;
+    originalInquiry.unread = false;
+    await originalInquiry.save();
 
     // Trigger transactional email to prospect
     try {
@@ -39,7 +46,7 @@ export async function PATCH(
         subject: originalInquiry.subject,
         originalMessage: originalInquiry.message,
         replyContent: replyText,
-        responderName: responderName || "Transimex Operations Dispatch",
+        responderName: repliedBy,
       });
     } catch (mailErr) {
       console.warn("[Email Notification] Could not send inquiry reply email:", mailErr);
@@ -48,7 +55,7 @@ export async function PATCH(
     return NextResponse.json({
       success: true,
       message: `Reply delivered to ${originalInquiry.email}`,
-      inquiry: updated,
+      inquiry: toContactInquiry(originalInquiry),
     });
   } catch (error: any) {
     console.error("Error replying to inquiry:", error);

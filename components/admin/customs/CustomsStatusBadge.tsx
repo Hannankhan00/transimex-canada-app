@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { CustomsClearanceStatus } from "@/lib/mockData";
+import { CustomsClearanceStatus } from "@/lib/customsTypes";
 import { CheckCircle2, Clock, AlertTriangle, Shield, ShieldCheck } from "lucide-react";
 
 interface CustomsStatusBadgeProps {

@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { api } from "@/lib/api";
-import { QuoteItem } from "@/lib/mockData";
+import { QuoteItem } from "@/lib/quoteTypes";
 import NewQuoteModal from "@/components/portal/NewQuoteModal";
 import {
   Truck,

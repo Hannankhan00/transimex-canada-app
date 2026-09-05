@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { ClientProfile, ClientAccountStatus } from "@/lib/mockData";
+import { ClientProfile, ClientAccountStatus } from "@/lib/clientTypes";
 import ClientDataTable from "@/components/admin/clients/ClientDataTable";
 import {
   Building2,

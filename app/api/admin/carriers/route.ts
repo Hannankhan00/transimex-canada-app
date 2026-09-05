@@ -1,65 +1,43 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongoose";
-import Carrier from "@/models/Carrier";
-import {
-  getStoredCarriers,
-  addCarrierToStore,
-  CarrierVendor,
-  TransportModeType,
-} from "@/lib/mockData";
+import Carrier, { TransportMode } from "@/models/Carrier";
 
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
-    const mode = searchParams.get("mode") as TransportModeType | null;
+    const mode = searchParams.get("mode") as TransportMode | null;
     const search = searchParams.get("q")?.toLowerCase() || "";
 
-    let carriers: CarrierVendor[] = getStoredCarriers();
+    await connectDB();
+    const dbCarriers = await Carrier.find().sort({ createdAt: -1 }).lean();
 
-    // Try fetching from MongoDB if available
-    try {
-      await connectDB();
-      const dbCarriers = await Carrier.find().lean();
-      if (dbCarriers && dbCarriers.length > 0) {
-        // Merge MongoDB carriers with initial mock carriers
-        const dbMapped: CarrierVendor[] = dbCarriers.map((c: any) => ({
-          id: c._id.toString(),
-          name: c.name,
-          code: c.code,
-          primaryMode: c.primaryMode,
-          supportedModes: c.supportedModes || [c.primaryMode],
-          dispatchContact: {
-            name: c.dispatchContact?.name || "Dispatch Desk",
-            phone: c.dispatchContact?.phone || "+1 (800) 555-0100",
-            email: c.dispatchContact?.email || "dispatch@carrier.ca",
-            emergencyPhone: c.dispatchContact?.emergency247Phone,
-          },
-          headquarters: c.headquarters || "Canada",
-          operatingLanes: c.operatingLanes || [],
-          fleetSize: c.fleetSize || "50+ Dedicated Units",
-          rating: c.rating || 4.8,
-          totalShipmentsCompleted: c.totalShipmentsCompleted || 0,
-          onTimeDeliveryRate: c.onTimeDeliveryRate || "98.0%",
-          insurance: {
-            policyNumber: c.insurance?.policyNumber || "POL-STANDARD",
-            coverageAmount: c.insurance?.coverageAmount || "$5,000,000 CAD",
-            expiryDate: c.insurance?.expiryDate || "2027-12-31",
-            isCompliant: c.insurance?.isCompliant !== false,
-          },
-          status: c.status || "Active",
-          notes: c.notes || "",
-        }));
-
-        // Combine uniquely by code
-        for (const dc of dbMapped) {
-          if (!carriers.find((c) => c.code.toUpperCase() === dc.code.toUpperCase())) {
-            carriers.unshift(dc);
-          }
-        }
-      }
-    } catch (dbErr) {
-      console.warn("[Admin Carriers API] DB fetch fallback:", dbErr);
-    }
+    let carriers = dbCarriers.map((c: any) => ({
+      id: c._id.toString(),
+      name: c.name,
+      code: c.code,
+      primaryMode: c.primaryMode,
+      supportedModes: c.supportedModes || [c.primaryMode],
+      dispatchContact: {
+        name: c.dispatchContact?.name || "",
+        phone: c.dispatchContact?.phone || "",
+        email: c.dispatchContact?.email || "",
+        emergencyPhone: c.dispatchContact?.emergency247Phone,
+      },
+      headquarters: c.headquarters || "",
+      operatingLanes: c.operatingLanes || [],
+      fleetSize: c.fleetSize || "",
+      rating: c.rating ?? 0,
+      totalShipmentsCompleted: c.totalShipmentsCompleted || 0,
+      onTimeDeliveryRate: c.onTimeDeliveryRate || "",
+      insurance: {
+        policyNumber: c.insurance?.policyNumber || "",
+        coverageAmount: c.insurance?.coverageAmount || "",
+        expiryDate: c.insurance?.expiryDate || "",
+        isCompliant: c.insurance?.isCompliant !== false,
+      },
+      status: c.status || "Active",
+      notes: c.notes || "",
+    }));
 
     // Filter by mode
     let filtered = carriers;
@@ -67,7 +45,7 @@ export async function GET(req: Request) {
       filtered = filtered.filter(
         (c) =>
           c.primaryMode.toLowerCase() === mode.toLowerCase() ||
-          c.supportedModes?.some((m) => m.toLowerCase() === mode.toLowerCase())
+          c.supportedModes?.some((m: string) => m.toLowerCase() === mode.toLowerCase())
       );
     }
 
@@ -78,7 +56,7 @@ export async function GET(req: Request) {
           c.name.toLowerCase().includes(search) ||
           c.code.toLowerCase().includes(search) ||
           c.dispatchContact.name.toLowerCase().includes(search) ||
-          c.operatingLanes.some((l) => l.toLowerCase().includes(search))
+          c.operatingLanes.some((l: string) => l.toLowerCase().includes(search))
       );
     }
 
@@ -121,58 +99,60 @@ export async function POST(req: Request) {
       notes,
     } = body;
 
-    if (!name || !code || !primaryMode || !dispatchContact?.phone || !dispatchContact?.email) {
+    if (
+      !name ||
+      !code ||
+      !primaryMode ||
+      !dispatchContact?.phone ||
+      !dispatchContact?.email ||
+      !headquarters ||
+      !insurance?.expiryDate
+    ) {
       return NextResponse.json(
-        { error: "Carrier name, code, transport mode, and dispatch contact details are required" },
+        {
+          error:
+            "Carrier name, code, transport mode, headquarters, dispatch contact, and insurance expiry are required",
+        },
         { status: 400 }
       );
     }
 
-    const carrierId = `CAR-${Math.floor(100 + Math.random() * 900)}`;
+    await connectDB();
 
-    const newCarrier: CarrierVendor = {
-      id: carrierId,
+    const existing = await Carrier.findOne({ code: code.toUpperCase() });
+    if (existing) {
+      return NextResponse.json(
+        { error: `A carrier with code ${code.toUpperCase()} already exists` },
+        { status: 409 }
+      );
+    }
+
+    const newCarrier = await Carrier.create({
       name,
       code: code.toUpperCase(),
-      primaryMode: primaryMode || "Road",
+      primaryMode,
       supportedModes: supportedModes || [primaryMode],
       dispatchContact: {
-        name: dispatchContact.name || "Primary Dispatch",
+        name: dispatchContact.name || "",
         phone: dispatchContact.phone,
         email: dispatchContact.email,
-        emergencyPhone: dispatchContact.emergencyPhone,
+        emergency247Phone: dispatchContact.emergencyPhone || "",
       },
-      headquarters: headquarters || "Canada",
+      headquarters,
       operatingLanes: operatingLanes || [],
-      fleetSize: fleetSize || "Dedicated Units",
-      rating: parseFloat(rating) || 4.8,
+      fleetSize: fleetSize || "",
+      rating: rating ? parseFloat(rating) : 4.8,
       totalShipmentsCompleted: 0,
-      onTimeDeliveryRate: "100.0%",
+      onTimeDeliveryRate: "0.0%",
       insurance: {
-        policyNumber: insurance?.policyNumber || `POL-${code.toUpperCase()}-2026`,
-        coverageAmount: insurance?.coverageAmount || "$5,000,000 CAD",
-        expiryDate: insurance?.expiryDate || "2027-12-31",
+        policyNumber: insurance?.policyNumber || `POL-${code.toUpperCase()}-${new Date().getFullYear()}`,
+        coverageAmount: insurance?.coverageAmount || "",
+        expiryDate: insurance.expiryDate,
         isCompliant: true,
       },
       status: "Active",
       notes: notes || "",
-    };
-
-    // Save in DB if available
-    try {
-      await connectDB();
-      await Carrier.create({
-        ...newCarrier,
-        dispatchContact: {
-          ...newCarrier.dispatchContact,
-          emergency247Phone: newCarrier.dispatchContact.emergencyPhone,
-        },
-      });
-    } catch (dbErr) {
-      console.warn("[Admin Carriers API] DB create fallback:", dbErr);
-    }
-
-    addCarrierToStore(newCarrier);
+    });
 
     return NextResponse.json({
       success: true,

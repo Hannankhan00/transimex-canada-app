@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongoose";
 import User from "@/models/User";
-import { updateClientStatus, getStoredClients } from "@/lib/mockData";
 
 export async function PATCH(
   req: Request,
@@ -19,28 +18,21 @@ export async function PATCH(
       );
     }
 
-    // 1. Update in MongoDB if exists
-    try {
-      await connectDB();
-      const user = await User.findOne({
-        $or: [{ _id: id.match(/^[0-9a-fA-F]{24}$/) ? id : null }, { email: id.toLowerCase() }],
-      });
+    await connectDB();
+    const user = await User.findOne({
+      $or: [{ _id: id.match(/^[0-9a-fA-F]{24}$/) ? id : null }, { email: id.toLowerCase() }],
+    });
 
-      if (user) {
-        user.isVerified = status === "Active";
-        await user.save();
-      }
-    } catch (dbErr) {
-      console.warn("[Client Status API] DB status update fallback:", dbErr);
+    if (!user) {
+      return NextResponse.json({ error: "Client not found" }, { status: 404 });
     }
 
-    // 2. Update in storage/mock layer
-    const updatedClient = updateClientStatus(id, status);
+    user.isVerified = status === "Active";
+    await user.save();
 
     return NextResponse.json({
       success: true,
       message: `Client account status updated to ${status}`,
-      client: updatedClient,
       status,
     });
   } catch (error: any) {

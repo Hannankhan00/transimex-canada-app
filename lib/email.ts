@@ -1,4 +1,6 @@
 import nodemailer from "nodemailer";
+import connectDB from "@/lib/mongoose";
+import EmailTemplate from "@/models/EmailTemplate";
 
 interface SendEmailParams {
   to: string;
@@ -134,6 +136,42 @@ export function emailTemplateWrapper(contentHtml: string, previewText: string = 
   </div>
 </body>
 </html>
+  `;
+}
+
+/**
+ * Loads a DB-backed transactional email template by slug (English copy).
+ * Returns null if the template row is missing or the DB is unreachable —
+ * callers should fall back to their hardcoded copy in that case.
+ */
+async function loadEmailTemplate(
+  slug: string
+): Promise<{ subject: string; heading: string; body: string } | null> {
+  try {
+    await connectDB();
+    const template = await EmailTemplate.findOne({ slug }).lean();
+    if (!template) return null;
+    const t: any = template;
+    return {
+      subject: t.subject?.en || "",
+      heading: t.heading?.en || "",
+      body: t.body?.en || "",
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** Replaces every {{token}} occurrence in text with the matching value (or empty string). */
+function interpolateTemplate(text: string, tokens: Record<string, string | undefined>): string {
+  return text.replace(/\{\{\s*(\w+)\s*\}\}/g, (_match, key) => tokens[key] ?? "");
+}
+
+/** Renders a DB-backed template's heading + body into the standard email content block. */
+function renderTemplateContent(heading: string, body: string): string {
+  return `
+    <h1 class="h1">${heading}</h1>
+    <div style="color: #334155; font-size: 14px; line-height: 1.7; white-space: pre-wrap;">${body}</div>
   `;
 }
 
@@ -297,11 +335,37 @@ export async function sendQuoteAcceptedEmail({
   const appUrl = getAppUrl();
   const trackingUrl = `${appUrl}/dashboard/shipments?id=${encodeURIComponent(trackingId)}`;
 
+  const dbTemplate = await loadEmailTemplate("quote-accepted");
+  if (dbTemplate) {
+    const tokens = {
+      clientName: name,
+      quoteId,
+      trackingId,
+      origin,
+      destination,
+      rate: priceCad,
+      eta: "",
+      portalUrl: trackingUrl,
+    };
+    const subject = interpolateTemplate(dbTemplate.subject, tokens);
+    const heading = interpolateTemplate(dbTemplate.heading, tokens);
+    const bodyText = interpolateTemplate(dbTemplate.body, tokens);
+
+    return sendEmail({
+      to,
+      subject,
+      html: emailTemplateWrapper(renderTemplateContent(heading, bodyText), subject),
+      text: bodyText,
+    });
+  }
+
+  console.warn('[Email] No DB template found for slug "quote-accepted" — using hardcoded fallback copy.');
+
   const content = `
     <h1 class="h1">Freight Quote Accepted &amp; Dispatched</h1>
     <p>Dear <strong>${name}</strong> ${companyName ? `(${companyName})` : ""},</p>
     <p>We are pleased to inform you that your freight quote request <strong>${quoteId}</strong> has been finalized, approved, and converted into an active commercial shipment.</p>
-    
+
     <div class="cred-box">
       <div style="font-size: 15px; font-weight: bold; color: #0B2545; margin-bottom: 8px;">
         Tracking Manifest: <span style="color: #D21F27;">${trackingId}</span>
@@ -351,6 +415,29 @@ export async function sendQuoteRejectedEmail({
 }) {
   const appUrl = getAppUrl();
   const contactUrl = `${appUrl}/dashboard/support`;
+
+  const dbTemplate = await loadEmailTemplate("quote-rejected");
+  if (dbTemplate) {
+    const tokens = {
+      clientName: name,
+      quoteId,
+      origin,
+      destination,
+      rejectionReason,
+    };
+    const subject = interpolateTemplate(dbTemplate.subject, tokens);
+    const heading = interpolateTemplate(dbTemplate.heading, tokens);
+    const bodyText = interpolateTemplate(dbTemplate.body, tokens);
+
+    return sendEmail({
+      to,
+      subject,
+      html: emailTemplateWrapper(renderTemplateContent(heading, bodyText), subject),
+      text: bodyText,
+    });
+  }
+
+  console.warn('[Email] No DB template found for slug "quote-rejected" — using hardcoded fallback copy.');
 
   const content = `
     <h1 class="h1">Freight Quote Assessment Update</h1>
@@ -460,6 +547,54 @@ export async function sendDutiesNoticeEmail({
 }) {
   const appUrl = getAppUrl();
   const paymentUrl = `${appUrl}/dashboard/shipments?id=${encodeURIComponent(trackingId)}`;
+
+  const dutiesBreakdown = `
+    <div class="cred-box">
+      <div style="font-size: 16px; font-weight: bold; color: #0B2545; margin-bottom: 8px;">
+        Total Tariff &amp; Regulatory Duties Owed: <span style="color: #D21F27;">${totalOwed}</span>
+      </div>
+      <div style="font-size: 13px; line-height: 1.6;">
+        <div>&bull; <strong>Customs Tariff Duties:</strong> ${dutiesAmount}</div>
+        <div>&bull; <strong>Federal / Provincial Taxes (GST/HST):</strong> ${taxesAmount}</div>
+        <div>&bull; <strong>Brokerage &amp; Harbor Filing Fee:</strong> ${brokerageFee}</div>
+      </div>
+    </div>
+
+    <p style="margin-top: 18px;">
+      ${wirePaymentInstructions || "Payment can be executed via Electronic Funds Transfer (EFT), certified corporate cheque, or credit card directly in the client portal."}
+    </p>
+
+    <div style="text-align: center; margin-top: 24px;">
+      <a href="${paymentUrl}" class="btn" target="_blank">Review &amp; Clear Duties in Portal</a>
+    </div>
+
+    <div class="alert-box">
+      <strong>Important Border Release Notice:</strong> In accordance with CBSA &amp; CBP regulations, freight release from border customs hold will occur immediately upon settlement verification.
+    </div>
+  `;
+
+  const dbTemplate = await loadEmailTemplate("customs-duties");
+  if (dbTemplate) {
+    const tokens = {
+      clientName: name,
+      trackingId,
+      totalOwed,
+      portOfEntry: portOfEntry || "",
+      portalUrl: paymentUrl,
+    };
+    const subject = interpolateTemplate(dbTemplate.subject, tokens);
+    const heading = interpolateTemplate(dbTemplate.heading, tokens);
+    const bodyText = interpolateTemplate(dbTemplate.body, tokens);
+
+    return sendEmail({
+      to,
+      subject,
+      html: emailTemplateWrapper(renderTemplateContent(heading, bodyText) + dutiesBreakdown, subject),
+      text: `${bodyText}\n\nCustoms Tariff Duties: ${dutiesAmount}\nFederal / Provincial Taxes (GST/HST): ${taxesAmount}\nBrokerage & Harbor Filing Fee: ${brokerageFee}\nPay and clear at ${paymentUrl}`,
+    });
+  }
+
+  console.warn('[Email] No DB template found for slug "customs-duties" — using hardcoded fallback copy.');
 
   const content = `
     <h1 class="h1">Customs Clearance: Duties &amp; Taxes Notice</h1>
@@ -581,6 +716,29 @@ export async function sendTicketUpdateEmail({
   const appUrl = getAppUrl();
   const ticketUrl = `${appUrl}/dashboard/support`;
 
+  const dbTemplate = await loadEmailTemplate("support-update");
+  if (dbTemplate) {
+    const tokens = {
+      clientName: name,
+      ticketId,
+      subject,
+      latestMessage,
+      portalUrl: ticketUrl,
+    };
+    const templatedSubject = interpolateTemplate(dbTemplate.subject, tokens);
+    const heading = interpolateTemplate(dbTemplate.heading, tokens);
+    const bodyText = interpolateTemplate(dbTemplate.body, tokens);
+
+    return sendEmail({
+      to,
+      subject: templatedSubject,
+      html: emailTemplateWrapper(renderTemplateContent(heading, bodyText), templatedSubject),
+      text: bodyText,
+    });
+  }
+
+  console.warn('[Email] No DB template found for slug "support-update" — using hardcoded fallback copy.');
+
   const content = `
     <h1 class="h1">Support Ticket Update: ${ticketId}</h1>
     <p>Dear <strong>${name}</strong>,</p>
@@ -629,7 +787,7 @@ export async function sendStaffInviteEmail({
   inviteToken: string;
 }) {
   const appUrl = getAppUrl();
-  const setupUrl = `${appUrl}/login?invite=${inviteToken}&email=${encodeURIComponent(to)}`;
+  const setupUrl = `${appUrl}/reset-password?token=${encodeURIComponent(inviteToken)}`;
 
   const content = `
     <h1 class="h1">Welcome to the Transimex Operations Team</h1>

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
-import { QuoteItem, QuoteStatus } from "@/lib/mockData";
+import { QuoteItem, QuoteStatus } from "@/lib/quoteTypes";
 import QuoteDataTable from "@/components/admin/quotes/QuoteDataTable";
 import QuoteReviewDrawer from "@/components/admin/quotes/QuoteReviewDrawer";
 import {

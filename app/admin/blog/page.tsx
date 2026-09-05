@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { BlogPostItem } from "@/lib/mockData";
+import { BlogPostItem } from "@/lib/blogTypes";
 import BlogEditorModal from "@/components/admin/blog/BlogEditorModal";
 import {
   FileText,

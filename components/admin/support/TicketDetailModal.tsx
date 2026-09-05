@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { SupportTicketItem } from "@/lib/mockData";
+import { SupportTicketItem } from "@/lib/supportTypes";
 import {
   X,
   Send,

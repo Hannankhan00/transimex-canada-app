@@ -21,6 +21,8 @@ export interface IUser extends Document {
   resetTokenExpires?: Date;
   jobTitle?: string;
   department?: string;
+  accountStatus?: "active" | "pending" | "revoked";
+  lastLoginAt?: Date;
   emailPreferences?: {
     emailShipmentUpdates: boolean;
     emailCustomsHolds: boolean;
@@ -64,7 +66,7 @@ const UserSchema = new Schema<IUser>(
       type: String,
       required: [true, "Company name is required"],
       trim: true,
-      default: "Laurentian Global Logistics Ltd.",
+      default: "",
     },
     industry: {
       type: String,
@@ -119,6 +121,14 @@ const UserSchema = new Schema<IUser>(
     department: {
       type: String,
       default: "",
+    },
+    accountStatus: {
+      type: String,
+      enum: ["active", "pending", "revoked"],
+      default: "active",
+    },
+    lastLoginAt: {
+      type: Date,
     },
     emailPreferences: {
       emailShipmentUpdates: { type: Boolean, default: true },

@@ -3,7 +3,8 @@
 import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { ClientProfile, ClientAccountStatus, VaultDocument } from "@/lib/mockData";
+import { ClientProfile, ClientAccountStatus } from "@/lib/clientTypes";
+import { VaultDocument } from "@/lib/documentTypes";
 import {
   ArrowLeft,
   Building2,
@@ -107,22 +108,11 @@ export default function ClientInspectorPage() {
 
   const handleDownloadDoc = (doc: VaultDocument) => {
     setDownloadingDocId(doc.id);
-    try {
-      const fileContent = `%PDF-1.4\n% Transimex Canada Official Client Document Vault\n% Client: ${client?.companyName}\n% Document ID: ${doc.id}\n% Shipment: ${doc.shipmentId}\n% Type: ${doc.type}\n% Date: ${doc.dateUploaded}\n%%EOF`;
-      const blob = new Blob([fileContent], { type: "application/pdf" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = doc.name;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error("Download error:", err);
-    } finally {
-      setTimeout(() => setDownloadingDocId(null), 500);
-    }
+    window.open(
+      `/api/admin/shipments/${encodeURIComponent(doc.shipmentId)}/documents/${encodeURIComponent(doc.id)}/file`,
+      "_blank"
+    );
+    setTimeout(() => setDownloadingDocId(null), 500);
   };
 
   if (loading) {
@@ -281,7 +271,7 @@ export default function ClientInspectorPage() {
           </span>
           <div className="mt-2 flex items-baseline gap-2">
             <span className="text-3xl font-bold text-[#0B2545]">
-              {dossier.tickets?.length || 2}
+              {dossier.tickets?.length || 0}
             </span>
             <span className="text-xs font-semibold text-slate-500">Logged</span>
           </div>
@@ -528,10 +518,10 @@ export default function ClientInspectorPage() {
                         </span>
                       </td>
                       <td className="py-3.5 px-4 font-mono font-bold text-slate-800">
-                        {s.rateCad || "$4,650.00 CAD"}
+                        {s.rateCad || "Pending"}
                       </td>
                       <td className="py-3.5 px-4 text-slate-600 text-[11px]">
-                        {s.assignedCarrier || "Transimex Fleet"}
+                        {s.assignedCarrier || "Unassigned"}
                       </td>
                       <td className="py-3.5 px-4 text-right">
                         <Link
@@ -683,7 +673,7 @@ export default function ClientInspectorPage() {
         <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs p-5 space-y-4 text-xs">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <h3 className="font-bold text-[#0B2545] text-sm">Customer Inquiry &amp; Support History</h3>
-            <span className="text-[11px] text-slate-500">2 Inquiries Logged</span>
+            <span className="text-[11px] text-slate-500">{dossier.tickets.length} Inquiries Logged</span>
           </div>
 
           <div className="space-y-3">

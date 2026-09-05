@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { BlogPostItem } from "@/lib/mockData";
+import { BlogPostItem } from "@/lib/blogTypes";
 import {
   X,
   Languages,

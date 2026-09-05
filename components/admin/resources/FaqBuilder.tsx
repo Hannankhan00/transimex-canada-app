@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
-import { FaqItem, getStoredFaqs, saveStoredFaqs } from "@/lib/mockData";
+import React, { useState, useEffect, useCallback } from "react";
+import { FaqItem } from "@/lib/faqTypes";
 import {
   HelpCircle,
   Plus,
@@ -15,11 +15,12 @@ import {
 } from "lucide-react";
 
 export default function FaqBuilder() {
-  const [faqs, setFaqs] = useState<FaqItem[]>(getStoredFaqs());
+  const [faqs, setFaqs] = useState<FaqItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [editingFaq, setEditingFaq] = useState<FaqItem | null>(null);
   const [isCreating, setIsCreating] = useState(false);
-  const [expandedId, setExpandedId] = useState<string | null>("FAQ-01");
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   // Form states
   const [cat, setCat] = useState<FaqItem["category"]>("Customs");
@@ -36,6 +37,26 @@ export default function FaqBuilder() {
     "Billing",
     "Operations",
   ];
+
+  const fetchFaqs = useCallback(async () => {
+    try {
+      setLoading(true);
+      const res = await fetch("/api/admin/faq");
+      const data = await res.json();
+      if (res.ok && data.faqs) {
+        setFaqs(data.faqs);
+        setExpandedId((prev) => prev ?? (data.faqs.length > 0 ? data.faqs[0].id : null));
+      }
+    } catch (err) {
+      console.error("Error fetching FAQs:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchFaqs();
+  }, [fetchFaqs]);
 
   const filteredFaqs = faqs.filter(
     (f) => selectedCategory === "All" || f.category === selectedCategory
@@ -61,48 +82,65 @@ export default function FaqBuilder() {
     setIsCreating(true);
   };
 
-  const handleDelete = (id: string) => {
-    const updated = faqs.filter((f) => f.id !== id);
-    setFaqs(updated);
-    saveStoredFaqs(updated);
-    setToastMsg("FAQ item deleted.");
-    setTimeout(() => setToastMsg(null), 2500);
+  const handleDelete = async (id: string) => {
+    try {
+      const res = await fetch(`/api/admin/faq/${encodeURIComponent(id)}`, {
+        method: "DELETE",
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Failed to delete FAQ item");
+
+      setFaqs((prev) => prev.filter((f) => f.id !== id));
+      setToastMsg("FAQ item deleted.");
+      setTimeout(() => setToastMsg(null), 2500);
+    } catch (err: any) {
+      alert(err.message || "Error deleting FAQ item");
+    }
   };
 
-  const handleSaveForm = (e: React.FormEvent) => {
+  const handleSaveForm = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!qEn.trim() || !aEn.trim()) return;
 
-    if (editingFaq) {
-      const updated = faqs.map((f) =>
-        f.id === editingFaq.id
-          ? {
-              ...f,
-              category: cat,
-              question: { en: qEn, fr: qFr || qEn },
-              answer: { en: aEn, fr: aFr || aEn },
-            }
-          : f
-      );
-      setFaqs(updated);
-      saveStoredFaqs(updated);
-      setToastMsg("FAQ updated successfully.");
-    } else {
-      const newFaq: FaqItem = {
-        id: `FAQ-${Date.now()}`,
-        category: cat,
-        question: { en: qEn, fr: qFr || qEn },
-        answer: { en: aEn, fr: aFr || aEn },
-        order: faqs.length + 1,
-      };
-      const updated = [...faqs, newFaq];
-      setFaqs(updated);
-      saveStoredFaqs(updated);
-      setToastMsg("New FAQ item published.");
-    }
+    try {
+      if (editingFaq) {
+        const res = await fetch(`/api/admin/faq/${encodeURIComponent(editingFaq.id)}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            category: cat,
+            question: { en: qEn, fr: qFr || qEn },
+            answer: { en: aEn, fr: aFr || aEn },
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Failed to update FAQ item");
 
-    setIsCreating(false);
-    setTimeout(() => setToastMsg(null), 3000);
+        setFaqs((prev) => prev.map((f) => (f.id === editingFaq.id ? data.faq : f)));
+        setToastMsg("FAQ updated successfully.");
+      } else {
+        const res = await fetch("/api/admin/faq", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            category: cat,
+            question: { en: qEn, fr: qFr || qEn },
+            answer: { en: aEn, fr: aFr || aEn },
+            order: faqs.length + 1,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Failed to create FAQ item");
+
+        setFaqs((prev) => [...prev, data.faq]);
+        setToastMsg("New FAQ item published.");
+      }
+
+      setIsCreating(false);
+      setTimeout(() => setToastMsg(null), 3000);
+    } catch (err: any) {
+      alert(err.message || "Error saving FAQ item");
+    }
   };
 
   return (
@@ -250,68 +288,76 @@ export default function FaqBuilder() {
 
       {/* Accordion List */}
       <div className="divide-y divide-slate-100">
-        {filteredFaqs.map((faq) => {
-          const isExpanded = expandedId === faq.id;
+        {loading ? (
+          <div className="p-8 text-center text-slate-400 text-xs">Loading FAQ items...</div>
+        ) : filteredFaqs.length === 0 ? (
+          <div className="p-8 text-center text-slate-400 text-xs">
+            No FAQ items found matching criteria.
+          </div>
+        ) : (
+          filteredFaqs.map((faq) => {
+            const isExpanded = expandedId === faq.id;
 
-          return (
-            <div key={faq.id} className="p-4 hover:bg-slate-50/60 transition space-y-2 text-xs">
-              <div
-                onClick={() => setExpandedId(isExpanded ? null : faq.id)}
-                className="flex items-center justify-between cursor-pointer select-none"
-              >
-                <div className="flex items-center gap-2">
-                  <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 text-[10px] font-bold">
-                    {faq.category}
-                  </span>
-                  <span className="font-bold text-slate-900 text-xs sm:text-sm">
-                    {faq.question.en}
-                  </span>
+            return (
+              <div key={faq.id} className="p-4 hover:bg-slate-50/60 transition space-y-2 text-xs">
+                <div
+                  onClick={() => setExpandedId(isExpanded ? null : faq.id)}
+                  className="flex items-center justify-between cursor-pointer select-none"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 text-[10px] font-bold">
+                      {faq.category}
+                    </span>
+                    <span className="font-bold text-slate-900 text-xs sm:text-sm">
+                      {faq.question.en}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        startEdit(faq);
+                      }}
+                      className="p-1 text-slate-400 hover:text-slate-700 transition"
+                      title="Edit Item"
+                    >
+                      <Edit2 className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(faq.id);
+                      }}
+                      className="p-1 text-slate-400 hover:text-red-600 transition"
+                      title="Delete Item"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                    {isExpanded ? (
+                      <ChevronUp className="w-4 h-4 text-slate-400" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4 text-slate-400" />
+                    )}
+                  </div>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      startEdit(faq);
-                    }}
-                    className="p-1 text-slate-400 hover:text-slate-700 transition"
-                    title="Edit Item"
-                  >
-                    <Edit2 className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDelete(faq.id);
-                    }}
-                    className="p-1 text-slate-400 hover:text-red-600 transition"
-                    title="Delete Item"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                  {isExpanded ? (
-                    <ChevronUp className="w-4 h-4 text-slate-400" />
-                  ) : (
-                    <ChevronDown className="w-4 h-4 text-slate-400" />
-                  )}
-                </div>
+                {isExpanded && (
+                  <div className="pt-2 pl-4 border-l-2 border-[#0B2545] space-y-2 text-[12px] leading-relaxed text-slate-700 animate-in fade-in duration-150">
+                    <p>
+                      <strong className="text-slate-900">EN:</strong> {faq.answer.en}
+                    </p>
+                    <p className="text-slate-600 italic">
+                      <strong className="text-slate-900 font-normal">FR:</strong> {faq.answer.fr}
+                    </p>
+                  </div>
+                )}
               </div>
-
-              {isExpanded && (
-                <div className="pt-2 pl-4 border-l-2 border-[#0B2545] space-y-2 text-[12px] leading-relaxed text-slate-700 animate-in fade-in duration-150">
-                  <p>
-                    <strong className="text-slate-900">EN:</strong> {faq.answer.en}
-                  </p>
-                  <p className="text-slate-600 italic">
-                    <strong className="text-slate-900 font-normal">FR:</strong> {faq.answer.fr}
-                  </p>
-                </div>
-              )}
-            </div>
-          );
-        })}
+            );
+          })
+        )}
       </div>
     </div>
   );

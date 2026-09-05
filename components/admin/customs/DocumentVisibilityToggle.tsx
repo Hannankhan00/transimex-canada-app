@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { VaultDocument } from "@/lib/mockData";
+import { VaultDocument } from "@/lib/documentTypes";
 import {
   Lock,
   Eye,
@@ -56,22 +56,11 @@ export default function DocumentVisibilityToggle({
 
   const handleDownloadPreview = (doc: VaultDocument) => {
     setDownloadingId(doc.id);
-    try {
-      const fileContent = `%PDF-1.4\n% Transimex Canada Logistics Official Paperwork\n% Document ID: ${doc.id}\n% Shipment ID: ${doc.shipmentId}\n% Type: ${doc.type}\n% Visibility: ${doc.isClientVisible ? "PUBLIC" : "INTERNAL CONFIDENTIAL"}\n% Date: ${doc.dateUploaded}\n%%EOF`;
-      const blob = new Blob([fileContent], { type: "application/pdf" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = doc.name;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error("Download error:", err);
-    } finally {
-      setTimeout(() => setDownloadingId(null), 500);
-    }
+    window.open(
+      `/api/admin/shipments/${encodeURIComponent(shipmentId)}/documents/${encodeURIComponent(doc.id)}/file`,
+      "_blank"
+    );
+    setTimeout(() => setDownloadingId(null), 500);
   };
 
   return (

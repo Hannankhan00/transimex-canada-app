@@ -1,22 +1,48 @@
 import { NextResponse } from "next/server";
-import { getStoredAuditLogs, AuditLogEntry } from "@/lib/mockData";
+import connectDB from "@/lib/mongoose";
+import AuditLog from "@/models/AuditLog";
+
+function formatTimestamp(date: Date): string {
+  return new Date(date).toLocaleString("en-CA", {
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
 
 export async function GET(req: Request) {
   try {
+    await connectDB();
+
     const { searchParams } = new URL(req.url);
     const action = searchParams.get("action");
     const staff = searchParams.get("staff");
     const search = searchParams.get("q")?.toLowerCase() || "";
 
-    let logs: AuditLogEntry[] = getStoredAuditLogs();
-
+    const query: Record<string, any> = {};
     if (action && action !== "all") {
-      logs = logs.filter((l) => l.action.toLowerCase() === action.toLowerCase());
+      query.action = { $regex: `^${action}$`, $options: "i" };
+    }
+    if (staff && staff !== "all") {
+      query.staffName = { $regex: `^${staff}$`, $options: "i" };
     }
 
-    if (staff && staff !== "all") {
-      logs = logs.filter((l) => l.staffName.toLowerCase() === staff.toLowerCase());
-    }
+    const records = await AuditLog.find(query).sort({ createdAt: -1 }).lean();
+
+    let logs = records.map((l: any) => ({
+      id: l._id.toString(),
+      timestamp: formatTimestamp(l.createdAt),
+      staffName: l.staffName,
+      staffEmail: l.staffEmail,
+      staffRole: l.staffRole,
+      action: l.action,
+      resourceType: l.resourceType,
+      resourceId: l.resourceId,
+      details: l.details || "",
+      ipAddress: l.ipAddress || "",
+    }));
 
     if (search) {
       logs = logs.filter(
@@ -29,9 +55,9 @@ export async function GET(req: Request) {
       );
     }
 
-    const all = getStoredAuditLogs();
-    const actions = Array.from(new Set(all.map((l) => l.action)));
-    const staffMembers = Array.from(new Set(all.map((l) => l.staffName)));
+    const allRecords = await AuditLog.find().lean();
+    const actions = Array.from(new Set(allRecords.map((l: any) => l.action)));
+    const staffMembers = Array.from(new Set(allRecords.map((l: any) => l.staffName)));
 
     return NextResponse.json({
       success: true,

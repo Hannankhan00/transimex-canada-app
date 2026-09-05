@@ -55,6 +55,7 @@ export interface IShipment extends Document {
   duties?: {
     amountCad?: string;
     taxGstHst?: string;
+    brokerageFeeCad?: string;
     totalOwed?: string;
     status?: "Unassessed" | "Notice Dispatched" | "Settled";
     dispatchedAt?: string;
@@ -131,6 +132,7 @@ const ShipmentSchema = new Schema<IShipment>(
     duties: {
       amountCad: { type: String, default: "" },
       taxGstHst: { type: String, default: "" },
+      brokerageFeeCad: { type: String, default: "" },
       totalOwed: { type: String, default: "" },
       status: {
         type: String,

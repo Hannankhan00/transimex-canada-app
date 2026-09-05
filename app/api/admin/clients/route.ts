@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongoose";
 import User from "@/models/User";
-import { getStoredClients, ClientProfile } from "@/lib/mockData";
+import { ClientProfile, mapUserIndustryToClientIndustry } from "@/lib/clientTypes";
 
 export async function GET(req: Request) {
   try {
@@ -10,54 +10,40 @@ export async function GET(req: Request) {
     const status = searchParams.get("status") || "all";
     const industry = searchParams.get("industry") || "all";
 
-    // 1. Fetch from mock/storage layer
-    let clients: ClientProfile[] = getStoredClients();
+    await connectDB();
+    const dbUsers = await User.find({ role: { $in: ["client", "user"] } })
+      .sort({ createdAt: -1 })
+      .lean();
 
-    // 2. Fetch registered clients from MongoDB if available
-    try {
-      await connectDB();
-      const dbUsers = await User.find({ role: { $in: ["client", "user"] } }).lean();
+    const clients: ClientProfile[] = dbUsers.map((u: any) => ({
+      id: u._id.toString(),
+      companyName: u.companyName || "",
+      primaryContact: u.name,
+      email: u.email,
+      phone: u.phone || "",
+      industry: mapUserIndustryToClientIndustry(u.industry),
+      status: u.isVerified !== false ? "Active" : "Deactivated",
+      registeredDate: u.createdAt
+        ? new Date(u.createdAt).toLocaleDateString("en-US", {
+            month: "short",
+            day: "2-digit",
+            year: "numeric",
+          })
+        : "",
+      billingAddress: u.address || "",
+      city: u.city || "",
+      province: u.province || "",
+      postalCode: "",
+      country: "Canada",
+      taxId: "",
+      paymentTerms: "Net 30 Days",
+      accountManager: "",
+      lifetimeRevenueCad: "$0.00 CAD",
+      totalShipmentsCompleted: 0,
+      activeQuotesCount: 0,
+    }));
 
-      // Merge any new DB users that aren't in INITIAL_CLIENTS
-      for (const u of dbUsers) {
-        const existing = clients.find(
-          (c) => c.email.toLowerCase() === u.email.toLowerCase()
-        );
-        if (!existing) {
-          clients.push({
-            id: u._id.toString(),
-            companyName: u.companyName || u.name + " Corp",
-            primaryContact: u.name,
-            email: u.email,
-            phone: u.phone || "+1 (514) 555-0100",
-            industry: "Manufacturing",
-            status: u.isVerified !== false ? "Active" : "Deactivated",
-            registeredDate: u.createdAt
-              ? new Date(u.createdAt).toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "2-digit",
-                  year: "numeric",
-                })
-              : "Recent",
-            billingAddress: "Registered Corporate Address",
-            city: "Montreal",
-            province: "QC",
-            postalCode: "H3B 2Y5",
-            country: "Canada",
-            taxId: "GST-PENDING-RT0001",
-            paymentTerms: "Net 30 Days",
-            accountManager: "Jean-Philippe Tremblay",
-            lifetimeRevenueCad: "$0.00 CAD",
-            totalShipmentsCompleted: 0,
-            activeQuotesCount: 0,
-          });
-        }
-      }
-    } catch (dbErr) {
-      console.warn("[Admin Clients API] DB read fallback:", dbErr);
-    }
-
-    // 3. Filter by search, status, and industry
+    // Filter by search, status, and industry
     const filtered = clients.filter((c) => {
       if (status !== "all" && c.status.toLowerCase() !== status.toLowerCase()) {
         return false;

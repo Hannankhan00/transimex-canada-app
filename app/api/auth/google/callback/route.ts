@@ -87,10 +87,11 @@ export async function GET(req: Request) {
     let user = await User.findOne({ email: googleUser.email.toLowerCase() });
 
     if (!user) {
+      const displayName = googleUser.name || "Client User";
       user = await User.create({
-        name: googleUser.name || "Client User",
+        name: displayName,
         email: googleUser.email.toLowerCase(),
-        companyName: "Laurentian Global Logistics Ltd.",
+        companyName: `${displayName}'s Company`,
         role: "client",
         googleId: googleUser.sub,
         avatar: googleUser.picture,
@@ -109,7 +110,7 @@ export async function GET(req: Request) {
       userId: user._id.toString(),
       email: user.email,
       name: user.name,
-      companyName: user.companyName || "Laurentian Global Logistics Ltd.",
+      companyName: user.companyName || "",
       role: user.role || "client",
     };
 

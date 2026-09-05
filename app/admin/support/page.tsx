@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { SupportTicketItem } from "@/lib/mockData";
+import { SupportTicketItem } from "@/lib/supportTypes";
 import TicketDetailModal from "@/components/admin/support/TicketDetailModal";
 import {
   MessageSquare,

@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongoose";
 import BlogPost from "@/models/BlogPost";
-import { getStoredBlogPosts, addBlogPostToStore, BlogPostItem } from "@/lib/mockData";
 
 export async function GET(req: Request) {
   try {
@@ -9,40 +8,31 @@ export async function GET(req: Request) {
     const status = searchParams.get("status"); // "Draft" | "Published" | "all"
     const search = searchParams.get("q")?.toLowerCase() || "";
 
-    let posts: BlogPostItem[] = getStoredBlogPosts();
+    await connectDB();
+    const dbPosts = await BlogPost.find().sort({ createdAt: -1 }).lean();
 
-    try {
-      await connectDB();
-      const dbPosts = await BlogPost.find().lean();
-      if (dbPosts && dbPosts.length > 0) {
-        for (const dp of dbPosts) {
-          if (!posts.find((p) => p.slug === dp.slug)) {
-            posts.unshift({
-              id: dp._id.toString(),
-              slug: dp.slug,
-              title: dp.title,
-              excerpt: dp.excerpt,
-              content: dp.content,
-              author: dp.author,
-              category: dp.category,
-              status: dp.status,
-              publishedDate: dp.publishedAt
-                ? new Date(dp.publishedAt).toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "2-digit",
-                    year: "numeric",
-                  })
-                : "Draft",
-              views: dp.views || 0,
-              featuredImage: dp.featuredImage || "",
-              tags: dp.tags || [],
-            });
-          }
-        }
-      }
-    } catch (dbErr) {
-      console.warn("[Admin Blog API] DB read fallback:", dbErr);
-    }
+    let posts = dbPosts.map((dp: any) => ({
+      id: dp._id.toString(),
+      slug: dp.slug,
+      title: dp.title,
+      excerpt: dp.excerpt,
+      content: dp.content,
+      author: dp.author,
+      category: dp.category,
+      status: dp.status,
+      publishedDate: dp.publishedAt
+        ? new Date(dp.publishedAt).toLocaleDateString("en-US", {
+            month: "short",
+            day: "2-digit",
+            year: "numeric",
+          })
+        : "Draft",
+      views: dp.views || 0,
+      featuredImage: dp.featuredImage || "",
+      tags: dp.tags || [],
+    }));
+
+    const allPosts = posts;
 
     if (status && status !== "all") {
       posts = posts.filter(
@@ -60,7 +50,6 @@ export async function GET(req: Request) {
       );
     }
 
-    const allPosts = getStoredBlogPosts();
     const counts = {
       all: allPosts.length,
       published: allPosts.filter((p) => p.status === "Published").length,
@@ -100,42 +89,29 @@ export async function POST(req: Request) {
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/(^-|-$)+/g, "");
 
-    const newPost: BlogPostItem = {
-      id: `POST-${Date.now()}`,
+    await connectDB();
+
+    const existingSlug = await BlogPost.findOne({ slug: generatedSlug });
+    if (existingSlug) {
+      return NextResponse.json(
+        { error: `A blog post with slug "${generatedSlug}" already exists` },
+        { status: 409 }
+      );
+    }
+
+    const newPost = await BlogPost.create({
       slug: generatedSlug,
-      title: {
-        en: title.en,
-        fr: title.fr,
-      },
-      excerpt: {
-        en: excerpt?.en || "",
-        fr: excerpt?.fr || "",
-      },
-      content: {
-        en: content?.en || "",
-        fr: content?.fr || "",
-      },
+      title: { en: title.en, fr: title.fr },
+      excerpt: { en: excerpt?.en || "", fr: excerpt?.fr || "" },
+      content: { en: content?.en || "", fr: content?.fr || "" },
       author: author || "Transimex Logistics Editorial",
       category: category || "Logistics Operations",
       status: status || "Draft",
-      publishedDate: status === "Published" ? "Today" : "Draft",
+      publishedAt: status === "Published" ? new Date() : undefined,
       views: 0,
-      featuredImage: featuredImage || "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&q=80&w=1200",
-      tags: tags || ["Logistics", "Freight"],
-    };
-
-    // Save in DB if available
-    try {
-      await connectDB();
-      await BlogPost.create({
-        ...newPost,
-        publishedAt: status === "Published" ? new Date() : undefined,
-      });
-    } catch (dbErr) {
-      console.warn("[Admin Blog API] DB write fallback:", dbErr);
-    }
-
-    addBlogPostToStore(newPost);
+      featuredImage: featuredImage || "",
+      tags: tags || [],
+    });
 
     return NextResponse.json({
       success: true,

@@ -8,7 +8,7 @@ export async function PATCH(
 ) {
   try {
     const { docId } = await params;
-    const body = await req.json().catch(() => ({}));
+    const body = await req.json();
     const { isClientVisible } = body;
 
     await connectDB();
@@ -17,18 +17,23 @@ export async function PATCH(
       return NextResponse.json({ error: "Document not found" }, { status: 404 });
     }
 
-    doc.isClientVisible = typeof isClientVisible === "boolean" ? isClientVisible : !doc.isClientVisible;
+    if (typeof isClientVisible === "boolean") {
+      doc.isClientVisible = isClientVisible;
+    }
     await doc.save();
+
+    const docObj: any = doc.toObject();
+    delete docObj.fileData;
 
     return NextResponse.json({
       success: true,
-      message: `Document ${docId} visibility updated to ${doc.isClientVisible ? "Public in Client Vault" : "Internal Confidential"}`,
-      document: { ...doc.toObject(), id: doc._id.toString() },
+      message: `Document ${doc.name} visibility updated`,
+      document: { ...docObj, id: doc._id.toString() },
     });
   } catch (error: any) {
     console.error("Error updating document visibility:", error);
     return NextResponse.json(
-      { error: error.message || "Failed to update document visibility" },
+      { error: error.message || "Failed to update document" },
       { status: 500 }
     );
   }

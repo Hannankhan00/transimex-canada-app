@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import FaqBuilder from "@/components/admin/resources/FaqBuilder";
 import {
   FolderOpen,
@@ -20,74 +20,105 @@ interface DownloadableResource {
   titleEn: string;
   titleFr: string;
   category: string;
-  fileSize: string;
+  fileSize: number;
   fileName: string;
+  mimeType: string;
   downloadsCount: number;
+  createdAt: string;
+}
+
+function formatFileSize(bytes: number): string {
+  if (!bytes) return "0 KB";
+  const units = ["B", "KB", "MB", "GB"];
+  let size = bytes;
+  let unitIndex = 0;
+  while (size >= 1024 && unitIndex < units.length - 1) {
+    size /= 1024;
+    unitIndex++;
+  }
+  return `${size.toFixed(1)} ${units[unitIndex]}`;
 }
 
 export default function AdminResourcesPage() {
-  const [resources, setResources] = useState<DownloadableResource[]>([
-    {
-      id: "RES-01",
-      titleEn: "2026 Canadian Customs Clearance & CBSA PARS Shipper Handbook",
-      titleFr: "Manuel de l'expéditeur 2026 : Dédouanement canadien et PARS de l'ASFC",
-      category: "Customs Compliance",
-      fileSize: "2.4 MB (PDF)",
-      fileName: "Transimex_Customs_Clearance_Handbook_2026.pdf",
-      downloadsCount: 382,
-    },
-    {
-      id: "RES-02",
-      titleEn: "Pharmaceutical Cold-Chain Validation & Temperature Protocol Guide",
-      titleFr: "Protocole de validation de la chaîne du froid pharmaceutique",
-      category: "Specialized Transport",
-      fileSize: "1.8 MB (PDF)",
-      fileName: "Transimex_ColdChain_Validation_Protocol.pdf",
-      downloadsCount: 215,
-    },
-    {
-      id: "RES-03",
-      titleEn: "Quebec Spring Thaw (Dégel) Heavy Haul Axle Load Limits Reference Sheet",
-      titleFr: "Feuille de référence des charges par essieu pendant le dégel au Québec",
-      category: "Heavy Haul Oversize",
-      fileSize: "1.1 MB (PDF)",
-      fileName: "Quebec_Spring_Thaw_Axle_Limits_2026.pdf",
-      downloadsCount: 164,
-    },
-  ]);
+  const [resources, setResources] = useState<DownloadableResource[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [newTitleEn, setNewTitleEn] = useState("");
   const [newTitleFr, setNewTitleFr] = useState("");
   const [newCategory, setNewCategory] = useState("Customs Compliance");
+  const [newFile, setNewFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleAddResource = (e: React.FormEvent) => {
+  const fetchResources = useCallback(async () => {
+    try {
+      setLoading(true);
+      const res = await fetch("/api/admin/resources");
+      const data = await res.json();
+      if (res.ok && data.resources) {
+        setResources(data.resources);
+      }
+    } catch (err) {
+      console.error("Error fetching resources:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchResources();
+  }, [fetchResources]);
+
+  const handleAddResource = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newTitleEn.trim()) return;
+    if (!newTitleEn.trim() || !newFile) return;
 
-    const newRes: DownloadableResource = {
-      id: `RES-0${resources.length + 1}`,
-      titleEn: newTitleEn,
-      titleFr: newTitleFr || newTitleEn,
-      category: newCategory,
-      fileSize: "1.5 MB (PDF)",
-      fileName: `${newTitleEn.toLowerCase().replace(/[^a-z0-9]+/g, "_")}.pdf`,
-      downloadsCount: 0,
-    };
+    try {
+      setSubmitting(true);
+      const formData = new FormData();
+      formData.append("titleEn", newTitleEn);
+      formData.append("titleFr", newTitleFr || newTitleEn);
+      formData.append("category", newCategory);
+      formData.append("file", newFile);
 
-    setResources([newRes, ...resources]);
-    setIsUploading(false);
-    setNewTitleEn("");
-    setNewTitleFr("");
-    setToastMsg("New downloadable shipping guide registered.");
-    setTimeout(() => setToastMsg(null), 3000);
+      const res = await fetch("/api/admin/resources", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to upload resource");
+
+      setResources((prev) => [data.resource, ...prev]);
+      setIsUploading(false);
+      setNewTitleEn("");
+      setNewTitleFr("");
+      setNewFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      setToastMsg("New downloadable shipping guide registered.");
+      setTimeout(() => setToastMsg(null), 3000);
+    } catch (err: any) {
+      alert(err.message || "Error uploading resource");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const handleDeleteResource = (id: string) => {
-    setResources((prev) => prev.filter((r) => r.id !== id));
-    setToastMsg("Resource guide removed.");
-    setTimeout(() => setToastMsg(null), 2500);
+  const handleDeleteResource = async (id: string) => {
+    try {
+      const res = await fetch(`/api/admin/resources/${encodeURIComponent(id)}`, {
+        method: "DELETE",
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Failed to remove resource");
+
+      setResources((prev) => prev.filter((r) => r.id !== id));
+      setToastMsg("Resource guide removed.");
+      setTimeout(() => setToastMsg(null), 2500);
+    } catch (err: any) {
+      alert(err.message || "Error removing resource");
+    }
   };
 
   return (
@@ -137,7 +168,7 @@ export default function AdminResourcesPage() {
           <div>
             <h3 className="font-bold text-[#0B2545] text-sm flex items-center gap-2">
               <FolderOpen className="w-4 h-4 text-[#0B2545]" />
-              <span>Public Shipping Guides &amp; Whitepapers (Cloudinary Vault)</span>
+              <span>Public Shipping Guides &amp; Whitepapers</span>
             </h3>
             <p className="text-[11px] text-slate-500 mt-0.5">
               Certified PDFs available for immediate download by prospective shippers and clients.
@@ -196,6 +227,17 @@ export default function AdminResourcesPage() {
                   className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 outline-none"
                 />
               </div>
+
+              <div className="sm:col-span-3">
+                <label className="font-bold text-slate-700 block mb-1">File (PDF, DOCX, etc.)</label>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  onChange={(e) => setNewFile(e.target.files?.[0] || null)}
+                  required
+                  className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 outline-none file:mr-3 file:px-2 file:py-1 file:rounded-lg file:border-0 file:bg-slate-100 file:text-slate-700 file:font-bold"
+                />
+              </div>
             </div>
 
             <div className="flex justify-end gap-2 pt-1">
@@ -208,9 +250,10 @@ export default function AdminResourcesPage() {
               </button>
               <button
                 type="submit"
-                className="px-4 py-1.5 bg-[#0B2545] text-white rounded-xl font-bold shadow-xs transition cursor-pointer"
+                disabled={submitting || !newTitleEn.trim() || !newFile}
+                className="px-4 py-1.5 bg-[#0B2545] text-white rounded-xl font-bold shadow-xs transition cursor-pointer disabled:opacity-50"
               >
-                Publish Guide
+                {submitting ? "Uploading..." : "Publish Guide"}
               </button>
             </div>
           </form>
@@ -230,45 +273,68 @@ export default function AdminResourcesPage() {
             </thead>
 
             <tbody className="divide-y divide-slate-100 text-slate-700">
-              {resources.map((res) => (
-                <tr key={res.id} className="hover:bg-slate-50/80 transition">
-                  <td className="py-3.5 px-4">
-                    <div className="flex items-start gap-2.5">
-                      <FileText className="w-4 h-4 text-[#d21f27] mt-0.5 flex-shrink-0" />
-                      <div>
-                        <span className="font-bold text-slate-900 block">{res.titleEn}</span>
-                        <span className="text-[11px] text-slate-500 italic block">{res.titleFr}</span>
-                        <span className="text-[10px] font-mono text-slate-400 block mt-0.5">{res.fileName}</span>
-                      </div>
-                    </div>
-                  </td>
-
-                  <td className="py-3.5 px-4 whitespace-nowrap">
-                    <span className="px-2 py-0.5 rounded bg-slate-100 font-semibold text-slate-700 text-[11px]">
-                      {res.category}
-                    </span>
-                  </td>
-
-                  <td className="py-3.5 px-4 whitespace-nowrap font-mono text-slate-600 text-[11px]">
-                    {res.fileSize}
-                  </td>
-
-                  <td className="py-3.5 px-4 whitespace-nowrap font-mono font-bold text-slate-800">
-                    {res.downloadsCount}
-                  </td>
-
-                  <td className="py-3.5 px-4 whitespace-nowrap text-right">
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteResource(res.id)}
-                      className="p-1.5 text-slate-400 hover:text-red-600 transition cursor-pointer"
-                      title="Remove Guide"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+              {loading ? (
+                <tr>
+                  <td colSpan={5} className="py-8 px-4 text-center text-slate-400">
+                    Loading resources...
                   </td>
                 </tr>
-              ))}
+              ) : resources.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="py-8 px-4 text-center text-slate-400">
+                    No resources uploaded yet.
+                  </td>
+                </tr>
+              ) : (
+                resources.map((res) => (
+                  <tr key={res.id} className="hover:bg-slate-50/80 transition">
+                    <td className="py-3.5 px-4">
+                      <div className="flex items-start gap-2.5">
+                        <FileText className="w-4 h-4 text-[#d21f27] mt-0.5 flex-shrink-0" />
+                        <div>
+                          <span className="font-bold text-slate-900 block">{res.titleEn}</span>
+                          <span className="text-[11px] text-slate-500 italic block">{res.titleFr}</span>
+                          <span className="text-[10px] font-mono text-slate-400 block mt-0.5">{res.fileName}</span>
+                        </div>
+                      </div>
+                    </td>
+
+                    <td className="py-3.5 px-4 whitespace-nowrap">
+                      <span className="px-2 py-0.5 rounded bg-slate-100 font-semibold text-slate-700 text-[11px]">
+                        {res.category}
+                      </span>
+                    </td>
+
+                    <td className="py-3.5 px-4 whitespace-nowrap font-mono text-slate-600 text-[11px]">
+                      {formatFileSize(res.fileSize)}
+                    </td>
+
+                    <td className="py-3.5 px-4 whitespace-nowrap font-mono font-bold text-slate-800">
+                      {res.downloadsCount}
+                    </td>
+
+                    <td className="py-3.5 px-4 whitespace-nowrap text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <a
+                          href={`/api/admin/resources/${encodeURIComponent(res.id)}/file`}
+                          className="p-1.5 text-slate-400 hover:text-[#0B2545] transition"
+                          title="Download File"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                        </a>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteResource(res.id)}
+                          className="p-1.5 text-slate-400 hover:text-red-600 transition cursor-pointer"
+                          title="Remove Guide"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

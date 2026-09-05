@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { CarrierVendor, TransportModeType } from "@/lib/mockData";
+import { CarrierVendor, TransportModeType } from "@/lib/carrierTypes";
 import {
   Truck,
   Ship,

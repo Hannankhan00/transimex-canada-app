@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongoose";
 import SupportTicket from "@/models/SupportTicket";
-import { getStoredTickets, SupportTicketItem } from "@/lib/mockData";
 
 export async function GET(req: Request) {
   try {
@@ -10,47 +9,37 @@ export async function GET(req: Request) {
     const priority = searchParams.get("priority");
     const search = searchParams.get("q")?.toLowerCase() || "";
 
-    let tickets: SupportTicketItem[] = getStoredTickets();
+    await connectDB();
+    const dbTickets = await SupportTicket.find().sort({ createdAt: -1 }).lean();
 
-    // Check DB if tickets exist
-    try {
-      await connectDB();
-      const dbTickets = await SupportTicket.find().lean();
-      if (dbTickets && dbTickets.length > 0) {
-        for (const dt of dbTickets) {
-          if (!tickets.find((t) => t.ticketId === dt.ticketId)) {
-            tickets.unshift({
-              id: dt._id.toString(),
-              ticketId: dt.ticketId,
-              client: {
-                name: dt.client.name,
-                companyName: dt.client.companyName,
-                email: dt.client.email,
-              },
-              subject: dt.subject,
-              shipmentId: dt.shipmentId || "",
-              priority: dt.priority,
-              message: dt.subject,
-              status: dt.status,
-              category: dt.category || "Operations",
-              createdAt: dt.createdAt ? new Date(dt.createdAt).toLocaleString() : "Recent",
-              updatedAt: dt.updatedAt ? new Date(dt.updatedAt).toLocaleString() : "Recent",
-              messages: (dt.messages || []).map((m: any, idx: number) => ({
-                id: `MSG-${idx}`,
-                sender: m.sender,
-                senderName: m.senderName,
-                message: m.message,
-                timestamp: m.timestamp,
-                isInternal: m.isInternal,
-              })),
-              internalNotes: dt.internalNotes || "",
-            });
-          }
-        }
-      }
-    } catch (dbErr) {
-      console.warn("[Admin Support API] DB fetch fallback:", dbErr);
-    }
+    let tickets = dbTickets.map((dt: any) => ({
+      id: dt._id.toString(),
+      ticketId: dt.ticketId,
+      client: {
+        name: dt.client.name,
+        companyName: dt.client.companyName,
+        email: dt.client.email,
+      },
+      subject: dt.subject,
+      shipmentId: dt.shipmentId || "",
+      priority: dt.priority,
+      message: dt.subject,
+      status: dt.status,
+      category: dt.category || "Operations",
+      createdAt: dt.createdAt ? new Date(dt.createdAt).toLocaleString() : "",
+      updatedAt: dt.updatedAt ? new Date(dt.updatedAt).toLocaleString() : "",
+      messages: (dt.messages || []).map((m: any, idx: number) => ({
+        id: `MSG-${idx}`,
+        sender: m.sender,
+        senderName: m.senderName,
+        message: m.message,
+        timestamp: m.timestamp,
+        isInternal: m.isInternal,
+      })),
+      internalNotes: dt.internalNotes || "",
+    }));
+
+    const allTickets = tickets;
 
     if (status && status !== "all") {
       tickets = tickets.filter(
@@ -69,7 +58,7 @@ export async function GET(req: Request) {
         const ticketRef = (t.ticketId || t.id).toLowerCase();
         const clientName = (t.client?.name || "").toLowerCase();
         const company = (t.client?.companyName || "").toLowerCase();
-        const shipment = (t.shipmentId || t.linkedShipmentId || "").toLowerCase();
+        const shipment = (t.shipmentId || "").toLowerCase();
 
         return (
           ticketRef.includes(search) ||
@@ -81,13 +70,12 @@ export async function GET(req: Request) {
       });
     }
 
-    const allTickets = getStoredTickets();
     const counts = {
       all: allTickets.length,
       open: allTickets.filter((t) => t.status === "Open").length,
       in_progress: allTickets.filter((t) => t.status === "In Progress").length,
       resolved: allTickets.filter((t) => t.status === "Resolved").length,
-      urgent: allTickets.filter((t) => (t.priority as string) === "Urgent" || (t.priority as string) === "Critical Dispatch Emergency").length,
+      urgent: allTickets.filter((t) => t.priority === "Urgent" || t.priority === "Critical Dispatch Emergency").length,
     };
 
     return NextResponse.json({

@@ -75,9 +75,6 @@ export default function DutiesAlertModal({
           brokerageFee: `$${brokerageFee} ${currency}`,
           totalOwed: formattedTotal,
           wirePaymentInstructions: paymentInstructions,
-          clientEmail: client.email,
-          clientName: client.name,
-          clientCompany: client.companyName,
         }),
       });
 

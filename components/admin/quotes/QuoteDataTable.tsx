@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { QuoteItem, QuoteStatus } from "@/lib/mockData";
+import { QuoteItem, QuoteStatus } from "@/lib/quoteTypes";
 import StatusBadge from "./StatusBadge";
 import {
   Search,
@@ -354,7 +354,7 @@ export default function QuoteDataTable({
                         {quote.clientCompany || "Commercial Enterprise"}
                       </span>
                       <span className="text-[11px] text-slate-500">
-                        {quote.clientName || "Marc Tremblay"} &bull; {quote.clientEmail}
+                        {quote.clientName || "—"} &bull; {quote.clientEmail}
                       </span>
                     </div>
                   </td>

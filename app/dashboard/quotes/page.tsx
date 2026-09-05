@@ -4,7 +4,7 @@ import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
-import { QuoteItem } from "@/lib/mockData";
+import { QuoteItem } from "@/lib/quoteTypes";
 import QuoteDetailsModal from "@/components/portal/QuoteDetailsModal";
 import NewQuoteModal from "@/components/portal/NewQuoteModal";
 import {

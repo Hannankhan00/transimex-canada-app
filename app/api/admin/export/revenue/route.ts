@@ -1,36 +1,34 @@
 import { NextRequest } from "next/server";
 import connectDB from "@/lib/mongoose";
 import Shipment from "@/models/Shipment";
-import { getStoredShipments } from "@/lib/mockData";
 import { serializeToCsv, createCsvDownloadResponse } from "@/lib/csvExport";
+
+/** Parses a currency string like "$4,850.00 CAD" into a plain number. Returns 0 if unparseable. */
+function parseCadAmount(value: unknown): number {
+  if (typeof value === "number") return value;
+  if (typeof value !== "string") return 0;
+  const parsed = parseFloat(value.replace(/[^0-9.-]/g, ""));
+  return Number.isFinite(parsed) ? parsed : 0;
+}
 
 export async function GET(req: NextRequest) {
   try {
-    let shipments = getStoredShipments();
-
-    try {
-      await connectDB();
-      const dbShipments = await Shipment.find().lean();
-      if (dbShipments && dbShipments.length > 0) {
-        shipments = dbShipments as any;
-      }
-    } catch (dbErr) {
-      console.warn("[Export Revenue] DB read fallback:", dbErr);
-    }
+    await connectDB();
+    const shipments = await Shipment.find().lean();
 
     const flatData = shipments.map((s: any) => {
-      const linehaul = typeof s.tariffRate === "number" ? s.tariffRate : typeof s.rate === "number" ? s.rate : 4850;
-      const duties = s.duties ? s.duties.customsDutiesCad || 420 : 380;
-      const taxes = s.duties ? s.duties.taxesCad || 210 : 190;
-      const brokerage = s.duties ? s.duties.brokerageFeeCad || 150 : 150;
+      const linehaul = parseCadAmount(s.rateCad);
+      const duties = parseCadAmount(s.duties?.amountCad);
+      const taxes = parseCadAmount(s.duties?.taxGstHst);
+      const brokerage = parseCadAmount(s.duties?.brokerageFeeCad);
       const totalFreightCharges = linehaul + duties + taxes + brokerage;
 
-      const clientName = typeof s.client === "object" ? s.client?.companyName || s.client?.name : s.client || "Laurentian Global Logistics";
+      const clientName = s.client?.companyName || s.client?.name || "";
 
       return {
-        manifestTrackingId: s.trackingId || s.id,
+        manifestTrackingId: s.trackingNumber || "",
         clientCompany: clientName,
-        mode: s.mode || s.transportMode || "Road Freight",
+        mode: s.cargo?.transportMode || "",
         linehaulCad: linehaul,
         customsDutiesCad: duties,
         federalTaxesCad: taxes,
@@ -38,7 +36,7 @@ export async function GET(req: NextRequest) {
         totalInvoicedCad: totalFreightCharges,
         currency: "CAD",
         paymentStatus: s.customsStatus === "Released" ? "Settled" : "Pending Clearance",
-        invoiceDate: s.dispatchedAt || s.createdAt || "2026-08-28",
+        invoiceDate: s.duties?.dispatchedAt || s.createdAt || "",
       };
     });
 

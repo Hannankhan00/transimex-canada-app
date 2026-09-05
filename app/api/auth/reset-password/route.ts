@@ -37,6 +37,9 @@ export async function POST(req: Request) {
     user.password = await hashPassword(password);
     user.resetToken = undefined;
     user.resetTokenExpires = undefined;
+    if (user.accountStatus === "pending") {
+      user.accountStatus = "active";
+    }
     await user.save();
 
     return NextResponse.json({

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import SettingsNavTabs from "@/components/admin/settings/SettingsNavTabs";
-import { StaffUser, StaffRole } from "@/lib/mockData";
+import { StaffUserView as StaffUser, StaffRole } from "@/lib/staffUsers";
 import {
   Users,
   Plus,

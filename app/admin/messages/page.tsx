@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { ContactInquiry } from "@/lib/mockData";
+import { ContactInquiry } from "@/lib/inquiryTypes";
 import InquiryMasterDetail from "@/components/admin/messages/InquiryMasterDetail";
 import {
   Inbox,

@@ -4,13 +4,8 @@ import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
-import {
-  CustomsClearanceStatus,
-  CustomsComplianceRecord,
-  getCustomsRecordForShipment,
-  getStoredDocuments,
-  VaultDocument,
-} from "@/lib/mockData";
+import { CustomsClearanceStatus, CustomsComplianceRecord } from "@/lib/customsTypes";
+import { VaultDocument } from "@/lib/documentTypes";
 import CustomsStatusBadge from "@/components/admin/customs/CustomsStatusBadge";
 import DutiesAlertModal from "@/components/admin/customs/DutiesAlertModal";
 import CloudinaryUploader from "@/components/admin/customs/CloudinaryUploader";
@@ -76,29 +71,55 @@ export default function ShipmentCustomsCompliancePage() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [isDutiesModalOpen, setIsDutiesModalOpen] = useState(false);
 
-  // Client info for duties notifications
-  const clientInfo = {
-    name: "Marc Tremblay",
-    companyName: "Laurentian Global Logistics Ltd.",
-    email: "dispatch@laurentianglobal.ca",
-  };
+  // Client info for duties notifications — loaded from the shipment's real client record
+  const [clientInfo, setClientInfo] = useState({
+    name: "",
+    companyName: "",
+    email: "",
+  });
 
-  // Load record and documents
-  const loadData = useCallback(() => {
-    const record = getCustomsRecordForShipment(shipmentId);
-    setCustomsRecord(record);
-    setStatus(record.status);
-    setBroker(record.broker);
-    setPortOfEntry(record.portOfEntry);
-    setCbsaPars(record.cbsaPars);
-    setCbsaNotes(record.cbsaNotes);
+  // Load record and documents from the real API
+  const loadData = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/admin/shipments/${encodeURIComponent(shipmentId)}/customs`);
+      const data = await res.json();
+      if (res.ok && data.customsRecord) {
+        setCustomsRecord(data.customsRecord);
+        setStatus(data.customsRecord.status);
+        setBroker(data.customsRecord.broker);
+        setPortOfEntry(data.customsRecord.portOfEntry);
+        setCbsaPars(data.customsRecord.cbsaPars);
+        setCbsaNotes(data.customsRecord.cbsaNotes);
+      }
+      if (res.ok && data.client) {
+        setClientInfo({
+          name: data.client.name || "",
+          companyName: data.client.companyName || "",
+          email: data.client.email || "",
+        });
+      }
+    } catch (err) {
+      console.error("Error loading customs record:", err);
+    }
 
     // Load documents linked to this shipment
-    const allDocs = getStoredDocuments();
-    const linked = allDocs.filter(
-      (d) => d.shipmentId.toLowerCase() === shipmentId.toLowerCase()
-    );
-    setDocuments(linked);
+    try {
+      const docsRes = await fetch(`/api/admin/shipments/${encodeURIComponent(shipmentId)}/documents`);
+      const docsData = await docsRes.json();
+      if (docsRes.ok && docsData.documents) {
+        setDocuments(
+          docsData.documents.map((d: any) => ({
+            ...d,
+            dateUploaded: d.createdAt
+              ? new Date(d.createdAt).toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" })
+              : "",
+            size: d.fileSize ? `${(d.fileSize / 1024).toFixed(0)} KB` : "",
+          }))
+        );
+      }
+    } catch (err) {
+      console.error("Error loading shipment documents:", err);
+    }
   }, [shipmentId]);
 
   useEffect(() => {

@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { ClientProfile, ClientIndustry, ClientAccountStatus } from "@/lib/mockData";
+import { ClientProfile, ClientAccountStatus } from "@/lib/clientTypes";
 import {
   Search,
   Building2,
@@ -34,6 +34,7 @@ const INDUSTRIES: { label: string; value: string }[] = [
   { label: "Retail & Consumer", value: "Retail & Consumer" },
   { label: "Food & Cold-Chain", value: "Food & Cold-Chain" },
   { label: "Industrial & Energy", value: "Industrial & Energy" },
+  { label: "Other", value: "Other" },
 ];
 
 export default function ClientDataTable({

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { QuoteStatus } from "@/lib/mockData";
+import { QuoteStatus } from "@/lib/quoteTypes";
 import { CheckCircle2, Clock, XCircle, AlertCircle, FileSpreadsheet } from "lucide-react";
 
 interface StatusBadgeProps {

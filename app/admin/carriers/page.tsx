@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { CarrierVendor, TransportModeType } from "@/lib/mockData";
+import { CarrierVendor, TransportModeType } from "@/lib/carrierTypes";
 import CarrierDataTable from "@/components/admin/carriers/CarrierDataTable";
 import CarrierModal from "@/components/admin/carriers/CarrierModal";
 import {

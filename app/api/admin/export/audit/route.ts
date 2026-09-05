@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
-import { getStoredAuditLogs } from "@/lib/mockData";
+import connectDB from "@/lib/mongoose";
+import AuditLog from "@/models/AuditLog";
 import { serializeToCsv, createCsvDownloadResponse } from "@/lib/csvExport";
 
 export async function GET(req: NextRequest) {
@@ -8,19 +9,20 @@ export async function GET(req: NextRequest) {
     const action = searchParams.get("action");
     const staff = searchParams.get("staff");
 
-    let logs = getStoredAuditLogs();
-
+    await connectDB();
+    const query: any = {};
     if (action && action !== "all") {
-      logs = logs.filter((l) => l.action.toLowerCase() === action.toLowerCase());
+      query.action = action;
     }
-
     if (staff && staff !== "all") {
-      logs = logs.filter((l) => l.staffName.toLowerCase() === staff.toLowerCase());
+      query.staffName = staff;
     }
 
-    const flatData = logs.map((l) => ({
-      auditId: l.id,
-      timestamp: l.timestamp,
+    const logs = await AuditLog.find(query).sort({ createdAt: -1 }).lean();
+
+    const flatData = logs.map((l: any) => ({
+      auditId: l._id.toString(),
+      timestamp: new Date(l.createdAt).toISOString(),
       staffName: l.staffName,
       staffEmail: l.staffEmail,
       staffRole: l.staffRole,
@@ -28,7 +30,7 @@ export async function GET(req: NextRequest) {
       resourceType: l.resourceType,
       resourceId: l.resourceId,
       details: l.details,
-      ipAddress: l.ipAddress,
+      ipAddress: l.ipAddress || "",
     }));
 
     const headers = [

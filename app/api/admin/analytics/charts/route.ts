@@ -1,21 +1,22 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongoose";
 import Shipment from "@/models/Shipment";
-import { getStoredShipments } from "@/lib/mockData";
+
+/** Parses a currency string like "$4,850.00 CAD" into a plain number. Returns 0 if unparseable. */
+function parseCadAmount(value: unknown): number {
+  if (typeof value === "number") return value;
+  if (typeof value !== "string") return 0;
+  const parsed = parseFloat(value.replace(/[^0-9.-]/g, ""));
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+const MONTH_LABELS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 export async function GET() {
   try {
-    let shipments = getStoredShipments();
+    await connectDB();
 
-    try {
-      await connectDB();
-      const dbShipments = await Shipment.find().lean();
-      if (dbShipments && dbShipments.length > 0) {
-        shipments = dbShipments as any;
-      }
-    } catch (dbErr) {
-      console.warn("[Analytics Charts API] DB read fallback:", dbErr);
-    }
+    const shipments = await Shipment.find().lean();
 
     // 1. Calculate Modal Split
     let roadCount = 0;
@@ -24,7 +25,7 @@ export async function GET() {
     let railCount = 0;
 
     shipments.forEach((s: any) => {
-      const mode = (s.mode || s.transportMode || "Road").toLowerCase();
+      const mode = (s.cargo?.transportMode || "Road").toLowerCase();
       if (mode.includes("road") || mode.includes("truck") || mode.includes("highway")) {
         roadCount++;
       } else if (mode.includes("sea") || mode.includes("ocean") || mode.includes("maritime")) {
@@ -46,26 +47,48 @@ export async function GET() {
       { mode: "Intermodal Rail", count: railCount, percentage: Math.round((railCount / totalModes) * 100), color: "#F59E0B" },
     ];
 
-    // 2. Monthly Volume Trend (2026 YTD)
-    const monthlyTrend = [
-      { month: "Jan", volume: 142, revenue: 688000 },
-      { month: "Feb", volume: 165, revenue: 792000 },
-      { month: "Mar", volume: 198, revenue: 954000 },
-      { month: "Apr", volume: 220, revenue: 1085000 },
-      { month: "May", volume: 254, revenue: 1240000 },
-      { month: "Jun", volume: 289, revenue: 1410000 },
-      { month: "Jul", volume: 312, revenue: 1530000 },
-      { month: "Aug", volume: 345, revenue: 1680000 },
-    ];
+    // 2. Monthly Volume & Revenue Trend — real aggregation over Shipment.createdAt
+    const monthlyBuckets = new Map<string, { volume: number; revenue: number }>();
+    shipments.forEach((s: any) => {
+      if (!s.createdAt) return;
+      const date = new Date(s.createdAt);
+      const key = `${date.getFullYear()}-${date.getMonth()}`;
+      const bucket = monthlyBuckets.get(key) || { volume: 0, revenue: 0 };
+      bucket.volume += 1;
+      bucket.revenue += parseCadAmount(s.rateCad);
+      monthlyBuckets.set(key, bucket);
+    });
 
-    // 3. Top Operating Corridors
-    const topCorridors = [
-      { corridor: "Montreal, QC ↔ Chicago, IL", mode: "Road Reefer", loadsMoved: 84, onTime: "99.1%", avgTransit: "22h" },
-      { corridor: "Toronto, ON ↔ Detroit, MI", mode: "Road Dry Van", loadsMoved: 72, onTime: "98.5%", avgTransit: "8h" },
-      { corridor: "Halifax Port ↔ Montreal Dorval", mode: "Rail Intermodal", loadsMoved: 56, onTime: "97.8%", avgTransit: "38h" },
-      { corridor: "Vancouver, BC ↔ Calgary, AB", mode: "Road Flatbed", loadsMoved: 48, onTime: "98.9%", avgTransit: "16h" },
-      { corridor: "Montreal Trudeau (YUL) ↔ Frankfurt (FRA)", mode: "Air Express", loadsMoved: 28, onTime: "100%", avgTransit: "9h" },
-    ];
+    const monthlyTrend = Array.from(monthlyBuckets.entries())
+      .sort(([a], [b]) => {
+        const [ay, am] = a.split("-").map(Number);
+        const [by, bm] = b.split("-").map(Number);
+        return ay - by || am - bm;
+      })
+      .map(([key, bucket]) => {
+        const [, monthIndex] = key.split("-").map(Number);
+        return { month: MONTH_LABELS[monthIndex], volume: bucket.volume, revenue: bucket.revenue };
+      });
+
+    // 3. Top Operating Corridors — real aggregation grouped by origin/destination pair
+    const corridorBuckets = new Map<string, { corridor: string; mode: string; loadsMoved: number }>();
+    shipments.forEach((s: any) => {
+      const origin = s.route?.origin || "";
+      const destination = s.route?.destination || "";
+      if (!origin && !destination) return;
+      const key = `${origin} -> ${destination}`;
+      const bucket = corridorBuckets.get(key) || {
+        corridor: `${origin} ↔ ${destination}`,
+        mode: s.cargo?.transportMode || "",
+        loadsMoved: 0,
+      };
+      bucket.loadsMoved += 1;
+      corridorBuckets.set(key, bucket);
+    });
+
+    const topCorridors = Array.from(corridorBuckets.values())
+      .sort((a, b) => b.loadsMoved - a.loadsMoved)
+      .slice(0, 5);
 
     return NextResponse.json({
       success: true,

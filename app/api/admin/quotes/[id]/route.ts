@@ -1,27 +1,26 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongoose";
 import Quote from "@/models/Quote";
-import { getStoredQuotes } from "@/lib/mockData";
 
 function mapQuote(q: any) {
   return {
     id: q.refNumber || q._id?.toString(),
-    clientName: q.client?.name || "Client Shipper",
-    clientCompany: q.client?.companyName || "Commercial Enterprise",
-    clientEmail: q.client?.email || "shipper@transimex.ca",
+    clientName: q.client?.name || "",
+    clientCompany: q.client?.companyName || "",
+    clientEmail: q.client?.email || "",
     clientPhone: q.client?.phone || "",
     userId: q.client?.userId || "",
     origin: q.route?.origin || "",
     originDetail: q.route?.originDetail || "",
     destination: q.route?.destination || "",
     destinationDetail: q.route?.destinationDetail || "",
-    transportMode: q.cargo?.transportMode || "53' Dry Van",
-    equipment: q.cargo?.equipment || "Standard Trailer",
+    transportMode: q.cargo?.transportMode || "",
+    equipment: q.cargo?.equipment || "",
     cargoType: q.cargo?.cargoType || "General Freight",
-    weight: q.cargo?.weight || "20,000 lbs",
+    weight: q.cargo?.weight || "",
     palletCount: q.cargo?.palletCount || 0,
     dimensions: q.cargo?.dimensions || "",
-    commodity: q.cargo?.commodity || "General Cargo",
+    commodity: q.cargo?.commodity || "",
     preferredPickupDate: q.cargo?.preferredPickupDate || "",
     specialInstructions: q.cargo?.specialInstructions || "",
     submittedDate: q.submittedDate,
@@ -62,34 +61,18 @@ export async function GET(
       return NextResponse.json({ error: "Quote ID required" }, { status: 400 });
     }
 
-    // Check MongoDB
-    try {
-      await connectDB();
-      const dbQuote = await Quote.findOne({
-        $or: [{ refNumber: id }, { _id: id.match(/^[0-9a-fA-F]{24}$/) ? id : null }],
-      }).lean();
+    await connectDB();
+    const dbQuote = await Quote.findOne({
+      $or: [{ refNumber: id }, { _id: id.match(/^[0-9a-fA-F]{24}$/) ? id : null }],
+    }).lean();
 
-      if (dbQuote) {
-        return NextResponse.json({
-          success: true,
-          quote: mapQuote(dbQuote),
-        });
-      }
-    } catch (dbErr) {
-      console.warn("[Admin Quotes API] DB lookup error:", dbErr);
-    }
-
-    // Fallback to local store / mock data
-    const allQuotes = getStoredQuotes();
-    const found = allQuotes.find((q) => q.id.toLowerCase() === id.toLowerCase());
-
-    if (!found) {
+    if (!dbQuote) {
       return NextResponse.json({ error: "Quote not found" }, { status: 404 });
     }
 
     return NextResponse.json({
       success: true,
-      quote: found,
+      quote: mapQuote(dbQuote),
     });
   } catch (error: any) {
     console.error("Error fetching quote details:", error);

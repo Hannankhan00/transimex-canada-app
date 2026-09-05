@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { ContactInquiry, InquiryCategory } from "@/lib/mockData";
+import { ContactInquiry, InquiryCategory } from "@/lib/inquiryTypes";
 import {
   Mail,
   Search,

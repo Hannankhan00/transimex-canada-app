@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import connectDB from "@/lib/mongoose";
 import Quote from "@/models/Quote";
-import { rejectQuote } from "@/lib/mockData";
+import { verifyToken } from "@/lib/auth";
+import { logAudit } from "@/lib/audit";
 import { sendQuoteRejectedEmail } from "@/lib/email";
 
 export async function PATCH(
@@ -20,68 +22,52 @@ export async function PATCH(
       );
     }
 
-    let updatedQuoteData: any = null;
-    let clientEmail = "dispatch@laurentianglobal.ca";
-    let clientName = "Marc Tremblay";
-    let clientCompany = "Laurentian Global Logistics Ltd.";
-    let originStr = "Montreal, QC";
-    let destStr = "Detroit, MI";
+    await connectDB();
+    const existingQuote = await Quote.findOne({
+      $or: [{ refNumber: id }, { _id: id.match(/^[0-9a-fA-F]{24}$/) ? id : null }],
+    });
 
-    // 1. Try DB update
-    try {
-      await connectDB();
-      const existingQuote = await Quote.findOne({
-        $or: [{ refNumber: id }, { _id: id.match(/^[0-9a-fA-F]{24}$/) ? id : null }],
-      });
+    if (!existingQuote) {
+      return NextResponse.json({ error: "Quote not found" }, { status: 404 });
+    }
 
-      if (existingQuote) {
-        existingQuote.status = "rejected";
-        existingQuote.rejectionReason = reason;
-        if (adminNotes) existingQuote.adminNotes = adminNotes;
-        await existingQuote.save();
+    existingQuote.status = "rejected";
+    existingQuote.rejectionReason = reason;
+    if (adminNotes) existingQuote.adminNotes = adminNotes;
+    await existingQuote.save();
 
-        clientEmail = existingQuote.client?.email || clientEmail;
-        clientName = existingQuote.client?.name || clientName;
-        clientCompany = existingQuote.client?.companyName || clientCompany;
-        originStr = existingQuote.route?.origin || originStr;
-        destStr = existingQuote.route?.destination || destStr;
-
-        updatedQuoteData = existingQuote.toObject();
+    if (existingQuote.client?.email) {
+      try {
+        await sendQuoteRejectedEmail({
+          to: existingQuote.client.email,
+          name: existingQuote.client.name,
+          companyName: existingQuote.client.companyName || "",
+          quoteId: id,
+          origin: existingQuote.route?.origin || "",
+          destination: existingQuote.route?.destination || "",
+          rejectionReason: reason,
+        });
+      } catch (mailErr) {
+        console.warn("[Email Notification] Could not send rejection email:", mailErr);
       }
-    } catch (dbErr) {
-      console.warn("[Reject Quote API] DB write error, using storage fallback:", dbErr);
     }
 
-    // 2. Synchronize with mock data layer
-    const mockResult = rejectQuote(id, reason, adminNotes);
-    if (mockResult && !updatedQuoteData) {
-      updatedQuoteData = mockResult;
-      clientEmail = mockResult.clientEmail || clientEmail;
-      clientName = mockResult.clientName || clientName;
-      clientCompany = mockResult.clientCompany || clientCompany;
-      originStr = mockResult.origin || originStr;
-      destStr = mockResult.destination || destStr;
-    }
-
-    // 3. Automated Email Notification to Client via Resend / Nodemailer
-    try {
-      await sendQuoteRejectedEmail({
-        to: clientEmail,
-        name: clientName,
-        companyName: clientCompany,
-        quoteId: id,
-        origin: originStr,
-        destination: destStr,
-        rejectionReason: reason,
+    const cookieStore = await cookies();
+    const actor = verifyToken(cookieStore.get("token")?.value || "");
+    if (actor) {
+      await logAudit({
+        actor,
+        action: "QUOTE_REJECTED",
+        resourceType: "Quote",
+        resourceId: existingQuote.refNumber,
+        details: `Quote ${existingQuote.refNumber} rejected: ${reason}`,
       });
-    } catch (mailErr) {
-      console.warn("[Email Notification] Could not send rejection email:", mailErr);
     }
 
     return NextResponse.json({
       success: true,
       message: `Quote ${id} has been declined`,
-      quote: updatedQuoteData || { id, status: "rejected", rejectionReason: reason },
+      quote: existingQuote.toObject(),
     });
   } catch (error: any) {
     console.error("Error rejecting quote:", error);

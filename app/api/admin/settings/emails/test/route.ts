@@ -8,36 +8,35 @@ export async function POST(req: Request) {
 
     const targetEmail = to || process.env.ADMIN_EMAIL || "dispatch@transimex.ca";
 
-    // Inject realistic preview replacements
-    const previewSubject = (subject || "Transimex Logistics Notification")
-      .replace(/\{\{clientName\}\}/g, "Marc Tremblay")
-      .replace(/\{\{quoteId\}\}/g, "QT-2026-00124")
-      .replace(/\{\{trackingId\}\}/g, "TMX-2026-00847")
-      .replace(/\{\{origin\}\}/g, "Montreal, QC")
-      .replace(/\{\{destination\}\}/g, "Chicago, IL")
-      .replace(/\{\{rate\}\}/g, "$4,850.00 CAD")
-      .replace(/\{\{eta\}\}/g, "Tomorrow, 04:15 PM")
-      .replace(/\{\{totalOwed\}\}/g, "$1,410.00 CAD");
+    // Inject generic, clearly-labeled sample data for previewing — never a
+    // specific-looking real client name, email, or dollar figure.
+    const SAMPLE_VALUES: Record<string, string> = {
+      "{{clientName}}": "Sample Client Inc.",
+      "{{quoteId}}": "QT-SAMPLE-0001",
+      "{{trackingId}}": "TMX-SAMPLE-0001",
+      "{{origin}}": "Sample Origin City",
+      "{{destination}}": "Sample Destination City",
+      "{{rate}}": "$0.00 CAD (sample)",
+      "{{eta}}": "Sample ETA",
+      "{{totalOwed}}": "$0.00 CAD (sample)",
+      "{{rejectionReason}}": "sample capacity constraint reason",
+      "{{deliveryTime}}": "Sample delivery time",
+      "{{ticketId}}": "SUP-SAMPLE-0001",
+      "{{subject}}": "Sample Inquiry Subject",
+      "{{latestMessage}}": "Sample dispatcher response message.",
+      "{{portalUrl}}": "https://transimex.ca/dashboard",
+      "{{portOfEntry}}": "Sample Port of Entry",
+    };
 
-    const previewHeading = (heading || "Transimex Logistics Dispatch Update")
-      .replace(/\{\{clientName\}\}/g, "Marc Tremblay")
-      .replace(/\{\{trackingId\}\}/g, "TMX-2026-00847");
+    const applySampleTokens = (text: string) =>
+      Object.entries(SAMPLE_VALUES).reduce(
+        (acc, [token, value]) => acc.replace(new RegExp(token.replace(/[{}]/g, "\\$&"), "g"), value),
+        text
+      );
 
-    const previewBody = (content || "Test transactional message content.")
-      .replace(/\{\{clientName\}\}/g, "Marc Tremblay")
-      .replace(/\{\{quoteId\}\}/g, "QT-2026-00124")
-      .replace(/\{\{trackingId\}\}/g, "TMX-2026-00847")
-      .replace(/\{\{origin\}\}/g, "Montreal, QC")
-      .replace(/\{\{destination\}\}/g, "Chicago, IL")
-      .replace(/\{\{rate\}\}/g, "$4,850.00 CAD")
-      .replace(/\{\{eta\}\}/g, "Tomorrow, 04:15 PM")
-      .replace(/\{\{totalOwed\}\}/g, "$1,410.00 CAD")
-      .replace(/\{\{rejectionReason\}\}/g, "equipment unavailability in the Detroit corridor")
-      .replace(/\{\{deliveryTime\}\}/g, "Today at 14:22 EST")
-      .replace(/\{\{ticketId\}\}/g, "SUP-2026-0042")
-      .replace(/\{\{subject\}\}/g, "CBSA PARS Customs Verification")
-      .replace(/\{\{latestMessage\}\}/g, "Livingston broker has cleared B3 entry and released cargo at port terminal.")
-      .replace(/\{\{portalUrl\}\}/g, "https://transimex.ca/dashboard");
+    const previewSubject = applySampleTokens(subject || "Transimex Logistics Notification");
+    const previewHeading = applySampleTokens(heading || "Transimex Logistics Dispatch Update");
+    const previewBody = applySampleTokens(content || "Test transactional message content.");
 
     const html = emailTemplateWrapper(
       `
