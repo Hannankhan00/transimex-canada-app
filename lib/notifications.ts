@@ -9,6 +9,7 @@ interface CreateNotificationParams {
   descFr: string;
   category: NotificationCategory;
   link?: string;
+  shipmentId?: string;
 }
 
 /**
@@ -29,6 +30,7 @@ export async function notifyUser(params: CreateNotificationParams): Promise<void
       descFr: params.descFr,
       category: params.category,
       link: params.link || "",
+      shipmentId: params.shipmentId || "",
     });
   } catch (err) {
     console.warn("[Notification] Failed to create in-app notification:", err);

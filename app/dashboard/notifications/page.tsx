@@ -21,6 +21,7 @@ import {
   CheckCheck,
   Inbox,
   ExternalLink,
+  Search,
 } from "lucide-react";
 
 export default function NotificationsPage() {
@@ -28,6 +29,7 @@ export default function NotificationsPage() {
   const { t, language } = useLanguage();
   const [notifications, setNotifications] = useState<PortalNotification[]>([]);
   const [filter, setFilter] = useState<string>("all");
+  const [shipmentQuery, setShipmentQuery] = useState("");
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const loadNotifications = () => {
@@ -72,10 +74,15 @@ export default function NotificationsPage() {
   };
 
   const filteredNotifs = notifications.filter((n) => {
-    if (filter === "unread") return n.unread;
-    if (filter === "customs") return n.category === "customs";
-    if (filter === "transit") return n.category === "transit";
-    if (filter === "documents") return n.category === "document";
+    if (filter === "unread" && !n.unread) return false;
+    if (filter === "customs" && n.category !== "customs") return false;
+    if (filter === "transit" && n.category !== "transit") return false;
+    if (filter === "documents" && n.category !== "document") return false;
+
+    if (shipmentQuery.trim() && !n.shipmentId.toLowerCase().includes(shipmentQuery.trim().toLowerCase())) {
+      return false;
+    }
+
     return true;
   });
 
@@ -160,8 +167,21 @@ export default function NotificationsPage() {
         )}
       </div>
 
-      {/* Filter Tabs */}
-      <div className="bg-white rounded-2xl p-3 border border-slate-200 shadow-xs flex items-center gap-1.5 overflow-x-auto">
+      {/* Filter Tabs & Shipment Search */}
+      <div className="bg-white rounded-2xl p-3 border border-slate-200 shadow-xs flex flex-col lg:flex-row lg:items-center gap-2.5">
+        <div className="relative w-full lg:w-64 flex-shrink-0">
+          <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <input
+            type="text"
+            value={shipmentQuery}
+            onChange={(e) => setShipmentQuery(e.target.value)}
+            placeholder={
+              language === "fr" ? "Filtrer par ID d'expédition..." : "Filter by Shipment ID..."
+            }
+            className="w-full pl-8 pr-3 py-2 bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#0B2545] rounded-xl text-xs outline-none transition font-medium text-slate-900"
+          />
+        </div>
+        <div className="flex items-center gap-1.5 overflow-x-auto">
         {[
           { id: "all", label: language === "fr" ? "Toutes les alertes" : "All Alerts", count: notifications.length },
           { id: "unread", label: language === "fr" ? "Non lues" : "Unread", count: unreadCount },
@@ -191,6 +211,7 @@ export default function NotificationsPage() {
             </span>
           </button>
         ))}
+        </div>
       </div>
 
       {/* Alert Feed List */}
@@ -254,10 +275,19 @@ export default function NotificationsPage() {
                     {language === "fr" ? notif.descFr : notif.desc}
                   </p>
 
-                  <div className="flex items-center gap-3 pt-1 text-[11px] text-slate-400">
-                    <span className="flex items-center gap-1">
+                  {notif.shipmentId && (
+                    <div className="flex items-center gap-1.5 text-[11px] font-mono font-bold text-[#0B2545]">
+                      <Truck className="w-3 h-3 text-slate-400 flex-shrink-0" />
+                      <span>{notif.shipmentId}</span>
+                      {notif.route && <span className="text-slate-400 font-sans font-normal">— {notif.route}</span>}
+                    </div>
+                  )}
+
+                  <div className="flex items-center gap-3 pt-1 text-[11px] text-slate-400 flex-wrap">
+                    <span className="flex items-center gap-1" title={notif.dateTime}>
                       <Clock className="w-3 h-3" />
-                      <span>{notif.time}</span>
+                      <span>{notif.dateTime}</span>
+                      <span className="text-slate-300">({notif.time})</span>
                     </span>
                     <span className="text-slate-300">&bull;</span>
                     <span className="text-[#0B2545] font-semibold flex items-center gap-1 group-hover:underline">

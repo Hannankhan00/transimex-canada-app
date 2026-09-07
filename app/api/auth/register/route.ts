@@ -3,6 +3,7 @@ import connectDB from "@/lib/mongoose";
 import User from "@/models/User";
 import crypto from "crypto";
 import { hashPassword, signToken } from "@/lib/auth";
+import { createUserSession } from "@/lib/authSession";
 import { sendVerificationEmail } from "@/lib/email";
 
 export async function POST(req: Request) {
@@ -77,12 +78,16 @@ export async function POST(req: Request) {
     const userRole = user.role || "client";
     const userId = user._id.toString();
 
+    const sessionId = await createUserSession(userId, req);
+
     const tokenPayload = {
       userId,
       email: email.toLowerCase(),
       name: parsedName,
       companyName: targetCompany,
       role: userRole,
+      sessionId,
+      tokenVersion: user.tokenVersion || 0,
     };
 
     const token = signToken(tokenPayload);

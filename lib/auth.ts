@@ -9,6 +9,8 @@ export interface TokenPayload {
   name: string;
   companyName: string;
   role: string;
+  sessionId?: string;
+  tokenVersion?: number;
 }
 
 export async function hashPassword(password: string): Promise<string> {

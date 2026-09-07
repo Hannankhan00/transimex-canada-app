@@ -58,6 +58,7 @@ export async function PATCH(
       await notifyUser({
         userId: dbTicket.client?.userId,
         category: "system",
+        shipmentId: dbTicket.shipmentId || "",
         title: `Update on Ticket ${dbTicket.ticketId}`,
         titleFr: `Mise à Jour du Billet ${dbTicket.ticketId}`,
         desc: message && !isInternal ? message : `Ticket status updated to ${dbTicket.status}.`,

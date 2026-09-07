@@ -3,6 +3,17 @@ export function formatDateLabel(date: Date | string): string {
   return d.toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" });
 }
 
+export function formatDateTimeLabel(date: Date | string): string {
+  const d = typeof date === "string" ? new Date(date) : date;
+  return d.toLocaleString("en-US", {
+    month: "short",
+    day: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 export function timeAgo(date: Date | string): string {
   const d = typeof date === "string" ? new Date(date) : date;
   const seconds = Math.floor((Date.now() - d.getTime()) / 1000);

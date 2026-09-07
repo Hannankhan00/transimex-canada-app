@@ -99,6 +99,7 @@ export async function PATCH(
     await notifyUser({
       userId: existingQuote.client?.userId,
       category: "quote",
+      shipmentId: trackingId,
       title: `Quote Accepted — ${existingQuote.refNumber}`,
       titleFr: `Soumission Acceptée — ${existingQuote.refNumber}`,
       desc: `Your quote ${existingQuote.refNumber} was accepted at ${priceCad} and is now shipment ${trackingId}.`,

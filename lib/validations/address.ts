@@ -1,10 +1,13 @@
 import { z } from "zod";
 
+export const addressTypesEnum = ["Pickup", "Delivery", "Both"] as const;
+
 export const addressSchema = z.object({
   alias: z
     .string()
     .min(2, "Alias / Facility name must be at least 2 characters")
     .max(50, "Alias must be under 50 characters"),
+  addressType: z.enum(addressTypesEnum),
   company: z
     .string()
     .min(2, "Company name is required")

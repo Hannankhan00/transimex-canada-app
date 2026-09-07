@@ -771,6 +771,91 @@ export async function sendTicketUpdateEmail({
 }
 
 /**
+ * 8b. Send New Support Ticket Alert to Ops/Dispatch Staff
+ */
+export async function sendNewTicketAdminAlertEmail({
+  to,
+  ticketId,
+  clientName,
+  companyName,
+  subject,
+  category,
+  priority,
+  message,
+  shipmentId,
+}: {
+  to: string;
+  ticketId: string;
+  clientName: string;
+  companyName: string;
+  subject: string;
+  category: string;
+  priority: string;
+  message: string;
+  shipmentId?: string;
+}) {
+  const appUrl = getAppUrl();
+  const adminUrl = `${appUrl}/admin/support`;
+
+  const dbTemplate = await loadEmailTemplate("support-new-ticket-admin-alert");
+  if (dbTemplate) {
+    const tokens = {
+      clientName,
+      companyName,
+      ticketId,
+      subject,
+      category,
+      priority,
+      message,
+      portalUrl: adminUrl,
+    };
+    const templatedSubject = interpolateTemplate(dbTemplate.subject, tokens);
+    const heading = interpolateTemplate(dbTemplate.heading, tokens);
+    const bodyText = interpolateTemplate(dbTemplate.body, tokens);
+
+    return sendEmail({
+      to,
+      subject: templatedSubject,
+      html: emailTemplateWrapper(renderTemplateContent(heading, bodyText), templatedSubject),
+      text: bodyText,
+    });
+  }
+
+  console.warn('[Email] No DB template found for slug "support-new-ticket-admin-alert" — using hardcoded fallback copy.');
+
+  const content = `
+    <h1 class="h1">New Support Ticket: ${ticketId}</h1>
+    <p>A client has opened a new support ticket that requires review.</p>
+
+    <div class="cred-box">
+      <div><strong>Ticket Reference:</strong> ${ticketId}</div>
+      <div><strong>Client:</strong> ${clientName} (${companyName})</div>
+      <div><strong>Category:</strong> ${category}</div>
+      <div><strong>Priority:</strong> <span style="color: #D21F27; font-weight: bold;">${priority}</span></div>
+      ${shipmentId ? `<div><strong>Linked Shipment:</strong> ${shipmentId}</div>` : ""}
+    </div>
+
+    <div style="background-color: #f8fafc; border-left: 4px solid #D21F27; padding: 16px; margin: 18px 0; border-radius: 4px;">
+      <div style="font-weight: bold; color: #0B2545; font-size: 13px; margin-bottom: 6px;">
+        ${subject}
+      </div>
+      <div style="color: #334155; font-size: 13px; line-height: 1.6; white-space: pre-wrap;">${message}</div>
+    </div>
+
+    <div style="text-align: center; margin-top: 24px;">
+      <a href="${adminUrl}" class="btn" target="_blank">Open in Admin Panel</a>
+    </div>
+  `;
+
+  return sendEmail({
+    to,
+    subject: `[${ticketId}] New Support Ticket: ${subject}`,
+    html: emailTemplateWrapper(content, `New support ticket ${ticketId}`),
+    text: `New support ticket ${ticketId} from ${clientName} (${companyName}):\n\n${subject}\n${message}\n\nView at ${adminUrl}`,
+  });
+}
+
+/**
  * 9. Send Staff Onboarding Invitation Email
  */
 export async function sendStaffInviteEmail({

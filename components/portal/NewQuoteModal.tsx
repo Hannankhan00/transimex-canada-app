@@ -103,7 +103,9 @@ export default function NewQuoteModal({
             const addrData = await addrRes.json();
             const addrs: SavedAddress[] = addrData.addresses || [];
             setSavedAddresses(addrs);
-            const defaultAddr = addrs.find((a) => a.isDefault);
+            const defaultAddr = addrs.find(
+              (a) => a.isDefault && a.addressType !== "Delivery"
+            );
             if (defaultAddr) {
               setValue("originCity", defaultAddr.city);
               setValue("originProvince", defaultAddr.province);
@@ -135,6 +137,9 @@ export default function NewQuoteModal({
       setValue("destinationPostal", found.postalCode);
     }
   };
+
+  const pickupAddresses = savedAddresses.filter((a) => a.addressType !== "Delivery");
+  const deliveryAddresses = savedAddresses.filter((a) => a.addressType !== "Pickup");
 
   const onSubmit = async (data: QuoteRequestFormData) => {
     setIsSubmitting(true);
@@ -320,13 +325,13 @@ export default function NewQuoteModal({
                     <label className="font-bold text-slate-700 text-[11px] uppercase">
                       Origin Pickup *
                     </label>
-                    {savedAddresses.length > 0 && (
+                    {pickupAddresses.length > 0 && (
                       <select
                         onChange={(e) => handleOriginAddressSelect(e.target.value)}
                         className="px-2 py-0.5 bg-white border border-slate-200 rounded text-[11px] text-slate-700 outline-none"
                       >
                         <option value="">-- Autofill from saved address --</option>
-                        {savedAddresses.map((a) => (
+                        {pickupAddresses.map((a) => (
                           <option key={a.id} value={a.id}>
                             {a.alias} ({a.city})
                           </option>
@@ -366,13 +371,13 @@ export default function NewQuoteModal({
                     <label className="font-bold text-slate-700 text-[11px] uppercase">
                       Destination Delivery *
                     </label>
-                    {savedAddresses.length > 0 && (
+                    {deliveryAddresses.length > 0 && (
                       <select
                         onChange={(e) => handleDestinationAddressSelect(e.target.value)}
                         className="px-2 py-0.5 bg-white border border-slate-200 rounded text-[11px] text-slate-700 outline-none"
                       >
                         <option value="">-- Autofill from saved address --</option>
-                        {savedAddresses.map((a) => (
+                        {deliveryAddresses.map((a) => (
                           <option key={a.id} value={a.id}>
                             {a.alias} ({a.city})
                           </option>

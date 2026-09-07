@@ -1,9 +1,11 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
+import { api } from "@/lib/api";
+import { useInstallPrompt } from "@/lib/useInstallPrompt";
 import TransimexLogo from "@/components/TransimexLogo";
 import {
   LayoutDashboard,
@@ -18,6 +20,9 @@ import {
   ShieldCheck,
   X,
   ExternalLink,
+  ChevronUp,
+  Download,
+  LogOut,
 } from "lucide-react";
 
 interface PortalSidebarProps {
@@ -25,6 +30,11 @@ interface PortalSidebarProps {
   onCloseMobile?: () => void;
   unreadCount?: number;
   userRole?: string;
+  user?: {
+    name?: string;
+    email?: string;
+    companyName?: string;
+  } | null;
 }
 
 export default function PortalSidebar({
@@ -32,9 +42,64 @@ export default function PortalSidebar({
   onCloseMobile,
   unreadCount = 3,
   userRole = "client",
+  user = null,
 }: PortalSidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const { t, language } = useLanguage();
+  const { isStandalone, isIOS, promptInstall } = useInstallPrompt();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [installHint, setInstallHint] = useState<string | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setMenuOpen(false);
+        setInstallHint(null);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const displayName = user?.name || "Client User";
+  const displayCompany = user?.companyName || "Organization Account";
+  const initialsSource = user?.name?.trim() || user?.email || "";
+  const initials = initialsSource
+    ? initialsSource
+        .trim()
+        .split(/\s+/)
+        .map((part) => part[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase()
+    : "?";
+
+  const handleLogout = async () => {
+    await api.auth.logout();
+    router.push("/login");
+  };
+
+  const handleInstallClick = async () => {
+    const result = await promptInstall();
+    if (result === "ios") {
+      setInstallHint(
+        language === "fr"
+          ? "Appuyez sur Partager, puis « Sur l'écran d'accueil »."
+          : "Tap Share, then \"Add to Home Screen.\""
+      );
+    } else if (result === "unavailable") {
+      setInstallHint(
+        language === "fr"
+          ? "Utilisez le menu de votre navigateur pour installer l'application."
+          : "Use your browser menu to install this app."
+      );
+    } else {
+      setMenuOpen(false);
+      setInstallHint(null);
+    }
+  };
 
   const navigationItems = [
     {
@@ -185,22 +250,57 @@ export default function PortalSidebar({
         </nav>
       </div>
 
-      {/* Bottom Dispatch Status Card */}
-      <div className="p-4 m-3 bg-white/5 border border-white/10 rounded-xl text-xs space-y-2">
-        <div className="flex items-center justify-between">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-            {language === "fr" ? "Réseau Transimex" : "Logistics Hub"}
-          </span>
-          <span className="text-[10px] text-emerald-400 font-semibold flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-            24/7 Dispatch
-          </span>
-        </div>
-        <p className="text-[11px] text-slate-300 leading-snug">
-          {language === "fr"
-            ? "Ligne directe de fret express: +1 (800) 555-TXMX"
-            : "Express freight direct line: +1 (800) 555-TXMX"}
-        </p>
+      {/* Bottom Nameplate & Account Menu */}
+      <div className="p-3 relative" ref={menuRef}>
+        {menuOpen && (
+          <div className="absolute bottom-full left-3 right-3 mb-2 bg-[#132a52] border border-white/10 rounded-xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-150 z-10">
+            {installHint && (
+              <div className="px-3.5 py-2.5 text-[11px] text-slate-300 leading-snug border-b border-white/10 bg-white/5">
+                {installHint}
+              </div>
+            )}
+            {!isStandalone && (
+              <button
+                type="button"
+                onClick={handleInstallClick}
+                className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-xs font-semibold text-slate-200 hover:bg-white/10 transition cursor-pointer"
+              >
+                <Download className="w-4 h-4 text-slate-400" />
+                <span>{language === "fr" ? "Installer l'application" : "Install App"}</span>
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-xs font-bold text-red-300 hover:bg-red-500/10 transition cursor-pointer border-t border-white/10"
+            >
+              <LogOut className="w-4 h-4" />
+              <span>{language === "fr" ? "Se déconnecter" : "Log Out"}</span>
+            </button>
+          </div>
+        )}
+
+        <button
+          type="button"
+          onClick={() => {
+            setMenuOpen((open) => !open);
+            setInstallHint(null);
+          }}
+          className="w-full flex items-center gap-2.5 p-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 transition cursor-pointer"
+        >
+          <div className="w-8 h-8 rounded-lg bg-white/10 border border-white/15 flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
+            {initials}
+          </div>
+          <div className="min-w-0 flex-1 text-left">
+            <div className="text-xs font-bold text-white truncate">{displayName}</div>
+            <div className="text-[10px] text-slate-400 truncate">{displayCompany}</div>
+          </div>
+          <ChevronUp
+            className={`w-3.5 h-3.5 text-slate-400 transition-transform flex-shrink-0 ${
+              menuOpen ? "rotate-180" : ""
+            }`}
+          />
+        </button>
       </div>
     </div>
   );

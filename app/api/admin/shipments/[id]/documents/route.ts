@@ -90,6 +90,7 @@ export async function POST(
       await notifyUser({
         userId: doc.userId,
         category: "document",
+        shipmentId: doc.shipmentId,
         title: `New Document Available — ${id}`,
         titleFr: `Nouveau Document Disponible — ${id}`,
         desc: `${type} "${file.name}" has been uploaded and is ready for download for shipment ${id}.`,

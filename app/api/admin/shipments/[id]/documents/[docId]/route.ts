@@ -28,6 +28,7 @@ export async function PATCH(
       await notifyUser({
         userId: doc.userId,
         category: "document",
+        shipmentId: doc.shipmentId,
         title: `New Document Available — ${doc.shipmentId}`,
         titleFr: `Nouveau Document Disponible — ${doc.shipmentId}`,
         desc: `${doc.type} "${doc.name}" is now available for download for shipment ${doc.shipmentId}.`,

@@ -14,6 +14,7 @@ export const INITIAL_ADDRESSES: SavedAddress[] = [
   {
     id: "ADDR-001",
     alias: "Montreal Distribution Center (HQ)",
+    addressType: "Both",
     company: "Laurentian Global Logistics Ltd.",
     contactPerson: "Marc Tremblay",
     phone: "+1 (514) 555-0199",
@@ -29,6 +30,7 @@ export const INITIAL_ADDRESSES: SavedAddress[] = [
   {
     id: "ADDR-002",
     alias: "Toronto Cross-Dock Facility",
+    addressType: "Both",
     company: "Laurentian Ontario Operations",
     contactPerson: "Sarah Jenkins",
     phone: "+1 (416) 555-0144",
@@ -44,6 +46,7 @@ export const INITIAL_ADDRESSES: SavedAddress[] = [
   {
     id: "ADDR-003",
     alias: "Vancouver Pacific Gateway Terminal",
+    addressType: "Both",
     company: "Laurentian West Coast Cargo",
     contactPerson: "David Wong",
     phone: "+1 (604) 555-0182",
@@ -59,6 +62,7 @@ export const INITIAL_ADDRESSES: SavedAddress[] = [
   {
     id: "ADDR-004",
     alias: "Calgary Logistics Center",
+    addressType: "Both",
     company: "Laurentian Western Hub",
     contactPerson: "Trevor Miller",
     phone: "+1 (403) 555-0177",
@@ -111,8 +115,11 @@ export interface PortalNotification {
   desc: string;
   descFr: string;
   time: string;
+  dateTime: string;
   category: NotificationCategory;
   link: string;
+  shipmentId: string;
+  route: string;
   unread: boolean;
   timestamp: string;
 }

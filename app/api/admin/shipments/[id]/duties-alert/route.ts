@@ -88,6 +88,7 @@ export async function POST(
     await notifyUser({
       userId: shipment.client?.userId,
       category: "customs",
+      shipmentId: shipment.trackingNumber,
       title: `Duties Payment Required — ${shipment.trackingNumber}`,
       titleFr: `Paiement de Droits Requis — ${shipment.trackingNumber}`,
       desc: `A total of ${totalOwed} in duties and taxes has been assessed for shipment ${shipment.trackingNumber}. Check your email for payment instructions.`,

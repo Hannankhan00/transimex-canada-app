@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { addressSchema, AddressFormData, SavedAddress } from "@/lib/validations/address";
+import { addressSchema, addressTypesEnum, AddressFormData, SavedAddress } from "@/lib/validations/address";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { api } from "@/lib/api";
 import { X, Building2, MapPin, User, Phone, FileText, Check } from "lucide-react";
@@ -48,6 +48,7 @@ export default function AddressModal({
     resolver: zodResolver(addressSchema) as any,
     defaultValues: {
       alias: "",
+      addressType: "Both",
       company: "",
       contactPerson: "",
       phone: "",
@@ -65,6 +66,7 @@ export default function AddressModal({
     if (initialData) {
       reset({
         alias: initialData.alias,
+        addressType: initialData.addressType || "Both",
         company: initialData.company,
         contactPerson: initialData.contactPerson,
         phone: initialData.phone,
@@ -79,6 +81,7 @@ export default function AddressModal({
     } else {
       reset({
         alias: "",
+        addressType: "Both",
         company: currentUserCompany,
         contactPerson: currentUserContact,
         phone: currentUserPhone,
@@ -133,21 +136,49 @@ export default function AddressModal({
 
         {/* Form */}
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 mt-4">
-          {/* Alias / Facility Name */}
-          <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-              {language === "fr" ? "Alias / Nom du Site" : "Location Alias / Facility Name"} *
-            </label>
-            <input
-              {...register("alias")}
-              placeholder="e.g. Montreal Main Distribution Center, Toronto Dock #4"
-              className={`w-full px-3.5 py-2.5 bg-slate-50 border ${
-                errors.alias ? "border-red-500 bg-red-50/30" : "border-slate-200"
-              } focus:bg-white focus:border-[#0B2545] rounded-xl text-xs outline-none transition font-medium text-slate-900`}
-            />
-            {errors.alias && (
-              <p className="text-[11px] text-red-600 mt-1 font-semibold">{errors.alias.message}</p>
-            )}
+          {/* Alias / Facility Name & Address Type */}
+          <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                {language === "fr" ? "Alias / Nom du Site" : "Location Alias / Facility Name"} *
+              </label>
+              <input
+                {...register("alias")}
+                placeholder="e.g. Montreal Main Distribution Center, Toronto Dock #4"
+                className={`w-full px-3.5 py-2.5 bg-slate-50 border ${
+                  errors.alias ? "border-red-500 bg-red-50/30" : "border-slate-200"
+                } focus:bg-white focus:border-[#0B2545] rounded-xl text-xs outline-none transition font-medium text-slate-900`}
+              />
+              {errors.alias && (
+                <p className="text-[11px] text-red-600 mt-1 font-semibold">{errors.alias.message}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                {language === "fr" ? "Type d'Adresse" : "Address Type"} *
+              </label>
+              <select
+                {...register("addressType")}
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#0B2545] rounded-xl text-xs font-semibold text-slate-800 outline-none transition cursor-pointer"
+              >
+                {addressTypesEnum.map((type) => (
+                  <option key={type} value={type}>
+                    {type === "Pickup"
+                      ? language === "fr"
+                        ? "Ramassage"
+                        : "Pickup"
+                      : type === "Delivery"
+                      ? language === "fr"
+                        ? "Livraison"
+                        : "Delivery"
+                      : language === "fr"
+                      ? "Les Deux"
+                      : "Both"}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {/* Company & Contact */}

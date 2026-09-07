@@ -27,6 +27,19 @@ export async function GET(
       return NextResponse.json({ error: "Document not found" }, { status: 404 });
     }
 
+    const safeFilename = doc.name.replace(/[^a-zA-Z0-9_.-]/g, "_");
+
+    // Serve the actual staff-uploaded file when available.
+    if (doc.fileData) {
+      return new NextResponse(new Uint8Array(doc.fileData), {
+        headers: {
+          "Content-Type": doc.mimeType || "application/pdf",
+          "Content-Disposition": `attachment; filename="${safeFilename}"`,
+        },
+      });
+    }
+
+    // Fallback for legacy records with no stored file bytes.
     const pdf = buildSimplePdf("Transimex Canada Logistics - Official Shipping Document", [
       `Document ID: ${doc._id.toString()}`,
       `Shipment ID: ${doc.shipmentId}`,
@@ -41,7 +54,7 @@ export async function GET(
     return new NextResponse(new Uint8Array(pdf), {
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="${doc.name.replace(/[^a-zA-Z0-9_.-]/g, "_")}"`,
+        "Content-Disposition": `attachment; filename="${safeFilename}"`,
       },
     });
   } catch (error: any) {

@@ -10,6 +10,7 @@ export interface INotification extends Document {
   descFr?: string;
   category: NotificationCategory;
   link?: string;
+  shipmentId?: string;
   read: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -28,6 +29,7 @@ const NotificationSchema = new Schema<INotification>(
       default: "system",
     },
     link: { type: String, default: "" },
+    shipmentId: { type: String, default: "", index: true },
     read: { type: Boolean, default: false, index: true },
   },
   { timestamps: true }

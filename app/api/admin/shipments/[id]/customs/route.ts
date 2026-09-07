@@ -105,6 +105,7 @@ export async function PATCH(
       await notifyUser({
         userId: shipment.client?.userId,
         category: "customs",
+        shipmentId: shipment.trackingNumber,
         title:
           status === "Held"
             ? `Customs Hold Placed — ${shipment.trackingNumber}`

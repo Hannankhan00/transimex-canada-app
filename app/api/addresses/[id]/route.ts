@@ -28,6 +28,7 @@ export async function PATCH(
 
     const fields = [
       "alias",
+      "addressType",
       "company",
       "contactPerson",
       "phone",

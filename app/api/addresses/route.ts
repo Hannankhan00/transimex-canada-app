@@ -36,7 +36,7 @@ export async function POST(req: Request) {
 
   try {
     const body = await req.json();
-    const { alias, company, contactPerson, phone, street, city, province, postalCode, country, accessInstructions, isDefault } = body;
+    const { alias, addressType, company, contactPerson, phone, street, city, province, postalCode, country, accessInstructions, isDefault } = body;
 
     if (!alias || !company || !contactPerson || !phone || !street || !city || !province || !postalCode) {
       return NextResponse.json({ error: "All address fields are required" }, { status: 400 });
@@ -51,6 +51,7 @@ export async function POST(req: Request) {
     const address = await Address.create({
       userId: currentUser.userId,
       alias,
+      addressType: addressType || "Both",
       company,
       contactPerson,
       phone,

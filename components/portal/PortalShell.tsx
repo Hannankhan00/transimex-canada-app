@@ -70,6 +70,7 @@ export default function PortalShell({ children }: PortalShellProps) {
         onCloseMobile={() => setMobileMenuOpen(false)}
         unreadCount={unreadCount}
         userRole={user?.role || "client"}
+        user={user}
       />
 
       {/* Main Column (Offset by 260px on Desktop) */}

@@ -35,6 +35,8 @@ export async function PATCH(req: Request) {
       name: user.name,
       companyName: user.companyName,
       role: user.role || "client",
+      sessionId: currentUser.sessionId,
+      tokenVersion: user.tokenVersion || 0,
     };
     const token = signToken(tokenPayload);
 

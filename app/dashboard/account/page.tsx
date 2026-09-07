@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -38,11 +39,30 @@ import {
   KeyRound,
   FileCheck,
   ArrowUpRight,
+  Monitor,
+  Smartphone,
+  Tablet,
+  LogOut,
+  MapPin,
 } from "lucide-react";
 
+interface ActiveSession {
+  id: string;
+  device: string;
+  browser: string;
+  os: string;
+  ip: string;
+  createdAt: string;
+  lastActive: string;
+  isCurrent: boolean;
+}
+
 export default function AccountSettingsPage() {
+  const router = useRouter();
   const { t, language, setLanguage } = useLanguage();
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [sessions, setSessions] = useState<ActiveSession[]>([]);
+  const [loggingOutAll, setLoggingOutAll] = useState(false);
   const [preferences, setPreferences] = useState<EmailPreferences>(DEFAULT_PREFERENCES);
   const [currentUser, setCurrentUser] = useState<any>({
     name: "",
@@ -119,11 +139,36 @@ export default function AccountSettingsPage() {
         if (data.success) setPreferences(data.preferences);
       })
       .catch(() => {});
+
+    fetch("/api/account/sessions")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) setSessions(data.sessions);
+      })
+      .catch(() => {});
   }, [resetProfile]);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3000);
+  };
+
+  const handleLogoutAllDevices = async () => {
+    setLoggingOutAll(true);
+    try {
+      const res = await fetch("/api/account/sessions/logout-all", { method: "POST" });
+      if (!res.ok) throw new Error("Failed to log out all devices");
+      router.push("/login");
+    } catch (err: any) {
+      showToast(err.message || "Failed to log out all devices");
+      setLoggingOutAll(false);
+    }
+  };
+
+  const getDeviceIcon = (device: string) => {
+    if (device === "Mobile") return Smartphone;
+    if (device === "Tablet") return Tablet;
+    return Monitor;
   };
 
   const handleProfileSubmit = async (data: ProfileUpdateFormData) => {
@@ -583,6 +628,84 @@ export default function AccountSettingsPage() {
             </button>
           </div>
         </form>
+
+        {/* Active Sessions Manager */}
+        <div className="bg-white rounded-2xl p-6 sm:p-7 border border-slate-200 shadow-xs space-y-4">
+          <div className="flex items-center justify-between gap-3 border-b border-slate-100 pb-3">
+            <div className="flex items-center gap-2 font-bold text-slate-900 text-xs uppercase tracking-wider">
+              <Monitor className="w-4 h-4 text-[#d21f27]" />
+              <span>{language === "fr" ? "Sessions Actives" : "Active Sessions"}</span>
+            </div>
+            {sessions.length > 0 && (
+              <button
+                type="button"
+                onClick={handleLogoutAllDevices}
+                disabled={loggingOutAll}
+                className="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 text-[11px] font-bold rounded-lg transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span>
+                  {loggingOutAll
+                    ? language === "fr"
+                      ? "Déconnexion..."
+                      : "Logging Out..."
+                    : language === "fr"
+                    ? "Déconnecter Tous les Appareils"
+                    : "Log Out All Devices"}
+                </span>
+              </button>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            {sessions.length === 0 ? (
+              <p className="text-xs text-slate-400">
+                {language === "fr" ? "Chargement des sessions..." : "Loading sessions..."}
+              </p>
+            ) : (
+              sessions.map((session) => {
+                const DeviceIcon = getDeviceIcon(session.device);
+                return (
+                  <div
+                    key={session.id}
+                    className={`flex items-center gap-3 p-3 rounded-xl border text-xs ${
+                      session.isCurrent
+                        ? "bg-emerald-50/60 border-emerald-200"
+                        : "bg-slate-50 border-slate-200/80"
+                    }`}
+                  >
+                    <div className="w-9 h-9 rounded-lg bg-white border border-slate-200 flex items-center justify-center flex-shrink-0 text-[#0B2545]">
+                      <DeviceIcon className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-bold text-slate-900">
+                          {session.browser} — {session.os}
+                        </span>
+                        {session.isCurrent && (
+                          <span className="px-2 py-0.2 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold uppercase tracking-wider border border-emerald-200">
+                            {language === "fr" ? "Cet Appareil" : "This Device"}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3 text-[11px] text-slate-500 mt-0.5 flex-wrap">
+                        <span>
+                          {language === "fr" ? "Actif" : "Active"} {session.lastActive}
+                        </span>
+                        {session.ip && (
+                          <span className="flex items-center gap-1">
+                            <MapPin className="w-3 h-3 text-slate-400" />
+                            {session.ip}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
         </div>
 
         {/* Right Section: Profile Snapshot & Help (4 cols) */}

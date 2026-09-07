@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongoose";
 import User from "@/models/User";
 import { signToken } from "@/lib/auth";
+import { createUserSession } from "@/lib/authSession";
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
@@ -106,12 +107,16 @@ export async function GET(req: Request) {
     }
 
     // 4. Generate JWT Token
+    const sessionId = await createUserSession(user._id.toString(), req);
+
     const tokenPayload = {
       userId: user._id.toString(),
       email: user.email,
       name: user.name,
       companyName: user.companyName || "",
       role: user.role || "client",
+      sessionId,
+      tokenVersion: user.tokenVersion || 0,
     };
 
     const token = signToken(tokenPayload);

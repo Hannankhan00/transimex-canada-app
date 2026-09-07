@@ -1,8 +1,11 @@
 import mongoose, { Document, Model, Schema } from "mongoose";
 
+export type AddressType = "Pickup" | "Delivery" | "Both";
+
 export interface IAddress extends Document {
   userId: string;
   alias: string;
+  addressType: AddressType;
   company: string;
   contactPerson: string;
   phone: string;
@@ -21,6 +24,11 @@ const AddressSchema = new Schema<IAddress>(
   {
     userId: { type: String, required: true, index: true },
     alias: { type: String, required: true, trim: true },
+    addressType: {
+      type: String,
+      enum: ["Pickup", "Delivery", "Both"],
+      default: "Both",
+    },
     company: { type: String, required: true, trim: true },
     contactPerson: { type: String, required: true, trim: true },
     phone: { type: String, required: true, trim: true },

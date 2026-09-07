@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongoose";
 import User from "@/models/User";
 import { comparePassword, signToken } from "@/lib/auth";
+import { createUserSession } from "@/lib/authSession";
 
 export async function POST(req: Request) {
   try {
@@ -52,12 +53,16 @@ export async function POST(req: Request) {
       );
     }
 
+    const sessionId = await createUserSession(user._id.toString(), req);
+
     const tokenPayload = {
       userId: user._id.toString(),
       email: user.email,
       name: user.name,
       companyName: user.companyName,
       role: user.role || "client",
+      sessionId,
+      tokenVersion: user.tokenVersion || 0,
     };
 
     const maxAge = rememberMe ? 60 * 60 * 24 * 30 : 60 * 60 * 24 * 7; // 30 days vs 7 days

@@ -23,6 +23,7 @@ export interface IUser extends Document {
   department?: string;
   accountStatus?: "active" | "pending" | "revoked";
   lastLoginAt?: Date;
+  tokenVersion?: number;
   emailPreferences?: {
     emailShipmentUpdates: boolean;
     emailCustomsHolds: boolean;
@@ -129,6 +130,10 @@ const UserSchema = new Schema<IUser>(
     },
     lastLoginAt: {
       type: Date,
+    },
+    tokenVersion: {
+      type: Number,
+      default: 0,
     },
     emailPreferences: {
       emailShipmentUpdates: { type: Boolean, default: true },

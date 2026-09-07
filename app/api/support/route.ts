@@ -3,6 +3,7 @@ import connectDB from "@/lib/mongoose";
 import SupportTicket from "@/models/SupportTicket";
 import User from "@/models/User";
 import { getCurrentUser } from "@/lib/session";
+import { sendNewTicketAdminAlertEmail } from "@/lib/email";
 
 function mapTicket(t: any) {
   return {
@@ -122,6 +123,33 @@ export async function POST(req: Request) {
         },
       ],
     });
+
+    try {
+      const staffUsers = await User.find({
+        role: { $in: ["admin", "superadmin", "subadmin", "dispatcher"] },
+      })
+        .select("email")
+        .lean<any[]>();
+      const staffEmails = staffUsers.map((s) => s.email).filter(Boolean);
+
+      await Promise.all(
+        staffEmails.map((staffEmail) =>
+          sendNewTicketAdminAlertEmail({
+            to: staffEmail,
+            ticketId,
+            clientName,
+            companyName: user?.companyName || currentUser.companyName || "",
+            subject,
+            category,
+            priority,
+            message,
+            shipmentId: linkedShipmentId || "",
+          })
+        )
+      );
+    } catch (mailErr) {
+      console.warn("[Email Notification] Could not send new ticket admin alert email:", mailErr);
+    }
 
     return NextResponse.json({
       success: true,

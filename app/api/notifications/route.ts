@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongoose";
 import Notification from "@/models/Notification";
+import Shipment from "@/models/Shipment";
 import { getCurrentUser } from "@/lib/session";
-import { timeAgo } from "@/lib/formatDate";
+import { timeAgo, formatDateTimeLabel } from "@/lib/formatDate";
 
 export async function GET() {
   const currentUser = await getCurrentUser();
@@ -16,6 +17,21 @@ export async function GET() {
       .sort({ createdAt: -1 })
       .lean();
 
+    const shipmentIds = Array.from(
+      new Set(notifications.map((n: any) => n.shipmentId).filter(Boolean))
+    );
+    const shipments = shipmentIds.length
+      ? await Shipment.find({ trackingNumber: { $in: shipmentIds } })
+          .select("trackingNumber route")
+          .lean()
+      : [];
+    const routeByShipmentId = new Map(
+      shipments.map((s: any) => [
+        s.trackingNumber,
+        `${s.route?.origin || ""} → ${s.route?.destination || ""}`,
+      ])
+    );
+
     return NextResponse.json({
       success: true,
       notifications: notifications.map((n: any) => ({
@@ -25,8 +41,11 @@ export async function GET() {
         desc: n.desc,
         descFr: n.descFr || n.desc,
         time: timeAgo(n.createdAt),
+        dateTime: formatDateTimeLabel(n.createdAt),
         category: n.category,
         link: n.link || "",
+        shipmentId: n.shipmentId || "",
+        route: n.shipmentId ? routeByShipmentId.get(n.shipmentId) || "" : "",
         unread: !n.read,
         timestamp: n.createdAt,
       })),
