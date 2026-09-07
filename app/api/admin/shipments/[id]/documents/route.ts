@@ -5,6 +5,7 @@ import Shipment from "@/models/Shipment";
 import PortalDocument, { PortalDocumentType } from "@/models/PortalDocument";
 import { verifyToken } from "@/lib/auth";
 import { logAudit } from "@/lib/audit";
+import { notifyUser } from "@/lib/notifications";
 
 export async function GET(
   req: Request,
@@ -82,6 +83,18 @@ export async function POST(
         resourceType: "Document",
         resourceId: id,
         details: `Uploaded document "${file.name}" (${type}) to shipment ${id}.`,
+      });
+    }
+
+    if (isClientVisible) {
+      await notifyUser({
+        userId: doc.userId,
+        category: "document",
+        title: `New Document Available — ${id}`,
+        titleFr: `Nouveau Document Disponible — ${id}`,
+        desc: `${type} "${file.name}" has been uploaded and is ready for download for shipment ${id}.`,
+        descFr: `${type} « ${file.name} » a été téléversé et est prêt à être téléchargé pour l'expédition ${id}.`,
+        link: `/dashboard/documents`,
       });
     }
 

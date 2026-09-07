@@ -5,6 +5,7 @@ import Shipment from "@/models/Shipment";
 import { verifyToken } from "@/lib/auth";
 import { logAudit } from "@/lib/audit";
 import { sendDutiesNoticeEmail } from "@/lib/email";
+import { notifyUser } from "@/lib/notifications";
 
 export async function POST(
   req: Request,
@@ -83,6 +84,16 @@ export async function POST(
     } catch (mailErr) {
       console.warn("[Email Notification] Could not send duties notice email:", mailErr);
     }
+
+    await notifyUser({
+      userId: shipment.client?.userId,
+      category: "customs",
+      title: `Duties Payment Required — ${shipment.trackingNumber}`,
+      titleFr: `Paiement de Droits Requis — ${shipment.trackingNumber}`,
+      desc: `A total of ${totalOwed} in duties and taxes has been assessed for shipment ${shipment.trackingNumber}. Check your email for payment instructions.`,
+      descFr: `Un total de ${totalOwed} en droits et taxes a été évalué pour l'expédition ${shipment.trackingNumber}. Consultez votre courriel pour les instructions de paiement.`,
+      link: `/dashboard/shipments?id=${shipment.trackingNumber}`,
+    });
 
     // Best-effort audit trail entry — never blocks the response
     const actor = verifyToken((await cookies()).get("token")?.value || "");

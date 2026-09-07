@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongoose";
 import PortalDocument from "@/models/PortalDocument";
+import { notifyUser } from "@/lib/notifications";
 
 export async function PATCH(
   req: Request,
@@ -17,10 +18,23 @@ export async function PATCH(
       return NextResponse.json({ error: "Document not found" }, { status: 404 });
     }
 
+    const wasVisible = doc.isClientVisible;
     if (typeof isClientVisible === "boolean") {
       doc.isClientVisible = isClientVisible;
     }
     await doc.save();
+
+    if (isClientVisible === true && !wasVisible) {
+      await notifyUser({
+        userId: doc.userId,
+        category: "document",
+        title: `New Document Available — ${doc.shipmentId}`,
+        titleFr: `Nouveau Document Disponible — ${doc.shipmentId}`,
+        desc: `${doc.type} "${doc.name}" is now available for download for shipment ${doc.shipmentId}.`,
+        descFr: `${doc.type} « ${doc.name} » est maintenant disponible pour l'expédition ${doc.shipmentId}.`,
+        link: `/dashboard/documents`,
+      });
+    }
 
     const docObj: any = doc.toObject();
     delete docObj.fileData;

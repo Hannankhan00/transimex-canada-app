@@ -6,6 +6,7 @@ import Shipment from "@/models/Shipment";
 import { verifyToken } from "@/lib/auth";
 import { logAudit } from "@/lib/audit";
 import { sendQuoteAcceptedEmail } from "@/lib/email";
+import { notifyUser } from "@/lib/notifications";
 
 export async function PATCH(
   req: Request,
@@ -94,6 +95,16 @@ export async function PATCH(
     } catch (mailErr) {
       console.warn("[Email Notification] Could not send accepted email:", mailErr);
     }
+
+    await notifyUser({
+      userId: existingQuote.client?.userId,
+      category: "quote",
+      title: `Quote Accepted — ${existingQuote.refNumber}`,
+      titleFr: `Soumission Acceptée — ${existingQuote.refNumber}`,
+      desc: `Your quote ${existingQuote.refNumber} was accepted at ${priceCad} and is now shipment ${trackingId}.`,
+      descFr: `Votre soumission ${existingQuote.refNumber} a été acceptée à ${priceCad} et est maintenant l'expédition ${trackingId}.`,
+      link: `/dashboard/shipments?id=${trackingId}`,
+    });
 
     const cookieStore = await cookies();
     const actor = verifyToken(cookieStore.get("token")?.value || "");

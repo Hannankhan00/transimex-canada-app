@@ -32,7 +32,7 @@ interface TopBarProps {
 export default function TopBar({
   onOpenMobileMenu,
   user,
-  unreadCount = 3,
+  unreadCount = 0,
 }: TopBarProps) {
   const router = useRouter();
   const { t, language, setLanguage } = useLanguage();

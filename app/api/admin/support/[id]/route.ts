@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongoose";
 import SupportTicket from "@/models/SupportTicket";
 import { sendTicketUpdateEmail } from "@/lib/email";
+import { notifyUser } from "@/lib/notifications";
 
 export async function PATCH(
   req: Request,
@@ -53,6 +54,16 @@ export async function PATCH(
       } catch (mailErr) {
         console.warn("[Email Notification] Could not send ticket update email:", mailErr);
       }
+
+      await notifyUser({
+        userId: dbTicket.client?.userId,
+        category: "system",
+        title: `Update on Ticket ${dbTicket.ticketId}`,
+        titleFr: `Mise à Jour du Billet ${dbTicket.ticketId}`,
+        desc: message && !isInternal ? message : `Ticket status updated to ${dbTicket.status}.`,
+        descFr: message && !isInternal ? message : `Le statut du billet a été mis à jour à ${dbTicket.status}.`,
+        link: `/dashboard/support`,
+      });
     }
 
     return NextResponse.json({

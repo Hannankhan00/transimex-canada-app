@@ -112,7 +112,7 @@ export default function NotificationsPage() {
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-200 max-w-4xl">
+    <div className="space-y-6 animate-in fade-in duration-200">
       {/* Toast Notification */}
       {toastMessage && (
         <div className="fixed bottom-6 right-6 z-50 bg-[#0B2545] text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-2.5 text-xs font-semibold border border-white/10 animate-in slide-in-from-bottom-4">

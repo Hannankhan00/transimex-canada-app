@@ -4,6 +4,7 @@ import connectDB from "@/lib/mongoose";
 import Shipment from "@/models/Shipment";
 import { verifyToken } from "@/lib/auth";
 import { logAudit } from "@/lib/audit";
+import { notifyUser } from "@/lib/notifications";
 
 export async function GET(
   req: Request,
@@ -97,6 +98,30 @@ export async function PATCH(
           status === "Held"
             ? `Placed shipment ${shipment.trackingNumber} on customs hold.${cbsaNotes ? ` Reason: ${cbsaNotes}` : ""}`
             : `Released customs hold on shipment ${shipment.trackingNumber}.`,
+      });
+    }
+
+    if (status && status !== previousStatus && (status === "Held" || status === "Released")) {
+      await notifyUser({
+        userId: shipment.client?.userId,
+        category: "customs",
+        title:
+          status === "Held"
+            ? `Customs Hold Placed — ${shipment.trackingNumber}`
+            : `Customs Hold Released — ${shipment.trackingNumber}`,
+        titleFr:
+          status === "Held"
+            ? `Retenue Douanière — ${shipment.trackingNumber}`
+            : `Mainlevée Douanière — ${shipment.trackingNumber}`,
+        desc:
+          status === "Held"
+            ? `Shipment ${shipment.trackingNumber} has been placed on customs hold by CBSA.${cbsaNotes ? ` ${cbsaNotes}` : ""}`
+            : `Shipment ${shipment.trackingNumber} has cleared customs and is back in transit.`,
+        descFr:
+          status === "Held"
+            ? `L'expédition ${shipment.trackingNumber} a été retenue par l'ASFC.${cbsaNotes ? ` ${cbsaNotes}` : ""}`
+            : `L'expédition ${shipment.trackingNumber} a été dédouanée et est de nouveau en transit.`,
+        link: `/dashboard/shipments?id=${shipment.trackingNumber}`,
       });
     }
 

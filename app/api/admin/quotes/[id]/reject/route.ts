@@ -5,6 +5,7 @@ import Quote from "@/models/Quote";
 import { verifyToken } from "@/lib/auth";
 import { logAudit } from "@/lib/audit";
 import { sendQuoteRejectedEmail } from "@/lib/email";
+import { notifyUser } from "@/lib/notifications";
 
 export async function PATCH(
   req: Request,
@@ -51,6 +52,16 @@ export async function PATCH(
         console.warn("[Email Notification] Could not send rejection email:", mailErr);
       }
     }
+
+    await notifyUser({
+      userId: existingQuote.client?.userId,
+      category: "quote",
+      title: `Quote Declined — ${existingQuote.refNumber}`,
+      titleFr: `Soumission Refusée — ${existingQuote.refNumber}`,
+      desc: `Your quote ${existingQuote.refNumber} could not be fulfilled: ${reason}`,
+      descFr: `Votre soumission ${existingQuote.refNumber} n'a pas pu être honorée : ${reason}`,
+      link: `/dashboard/quotes`,
+    });
 
     const cookieStore = await cookies();
     const actor = verifyToken(cookieStore.get("token")?.value || "");
