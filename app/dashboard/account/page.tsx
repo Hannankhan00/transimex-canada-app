@@ -63,6 +63,7 @@ export default function AccountSettingsPage() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [sessions, setSessions] = useState<ActiveSession[]>([]);
   const [loggingOutAll, setLoggingOutAll] = useState(false);
+  const [revokingId, setRevokingId] = useState<string | null>(null);
   const [preferences, setPreferences] = useState<EmailPreferences>(DEFAULT_PREFERENCES);
   const [currentUser, setCurrentUser] = useState<any>({
     name: "",
@@ -162,6 +163,27 @@ export default function AccountSettingsPage() {
     } catch (err: any) {
       showToast(err.message || "Failed to log out all devices");
       setLoggingOutAll(false);
+    }
+  };
+
+  const handleLogoutDevice = async (sessionId: string) => {
+    setRevokingId(sessionId);
+    try {
+      const res = await fetch(`/api/account/sessions/${sessionId}`, { method: "DELETE" });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || "Failed to log out device");
+
+      if (result.isCurrentDevice) {
+        router.push("/login");
+        return;
+      }
+
+      setSessions((prev) => prev.filter((s) => s.id !== sessionId));
+      showToast(language === "fr" ? "Appareil déconnecté" : "Device logged out");
+    } catch (err: any) {
+      showToast(err.message || "Failed to log out device");
+    } finally {
+      setRevokingId(null);
     }
   };
 
@@ -700,6 +722,23 @@ export default function AccountSettingsPage() {
                         )}
                       </div>
                     </div>
+                    <button
+                      type="button"
+                      onClick={() => handleLogoutDevice(session.id)}
+                      disabled={revokingId === session.id}
+                      className="px-2.5 py-1.5 bg-white hover:bg-red-50 border border-slate-200 hover:border-red-200 text-slate-600 hover:text-red-700 text-[11px] font-bold rounded-lg transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50 flex-shrink-0"
+                    >
+                      <LogOut className="w-3.5 h-3.5" />
+                      <span>
+                        {revokingId === session.id
+                          ? language === "fr"
+                            ? "..."
+                            : "..."
+                          : language === "fr"
+                          ? "Déconnecter"
+                          : "Log Out"}
+                      </span>
+                    </button>
                   </div>
                 );
               })
