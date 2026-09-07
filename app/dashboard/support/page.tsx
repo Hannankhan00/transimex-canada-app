@@ -14,7 +14,6 @@ import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { SupportTicket } from "@/lib/mockData";
 import { api } from "@/lib/api";
 import {
-  HelpCircle,
   MessageSquare,
   Plus,
   Phone,
@@ -26,10 +25,7 @@ import {
   Truck,
   ShieldCheck,
   Send,
-  User,
   ArrowUpRight,
-  Filter,
-  Check,
   LifeBuoy,
   FileText,
 } from "lucide-react";
@@ -88,6 +84,10 @@ export default function SupportPage() {
       .catch(() => {});
   }, []);
 
+  const openCount = tickets.filter((t) => t.status === "Open").length;
+  const inProgressCount = tickets.filter((t) => t.status === "In Progress").length;
+  const resolvedCount = tickets.filter((t) => t.status === "Resolved").length;
+
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3000);
@@ -144,7 +144,7 @@ export default function SupportPage() {
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-200 max-w-5xl">
+    <div className="space-y-6 animate-in fade-in duration-200">
       {/* Toast Notification */}
       {toastMessage && (
         <div className="fixed bottom-6 right-6 z-50 bg-[#0B2545] text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-2.5 text-xs font-semibold border border-white/10 animate-in slide-in-from-bottom-4">
@@ -459,20 +459,77 @@ export default function SupportPage() {
             </div>
           </div>
 
+          {/* Ticket Snapshot */}
+          <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs space-y-3">
+            <span className="text-xs font-bold text-[#0B2545] uppercase tracking-wider block border-b border-slate-100 pb-2">
+              {language === "fr" ? "Aperçu des Billets" : "Ticket Snapshot"}
+            </span>
+            <div className="grid grid-cols-3 gap-2">
+              <div className="text-center p-2.5 bg-amber-50 border border-amber-100 rounded-xl">
+                <AlertCircle className="w-3.5 h-3.5 text-amber-700 mx-auto" />
+                <div className="text-lg font-bold text-amber-800 mt-1 leading-none">{openCount}</div>
+                <div className="text-[9px] font-bold uppercase tracking-wider text-amber-700/80 mt-1">
+                  {language === "fr" ? "Ouverts" : "Open"}
+                </div>
+              </div>
+              <div className="text-center p-2.5 bg-blue-50 border border-blue-100 rounded-xl">
+                <Clock className="w-3.5 h-3.5 text-blue-700 mx-auto" />
+                <div className="text-lg font-bold text-blue-800 mt-1 leading-none">{inProgressCount}</div>
+                <div className="text-[9px] font-bold uppercase tracking-wider text-blue-700/80 mt-1">
+                  {language === "fr" ? "En Cours" : "In Progress"}
+                </div>
+              </div>
+              <div className="text-center p-2.5 bg-emerald-50 border border-emerald-100 rounded-xl">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700 mx-auto" />
+                <div className="text-lg font-bold text-emerald-800 mt-1 leading-none">{resolvedCount}</div>
+                <div className="text-[9px] font-bold uppercase tracking-wider text-emerald-700/80 mt-1">
+                  {language === "fr" ? "Résolus" : "Resolved"}
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Quick Help Topics */}
           <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs space-y-3">
             <span className="text-xs font-bold text-[#0B2545] uppercase tracking-wider block border-b border-slate-100 pb-2">
               Common Support Topics
             </span>
             <div className="space-y-2 text-xs">
-              <div className="p-2.5 bg-slate-50 rounded-xl hover:bg-slate-100 transition cursor-pointer">
-                <div className="font-bold text-slate-900">Customs Clearance PARS Delays</div>
-                <p className="text-[11px] text-slate-500 mt-0.5">How CBSA electronic release works for bonded cargo.</p>
-              </div>
-              <div className="p-2.5 bg-slate-50 rounded-xl hover:bg-slate-100 transition cursor-pointer">
-                <div className="font-bold text-slate-900">Container Demurrage Inquiries</div>
-                <p className="text-[11px] text-slate-500 mt-0.5">Free time rules at Canadian and African seaports.</p>
-              </div>
+              {[
+                {
+                  icon: FileText,
+                  title: "Customs Clearance PARS Delays",
+                  desc: "How CBSA electronic release works for bonded cargo.",
+                },
+                {
+                  icon: Truck,
+                  title: "Container Demurrage Inquiries",
+                  desc: "Free time rules at Canadian and African seaports.",
+                },
+                {
+                  icon: ShieldCheck,
+                  title: "Cargo Claims & Insurance",
+                  desc: "Filing a claim for damaged or missing freight.",
+                },
+                {
+                  icon: LifeBuoy,
+                  title: "Onboarding & EDI Setup",
+                  desc: "Connecting your systems to the Transimex client portal.",
+                },
+              ].map((topic) => (
+                <div
+                  key={topic.title}
+                  className="group flex items-start gap-3 p-2.5 bg-slate-50 rounded-xl hover:bg-slate-100 transition cursor-pointer"
+                >
+                  <div className="w-7 h-7 rounded-lg bg-white border border-slate-200 flex items-center justify-center flex-shrink-0 text-[#0B2545] group-hover:border-[#0B2545]/40 transition">
+                    <topic.icon className="w-3.5 h-3.5" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="font-bold text-slate-900">{topic.title}</div>
+                    <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">{topic.desc}</p>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
