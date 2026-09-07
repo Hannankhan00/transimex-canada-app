@@ -1,19 +1,11 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { verifyToken } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/session";
 import connectDB from "@/lib/mongoose";
 import User from "@/models/User";
 
 export async function GET() {
   try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get("token")?.value;
-
-    if (!token) {
-      return NextResponse.json({ user: null }, { status: 401 });
-    }
-
-    const payload = verifyToken(token);
+    const payload = await getCurrentUser();
     if (!payload) {
       return NextResponse.json({ user: null }, { status: 401 });
     }
