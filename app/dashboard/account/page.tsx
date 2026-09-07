@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -36,6 +37,7 @@ import {
   Layers,
   KeyRound,
   FileCheck,
+  ArrowUpRight,
 } from "lucide-react";
 
 export default function AccountSettingsPage() {
@@ -53,6 +55,7 @@ export default function AccountSettingsPage() {
     jobTitle: "",
     department: "",
     clientCode: "",
+    role: "",
   });
 
   const {
@@ -98,6 +101,7 @@ export default function AccountSettingsPage() {
           jobTitle: (res.user as any).jobTitle || "",
           department: (res.user as any).department || "",
           clientCode: `TMX-${(res.user.userId || "CORP").slice(-4).toUpperCase()}`,
+          role: (res.user as any).role || "client",
         };
         setCurrentUser(userObj);
         resetProfile({
@@ -188,8 +192,19 @@ export default function AccountSettingsPage() {
     }
   };
 
+  const initialsSource = currentUser.name?.trim() || currentUser.email || "";
+  const initials = initialsSource
+    ? initialsSource
+        .trim()
+        .split(/\s+/)
+        .map((part: string) => part[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase()
+    : "?";
+
   return (
-    <div className="space-y-6 max-w-4xl animate-in fade-in duration-200">
+    <div className="space-y-6 animate-in fade-in duration-200">
       {/* Toast Notification */}
       {toastMessage && (
         <div className="fixed bottom-6 right-6 z-50 bg-[#0B2545] text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-2.5 text-xs font-semibold border border-white/10 animate-in slide-in-from-bottom-4">
@@ -216,355 +231,421 @@ export default function AccountSettingsPage() {
         </p>
       </div>
 
-      {/* Language Preference Section */}
-      <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-          <div className="flex items-center gap-2 font-bold text-slate-900 text-xs uppercase tracking-wider">
-            <Globe2 className="w-4 h-4 text-[#d21f27]" />
-            <span>{language === "fr" ? "Langue du Portail" : "Portal Language Preference"}</span>
-          </div>
-          <span className="text-[10px] text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
-            Instant Bilingue
-          </span>
-        </div>
-
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <p className="text-xs font-semibold text-slate-800">
-              {language === "fr"
-                ? "Sélectionnez votre langue d'affichage pour l'ensemble du portail logistique."
-                : "Choose your primary display language across all manifests, notifications, and quote forms."}
-            </p>
-            <p className="text-[11px] text-slate-400 mt-0.5">
-              Current active locale: <strong className="text-[#0B2545]">{language === "fr" ? "Français (FR)" : "English (EN)"}</strong>
-            </p>
-          </div>
-
-          {/* Language Toggle Buttons */}
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setLanguage("en")}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-2 ${
-                language === "en"
-                  ? "bg-[#0B2545] text-white shadow-xs"
-                  : "bg-slate-100 hover:bg-slate-200 text-slate-700"
-              }`}
-            >
-              <span>English (EN)</span>
-              {language === "en" && <Check className="w-3.5 h-3.5 text-[#d21f27]" />}
-            </button>
-            <button
-              type="button"
-              onClick={() => setLanguage("fr")}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-2 ${
-                language === "fr"
-                  ? "bg-[#0B2545] text-white shadow-xs"
-                  : "bg-slate-100 hover:bg-slate-200 text-slate-700"
-              }`}
-            >
-              <span>Français (FR)</span>
-              {language === "fr" && <Check className="w-3.5 h-3.5 text-[#d21f27]" />}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Profile Management Form */}
-      <form onSubmit={handleSubmitProfile(handleProfileSubmit)} className="bg-white rounded-2xl p-6 sm:p-7 border border-slate-200 shadow-xs space-y-6">
-        {/* Section 1: Administrator Information */}
-        <div className="space-y-4">
-          <div className="flex items-center gap-2 font-bold text-slate-900 text-xs uppercase tracking-wider border-b border-slate-100 pb-2">
-            <User className="w-4 h-4 text-[#d21f27]" />
-            <span>1. {language === "fr" ? "Coordonnées de l'Administrateur" : "Primary Account Administrator"}</span>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                {language === "fr" ? "Nom Complet" : "Full Name"} *
-              </label>
-              <input
-                {...registerProfile("name")}
-                className={`w-full px-3.5 py-2.5 bg-slate-50 border ${
-                  profileErrors.name ? "border-red-500 bg-red-50/30" : "border-slate-200"
-                } focus:bg-white focus:border-[#0B2545] rounded-xl text-xs outline-none transition font-medium text-slate-900`}
-              />
-              {profileErrors.name && (
-                <p className="text-[11px] text-red-600 mt-1 font-semibold">{profileErrors.name.message}</p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                {language === "fr" ? "Courriel Corporatif (Identifiant)" : "Corporate Email Address"}
-              </label>
-              <input
-                type="email"
-                disabled
-                value={currentUser.email}
-                className="w-full px-3.5 py-2.5 bg-slate-100 border border-slate-200 text-slate-500 rounded-xl text-xs outline-none cursor-not-allowed font-medium"
-              />
-              <span className="text-[10px] text-slate-400">Primary single sign-on corporate identifier</span>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                {language === "fr" ? "Téléphone Direct" : "Direct Phone Number"} *
-              </label>
-              <input
-                {...registerProfile("phone")}
-                placeholder="+1 (514) 555-0199"
-                className={`w-full px-3.5 py-2.5 bg-slate-50 border ${
-                  profileErrors.phone ? "border-red-500 bg-red-50/30" : "border-slate-200"
-                } focus:bg-white focus:border-[#0B2545] rounded-xl text-xs outline-none transition font-medium text-slate-900`}
-              />
-              {profileErrors.phone && (
-                <p className="text-[11px] text-red-600 mt-1 font-semibold">{profileErrors.phone.message}</p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                {language === "fr" ? "Titre du Poste" : "Job Title / Function"}
-              </label>
-              <input
-                {...registerProfile("jobTitle")}
-                placeholder="Senior Logistics Director"
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#0B2545] rounded-xl text-xs outline-none transition font-medium text-slate-900"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Section 2: Immutable Company Details */}
-        <div className="space-y-4 pt-2">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Left / Main Section: Forms (8 cols on desktop) */}
+        <div className="lg:col-span-8 space-y-6">
+        {/* Language Preference Section */}
+        <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <div className="flex items-center gap-2 font-bold text-slate-900 text-xs uppercase tracking-wider">
-              <Building2 className="w-4 h-4 text-[#d21f27]" />
-              <span>2. {language === "fr" ? "Entité Commerciale (Vérifiée)" : "Verified Corporate Commercial Entity"}</span>
+              <Globe2 className="w-4 h-4 text-[#d21f27]" />
+              <span>{language === "fr" ? "Langue du Portail" : "Portal Language Preference"}</span>
             </div>
-            <span className="text-[10px] text-slate-400 font-mono">Immutable Legal Info</span>
+            <span className="text-[10px] text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
+              Instant Bilingue
+            </span>
           </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-            <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/80">
-              <span className="text-[10px] uppercase font-bold text-slate-400 block">Company Name</span>
-              <span className="font-bold text-slate-900 mt-0.5 block">{currentUser.companyName}</span>
+  
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold text-slate-800">
+                {language === "fr"
+                  ? "Sélectionnez votre langue d'affichage pour l'ensemble du portail logistique."
+                  : "Choose your primary display language across all manifests, notifications, and quote forms."}
+              </p>
+              <p className="text-[11px] text-slate-400 mt-0.5">
+                Current active locale: <strong className="text-[#0B2545]">{language === "fr" ? "Français (FR)" : "English (EN)"}</strong>
+              </p>
             </div>
-
-            <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/80">
-              <span className="text-[10px] uppercase font-bold text-slate-400 block">Industry Sector</span>
-              <span className="font-bold text-slate-900 mt-0.5 block">{currentUser.industry}</span>
-            </div>
-
-            <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/80">
-              <span className="text-[10px] uppercase font-bold text-slate-400 block">Client ID Code</span>
-              <span className="font-mono font-bold text-[#0B2545] mt-0.5 block">{currentUser.clientCode}</span>
+  
+            {/* Language Toggle Buttons */}
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setLanguage("en")}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-2 ${
+                  language === "en"
+                    ? "bg-[#0B2545] text-white shadow-xs"
+                    : "bg-slate-100 hover:bg-slate-200 text-slate-700"
+                }`}
+              >
+                <span>English (EN)</span>
+                {language === "en" && <Check className="w-3.5 h-3.5 text-[#d21f27]" />}
+              </button>
+              <button
+                type="button"
+                onClick={() => setLanguage("fr")}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-2 ${
+                  language === "fr"
+                    ? "bg-[#0B2545] text-white shadow-xs"
+                    : "bg-slate-100 hover:bg-slate-200 text-slate-700"
+                }`}
+              >
+                <span>Français (FR)</span>
+                {language === "fr" && <Check className="w-3.5 h-3.5 text-[#d21f27]" />}
+              </button>
             </div>
           </div>
         </div>
-
-        <div className="pt-2 flex items-center justify-end">
-          <button
-            type="submit"
-            disabled={isSubmittingProfile}
-            className="px-6 py-2.5 bg-[#0B2545] hover:bg-[#123661] text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-xs transition cursor-pointer flex items-center gap-2"
-          >
-            <Check className="w-4 h-4" />
-            <span>{language === "fr" ? "Enregistrer les modifications" : "Save Profile Details"}</span>
-          </button>
+  
+        {/* Profile Management Form */}
+        <form onSubmit={handleSubmitProfile(handleProfileSubmit)} className="bg-white rounded-2xl p-6 sm:p-7 border border-slate-200 shadow-xs space-y-6">
+          {/* Section 1: Administrator Information */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 font-bold text-slate-900 text-xs uppercase tracking-wider border-b border-slate-100 pb-2">
+              <User className="w-4 h-4 text-[#d21f27]" />
+              <span>1. {language === "fr" ? "Coordonnées de l'Administrateur" : "Primary Account Administrator"}</span>
+            </div>
+  
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  {language === "fr" ? "Nom Complet" : "Full Name"} *
+                </label>
+                <input
+                  {...registerProfile("name")}
+                  className={`w-full px-3.5 py-2.5 bg-slate-50 border ${
+                    profileErrors.name ? "border-red-500 bg-red-50/30" : "border-slate-200"
+                  } focus:bg-white focus:border-[#0B2545] rounded-xl text-xs outline-none transition font-medium text-slate-900`}
+                />
+                {profileErrors.name && (
+                  <p className="text-[11px] text-red-600 mt-1 font-semibold">{profileErrors.name.message}</p>
+                )}
+              </div>
+  
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  {language === "fr" ? "Courriel Corporatif (Identifiant)" : "Corporate Email Address"}
+                </label>
+                <input
+                  type="email"
+                  disabled
+                  value={currentUser.email}
+                  className="w-full px-3.5 py-2.5 bg-slate-100 border border-slate-200 text-slate-500 rounded-xl text-xs outline-none cursor-not-allowed font-medium"
+                />
+                <span className="text-[10px] text-slate-400">Primary single sign-on corporate identifier</span>
+              </div>
+  
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  {language === "fr" ? "Téléphone Direct" : "Direct Phone Number"} *
+                </label>
+                <input
+                  {...registerProfile("phone")}
+                  placeholder="+1 (514) 555-0199"
+                  className={`w-full px-3.5 py-2.5 bg-slate-50 border ${
+                    profileErrors.phone ? "border-red-500 bg-red-50/30" : "border-slate-200"
+                  } focus:bg-white focus:border-[#0B2545] rounded-xl text-xs outline-none transition font-medium text-slate-900`}
+                />
+                {profileErrors.phone && (
+                  <p className="text-[11px] text-red-600 mt-1 font-semibold">{profileErrors.phone.message}</p>
+                )}
+              </div>
+  
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  {language === "fr" ? "Titre du Poste" : "Job Title / Function"}
+                </label>
+                <input
+                  {...registerProfile("jobTitle")}
+                  placeholder="Senior Logistics Director"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#0B2545] rounded-xl text-xs outline-none transition font-medium text-slate-900"
+                />
+              </div>
+            </div>
+          </div>
+  
+          {/* Section 2: Immutable Company Details */}
+          <div className="space-y-4 pt-2">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+              <div className="flex items-center gap-2 font-bold text-slate-900 text-xs uppercase tracking-wider">
+                <Building2 className="w-4 h-4 text-[#d21f27]" />
+                <span>2. {language === "fr" ? "Entité Commerciale (Vérifiée)" : "Verified Corporate Commercial Entity"}</span>
+              </div>
+              <span className="text-[10px] text-slate-400 font-mono">Immutable Legal Info</span>
+            </div>
+  
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+              <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/80">
+                <span className="text-[10px] uppercase font-bold text-slate-400 block">Company Name</span>
+                <span className="font-bold text-slate-900 mt-0.5 block">{currentUser.companyName}</span>
+              </div>
+  
+              <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/80">
+                <span className="text-[10px] uppercase font-bold text-slate-400 block">Industry Sector</span>
+                <span className="font-bold text-slate-900 mt-0.5 block">{currentUser.industry}</span>
+              </div>
+  
+              <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/80">
+                <span className="text-[10px] uppercase font-bold text-slate-400 block">Client ID Code</span>
+                <span className="font-mono font-bold text-[#0B2545] mt-0.5 block">{currentUser.clientCode}</span>
+              </div>
+            </div>
+          </div>
+  
+          <div className="pt-2 flex items-center justify-end">
+            <button
+              type="submit"
+              disabled={isSubmittingProfile}
+              className="px-6 py-2.5 bg-[#0B2545] hover:bg-[#123661] text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-xs transition cursor-pointer flex items-center gap-2"
+            >
+              <Check className="w-4 h-4" />
+              <span>{language === "fr" ? "Enregistrer les modifications" : "Save Profile Details"}</span>
+            </button>
+          </div>
+        </form>
+  
+        {/* Notification Preferences Subscriptions */}
+        <div className="bg-white rounded-2xl p-6 sm:p-7 border border-slate-200 shadow-xs space-y-5">
+          <div className="flex items-center gap-2 font-bold text-slate-900 text-xs uppercase tracking-wider border-b border-slate-100 pb-3">
+            <Bell className="w-4 h-4 text-[#d21f27]" />
+            <span>{language === "fr" ? "Abonnements aux Alertes Automatiques" : "Automated Dispatch Alert Subscriptions"}</span>
+          </div>
+  
+          <div className="divide-y divide-slate-100 text-xs">
+            {/* Item 1 */}
+            <div className="py-3 flex items-center justify-between gap-4">
+              <div>
+                <div className="font-bold text-slate-900">
+                  {language === "fr" ? "Alertes de transit et télématique GPS" : "Shipment GPS Telematics & Milestone Alerts"}
+                </div>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  {language === "fr"
+                    ? "Recevoir un courriel lorsqu'un camion part ou approche d'un terminal."
+                    : "Instant notifications on carrier departures, corridor milestones, and ETA changes."}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleTogglePreference("emailShipmentUpdates")}
+                className={`w-11 h-6 rounded-full transition-colors relative cursor-pointer flex-shrink-0 ${
+                  preferences.emailShipmentUpdates ? "bg-[#d21f27]" : "bg-slate-200"
+                }`}
+              >
+                <span
+                  className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${
+                    preferences.emailShipmentUpdates ? "translate-x-5" : "translate-x-0"
+                  }`}
+                />
+              </button>
+            </div>
+  
+            {/* Item 2 */}
+            <div className="py-3 flex items-center justify-between gap-4">
+              <div>
+                <div className="font-bold text-slate-900">
+                  {language === "fr" ? "Avis de retenue et dédouanement ASFC / CBSA" : "CBSA Customs & PARS Clearance Holds"}
+                </div>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  {language === "fr"
+                    ? "Notification prioritaire en cas d'inspection douanière ou de mainlevée accordée."
+                    : "Critical alerts when customs broker requires clearance documents or cargo release is granted."}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleTogglePreference("emailCustomsHolds")}
+                className={`w-11 h-6 rounded-full transition-colors relative cursor-pointer flex-shrink-0 ${
+                  preferences.emailCustomsHolds ? "bg-[#d21f27]" : "bg-slate-200"
+                }`}
+              >
+                <span
+                  className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${
+                    preferences.emailCustomsHolds ? "translate-x-5" : "translate-x-0"
+                  }`}
+                />
+              </button>
+            </div>
+  
+            {/* Item 3 */}
+            <div className="py-3 flex items-center justify-between gap-4">
+              <div>
+                <div className="font-bold text-slate-900">
+                  {language === "fr" ? "Nouveaux documents et connaissements (BOL / POD)" : "New Document & BOL / POD Uploads"}
+                </div>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  {language === "fr"
+                    ? "Notification dès qu'un connaissement officiel ou reçu signé est disponible."
+                    : "Email alert with one-click download link when official shipping paperwork is uploaded."}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleTogglePreference("emailNewDocuments")}
+                className={`w-11 h-6 rounded-full transition-colors relative cursor-pointer flex-shrink-0 ${
+                  preferences.emailNewDocuments ? "bg-[#d21f27]" : "bg-slate-200"
+                }`}
+              >
+                <span
+                  className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${
+                    preferences.emailNewDocuments ? "translate-x-5" : "translate-x-0"
+                  }`}
+                />
+              </button>
+            </div>
+  
+            {/* Item 4 */}
+            <div className="py-3 flex items-center justify-between gap-4">
+              <div>
+                <div className="font-bold text-slate-900">
+                  {language === "fr" ? "Mises à jour des tarifs et soumissions" : "Tariff & Freight Quote Rate Adjustments"}
+                </div>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  {language === "fr"
+                    ? "Alertes lorsque de nouveaux tarifs garantis sont disponibles pour vos corridors."
+                    : "Notifications regarding approved freight estimates and seasonal corridor adjustments."}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleTogglePreference("emailRateAlerts")}
+                className={`w-11 h-6 rounded-full transition-colors relative cursor-pointer flex-shrink-0 ${
+                  preferences.emailRateAlerts ? "bg-[#d21f27]" : "bg-slate-200"
+                }`}
+              >
+                <span
+                  className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${
+                    preferences.emailRateAlerts ? "translate-x-5" : "translate-x-0"
+                  }`}
+                />
+              </button>
+            </div>
+          </div>
         </div>
-      </form>
-
-      {/* Notification Preferences Subscriptions */}
-      <div className="bg-white rounded-2xl p-6 sm:p-7 border border-slate-200 shadow-xs space-y-5">
-        <div className="flex items-center gap-2 font-bold text-slate-900 text-xs uppercase tracking-wider border-b border-slate-100 pb-3">
-          <Bell className="w-4 h-4 text-[#d21f27]" />
-          <span>{language === "fr" ? "Abonnements aux Alertes Automatiques" : "Automated Dispatch Alert Subscriptions"}</span>
+  
+        {/* Security & Password Form */}
+        <form onSubmit={handleSubmitPassword(handlePasswordSubmit)} className="bg-white rounded-2xl p-6 sm:p-7 border border-slate-200 shadow-xs space-y-4">
+          <div className="flex items-center gap-2 font-bold text-slate-900 text-xs uppercase tracking-wider border-b border-slate-100 pb-3">
+            <KeyRound className="w-4 h-4 text-[#d21f27]" />
+            <span>{language === "fr" ? "Sécurité & Mot de Passe" : "Security & Password Management"}</span>
+          </div>
+  
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                Current Password
+              </label>
+              <input
+                type="password"
+                {...registerPassword("currentPassword")}
+                placeholder="••••••••"
+                className={`w-full px-3.5 py-2.5 bg-slate-50 border ${
+                  passwordErrors.currentPassword ? "border-red-500 bg-red-50/30" : "border-slate-200"
+                } focus:bg-white focus:border-[#0B2545] rounded-xl text-xs outline-none`}
+              />
+              {passwordErrors.currentPassword && (
+                <p className="text-[11px] text-red-600 mt-1 font-semibold">{passwordErrors.currentPassword.message}</p>
+              )}
+            </div>
+  
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                New Password
+              </label>
+              <input
+                type="password"
+                {...registerPassword("newPassword")}
+                placeholder="••••••••"
+                className={`w-full px-3.5 py-2.5 bg-slate-50 border ${
+                  passwordErrors.newPassword ? "border-red-500 bg-red-50/30" : "border-slate-200"
+                } focus:bg-white focus:border-[#0B2545] rounded-xl text-xs outline-none`}
+              />
+              {passwordErrors.newPassword && (
+                <p className="text-[11px] text-red-600 mt-1 font-semibold">{passwordErrors.newPassword.message}</p>
+              )}
+            </div>
+  
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                Confirm New Password
+              </label>
+              <input
+                type="password"
+                {...registerPassword("confirmPassword")}
+                placeholder="••••••••"
+                className={`w-full px-3.5 py-2.5 bg-slate-50 border ${
+                  passwordErrors.confirmPassword ? "border-red-500 bg-red-50/30" : "border-slate-200"
+                } focus:bg-white focus:border-[#0B2545] rounded-xl text-xs outline-none`}
+              />
+              {passwordErrors.confirmPassword && (
+                <p className="text-[11px] text-red-600 mt-1 font-semibold">{passwordErrors.confirmPassword.message}</p>
+              )}
+            </div>
+          </div>
+  
+          <div className="pt-2 flex items-center justify-end">
+            <button
+              type="submit"
+              disabled={isSubmittingPassword}
+              className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-xl transition cursor-pointer"
+            >
+              {language === "fr" ? "Mettre à jour le mot de passe" : "Update Password"}
+            </button>
+          </div>
+        </form>
         </div>
 
-        <div className="divide-y divide-slate-100 text-xs">
-          {/* Item 1 */}
-          <div className="py-3 flex items-center justify-between gap-4">
-            <div>
-              <div className="font-bold text-slate-900">
-                {language === "fr" ? "Alertes de transit et télématique GPS" : "Shipment GPS Telematics & Milestone Alerts"}
+        {/* Right Section: Profile Snapshot & Help (4 cols) */}
+        <div className="lg:col-span-4 space-y-4">
+          {/* Profile Snapshot Card */}
+          <div className="bg-[#0B2545] rounded-2xl p-5 text-white shadow-md space-y-4 relative overflow-hidden">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-full bg-white/10 border border-white/15 flex items-center justify-center text-base font-bold flex-shrink-0">
+                {initials}
               </div>
-              <p className="text-[11px] text-slate-500 mt-0.5">
-                {language === "fr"
-                  ? "Recevoir un courriel lorsqu'un camion part ou approche d'un terminal."
-                  : "Instant notifications on carrier departures, corridor milestones, and ETA changes."}
-              </p>
+              <div className="min-w-0">
+                <div className="font-bold text-sm truncate">
+                  {currentUser.name || (language === "fr" ? "Nom non renseigné" : "Client User")}
+                </div>
+                <div className="text-[11px] text-slate-300 truncate">
+                  {currentUser.jobTitle || (language === "fr" ? "Titre non renseigné" : "Job title not on file")}
+                </div>
+              </div>
             </div>
-            <button
-              type="button"
-              onClick={() => handleTogglePreference("emailShipmentUpdates")}
-              className={`w-11 h-6 rounded-full transition-colors relative cursor-pointer flex-shrink-0 ${
-                preferences.emailShipmentUpdates ? "bg-[#d21f27]" : "bg-slate-200"
-              }`}
-            >
-              <span
-                className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${
-                  preferences.emailShipmentUpdates ? "translate-x-5" : "translate-x-0"
-                }`}
-              />
-            </button>
+
+            <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-emerald-300 bg-emerald-400/10 border border-emerald-400/20 rounded-full px-2.5 py-1 w-fit">
+              <Shield className="w-3 h-3" />
+              <span>{language === "fr" ? "Compte Vérifié" : "Verified Account"}</span>
+            </div>
+
+            <div className="pt-3 border-t border-white/10 space-y-2 text-xs">
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-slate-400">{language === "fr" ? "Entreprise" : "Company"}</span>
+                <span className="font-semibold text-slate-100 truncate max-w-[140px]">
+                  {currentUser.companyName || "—"}
+                </span>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-slate-400">{language === "fr" ? "Rôle du Portail" : "Portal Role"}</span>
+                <span className="font-semibold text-slate-100 capitalize">{currentUser.role || "—"}</span>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-slate-400">{language === "fr" ? "Code Client" : "Client ID"}</span>
+                <span className="font-mono font-bold text-[#ff8f94]">{currentUser.clientCode || "—"}</span>
+              </div>
+            </div>
           </div>
 
-          {/* Item 2 */}
-          <div className="py-3 flex items-center justify-between gap-4">
-            <div>
-              <div className="font-bold text-slate-900">
-                {language === "fr" ? "Avis de retenue et dédouanement ASFC / CBSA" : "CBSA Customs & PARS Clearance Holds"}
-              </div>
-              <p className="text-[11px] text-slate-500 mt-0.5">
-                {language === "fr"
-                  ? "Notification prioritaire en cas d'inspection douanière ou de mainlevée accordée."
-                  : "Critical alerts when customs broker requires clearance documents or cargo release is granted."}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => handleTogglePreference("emailCustomsHolds")}
-              className={`w-11 h-6 rounded-full transition-colors relative cursor-pointer flex-shrink-0 ${
-                preferences.emailCustomsHolds ? "bg-[#d21f27]" : "bg-slate-200"
-              }`}
+          {/* Need Help Card */}
+          <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs space-y-3">
+            <span className="text-xs font-bold text-[#0B2545] uppercase tracking-wider block border-b border-slate-100 pb-2">
+              {language === "fr" ? "Besoin d'Assistance?" : "Need Help?"}
+            </span>
+            <p className="text-[11px] text-slate-500 leading-relaxed">
+              {language === "fr"
+                ? "Pour corriger le nom de votre entreprise ou d'autres informations légales immuables, contactez le répartiteur Transimex."
+                : "To correct your company name or other immutable legal information, contact Transimex dispatch directly."}
+            </p>
+            <Link
+              href="/dashboard/support"
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-[#d21f27] hover:text-[#b51a21] transition"
             >
-              <span
-                className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${
-                  preferences.emailCustomsHolds ? "translate-x-5" : "translate-x-0"
-                }`}
-              />
-            </button>
-          </div>
-
-          {/* Item 3 */}
-          <div className="py-3 flex items-center justify-between gap-4">
-            <div>
-              <div className="font-bold text-slate-900">
-                {language === "fr" ? "Nouveaux documents et connaissements (BOL / POD)" : "New Document & BOL / POD Uploads"}
-              </div>
-              <p className="text-[11px] text-slate-500 mt-0.5">
-                {language === "fr"
-                  ? "Notification dès qu'un connaissement officiel ou reçu signé est disponible."
-                  : "Email alert with one-click download link when official shipping paperwork is uploaded."}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => handleTogglePreference("emailNewDocuments")}
-              className={`w-11 h-6 rounded-full transition-colors relative cursor-pointer flex-shrink-0 ${
-                preferences.emailNewDocuments ? "bg-[#d21f27]" : "bg-slate-200"
-              }`}
-            >
-              <span
-                className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${
-                  preferences.emailNewDocuments ? "translate-x-5" : "translate-x-0"
-                }`}
-              />
-            </button>
-          </div>
-
-          {/* Item 4 */}
-          <div className="py-3 flex items-center justify-between gap-4">
-            <div>
-              <div className="font-bold text-slate-900">
-                {language === "fr" ? "Mises à jour des tarifs et soumissions" : "Tariff & Freight Quote Rate Adjustments"}
-              </div>
-              <p className="text-[11px] text-slate-500 mt-0.5">
-                {language === "fr"
-                  ? "Alertes lorsque de nouveaux tarifs garantis sont disponibles pour vos corridors."
-                  : "Notifications regarding approved freight estimates and seasonal corridor adjustments."}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => handleTogglePreference("emailRateAlerts")}
-              className={`w-11 h-6 rounded-full transition-colors relative cursor-pointer flex-shrink-0 ${
-                preferences.emailRateAlerts ? "bg-[#d21f27]" : "bg-slate-200"
-              }`}
-            >
-              <span
-                className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${
-                  preferences.emailRateAlerts ? "translate-x-5" : "translate-x-0"
-                }`}
-              />
-            </button>
+              <span>{language === "fr" ? "Ouvrir un billet de support" : "Open a Support Ticket"}</span>
+              <ArrowUpRight className="w-3.5 h-3.5" />
+            </Link>
           </div>
         </div>
       </div>
-
-      {/* Security & Password Form */}
-      <form onSubmit={handleSubmitPassword(handlePasswordSubmit)} className="bg-white rounded-2xl p-6 sm:p-7 border border-slate-200 shadow-xs space-y-4">
-        <div className="flex items-center gap-2 font-bold text-slate-900 text-xs uppercase tracking-wider border-b border-slate-100 pb-3">
-          <KeyRound className="w-4 h-4 text-[#d21f27]" />
-          <span>{language === "fr" ? "Sécurité & Mot de Passe" : "Security & Password Management"}</span>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-          <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-              Current Password
-            </label>
-            <input
-              type="password"
-              {...registerPassword("currentPassword")}
-              placeholder="••••••••"
-              className={`w-full px-3.5 py-2.5 bg-slate-50 border ${
-                passwordErrors.currentPassword ? "border-red-500 bg-red-50/30" : "border-slate-200"
-              } focus:bg-white focus:border-[#0B2545] rounded-xl text-xs outline-none`}
-            />
-            {passwordErrors.currentPassword && (
-              <p className="text-[11px] text-red-600 mt-1 font-semibold">{passwordErrors.currentPassword.message}</p>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-              New Password
-            </label>
-            <input
-              type="password"
-              {...registerPassword("newPassword")}
-              placeholder="••••••••"
-              className={`w-full px-3.5 py-2.5 bg-slate-50 border ${
-                passwordErrors.newPassword ? "border-red-500 bg-red-50/30" : "border-slate-200"
-              } focus:bg-white focus:border-[#0B2545] rounded-xl text-xs outline-none`}
-            />
-            {passwordErrors.newPassword && (
-              <p className="text-[11px] text-red-600 mt-1 font-semibold">{passwordErrors.newPassword.message}</p>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-              Confirm New Password
-            </label>
-            <input
-              type="password"
-              {...registerPassword("confirmPassword")}
-              placeholder="••••••••"
-              className={`w-full px-3.5 py-2.5 bg-slate-50 border ${
-                passwordErrors.confirmPassword ? "border-red-500 bg-red-50/30" : "border-slate-200"
-              } focus:bg-white focus:border-[#0B2545] rounded-xl text-xs outline-none`}
-            />
-            {passwordErrors.confirmPassword && (
-              <p className="text-[11px] text-red-600 mt-1 font-semibold">{passwordErrors.confirmPassword.message}</p>
-            )}
-          </div>
-        </div>
-
-        <div className="pt-2 flex items-center justify-end">
-          <button
-            type="submit"
-            disabled={isSubmittingPassword}
-            className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-xl transition cursor-pointer"
-          >
-            {language === "fr" ? "Mettre à jour le mot de passe" : "Update Password"}
-          </button>
-        </div>
-      </form>
     </div>
   );
 }
