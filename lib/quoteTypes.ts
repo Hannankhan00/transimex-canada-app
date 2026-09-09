@@ -1,4 +1,11 @@
-export type QuoteStatus = "under_review" | "reviewing" | "accepted" | "rejected" | "expired";
+export type QuoteStatus =
+  | "under_review"
+  | "reviewing"
+  | "quoted"
+  | "client_rejected"
+  | "accepted"
+  | "rejected"
+  | "expired";
 
 export interface QuoteItem {
   id: string; // e.g. "QT-2026-00124"
@@ -36,5 +43,11 @@ export interface QuoteItem {
   };
   shipmentId?: string; // Linked shipment if accepted
   rejectionReason?: string;
+  clientNegotiationPhone?: string;
+  clientRejectionReason?: string;
+  clientCounterBudget?: string;
+  rejectionBy?: "admin" | "client";
+  offeredAt?: string;
+  clientRespondedAt?: string;
   adminNotes?: string;
 }

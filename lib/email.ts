@@ -518,6 +518,129 @@ export async function sendQuoteSubmittedEmail({
 }
 
 /**
+ * 5c. Send Quote Price Offered Email to Client
+ */
+export async function sendQuotePriceOfferedEmail({
+  to,
+  name,
+  companyName,
+  quoteId,
+  origin,
+  destination,
+  priceCad,
+  equipment,
+  validUntil,
+}: {
+  to: string;
+  name: string;
+  companyName?: string;
+  quoteId: string;
+  origin: string;
+  destination: string;
+  priceCad: string;
+  equipment?: string;
+  validUntil?: string;
+}) {
+  const appUrl = getAppUrl();
+  const quotesUrl = `${appUrl}/dashboard/quotes`;
+
+  const content = `
+    <h1 class="h1">Freight Quote Pricing Ready for Review</h1>
+    <p>Dear <strong>${name}</strong> ${companyName ? `(${companyName})` : ""},</p>
+    <p>Our cross-border logistics dispatch team has assessed your freight requirements for <strong>${origin} &rarr; ${destination}</strong> and prepared a guaranteed freight rate for your approval.</p>
+
+    <div class="cred-box">
+      <div style="font-size: 15px; font-weight: bold; color: #0B2545; margin-bottom: 8px;">
+        Quote Reference: <span style="color: #D21F27;">${quoteId}</span>
+      </div>
+      <div style="font-size: 16px; margin-bottom: 6px;"><strong>Guaranteed Freight Rate:</strong> <span style="color: #0B2545; font-weight: bold;">${priceCad}</span></div>
+      <div style="margin-top: 4px;"><strong>Corridor Route:</strong> ${origin} &rarr; ${destination}</div>
+      ${equipment ? `<div style="margin-top: 4px;"><strong>Trailer Equipment:</strong> ${equipment}</div>` : ""}
+      <div style="margin-top: 4px;"><strong>Status:</strong> <span style="color: #2563eb; font-weight: bold;">Rate Offered &mdash; Awaiting Your Approval</span></div>
+      ${validUntil ? `<div style="margin-top: 4px; font-size: 12px; color: #64748b;"><strong>Tariff Validity:</strong> ${validUntil}</div>` : ""}
+    </div>
+
+    <div style="text-align: center; margin-top: 24px;">
+      <a href="${quotesUrl}" class="btn" target="_blank">Review Rate in Client Portal</a>
+    </div>
+
+    <div class="alert-box">
+      <strong>Your Next Step:</strong> Review this rate in your portal. You can <strong>Accept &amp; Book</strong> immediately to trigger dispatch staging, or <strong>Decline &amp; Negotiate</strong> if you require custom pricing adjustments.
+    </div>
+  `;
+
+  return sendEmail({
+    to,
+    subject: `Guaranteed Freight Rate Offered [${quoteId}]: ${priceCad} — Transimex Canada`,
+    html: emailTemplateWrapper(content, `Transimex has calculated a freight rate of ${priceCad} for quote ${quoteId}`),
+    text: `Your freight rate for quote ${quoteId} (${origin} -> ${destination}) is ${priceCad}. Review and accept or negotiate in your portal: ${quotesUrl}`,
+  });
+}
+
+/**
+ * 5d. Send Quote Negotiation Alert to Staff
+ */
+export async function sendQuoteNegotiationStaffEmail({
+  staffEmail,
+  quoteId,
+  clientName,
+  clientCompany,
+  clientPhone,
+  rejectionReason,
+  counterBudget,
+  origin,
+  destination,
+  offeredRate,
+}: {
+  staffEmail?: string;
+  quoteId: string;
+  clientName: string;
+  clientCompany?: string;
+  clientPhone: string;
+  rejectionReason: string;
+  counterBudget?: string;
+  origin: string;
+  destination: string;
+  offeredRate?: string;
+}) {
+  const to = staffEmail || process.env.SMTP_USER || "operations@transimex-canada.com";
+  const appUrl = getAppUrl();
+  const adminQuoteUrl = `${appUrl}/admin/quotes`;
+
+  const content = `
+    <h1 class="h1">Client Negotiation Requested on Quote</h1>
+    <p>Client <strong>${clientName}</strong> ${clientCompany ? `(${clientCompany})` : ""} has declined the offered freight rate for quote <strong>${quoteId}</strong> and submitted contact details to negotiate.</p>
+
+    <div class="cred-box">
+      <div style="font-size: 15px; font-weight: bold; color: #0B2545; margin-bottom: 8px;">
+        Quote Reference: <span style="color: #D21F27;">${quoteId}</span>
+      </div>
+      <div><strong>Client Direct Phone:</strong> <a href="tel:${clientPhone}" style="color: #D21F27; font-weight: bold;">${clientPhone}</a></div>
+      <div style="margin-top: 4px;"><strong>Corridor Route:</strong> ${origin} &rarr; ${destination}</div>
+      ${offeredRate ? `<div style="margin-top: 4px;"><strong>Offered Rate:</strong> ${offeredRate}</div>` : ""}
+      ${counterBudget ? `<div style="margin-top: 4px;"><strong>Client Target Budget:</strong> <span style="color: #10b981; font-weight: bold;">${counterBudget}</span></div>` : ""}
+    </div>
+
+    <div style="background-color: #fffbeb; border-left: 4px solid #f59e0b; padding: 14px; margin: 18px 0; border-radius: 4px;">
+      <div style="font-weight: bold; color: #92400e; margin-bottom: 4px;">Client Rejection Reason &amp; Feedback:</div>
+      <div style="color: #78350f; font-size: 13px; line-height: 1.5;">${rejectionReason}</div>
+    </div>
+
+    <div style="text-align: center; margin-top: 24px;">
+      <a href="${adminQuoteUrl}" class="btn" target="_blank">Open Quote in Admin Drawer</a>
+    </div>
+  `;
+
+  return sendEmail({
+    to,
+    subject: `[Negotiation Request] Client Declined Rate for Quote ${quoteId} (${clientPhone})`,
+    html: emailTemplateWrapper(content, `Client negotiation request on quote ${quoteId}`),
+    text: `Client ${clientName} (${clientPhone}) declined quote ${quoteId}. Reason: ${rejectionReason}. Review at ${adminQuoteUrl}`,
+  });
+}
+
+
+/**
  * 6. Send Duties & Tax Payment Notice Email
  */
 export async function sendDutiesNoticeEmail({

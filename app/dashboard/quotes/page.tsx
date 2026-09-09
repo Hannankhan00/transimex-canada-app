@@ -59,8 +59,21 @@ function QuotesContent() {
     setQuotes((prev) => [newQuote, ...prev.filter((q) => q.id !== newQuote.id)]);
   };
 
+  const handleQuoteUpdated = (updatedQuote: QuoteItem) => {
+    setQuotes((prev) =>
+      prev.map((q) => (q.id === updatedQuote.id ? updatedQuote : q))
+    );
+    setSelectedQuote(updatedQuote);
+  };
+
   const filteredQuotes = quotes.filter((q) => {
-    if (filter !== "all" && q.status !== filter) return false;
+    if (filter !== "all") {
+      if (filter === "under_review") {
+        if (q.status !== "under_review" && q.status !== "reviewing") return false;
+      } else if (q.status !== filter) {
+        return false;
+      }
+    }
     if (
       search &&
       !q.id.toLowerCase().includes(search.toLowerCase()) &&
@@ -124,21 +137,36 @@ function QuotesContent() {
 
         <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto">
           {[
-            { id: "all", label: language === "fr" ? "Toutes" : "All Quotes" },
-            { id: "under_review", label: language === "fr" ? "En Révision" : "Under Review" },
-            { id: "accepted", label: language === "fr" ? "Acceptées" : "Accepted" },
-            { id: "rejected", label: language === "fr" ? "Refusées" : "Rejected" },
+            { id: "all", label: language === "fr" ? "Toutes" : "All Quotes", count: quotes.length },
+            { id: "quoted", label: language === "fr" ? "Tarif Proposé" : "Price Offered", count: quotes.filter((q) => q.status === "quoted").length, highlight: true },
+            { id: "client_rejected", label: language === "fr" ? "En Négociation" : "Negotiating", count: quotes.filter((q) => q.status === "client_rejected").length },
+            { id: "under_review", label: language === "fr" ? "En Révision" : "Under Review", count: quotes.filter((q) => q.status === "under_review" || q.status === "reviewing").length },
+            { id: "accepted", label: language === "fr" ? "Acceptées" : "Accepted", count: quotes.filter((q) => q.status === "accepted").length },
+            { id: "rejected", label: language === "fr" ? "Refusées" : "Declined", count: quotes.filter((q) => q.status === "rejected").length },
           ].map((tab) => (
             <button
               key={tab.id}
               onClick={() => setFilter(tab.id)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
                 filter === tab.id
                   ? "bg-[#0B2545] text-white shadow-xs"
                   : "text-slate-600 hover:bg-slate-100"
               }`}
             >
-              {tab.label}
+              <span>{tab.label}</span>
+              {tab.count > 0 && (
+                <span
+                  className={`px-1.5 py-0.2 rounded-full text-[10px] ${
+                    filter === tab.id
+                      ? "bg-white/20 text-white"
+                      : tab.highlight
+                      ? "bg-sky-100 text-sky-800 font-bold"
+                      : "bg-slate-100 text-slate-600"
+                  }`}
+                >
+                  {tab.count}
+                </span>
+              )}
             </button>
           ))}
         </div>
@@ -186,7 +214,9 @@ function QuotesContent() {
                   {filteredQuotes.map((quote) => {
                     const isAccepted = quote.status === "accepted";
                     const isRejected = quote.status === "rejected";
-                    const isPending = quote.status === "under_review";
+                    const isQuoted = quote.status === "quoted";
+                    const isClientRejected = quote.status === "client_rejected";
+                    const isPending = quote.status === "under_review" || quote.status === "reviewing";
 
                     return (
                       <tr
@@ -228,7 +258,11 @@ function QuotesContent() {
                         <td className="py-4 px-4 whitespace-nowrap">
                           <span
                             className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                              isPending
+                              isQuoted
+                                ? "bg-sky-100 text-sky-800 border border-sky-300 ring-2 ring-sky-300/30"
+                                : isClientRejected
+                                ? "bg-purple-100 text-purple-800 border border-purple-200"
+                                : isPending
                                 ? "bg-amber-100 text-amber-800 border border-amber-200"
                                 : isAccepted
                                 ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
@@ -237,6 +271,8 @@ function QuotesContent() {
                                 : "bg-slate-100 text-slate-500 border border-slate-200"
                             }`}
                           >
+                            {isQuoted && <Sparkles className="w-3 h-3 text-sky-600" />}
+                            {isClientRejected && <Clock className="w-3 h-3 text-purple-600" />}
                             {isPending && <Clock className="w-3 h-3 text-amber-700" />}
                             {isAccepted && <CheckCircle2 className="w-3 h-3 text-emerald-700" />}
                             {isRejected && <AlertCircle className="w-3 h-3 text-red-700" />}
@@ -249,12 +285,14 @@ function QuotesContent() {
                           <div className="font-bold text-[#0B2545]">
                             {quote.priceCad}
                           </div>
-                          {quote.priceCad !== "Pending Dispatch Calculation" && quote.priceCad !== "N/A" && (
-                            <div className="text-[10px] text-slate-400 font-semibold">Guaranteed</div>
+                          {Boolean(quote.priceCad && quote.priceCad !== "Pending Dispatch Calculation" && quote.priceCad !== "N/A" && !quote.priceCad.includes("Pending")) && (
+                            <div className="text-[10px] text-emerald-600 font-semibold">
+                              {isQuoted ? (language === "fr" ? "À Confirmer" : "Action Required") : "Guaranteed"}
+                            </div>
                           )}
                         </td>
 
-                        {/* Actions: Accepted -> View Shipment, Rejected -> View Reason, Pending -> View Details */}
+                        {/* Actions */}
                         <td className="py-4 px-4 sm:px-6 text-right whitespace-nowrap">
                           {isAccepted && quote.shipmentId ? (
                             <Link
@@ -264,6 +302,24 @@ function QuotesContent() {
                               <span>{language === "fr" ? "Voir Expédition" : "View Shipment"}</span>
                               <ArrowUpRight className="w-3.5 h-3.5" />
                             </Link>
+                          ) : isQuoted ? (
+                            <button
+                              type="button"
+                              onClick={() => handleOpenDetails(quote)}
+                              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg shadow-xs transition cursor-pointer"
+                            >
+                              <Sparkles className="w-3.5 h-3.5" />
+                              <span>{language === "fr" ? "Examiner Tarif" : "Review Rate"}</span>
+                            </button>
+                          ) : isClientRejected ? (
+                            <button
+                              type="button"
+                              onClick={() => handleOpenDetails(quote)}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-800 border border-purple-200 text-xs font-bold rounded-lg transition cursor-pointer"
+                            >
+                              <Clock className="w-3.5 h-3.5 text-purple-600" />
+                              <span>{language === "fr" ? "Négociation" : "In Negotiation"}</span>
+                            </button>
                           ) : isRejected ? (
                             <button
                               type="button"
@@ -296,7 +352,9 @@ function QuotesContent() {
               {filteredQuotes.map((quote) => {
                 const isAccepted = quote.status === "accepted";
                 const isRejected = quote.status === "rejected";
-                const isPending = quote.status === "under_review";
+                const isQuoted = quote.status === "quoted";
+                const isClientRejected = quote.status === "client_rejected";
+                const isPending = quote.status === "under_review" || quote.status === "reviewing";
 
                 return (
                   <div key={quote.id} className="p-4 space-y-3">
@@ -304,7 +362,11 @@ function QuotesContent() {
                       <span className="font-mono font-bold text-sm text-[#0B2545]">{quote.id}</span>
                       <span
                         className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                          isPending
+                          isQuoted
+                            ? "bg-sky-100 text-sky-800 border border-sky-300 ring-2 ring-sky-300/30"
+                            : isClientRejected
+                            ? "bg-purple-100 text-purple-800 border border-purple-200"
+                            : isPending
                             ? "bg-amber-100 text-amber-800 border border-amber-200"
                             : isAccepted
                             ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
@@ -313,6 +375,8 @@ function QuotesContent() {
                             : "bg-slate-100 text-slate-500 border border-slate-200"
                         }`}
                       >
+                        {isQuoted && <Sparkles className="w-3 h-3 text-sky-600" />}
+                        {isClientRejected && <Clock className="w-3 h-3 text-purple-600" />}
                         {isPending && <Clock className="w-3 h-3 text-amber-700" />}
                         {isAccepted && <CheckCircle2 className="w-3 h-3 text-emerald-700" />}
                         {isRejected && <AlertCircle className="w-3 h-3 text-red-700" />}
@@ -346,6 +410,24 @@ function QuotesContent() {
                           <span>{language === "fr" ? "Expédition" : "Shipment"}</span>
                           <ArrowUpRight className="w-3.5 h-3.5" />
                         </Link>
+                      ) : isQuoted ? (
+                        <button
+                          type="button"
+                          onClick={() => handleOpenDetails(quote)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg shadow-xs transition"
+                        >
+                          <Sparkles className="w-3.5 h-3.5" />
+                          <span>{language === "fr" ? "Examiner" : "Review Rate"}</span>
+                        </button>
+                      ) : isClientRejected ? (
+                        <button
+                          type="button"
+                          onClick={() => handleOpenDetails(quote)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-800 border border-purple-200 text-xs font-bold rounded-lg transition"
+                        >
+                          <Clock className="w-3.5 h-3.5 text-purple-600" />
+                          <span>{language === "fr" ? "Négociation" : "Negotiating"}</span>
+                        </button>
                       ) : isRejected ? (
                         <button
                           type="button"
@@ -382,6 +464,7 @@ function QuotesContent() {
           setDetailsModalOpen(false);
           setSelectedQuote(null);
         }}
+        onQuoteUpdated={handleQuoteUpdated}
       />
 
       {/* Interactive New Quote Modal with Blurred Corridor Diagram */}

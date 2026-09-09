@@ -27,6 +27,8 @@ export default function AdminQuotesPage() {
     all: 0,
     under_review: 0,
     reviewing: 0,
+    quoted: 0,
+    client_rejected: 0,
     accepted: 0,
     rejected: 0,
   });
@@ -147,7 +149,8 @@ export default function AdminQuotesPage() {
       </div>
 
       {/* 2. PIPELINE HIGH-LEVEL METRIC TILES */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* 2. PIPELINE HIGH-LEVEL METRIC TILES */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
         {/* Metric 1: Pending Rate Assignment */}
         <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/90 shadow-2xs">
           <div className="flex items-center justify-between">
@@ -163,38 +166,61 @@ export default function AdminQuotesPage() {
               {counts.under_review}
             </span>
             <span className="text-xs font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200/60">
-              Immediate Priority
+              Intake
             </span>
           </div>
           <p className="text-[11px] text-slate-500 mt-1">
-            New requests submitted by commercial shippers
+            New requests awaiting rate evaluation
           </p>
         </div>
 
-        {/* Metric 2: Currently In Review */}
+        {/* Metric 2: Rate Offered */}
         <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/90 shadow-2xs">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-              In Staff Review
+              Rate Offered
             </span>
-            <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center">
+              <DollarSign className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-2.5 flex items-baseline gap-2">
+            <span className="text-2xl sm:text-3xl font-bold text-[#0B2545]">
+              {counts.quoted || 0}
+            </span>
+            <span className="text-xs font-semibold text-sky-700 bg-sky-50 px-2 py-0.5 rounded-full border border-sky-200/60">
+              With Client
+            </span>
+          </div>
+          <p className="text-[11px] text-slate-500 mt-1">
+            Rates sent, awaiting client decision
+          </p>
+        </div>
+
+        {/* Metric 3: In Negotiation */}
+        <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/90 shadow-2xs">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+              In Negotiation
+            </span>
+            <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
               <TrendingUp className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-2.5 flex items-baseline gap-2">
             <span className="text-2xl sm:text-3xl font-bold text-[#0B2545]">
-              {counts.reviewing}
+              {counts.client_rejected || 0}
             </span>
-            <span className="text-xs font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200/60">
-              Carrier Pricing
+            <span className="text-xs font-semibold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200/60">
+              Callback Req.
             </span>
           </div>
           <p className="text-[11px] text-slate-500 mt-1">
-            Rates currently being calculated by dispatch
+            Client declined &amp; provided phone to negotiate
           </p>
         </div>
 
-        {/* Metric 3: Accepted & Converted */}
+        {/* Metric 4: Accepted & Converted */}
         <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/90 shadow-2xs">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
@@ -209,19 +235,19 @@ export default function AdminQuotesPage() {
               {counts.accepted}
             </span>
             <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/60">
-              Shipments Live
+              Booked
             </span>
           </div>
           <p className="text-[11px] text-slate-500 mt-1">
-            Active highway loads spun up from quotes
+            Active shipments created from accepted quotes
           </p>
         </div>
 
-        {/* Metric 4: Declined Quotes */}
+        {/* Metric 5: Declined Quotes */}
         <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/90 shadow-2xs">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-              Declined Requests
+              Declined
             </span>
             <div className="w-8 h-8 rounded-xl bg-red-50 text-[#d21f27] flex items-center justify-center">
               <XCircle className="w-4 h-4" />
@@ -232,11 +258,11 @@ export default function AdminQuotesPage() {
               {counts.rejected}
             </span>
             <span className="text-xs font-semibold text-slate-500">
-              Logged &amp; Notified
+              Archived
             </span>
           </div>
           <p className="text-[11px] text-slate-500 mt-1">
-            Capacity/restriction declines with reason
+            Declined requests with logged reasons
           </p>
         </div>
       </div>

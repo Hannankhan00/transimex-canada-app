@@ -47,6 +47,8 @@ function timeAgo(date: Date): string {
 function quoteToActivity(q: any): ActivityItem {
   const statusMap: Record<string, { text: string; fr: string; type: ActivityStatusType }> = {
     accepted: { text: "Accepted & Dispatched", fr: "Acceptée & Expédiée", type: "success" },
+    quoted: { text: "Rate Offered to Client", fr: "Tarif Proposé au Client", type: "info" },
+    client_rejected: { text: "Negotiation Requested", fr: "Négociation Demandée", type: "warning" },
     reviewing: { text: "In Staff Review", fr: "En Évaluation Staff", type: "warning" },
     rejected: { text: "Quote Rejected", fr: "Soumission Refusée", type: "danger" },
     expired: { text: "Quote Expired", fr: "Soumission Expirée", type: "neutral" },

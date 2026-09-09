@@ -29,6 +29,8 @@ interface QuoteDataTableProps {
     all: number;
     under_review: number;
     reviewing: number;
+    quoted?: number;
+    client_rejected?: number;
     accepted: number;
     rejected: number;
   };
@@ -166,7 +168,7 @@ export default function QuoteDataTable({
                 : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
             }`}
           >
-            <span>New (Awaiting Review)</span>
+            <span>New (Review)</span>
             <span
               className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
                 activeTab === "under_review" ? "bg-white/20 text-white" : "bg-amber-100 text-amber-800"
@@ -179,22 +181,44 @@ export default function QuoteDataTable({
           <button
             type="button"
             onClick={() => {
-              onTabChange("reviewing");
+              onTabChange("quoted");
               setCurrentPage(1);
             }}
             className={`px-3.5 py-2 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-2 flex-shrink-0 ${
-              activeTab === "reviewing"
-                ? "bg-blue-600 text-white shadow-xs"
+              activeTab === "quoted"
+                ? "bg-sky-600 text-white shadow-xs"
                 : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
             }`}
           >
-            <span>Reviewing</span>
+            <span>Rate Offered</span>
             <span
               className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
-                activeTab === "reviewing" ? "bg-white/20 text-white" : "bg-blue-100 text-blue-800"
+                activeTab === "quoted" ? "bg-white/20 text-white" : "bg-sky-100 text-sky-800"
               }`}
             >
-              {counts.reviewing}
+              {counts.quoted || 0}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              onTabChange("client_rejected");
+              setCurrentPage(1);
+            }}
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-2 flex-shrink-0 ${
+              activeTab === "client_rejected"
+                ? "bg-purple-700 text-white shadow-xs"
+                : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+            }`}
+          >
+            <span>Negotiating</span>
+            <span
+              className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+                activeTab === "client_rejected" ? "bg-white/20 text-white" : "bg-purple-100 text-purple-800"
+              }`}
+            >
+              {counts.client_rejected || 0}
             </span>
           </button>
 
@@ -232,7 +256,7 @@ export default function QuoteDataTable({
                 : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
             }`}
           >
-            <span>Rejected</span>
+            <span>Declined</span>
             <span
               className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
                 activeTab === "rejected" ? "bg-white/20 text-white" : "bg-red-100 text-red-800"

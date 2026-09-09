@@ -28,6 +28,8 @@ import {
   Send,
   Clock,
   Edit3,
+  Copy,
+  RotateCcw,
 } from "lucide-react";
 
 interface QuoteReviewDrawerProps {
@@ -53,9 +55,12 @@ export default function QuoteReviewDrawer({
   const [adminNotes, setAdminNotes] = useState("");
 
   // Action states
+  const [isOffering, setIsOffering] = useState(false);
   const [isAccepting, setIsAccepting] = useState(false);
   const [isSavingNotes, setIsSavingNotes] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [offerSuccessMessage, setOfferSuccessMessage] = useState<string | null>(null);
+  const [copiedPhone, setCopiedPhone] = useState(false);
   const [conversionSuccess, setConversionSuccess] = useState<{
     trackingId: string;
     message: string;
@@ -110,8 +115,54 @@ export default function QuoteReviewDrawer({
 
   const isAccepted = quote.status === "accepted";
   const isRejected = quote.status === "rejected";
+  const isQuoted = quote.status === "quoted";
+  const isClientRejected = quote.status === "client_rejected";
 
-  // Handle Accept & Generate Shipment
+  // Handle Offer Price to Client (Does NOT auto-convert to shipment)
+  const handleOfferPrice = async () => {
+    setActionError(null);
+    setOfferSuccessMessage(null);
+    if (!totalRate || totalRate.trim() === "") {
+      setActionError("Please input or calculate a final freight rate before sending offer.");
+      return;
+    }
+
+    try {
+      setIsOffering(true);
+      const res = await fetch(`/api/admin/quotes/${encodeURIComponent(quote.id)}/offer`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          priceCad: totalRate,
+          priceUsd: currency === "USD" ? totalRate : undefined,
+          breakdown: {
+            lineHaul: `$${lineHaul} ${currency}`,
+            fuelSurcharge: `$${fuelSurcharge} ${currency}`,
+            crossBorderFee: `$${crossBorderFee} ${currency}`,
+            accessorials: `$${accessorials} ${currency}`,
+            total: totalRate,
+          },
+          adminNotes,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to send price offer");
+      }
+
+      setOfferSuccessMessage(data.message || `Price offer ${totalRate} sent to client successfully.`);
+      if (data.quote) {
+        onQuoteUpdated(data.quote);
+      }
+    } catch (err: any) {
+      setActionError(err.message || "Failed to process quote offer");
+    } finally {
+      setIsOffering(false);
+    }
+  };
+
+  // Handle Accept & Generate Shipment (Direct Dispatch Override)
   const handleAcceptAndGenerateShipment = async () => {
     setActionError(null);
     if (!totalRate || totalRate.trim() === "") {
@@ -244,6 +295,108 @@ export default function QuoteReviewDrawer({
           <div className="p-3.5 bg-red-50 border-b border-red-200 text-red-700 text-xs font-medium flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 text-red-600 flex-shrink-0" />
             <span>{actionError}</span>
+          </div>
+        )}
+
+        {/* Offer Success Banner */}
+        {offerSuccessMessage && (
+          <div className="p-4 bg-sky-50 border-b border-sky-200 text-sky-900 flex items-start gap-3 animate-in zoom-in-95 duration-150">
+            <CheckCircle2 className="w-5 h-5 text-sky-600 flex-shrink-0 mt-0.5" />
+            <div className="text-xs">
+              <p className="font-bold text-sky-800 text-sm">
+                Rate Offer Dispatched to Client!
+              </p>
+              <p className="mt-0.5 text-sky-700 leading-relaxed">
+                {offerSuccessMessage} Client has been notified by portal and email to accept or submit counter-negotiation terms.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Client Negotiation Banner if client rejected offer */}
+        {isClientRejected && (
+          <div className="p-4 bg-purple-50 border-b border-purple-200 text-purple-950 space-y-2.5 animate-in slide-in-from-top-2 duration-150">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 font-bold text-purple-900 text-xs sm:text-sm">
+                <Phone className="w-4 h-4 text-purple-700" />
+                <span>Client Declined Offer &amp; Requested Negotiation</span>
+              </div>
+              <span className="px-2 py-0.5 rounded-full bg-purple-200 text-purple-900 font-bold text-[10px]">
+                ACTION REQUIRED
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+              <div className="p-2.5 bg-white rounded-xl border border-purple-200 shadow-2xs">
+                <span className="text-[10px] text-purple-700 font-bold uppercase block tracking-wider">
+                  Client Direct Contact Phone
+                </span>
+                <div className="flex items-center justify-between mt-1">
+                  <a
+                    href={`tel:${quote.clientNegotiationPhone || quote.clientPhone}`}
+                    className="font-mono font-bold text-purple-950 text-sm hover:underline flex items-center gap-1.5"
+                  >
+                    <Phone className="w-3.5 h-3.5 text-purple-600" />
+                    <span>{quote.clientNegotiationPhone || quote.clientPhone || "No direct phone"}</span>
+                  </a>
+                  {(quote.clientNegotiationPhone || quote.clientPhone) && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(quote.clientNegotiationPhone || quote.clientPhone || "");
+                        setCopiedPhone(true);
+                        setTimeout(() => setCopiedPhone(false), 2000);
+                      }}
+                      className="px-2 py-0.5 bg-purple-100 hover:bg-purple-200 text-purple-800 rounded-md text-[10px] font-bold cursor-pointer transition flex items-center gap-1"
+                    >
+                      <Copy className="w-3 h-3" />
+                      <span>{copiedPhone ? "Copied!" : "Copy"}</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {quote.clientCounterBudget && (
+                <div className="p-2.5 bg-white rounded-xl border border-purple-200 shadow-2xs">
+                  <span className="text-[10px] text-purple-700 font-bold uppercase block tracking-wider">
+                    Client Target / Counter-Budget
+                  </span>
+                  <div className="font-mono font-bold text-emerald-700 text-sm mt-1">
+                    {quote.clientCounterBudget}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {quote.clientRejectionReason && (
+              <div className="p-2.5 bg-white rounded-xl border border-purple-200 shadow-2xs text-xs">
+                <span className="text-[10px] text-purple-700 font-bold uppercase block tracking-wider mb-0.5">
+                  Reason Stated by Client for Declining
+                </span>
+                <p className="text-slate-800 font-medium leading-relaxed">
+                  &ldquo;{quote.clientRejectionReason}&rdquo;
+                </p>
+              </div>
+            )}
+
+            <p className="text-[11px] text-purple-800 italic">
+              Call the client above to negotiate, adjust your rates below, and click <strong>&ldquo;Send Revised Price Offer&rdquo;</strong> to counter-offer.
+            </p>
+          </div>
+        )}
+
+        {/* Active Price Offer Banner */}
+        {isQuoted && !conversionSuccess && !offerSuccessMessage && (
+          <div className="p-3.5 bg-sky-50 border-b border-sky-200 flex items-center justify-between text-xs text-sky-900">
+            <div className="flex items-center gap-2">
+              <Clock className="w-4 h-4 text-sky-600 flex-shrink-0" />
+              <span>
+                Rate of <strong>{quote.priceCad}</strong> offered to client. Awaiting client online acceptance or negotiation.
+              </span>
+            </div>
+            <span className="px-2 py-0.5 rounded-full bg-sky-200 text-sky-900 font-bold text-[10px]">
+              AWAITING CLIENT
+            </span>
           </div>
         )}
 
@@ -595,7 +748,7 @@ export default function QuoteReviewDrawer({
                 className="flex-1 sm:flex-none justify-center px-3.5 py-2 rounded-xl text-xs font-bold text-red-600 hover:bg-red-100/70 border border-red-200 transition cursor-pointer flex items-center gap-1.5"
               >
                 <XCircle className="w-4 h-4" />
-                <span>Reject Quote</span>
+                <span>Decline Request</span>
               </button>
             )}
 
@@ -611,15 +764,36 @@ export default function QuoteReviewDrawer({
 
           <div className="flex items-center gap-2 w-full sm:w-auto">
             {!isAccepted ? (
-              <button
-                type="button"
-                onClick={handleAcceptAndGenerateShipment}
-                disabled={isAccepting}
-                className="w-full sm:w-auto justify-center px-5 py-2.5 bg-[#d21f27] hover:bg-[#b51a21] text-white rounded-xl text-xs font-bold shadow-xs hover:shadow transition cursor-pointer flex items-center gap-2 disabled:opacity-50"
-              >
-                <Sparkles className="w-4 h-4" />
-                <span>{isAccepting ? "Converting..." : "Accept & Generate Shipment"}</span>
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={handleOfferPrice}
+                  disabled={isOffering || isAccepting}
+                  className="flex-1 sm:flex-none justify-center px-4 py-2.5 bg-[#0B2545] hover:bg-[#123661] text-white rounded-xl text-xs font-bold shadow-xs hover:shadow transition cursor-pointer flex items-center gap-2 disabled:opacity-50"
+                >
+                  <Send className="w-4 h-4 text-amber-400" />
+                  <span>
+                    {isOffering
+                      ? "Sending..."
+                      : isClientRejected
+                      ? "Send Revised Price Offer"
+                      : isQuoted
+                      ? "Update & Re-send Offer"
+                      : "Approve & Send Price Offer"}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleAcceptAndGenerateShipment}
+                  disabled={isAccepting || isOffering}
+                  className="justify-center px-3 py-2.5 bg-[#d21f27] hover:bg-[#b51a21] text-white rounded-xl text-xs font-bold shadow-xs hover:shadow transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                  title="Direct manual override dispatch without awaiting client online response"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>{isAccepting ? "Dispatching..." : "Direct Dispatch"}</span>
+                </button>
+              </>
             ) : (
               <div className="w-full sm:w-auto justify-center px-4 py-2 bg-emerald-100 text-emerald-800 rounded-xl text-xs font-bold flex items-center gap-1.5">
                 <CheckCircle2 className="w-4 h-4" />

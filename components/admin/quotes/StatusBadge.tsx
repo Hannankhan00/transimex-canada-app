@@ -42,6 +42,26 @@ export default function StatusBadge({
         </span>
       );
 
+    case "quoted":
+      return (
+        <span
+          className={`inline-flex items-center gap-1.5 rounded-full font-bold bg-sky-50 text-sky-800 border border-sky-200/80 shadow-2xs ${sizeClasses} ${className}`}
+        >
+          <span className="w-1.5 h-1.5 rounded-full bg-sky-500" />
+          <span>Rate Offered</span>
+        </span>
+      );
+
+    case "client_rejected":
+      return (
+        <span
+          className={`inline-flex items-center gap-1.5 rounded-full font-bold bg-purple-50 text-purple-800 border border-purple-200/80 shadow-2xs ${sizeClasses} ${className}`}
+        >
+          <AlertCircle className="w-3 h-3 text-purple-600" />
+          <span>Negotiating (Client Declined)</span>
+        </span>
+      );
+
     case "accepted":
       return (
         <span

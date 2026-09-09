@@ -29,6 +29,10 @@ function mapQuote(q: any) {
     statusLabelEn:
       q.status === "accepted"
         ? "Accepted & Dispatched"
+        : q.status === "quoted"
+        ? "Rate Offered / Awaiting Client"
+        : q.status === "client_rejected"
+        ? "Rate Declined / In Negotiation"
         : q.status === "reviewing"
         ? "In Staff Review"
         : q.status === "rejected"
@@ -37,6 +41,10 @@ function mapQuote(q: any) {
     statusLabelFr:
       q.status === "accepted"
         ? "Acceptée & Expédiée"
+        : q.status === "quoted"
+        ? "Tarif Proposé / En Attente"
+        : q.status === "client_rejected"
+        ? "Tarif Refusé / En Négociation"
         : q.status === "reviewing"
         ? "En Évaluation Staff"
         : q.status === "rejected"
@@ -47,6 +55,12 @@ function mapQuote(q: any) {
     breakdown: q.breakdown,
     shipmentId: q.shipmentId,
     rejectionReason: q.rejectionReason,
+    clientNegotiationPhone: q.clientNegotiationPhone || "",
+    clientRejectionReason: q.clientRejectionReason || "",
+    clientCounterBudget: q.clientCounterBudget || "",
+    rejectionBy: q.rejectionBy || "",
+    offeredAt: q.offeredAt || "",
+    clientRespondedAt: q.clientRespondedAt || "",
     adminNotes: q.adminNotes,
   };
 }

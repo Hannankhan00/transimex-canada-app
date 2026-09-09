@@ -13,6 +13,7 @@ function mapQuote(q: any) {
     clientCompany: q.client?.companyName || "",
     clientEmail: q.client?.email || "",
     clientPhone: q.client?.phone || "",
+    userId: q.client?.userId || "",
     origin: q.route?.origin || "",
     originDetail: q.route?.originDetail || "",
     destination: q.route?.destination || "",
@@ -32,6 +33,10 @@ function mapQuote(q: any) {
     statusLabelEn:
       q.status === "accepted"
         ? "Accepted & Dispatched"
+        : q.status === "quoted"
+        ? "Rate Offered / Awaiting Client"
+        : q.status === "client_rejected"
+        ? "Rate Declined / In Negotiation"
         : q.status === "reviewing"
         ? "In Staff Review"
         : q.status === "rejected"
@@ -42,6 +47,10 @@ function mapQuote(q: any) {
     statusLabelFr:
       q.status === "accepted"
         ? "Acceptée & Expédiée"
+        : q.status === "quoted"
+        ? "Tarif Proposé / En Attente"
+        : q.status === "client_rejected"
+        ? "Tarif Refusé / En Négociation"
         : q.status === "reviewing"
         ? "En Évaluation Staff"
         : q.status === "rejected"
@@ -54,6 +63,12 @@ function mapQuote(q: any) {
     breakdown: q.breakdown && q.breakdown.total ? q.breakdown : undefined,
     shipmentId: q.shipmentId || "",
     rejectionReason: q.rejectionReason || "",
+    clientNegotiationPhone: q.clientNegotiationPhone || "",
+    clientRejectionReason: q.clientRejectionReason || "",
+    clientCounterBudget: q.clientCounterBudget || "",
+    rejectionBy: q.rejectionBy || "",
+    offeredAt: q.offeredAt || "",
+    clientRespondedAt: q.clientRespondedAt || "",
     adminNotes: q.adminNotes || "",
   };
 }
@@ -87,9 +102,6 @@ export async function GET() {
 
 export async function POST(req: Request) {
   const currentUser = await getCurrentUser();
-  if (!currentUser) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-  }
 
   try {
     const body = await req.json();
@@ -110,7 +122,14 @@ export async function POST(req: Request) {
       commodityType,
       specialInstructions,
       companyName,
+      contactName,
+      contactEmail,
+      contactPhone,
     } = body;
+
+    if (!currentUser && (!contactEmail || !contactName)) {
+      return NextResponse.json({ error: "Contact name and valid email are required to request a quote." }, { status: 401 });
+    }
 
     if (!originCity || !destinationCity || !transportMode || !weightLbs || !commodityType) {
       return NextResponse.json(
@@ -120,7 +139,7 @@ export async function POST(req: Request) {
     }
 
     await connectDB();
-    const user = await User.findById(currentUser.userId).lean<any>();
+    const user = currentUser?.userId ? await User.findById(currentUser.userId).lean<any>() : null;
 
     const now = new Date();
     const dimensions =
@@ -128,13 +147,18 @@ export async function POST(req: Request) {
         ? `${dimLengthIn}in x ${dimWidthIn}in x ${dimHeightIn}in`
         : "";
 
+    const clientEmail = user?.email || currentUser?.email || contactEmail;
+    const clientName = user?.name || currentUser?.name || contactName || "Commercial Shipper";
+    const clientPhone = user?.phone || contactPhone || "";
+    const clientCompany = companyName || user?.companyName || currentUser?.companyName || "";
+
     const quoteData = {
       client: {
-        name: user?.name || currentUser.name,
-        companyName: companyName || user?.companyName || currentUser.companyName || "",
-        email: user?.email || currentUser.email,
-        phone: user?.phone || "",
-        userId: currentUser.userId,
+        name: clientName,
+        companyName: clientCompany,
+        email: clientEmail.toLowerCase().trim(),
+        phone: clientPhone,
+        userId: currentUser?.userId || "",
       },
       route: {
         origin: `${originCity} (${originProvince || ""})`.trim(),

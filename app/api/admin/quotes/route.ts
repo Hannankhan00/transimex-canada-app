@@ -36,6 +36,10 @@ export async function GET(req: Request) {
       statusLabelEn:
         q.status === "accepted"
           ? "Accepted & Dispatched"
+          : q.status === "quoted"
+          ? "Rate Offered / Awaiting Client"
+          : q.status === "client_rejected"
+          ? "Rate Declined / In Negotiation"
           : q.status === "reviewing"
           ? "In Staff Review"
           : q.status === "rejected"
@@ -44,6 +48,10 @@ export async function GET(req: Request) {
       statusLabelFr:
         q.status === "accepted"
           ? "Acceptée & Expédiée"
+          : q.status === "quoted"
+          ? "Tarif Proposé / En Attente"
+          : q.status === "client_rejected"
+          ? "Tarif Refusé / En Négociation"
           : q.status === "reviewing"
           ? "En Évaluation Staff"
           : q.status === "rejected"
@@ -54,6 +62,12 @@ export async function GET(req: Request) {
       breakdown: q.breakdown,
       shipmentId: q.shipmentId || "",
       rejectionReason: q.rejectionReason || "",
+      clientNegotiationPhone: q.clientNegotiationPhone || "",
+      clientRejectionReason: q.clientRejectionReason || "",
+      clientCounterBudget: q.clientCounterBudget || "",
+      rejectionBy: q.rejectionBy || "",
+      offeredAt: q.offeredAt || "",
+      clientRespondedAt: q.clientRespondedAt || "",
       adminNotes: q.adminNotes || "",
     }));
 
@@ -62,6 +76,8 @@ export async function GET(req: Request) {
       all: allQuotes.length,
       under_review: allQuotes.filter((q) => q.status === "under_review").length,
       reviewing: allQuotes.filter((q) => q.status === "reviewing").length,
+      quoted: allQuotes.filter((q) => q.status === "quoted").length,
+      client_rejected: allQuotes.filter((q) => q.status === "client_rejected").length,
       accepted: allQuotes.filter((q) => q.status === "accepted").length,
       rejected: allQuotes.filter((q) => q.status === "rejected").length,
     };

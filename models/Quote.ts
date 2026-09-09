@@ -1,6 +1,13 @@
 import mongoose, { Document, Model, Schema } from "mongoose";
 
-export type QuoteStatus = "under_review" | "reviewing" | "accepted" | "rejected" | "expired";
+export type QuoteStatus =
+  | "under_review"
+  | "reviewing"
+  | "quoted"
+  | "client_rejected"
+  | "accepted"
+  | "rejected"
+  | "expired";
 
 export interface IQuoteBreakdown {
   lineHaul: string;
@@ -42,6 +49,12 @@ export interface IQuote extends Document {
   breakdown?: IQuoteBreakdown;
   shipmentId?: string; // Linked tracking ID once converted, e.g. "TMX-2026-00847"
   rejectionReason?: string;
+  clientNegotiationPhone?: string;
+  clientRejectionReason?: string;
+  clientCounterBudget?: string;
+  rejectionBy?: "admin" | "client";
+  offeredAt?: string;
+  clientRespondedAt?: string;
   adminNotes?: string;
   submittedDate: string;
   validUntil?: string;
@@ -84,7 +97,15 @@ const QuoteSchema = new Schema<IQuote>(
     },
     status: {
       type: String,
-      enum: ["under_review", "reviewing", "accepted", "rejected", "expired"],
+      enum: [
+        "under_review",
+        "reviewing",
+        "quoted",
+        "client_rejected",
+        "accepted",
+        "rejected",
+        "expired",
+      ],
       default: "under_review",
       index: true,
     },
@@ -99,6 +120,12 @@ const QuoteSchema = new Schema<IQuote>(
     },
     shipmentId: { type: String, default: "", index: true },
     rejectionReason: { type: String, default: "" },
+    clientNegotiationPhone: { type: String, default: "" },
+    clientRejectionReason: { type: String, default: "" },
+    clientCounterBudget: { type: String, default: "" },
+    rejectionBy: { type: String, enum: ["admin", "client", ""], default: "" },
+    offeredAt: { type: String, default: "" },
+    clientRespondedAt: { type: String, default: "" },
     adminNotes: { type: String, default: "" },
     submittedDate: { type: String, required: true },
     validUntil: { type: String, default: "" },
