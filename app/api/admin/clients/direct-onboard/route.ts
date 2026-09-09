@@ -76,12 +76,15 @@ export async function POST(req: Request) {
       transportMode,
       equipment,
       commodity,
+      commodityType,
       weightLbs,
       palletCount,
       dimLengthIn,
       dimWidthIn,
       dimHeightIn,
       cargoType = "General Freight",
+      temperatureControlled = false,
+      hazmat = false,
       pickupDate,
       specialInstructions,
 
@@ -92,6 +95,8 @@ export async function POST(req: Request) {
       validUntil = "7 Business Days from Issuance",
       adminNotes = "",
     } = body;
+
+    const resolvedCommodity = (commodity || commodityType || "").trim();
 
     // Required fields validation
     if (!clientName?.trim() || !clientEmail?.trim()) {
@@ -108,7 +113,7 @@ export async function POST(req: Request) {
       );
     }
 
-    if (!transportMode || !commodity?.trim() || !weightLbs) {
+    if (!transportMode || !resolvedCommodity || !weightLbs) {
       return NextResponse.json(
         { error: "Transport mode, commodity, and freight weight are required" },
         { status: 400 }
@@ -160,6 +165,13 @@ export async function POST(req: Request) {
     const originDetail = [originCity, originProvince, originPostal].filter(Boolean).join(", ");
     const destinationDetail = [destinationCity, destinationProvince, destinationPostal].filter(Boolean).join(", ");
 
+    let finalCargoType = cargoType || "General Freight";
+    if (hazmat) {
+      finalCargoType = "Hazardous Materials";
+    } else if (temperatureControlled) {
+      finalCargoType = "Perishable / Cold-Chain";
+    }
+
     const now = new Date();
     const quoteData = {
       client: {
@@ -178,11 +190,11 @@ export async function POST(req: Request) {
       cargo: {
         transportMode: transportMode,
         equipment: equipment || transportMode,
-        cargoType: cargoType || "General Freight",
+        cargoType: finalCargoType,
         weight: `${Number(String(weightLbs).replace(/[^0-9.]/g, "") || 0).toLocaleString()} lbs`,
         palletCount: palletCount ? parseInt(String(palletCount), 10) : 0,
         dimensions,
-        commodity: commodity.trim(),
+        commodity: resolvedCommodity,
         preferredPickupDate: pickupDate || "",
         specialInstructions: specialInstructions?.trim() || "",
       },
@@ -265,7 +277,6 @@ export async function POST(req: Request) {
         email: user.email,
         companyName: user.companyName,
         isNewUser,
-        temporaryPassword: isNewUser ? temporaryPassword : null,
       },
       quote: {
         id: createdQuote.refNumber,

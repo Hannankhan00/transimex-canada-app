@@ -2,10 +2,10 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import { TRANSPORT_CATEGORIES, findCategoryForMode } from "@/lib/transportModes";
 import {
   X,
   Check,
-  Copy,
   Building2,
   User,
   Mail,
@@ -22,6 +22,9 @@ import {
   AlertCircle,
   ExternalLink,
   Info,
+  Package,
+  Boxes,
+  Zap,
 } from "lucide-react";
 
 interface DirectClientQuoteModalProps {
@@ -29,15 +32,6 @@ interface DirectClientQuoteModalProps {
   onClose: () => void;
   onSuccess?: () => void;
 }
-
-const TRANSPORT_MODES = [
-  "53' Dry Van (Standard)",
-  "53' Temperature-Controlled Reefer",
-  "Flatbed / Step Deck (Specialized)",
-  "LTL Consolidated (Palletized)",
-  "Dedicated Team Expedited",
-  "Intermodal Rail + Drayage",
-];
 
 const INDUSTRIES = [
   "Industrial",
@@ -68,7 +62,6 @@ export default function DirectClientQuoteModal({
       email: string;
       companyName: string;
       isNewUser: boolean;
-      temporaryPassword?: string | null;
     };
     quote: {
       id: string;
@@ -81,9 +74,8 @@ export default function DirectClientQuoteModal({
       validUntil: string;
     };
   } | null>(null);
-  const [copiedPass, setCopiedPass] = useState(false);
 
-  // Form State: Client Profile
+  // Form State: Step 1 - Client Profile
   const [clientName, setClientName] = useState("");
   const [clientCompany, setClientCompany] = useState("");
   const [clientEmail, setClientEmail] = useState("");
@@ -93,26 +85,29 @@ export default function DirectClientQuoteModal({
   const [province, setProvince] = useState("QC");
   const [billingAddress, setBillingAddress] = useState("");
 
-  // Form State: Cargo & Route
-  const [originCity, setOriginCity] = useState("Montreal");
-  const [originProvince, setOriginProvince] = useState("QC");
+  // Form State: Step 2 - Exact Quote Form replicating Client-Side (NewQuoteModal)
+  const [activeCategory, setActiveCategory] = useState<string>("truck");
+  const [transportMode, setTransportMode] = useState("53' Dry Van");
+  const [originCity, setOriginCity] = useState("");
+  const [originProvince, setOriginProvince] = useState("");
   const [originPostal, setOriginPostal] = useState("");
-  const [destinationCity, setDestinationCity] = useState("Toronto");
-  const [destinationProvince, setDestinationProvince] = useState("ON");
+  const [destinationCity, setDestinationCity] = useState("");
+  const [destinationProvince, setDestinationProvince] = useState("");
   const [destinationPostal, setDestinationPostal] = useState("");
-  const [transportMode, setTransportMode] = useState("53' Dry Van (Standard)");
-  const [equipment, setEquipment] = useState("");
-  const [commodity, setCommodity] = useState("");
   const [weightLbs, setWeightLbs] = useState("");
   const [palletCount, setPalletCount] = useState("");
+  const [pickupDate, setPickupDate] = useState(
+    new Date(Date.now() + 86400000 * 2).toISOString().split("T")[0]
+  );
   const [dimLengthIn, setDimLengthIn] = useState("");
   const [dimWidthIn, setDimWidthIn] = useState("");
   const [dimHeightIn, setDimHeightIn] = useState("");
-  const [cargoType, setCargoType] = useState<"General Freight" | "Hazardous Materials" | "Perishable / Cold-Chain" | "Heavy Haul Oversize">("General Freight");
-  const [pickupDate, setPickupDate] = useState("");
+  const [commodityType, setCommodityType] = useState("");
+  const [temperatureControlled, setTemperatureControlled] = useState(false);
+  const [hazmat, setHazmat] = useState(false);
   const [specialInstructions, setSpecialInstructions] = useState("");
 
-  // Form State: Agreed Pricing
+  // Form State: Step 3 - Agreed Freight Tariff & Admin Consultation
   const [priceCad, setPriceCad] = useState("");
   const [priceUsd, setPriceUsd] = useState("");
   const [validUntil, setValidUntil] = useState("7 Business Days from Issuance");
@@ -125,14 +120,27 @@ export default function DirectClientQuoteModal({
     setSubmitting(false);
     setErrorMsg(null);
     setSuccessData(null);
-    setCopiedPass(false);
     setClientName("");
     setClientCompany("");
     setClientEmail("");
     setClientPhone("");
-    setCommodity("");
+    setOriginCity("");
+    setOriginProvince("");
+    setOriginPostal("");
+    setDestinationCity("");
+    setDestinationProvince("");
+    setDestinationPostal("");
+    setTransportMode("53' Dry Van");
+    setActiveCategory("truck");
     setWeightLbs("");
     setPalletCount("");
+    setDimLengthIn("");
+    setDimWidthIn("");
+    setDimHeightIn("");
+    setCommodityType("");
+    setTemperatureControlled(false);
+    setHazmat(false);
+    setSpecialInstructions("");
     setPriceCad("");
     setPriceUsd("");
     setAdminNotes("");
@@ -157,16 +165,28 @@ export default function DirectClientQuoteModal({
   };
 
   const validateStep2 = () => {
-    if (!originCity.trim() || !destinationCity.trim()) {
-      setErrorMsg("Origin and destination cities are required.");
+    if (!originCity.trim() || !originProvince.trim() || !originPostal.trim()) {
+      setErrorMsg("Origin pickup city, province/state, and postal/ZIP code are required.");
       return false;
     }
-    if (!commodity.trim()) {
-      setErrorMsg("Please provide a commodity description.");
+    if (!destinationCity.trim() || !destinationProvince.trim() || !destinationPostal.trim()) {
+      setErrorMsg("Destination city, province/state, and postal/ZIP code are required.");
+      return false;
+    }
+    if (!transportMode) {
+      setErrorMsg("Please select a transport mode and equipment type.");
       return false;
     }
     if (!weightLbs.trim() || isNaN(Number(weightLbs.replace(/[^0-9.]/g, "")))) {
-      setErrorMsg("Please provide a valid freight weight (lbs).");
+      setErrorMsg("Please provide a valid freight weight in lbs.");
+      return false;
+    }
+    if (!pickupDate) {
+      setErrorMsg("Please select a pickup date.");
+      return false;
+    }
+    if (!commodityType.trim()) {
+      setErrorMsg("Commodity description is required.");
       return false;
     }
     setErrorMsg(null);
@@ -175,7 +195,7 @@ export default function DirectClientQuoteModal({
 
   const validateStep3 = () => {
     if (!priceCad.trim() || isNaN(Number(priceCad.replace(/[^0-9.]/g, "")))) {
-      setErrorMsg("Please provide a valid agreed freight tariff (CAD).");
+      setErrorMsg("Please provide a valid agreed freight tariff in CAD.");
       return false;
     }
     setErrorMsg(null);
@@ -209,14 +229,16 @@ export default function DirectClientQuoteModal({
           destinationProvince,
           destinationPostal,
           transportMode,
-          equipment: equipment || transportMode,
-          commodity,
+          equipment: transportMode,
+          commodity: commodityType,
+          commodityType,
           weightLbs,
           palletCount,
           dimLengthIn,
           dimWidthIn,
           dimHeightIn,
-          cargoType,
+          temperatureControlled,
+          hazmat,
           pickupDate,
           specialInstructions,
           priceCad,
@@ -247,38 +269,37 @@ export default function DirectClientQuoteModal({
     }
   };
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedPass(true);
-    setTimeout(() => setCopiedPass(false), 2500);
-  };
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150 overflow-y-auto">
-      <div className="bg-white w-full max-w-3xl rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col my-auto max-h-[92vh]">
+      <div className="bg-white w-full max-w-3xl rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col my-auto max-h-[92vh]">
         {/* HEADER BAR */}
-        <div className="bg-[#0B2545] text-white px-6 py-5 flex items-center justify-between relative">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-[#d21f27] bg-white/10 px-2 py-0.5 rounded-sm">
-                In-Person &amp; Direct Consultation
-              </span>
-              <span className="text-[10px] text-slate-300 font-mono">ADMIN WORKFLOW</span>
+        <div className="bg-[#0B2545] text-white px-6 py-4 flex items-center justify-between border-b border-white/10 relative">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-[#d21f27] text-white flex items-center justify-center shadow-xs">
+              <Zap className="w-4 h-4" />
             </div>
-            <h2 className="text-xl sm:text-2xl font-bold tracking-tight mt-1 flex items-center gap-2">
-              <span>Direct Client Onboarding &amp; Pre-Priced Quote</span>
-            </h2>
-            <p className="text-xs text-slate-300 mt-0.5 max-w-xl">
-              Provisions a client account with an auto-generated password and issues a pre-priced freight quote ready for immediate client acceptance.
-            </p>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-[#ff8f94]">
+                  Direct Consultation Intake
+                </span>
+                <span className="text-[10px] text-slate-300 font-mono">B2B PORTAL</span>
+              </div>
+              <h2
+                className="text-lg sm:text-xl font-bold tracking-tight text-white mt-0.5"
+                style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
+              >
+                Direct Client Onboarding &amp; Pre-Priced Quote
+              </h2>
+            </div>
           </div>
 
           <button
             type="button"
             onClick={handleClose}
-            className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition cursor-pointer shrink-0"
+            className="p-1.5 text-slate-300 hover:text-white hover:bg-white/10 rounded-xl transition cursor-pointer shrink-0"
           >
-            <X className="w-4 h-4" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
@@ -327,7 +348,7 @@ export default function DirectClientQuoteModal({
                 >
                   2
                 </div>
-                <span>Route &amp; Cargo Specs</span>
+                <span>Quote Form (Freight Specs)</span>
               </button>
 
               <ArrowRight className="w-3.5 h-3.5 text-slate-300" />
@@ -362,15 +383,15 @@ export default function DirectClientQuoteModal({
         )}
 
         {/* MODAL BODY */}
-        <div className="p-6 overflow-y-auto flex-1">
+        <div className="p-5 sm:p-6 overflow-y-auto flex-1 max-h-[72vh]">
           {errorMsg && (
-            <div className="mb-5 p-3.5 bg-red-50 border border-red-200 rounded-xl flex items-start gap-2.5 text-red-700 text-xs font-medium">
+            <div className="mb-4 p-3.5 bg-red-50 border border-red-200 rounded-xl flex items-start gap-2.5 text-red-700 text-xs font-medium">
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-600" />
               <span>{errorMsg}</span>
             </div>
           )}
 
-          {/* ----------------- SUCCESS VIEW ----------------- */}
+          {/* ----------------- SUCCESS VIEW (PASSWORD NOT SHOWN TO ADMIN) ----------------- */}
           {successData ? (
             <div className="space-y-6 py-2 animate-in fade-in zoom-in-95 duration-200">
               {/* Success Banner */}
@@ -381,91 +402,45 @@ export default function DirectClientQuoteModal({
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-bold text-emerald-800 uppercase tracking-wider">
-                      Onboarding Completed &amp; Quote Dispatched
+                      Account Provisioned &amp; Quote Dispatched
                     </span>
                     <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-md text-[10px] font-bold font-mono">
-                      READY FOR ACCEPTANCE
+                      PRE-PRICED
                     </span>
                   </div>
                   <h3 className="text-lg font-bold text-slate-900 mt-0.5">
-                    Account Provisioned for {successData.user.name}
+                    Account Created for {successData.user.name}
                   </h3>
                   <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-                    Quote <strong className="text-[#0B2545] font-mono">{successData.quote.id}</strong> has been created with agreed freight tariff of <strong className="text-emerald-700">{successData.quote.priceCad}</strong>. An email confirmation has been dispatched.
+                    Quote <strong className="text-[#0B2545] font-mono">{successData.quote.id}</strong> has been created with agreed freight tariff of <strong className="text-emerald-700">{successData.quote.priceCad}</strong>.
                   </p>
                 </div>
               </div>
 
-              {/* Login Credentials Box (Crucial for In-Person sharing) */}
-              {successData.user.isNewUser && successData.user.temporaryPassword && (
-                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 shadow-2xs">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-xs font-bold text-[#0B2545] uppercase tracking-wider">
-                      <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                      <span>Generated Shipper Portal Credentials</span>
-                    </div>
-                    <span className="text-[10px] font-semibold text-slate-500 bg-white border border-slate-200 px-2 py-0.5 rounded-md">
-                      Share with client
-                    </span>
+              {/* Confidential Password Notice: ONLY sent to client email */}
+              <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl flex items-start gap-3">
+                <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center shrink-0 mt-0.5">
+                  <Mail className="w-4 h-4" />
+                </div>
+                <div className="text-xs text-slate-700 space-y-1">
+                  <div className="font-bold text-[#0B2545]">
+                    Login Credentials Delivered to Client
                   </div>
-
-                  <div className="mt-3.5 grid grid-cols-1 sm:grid-cols-2 gap-3 font-mono text-xs">
-                    <div className="bg-white p-3 rounded-xl border border-slate-200">
-                      <span className="text-[10px] text-slate-500 uppercase tracking-wider block font-sans">
-                        Client Username / Email
-                      </span>
-                      <span className="text-[#0B2545] font-bold select-all">
-                        {successData.user.email}
-                      </span>
-                    </div>
-
-                    <div className="bg-white p-3 rounded-xl border border-slate-200 flex items-center justify-between">
-                      <div>
-                        <span className="text-[10px] text-slate-500 uppercase tracking-wider block font-sans">
-                          Auto-Generated Password
-                        </span>
-                        <span className="text-[#d21f27] font-bold tracking-wider select-all">
-                          {successData.user.temporaryPassword}
-                        </span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          copyToClipboard(
-                            `Email: ${successData.user.email}\nPassword: ${successData.user.temporaryPassword}`
-                          )
-                        }
-                        className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-sans font-medium transition cursor-pointer flex items-center gap-1 shrink-0"
-                        title="Copy credentials"
-                      >
-                        {copiedPass ? (
-                          <>
-                            <Check className="w-3.5 h-3.5 text-emerald-600" />
-                            <span className="text-emerald-700 text-[11px] font-bold">Copied!</span>
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="w-3.5 h-3.5 text-slate-600" />
-                            <span className="text-[11px]">Copy</span>
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  </div>
-
-                  <p className="text-[11px] text-slate-500 mt-2.5 flex items-center gap-1.5">
-                    <Info className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-                    These credentials have also been emailed to {successData.user.email}. The client can immediately sign in and click &quot;Accept Rate&quot; to initiate freight dispatch.
+                  <p className="text-slate-600 leading-relaxed">
+                    A secure, auto-generated temporary password and account setup details were sent directly to <strong>{successData.user.email}</strong>.
+                  </p>
+                  <p className="text-[11px] text-slate-500 font-medium pt-1">
+                    * For privacy and security policies, the auto-generated password is not displayed to administrators and is accessible exclusively by the client in their email inbox.
                   </p>
                 </div>
-              )}
+              </div>
 
               {/* Quote Snapshot Card */}
               <div className="bg-[#0B2545] text-white rounded-2xl p-5">
                 <div className="flex items-center justify-between border-b border-white/10 pb-3 mb-3">
                   <div>
                     <span className="text-[10px] uppercase tracking-wider text-slate-300">
-                      Dispatched Freight Quote
+                      Pre-Approved Freight Quote
                     </span>
                     <div className="text-base font-bold font-mono text-white">
                       {successData.quote.id}
@@ -527,14 +502,14 @@ export default function DirectClientQuoteModal({
             </div>
           ) : (
             /* ----------------- MULTI-STEP INPUT FORM ----------------- */
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-4">
               {/* STEP 1: CLIENT PROFILE */}
               {activeStep === 1 && (
                 <div className="space-y-4 animate-in fade-in duration-150">
                   <div className="bg-blue-50/70 border border-blue-100 rounded-xl p-3.5 text-xs text-blue-900 flex items-start gap-2.5">
                     <Sparkles className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
                     <div>
-                      <strong className="font-semibold">Face-to-Face Onboarding:</strong> Enter the client&apos;s contact details. An activated account will be created with an auto-generated password and sent to their email along with the direct quote.
+                      <strong className="font-semibold">Face-to-Face Onboarding:</strong> Enter the client&apos;s corporate contact details. The system will create an active account with an auto-generated password and email it directly to the client with their quote.
                     </div>
                   </div>
 
@@ -581,7 +556,7 @@ export default function DirectClientQuoteModal({
                         className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-[#0B2545] bg-white"
                       />
                       <span className="text-[10px] text-slate-400 mt-1 block">
-                        Login credentials and quotation link will be delivered here.
+                        Auto-generated password &amp; quote link will be sent directly here.
                       </span>
                     </div>
 
@@ -662,229 +637,334 @@ export default function DirectClientQuoteModal({
                 </div>
               )}
 
-              {/* STEP 2: ROUTE & CARGO SPECIFICATIONS */}
+              {/* STEP 2: EXACT REPLICA OF CLIENT-SIDE QUOTE FORM */}
               {activeStep === 2 && (
-                <div className="space-y-4 animate-in fade-in duration-150">
-                  {/* Origin & Destination */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
-                      <div className="flex items-center gap-1.5 text-xs font-bold text-[#0B2545]">
-                        <MapPin className="w-3.5 h-3.5 text-emerald-600" />
-                        <span>Origin Facility / Pickup</span>
+                <div className="space-y-4 animate-in fade-in duration-150 text-xs">
+                  {/* Visual Blurred Diagram Banner (identical to client-side modal) */}
+                  <div className="relative overflow-hidden bg-gradient-to-r from-[#0B2545] via-[#123661] to-[#1E3A8A] text-white p-4 rounded-2xl border border-slate-200 shadow-md">
+                    <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-3">
+                      {/* Origin Box */}
+                      <div className="bg-white/10 backdrop-blur-md border border-white/15 rounded-xl p-3 flex-1 w-full text-center sm:text-left">
+                        <div className="flex items-center justify-center sm:justify-start gap-1.5 text-[10px] font-bold uppercase tracking-wider text-emerald-300">
+                          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                          <span>Origin Terminal</span>
+                        </div>
+                        <div className="text-xs font-bold text-white mt-1 truncate">
+                          {originCity || "Montreal"}, {originProvince || "QC"}
+                        </div>
+                        <div className="text-[10px] text-slate-300 font-mono">
+                          Commercial Pickup Hub
+                        </div>
                       </div>
-                      <div className="grid grid-cols-2 gap-2">
+
+                      {/* Connecting Corridor Graphic */}
+                      <div className="flex flex-col items-center justify-center px-2 py-0.5 text-center">
+                        <div className="text-[10px] font-bold uppercase tracking-wider text-amber-300 flex items-center gap-1 mb-1">
+                          <Sparkles className="w-3 h-3" />
+                          <span>{transportMode}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="h-[2px] w-6 sm:w-10 bg-gradient-to-r from-emerald-400 to-[#d21f27]" />
+                          <div className="w-7 h-7 rounded-full bg-[#d21f27] text-white flex items-center justify-center shadow-md animate-pulse">
+                            <Truck className="w-3.5 h-3.5" />
+                          </div>
+                          <div className="h-[2px] w-6 sm:w-10 bg-gradient-to-r from-[#d21f27] to-red-400" />
+                        </div>
+                        <div className="text-[9px] text-slate-300 mt-1 font-mono">
+                          {weightLbs ? `${Number(weightLbs.replace(/[^0-9.]/g, "")).toLocaleString()} lbs` : "Full Payload"}
+                        </div>
+                      </div>
+
+                      {/* Destination Box */}
+                      <div className="bg-white/10 backdrop-blur-md border border-white/15 rounded-xl p-3 flex-1 w-full text-center sm:text-right">
+                        <div className="flex items-center justify-center sm:justify-end gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[#ff8f94]">
+                          <MapPin className="w-3 h-3 text-[#d21f27]" />
+                          <span>Destination Receiving</span>
+                        </div>
+                        <div className="text-xs font-bold text-white mt-1 truncate">
+                          {destinationCity || "Toronto"}, {destinationProvince || "ON"}
+                        </div>
+                        <div className="text-[10px] text-slate-300 font-mono">
+                          Direct Receiving Facility
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 1. Origin & Destination Section */}
+                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-3">
+                    <span className="font-bold text-[#0B2545] text-xs flex items-center gap-1.5 uppercase tracking-wider">
+                      <MapPin className="w-3.5 h-3.5 text-[#d21f27]" />
+                      <span>1. Origin &amp; Destination Addresses</span>
+                    </span>
+
+                    {/* Origin Inputs */}
+                    <div className="space-y-1.5">
+                      <label className="font-bold text-slate-700 text-[11px] uppercase">
+                        Origin Pickup *
+                      </label>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                         <input
-                          type="text"
                           required
-                          placeholder="Origin City (e.g. Montreal)"
+                          placeholder="Origin City (Montreal)"
                           value={originCity}
                           onChange={(e) => setOriginCity(e.target.value)}
-                          className="px-3 py-2 text-xs rounded-lg border border-slate-200 bg-white"
+                          className="px-3 py-2 bg-white border border-slate-200 rounded-xl outline-none focus:border-[#0B2545]"
                         />
-                        <select
+                        <input
+                          required
+                          placeholder="Prov (QC)"
                           value={originProvince}
                           onChange={(e) => setOriginProvince(e.target.value)}
-                          className="px-3 py-2 text-xs rounded-lg border border-slate-200 bg-white"
-                        >
-                          {PROVINCES.map((p) => (
-                            <option key={p} value={p}>
-                              {p}
-                            </option>
-                          ))}
-                        </select>
+                          className="px-3 py-2 bg-white border border-slate-200 rounded-xl outline-none focus:border-[#0B2545]"
+                        />
+                        <input
+                          required
+                          placeholder="Postal (H4E 4N4)"
+                          value={originPostal}
+                          onChange={(e) => setOriginPostal(e.target.value)}
+                          className="px-3 py-2 bg-white border border-slate-200 rounded-xl outline-none focus:border-[#0B2545]"
+                        />
                       </div>
-                      <input
-                        type="text"
-                        placeholder="Postal Code / Terminal Details"
-                        value={originPostal}
-                        onChange={(e) => setOriginPostal(e.target.value)}
-                        className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-200 bg-white"
-                      />
                     </div>
 
-                    <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
-                      <div className="flex items-center gap-1.5 text-xs font-bold text-[#0B2545]">
-                        <MapPin className="w-3.5 h-3.5 text-red-600" />
-                        <span>Destination / Consignee</span>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2">
+                    {/* Destination Inputs */}
+                    <div className="space-y-1.5 pt-1">
+                      <label className="font-bold text-slate-700 text-[11px] uppercase">
+                        Destination Delivery *
+                      </label>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                         <input
-                          type="text"
                           required
-                          placeholder="Dest City (e.g. Toronto)"
+                          placeholder="Dest City (Toronto)"
                           value={destinationCity}
                           onChange={(e) => setDestinationCity(e.target.value)}
-                          className="px-3 py-2 text-xs rounded-lg border border-slate-200 bg-white"
+                          className="px-3 py-2 bg-white border border-slate-200 rounded-xl outline-none focus:border-[#0B2545]"
                         />
-                        <select
+                        <input
+                          required
+                          placeholder="State / Prov (ON)"
                           value={destinationProvince}
                           onChange={(e) => setDestinationProvince(e.target.value)}
-                          className="px-3 py-2 text-xs rounded-lg border border-slate-200 bg-white"
-                        >
-                          {PROVINCES.map((p) => (
-                            <option key={p} value={p}>
-                              {p}
-                            </option>
-                          ))}
-                        </select>
+                          className="px-3 py-2 bg-white border border-slate-200 rounded-xl outline-none focus:border-[#0B2545]"
+                        />
+                        <input
+                          required
+                          placeholder="ZIP / Postal (M5V 2T6)"
+                          value={destinationPostal}
+                          onChange={(e) => setDestinationPostal(e.target.value)}
+                          className="px-3 py-2 bg-white border border-slate-200 rounded-xl outline-none focus:border-[#0B2545]"
+                        />
                       </div>
-                      <input
-                        type="text"
-                        placeholder="Postal Code / Consignee Details"
-                        value={destinationPostal}
-                        onChange={(e) => setDestinationPostal(e.target.value)}
-                        className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-200 bg-white"
-                      />
                     </div>
                   </div>
 
-                  {/* Transport Mode & Commodity */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">
-                        Transport Mode &amp; Trailer Equipment <span className="text-red-500">*</span>
-                      </label>
-                      <select
-                        value={transportMode}
-                        onChange={(e) => setTransportMode(e.target.value)}
-                        className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-[#0B2545] bg-white"
-                      >
-                        {TRANSPORT_MODES.map((mode) => (
-                          <option key={mode} value={mode}>
-                            {mode}
-                          </option>
-                        ))}
-                      </select>
+                  {/* 2. Equipment & Freight Specifications Section */}
+                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-3">
+                    <span className="font-bold text-[#0B2545] text-xs flex items-center gap-1.5 uppercase tracking-wider">
+                      <Truck className="w-3.5 h-3.5 text-[#d21f27]" />
+                      <span>2. Equipment &amp; Cargo Specifications</span>
+                    </span>
+
+                    {/* Transport Category Selector */}
+                    <div className="grid grid-cols-4 gap-2">
+                      {TRANSPORT_CATEGORIES.map((cat) => {
+                        const isActiveCat = activeCategory === cat.id;
+                        return (
+                          <button
+                            key={cat.id}
+                            type="button"
+                            onClick={() => {
+                              setActiveCategory(cat.id);
+                              if (!cat.modes.some((m) => m.id === transportMode)) {
+                                setTransportMode(cat.modes[0].id);
+                              }
+                            }}
+                            className={`p-2.5 rounded-xl border transition cursor-pointer flex flex-col items-center justify-center gap-1 ${
+                              isActiveCat
+                                ? "bg-[#0B2545] text-white border-[#0B2545] shadow-xs"
+                                : "bg-white border-slate-200 text-slate-700 hover:bg-slate-100"
+                            }`}
+                          >
+                            <cat.icon
+                              className={`w-4 h-4 shrink-0 ${
+                                isActiveCat ? "text-[#ff8f94]" : "text-slate-400"
+                              }`}
+                            />
+                            <span className="font-bold text-[11px]">{cat.name}</span>
+                          </button>
+                        );
+                      })}
                     </div>
 
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">
-                        Commodity Description <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        placeholder="e.g. Commercial Machinery, Auto Parts"
-                        value={commodity}
-                        onChange={(e) => setCommodity(e.target.value)}
-                        className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-[#0B2545] bg-white"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Weight, Pallets, Cargo Classification */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">
-                        Total Weight (lbs) <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        placeholder="e.g. 38,500"
-                        value={weightLbs}
-                        onChange={(e) => setWeightLbs(e.target.value)}
-                        className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-[#0B2545] bg-white"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">
-                        Pallet Count
-                      </label>
-                      <input
-                        type="number"
-                        placeholder="e.g. 26"
-                        value={palletCount}
-                        onChange={(e) => setPalletCount(e.target.value)}
-                        className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-[#0B2545] bg-white"
-                      />
+                    {/* Equipment Sub-Options for Selected Category */}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {TRANSPORT_CATEGORIES.find((cat) => cat.id === activeCategory)!.modes.map(
+                        (mode) => {
+                          const isSelected = transportMode === mode.id;
+                          return (
+                            <label
+                              key={mode.id}
+                              title={mode.desc}
+                              className={`p-2.5 rounded-xl border transition cursor-pointer flex items-center justify-between gap-1.5 ${
+                                isSelected
+                                  ? "bg-[#d21f27] text-white border-[#d21f27] shadow-xs"
+                                  : "bg-white border-slate-200 text-slate-700 hover:bg-slate-100"
+                              }`}
+                            >
+                              <div className="flex items-center gap-1.5 min-w-0">
+                                <mode.icon
+                                  className={`w-3.5 h-3.5 shrink-0 ${
+                                    isSelected ? "text-white" : "text-slate-400"
+                                  }`}
+                                />
+                                <span className="font-bold text-[11px] truncate">{mode.name}</span>
+                              </div>
+                              <input
+                                type="radio"
+                                name="transportMode"
+                                value={mode.id}
+                                checked={isSelected}
+                                onChange={() => setTransportMode(mode.id)}
+                                className="hidden"
+                              />
+                              {isSelected && <Check className="w-3 h-3 text-white shrink-0" />}
+                            </label>
+                          );
+                        }
+                      )}
                     </div>
 
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">
-                        Cargo Classification
-                      </label>
-                      <select
-                        value={cargoType}
-                        onChange={(e: any) => setCargoType(e.target.value)}
-                        className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-[#0B2545] bg-white"
-                      >
-                        <option value="General Freight">General Freight</option>
-                        <option value="Perishable / Cold-Chain">Perishable / Cold-Chain</option>
-                        <option value="Hazardous Materials">Hazardous Materials</option>
-                        <option value="Heavy Haul Oversize">Heavy Haul Oversize</option>
-                      </select>
-                    </div>
-                  </div>
+                    {/* Weight, Pallets, Pickup Date */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-600 uppercase mb-0.5">
+                          Weight (lbs) *
+                        </label>
+                        <input
+                          required
+                          placeholder="e.g. 42000"
+                          value={weightLbs}
+                          onChange={(e) => setWeightLbs(e.target.value)}
+                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl outline-none focus:border-[#0B2545]"
+                        />
+                      </div>
 
-                  {/* Dimensions & Pickup Date */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-600 uppercase mb-0.5">
+                          Pallet Count
+                        </label>
+                        <input
+                          type="number"
+                          placeholder="e.g. 24"
+                          value={palletCount}
+                          onChange={(e) => setPalletCount(e.target.value)}
+                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl outline-none focus:border-[#0B2545]"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-600 uppercase mb-0.5">
+                          Pickup Date *
+                        </label>
+                        <input
+                          type="date"
+                          required
+                          value={pickupDate}
+                          onChange={(e) => setPickupDate(e.target.value)}
+                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl outline-none focus:border-[#0B2545]"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Dimensions */}
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">
-                        Dimensions (L x W x H in inches)
+                      <label className="block text-[10px] font-bold text-slate-600 uppercase mb-0.5">
+                        Dimensions (in)
                       </label>
                       <div className="grid grid-cols-3 gap-2">
                         <input
-                          type="text"
                           placeholder="Length"
                           value={dimLengthIn}
                           onChange={(e) => setDimLengthIn(e.target.value)}
-                          className="px-2.5 py-2 text-xs rounded-lg border border-slate-200 bg-white text-center"
+                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl outline-none focus:border-[#0B2545] text-center"
                         />
                         <input
-                          type="text"
                           placeholder="Width"
                           value={dimWidthIn}
                           onChange={(e) => setDimWidthIn(e.target.value)}
-                          className="px-2.5 py-2 text-xs rounded-lg border border-slate-200 bg-white text-center"
+                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl outline-none focus:border-[#0B2545] text-center"
                         />
                         <input
-                          type="text"
                           placeholder="Height"
                           value={dimHeightIn}
                           onChange={(e) => setDimHeightIn(e.target.value)}
-                          className="px-2.5 py-2 text-xs rounded-lg border border-slate-200 bg-white text-center"
+                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl outline-none focus:border-[#0B2545] text-center"
                         />
                       </div>
                     </div>
 
+                    {/* Commodity Description */}
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">
-                        Preferred Pickup Window
+                      <label className="block text-[10px] font-bold text-slate-600 uppercase mb-0.5">
+                        Commodity Description *
                       </label>
                       <input
-                        type="text"
-                        placeholder="e.g. Tomorrow 08:00 AM or Sep 12"
-                        value={pickupDate}
-                        onChange={(e) => setPickupDate(e.target.value)}
-                        className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-[#0B2545] bg-white"
+                        required
+                        placeholder="e.g. Industrial Machinery, Frozen Food, Electronics"
+                        value={commodityType}
+                        onChange={(e) => setCommodityType(e.target.value)}
+                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl outline-none focus:border-[#0B2545]"
                       />
                     </div>
-                  </div>
 
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">
-                      Handling Instructions / Special Requirements
-                    </label>
-                    <textarea
-                      rows={2}
-                      placeholder="e.g. Liftgate required at delivery; driver check-in at security dock #4."
-                      value={specialInstructions}
-                      onChange={(e) => setSpecialInstructions(e.target.value)}
-                      className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-[#0B2545] bg-white resize-none"
-                    />
+                    {/* Temperature and Hazmat Toggles */}
+                    <div className="flex items-center gap-4 pt-0.5">
+                      <label className="flex items-center gap-1.5 cursor-pointer text-[11px] font-semibold text-slate-700">
+                        <input
+                          type="checkbox"
+                          checked={temperatureControlled}
+                          onChange={(e) => setTemperatureControlled(e.target.checked)}
+                          className="w-3.5 h-3.5 text-[#d21f27] rounded border-slate-300"
+                        />
+                        <span>Refrigerated / Temperature Controlled</span>
+                      </label>
+
+                      <label className="flex items-center gap-1.5 cursor-pointer text-[11px] font-semibold text-slate-700">
+                        <input
+                          type="checkbox"
+                          checked={hazmat}
+                          onChange={(e) => setHazmat(e.target.checked)}
+                          className="w-3.5 h-3.5 text-[#d21f27] rounded border-slate-300"
+                        />
+                        <span>Dangerous Goods / Hazmat</span>
+                      </label>
+                    </div>
+
+                    {/* Special Instructions */}
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-600 uppercase mb-0.5">
+                        Special Instructions / Driver Notes
+                      </label>
+                      <textarea
+                        rows={2}
+                        placeholder="e.g. Liftgate required at delivery; driver check-in at security dock #4."
+                        value={specialInstructions}
+                        onChange={(e) => setSpecialInstructions(e.target.value)}
+                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl outline-none focus:border-[#0B2545] resize-none"
+                      />
+                    </div>
                   </div>
                 </div>
               )}
 
               {/* STEP 3: AGREED PRICING & TERMS */}
               {activeStep === 3 && (
-                <div className="space-y-4 animate-in fade-in duration-150">
-                  <div className="bg-emerald-50/80 border border-emerald-200 rounded-xl p-3.5 text-xs text-emerald-900 flex items-start gap-2.5">
+                <div className="space-y-4 animate-in fade-in duration-150 text-xs">
+                  <div className="bg-emerald-50/80 border border-emerald-200 rounded-xl p-3.5 text-emerald-900 flex items-start gap-2.5">
                     <DollarSign className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
                     <div>
-                      <strong className="font-semibold">Agreed Tariff (Pre-Approved):</strong> This price was agreed upon directly with the client. The quote will be issued in status <strong>&quot;Rate Offered&quot;</strong>, allowing the client to accept it with 1 click in their portal to generate the active shipment manifest.
+                      <strong className="font-semibold">Agreed Tariff (Pre-Approved):</strong> This price was agreed upon face-to-face. The quote will be created in status <strong>&quot;Rate Offered&quot;</strong> so the client can immediately accept it in their portal to generate the shipment.
                     </div>
                   </div>
 
@@ -956,7 +1036,7 @@ export default function DirectClientQuoteModal({
                     </label>
                     <textarea
                       rows={3}
-                      placeholder="e.g. Face-to-face consultation at Transimex Montreal terminal. Rate includes linehaul and fuel surcharge. Client confirmed trailer staging for Friday."
+                      placeholder="e.g. Face-to-face consultation. Agreed rate includes linehaul and fuel surcharge. Client confirmed trailer staging for Friday."
                       value={adminNotes}
                       onChange={(e) => setAdminNotes(e.target.value)}
                       className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-[#0B2545] bg-white resize-none"
@@ -966,7 +1046,7 @@ export default function DirectClientQuoteModal({
                   {/* Summary recap box */}
                   <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl text-xs space-y-2">
                     <div className="font-bold text-slate-800 uppercase tracking-wider text-[10px]">
-                      Quick Consultation Summary
+                      Consultation Recap
                     </div>
                     <div className="grid grid-cols-2 gap-2 text-slate-600">
                       <div>
@@ -977,10 +1057,10 @@ export default function DirectClientQuoteModal({
                         <strong>Email:</strong> {clientEmail || "—"}
                       </div>
                       <div>
-                        <strong>Corridor:</strong> {originCity} &rarr; {destinationCity}
+                        <strong>Corridor:</strong> {originCity || "—"} &rarr; {destinationCity || "—"}
                       </div>
                       <div>
-                        <strong>Mode:</strong> {transportMode}
+                        <strong>Equipment:</strong> {transportMode}
                       </div>
                     </div>
                   </div>
@@ -1023,7 +1103,7 @@ export default function DirectClientQuoteModal({
                     }}
                     className="px-5 py-2.5 bg-[#0B2545] hover:bg-[#133E6D] text-white rounded-xl text-xs font-bold shadow-sm transition cursor-pointer flex items-center gap-1.5"
                   >
-                    <span>Next: {activeStep === 1 ? "Route & Cargo" : "Agreed Rate"}</span>
+                    <span>Next: {activeStep === 1 ? "Quote Form" : "Agreed Rate"}</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </button>
                 ) : (
