@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
+import DirectClientQuoteModal from "@/components/admin/clients/DirectClientQuoteModal";
 import {
   Truck,
   FileText,
@@ -72,6 +73,9 @@ interface SubAdminItem {
 export default function AdminOperationsPage() {
   const router = useRouter();
   const { language } = useLanguage();
+
+  // Direct Onboarding Modal State
+  const [isDirectOnboardOpen, setIsDirectOnboardOpen] = useState(false);
 
   // Metrics State
   const [metrics, setMetrics] = useState<MetricData>({
@@ -297,6 +301,15 @@ export default function AdminOperationsPage() {
           >
             <RefreshCw className={`w-3.5 h-3.5 text-slate-500 ${isRefreshing || loadingDashboard ? "animate-spin" : ""}`} />
             <span className="hidden sm:inline">{language === "fr" ? "Actualiser" : "Refresh"}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setIsDirectOnboardOpen(true)}
+            className="px-3.5 py-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-[#0B2545] shadow-2xs transition cursor-pointer flex items-center gap-1.5"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-[#d21f27]" />
+            <span>{language === "fr" ? "Client & Soumission Directe" : "Direct Client & Quote"}</span>
           </button>
 
           <button
@@ -960,6 +973,13 @@ export default function AdminOperationsPage() {
           </div>
         </div>
       )}
+
+      {/* Direct Client Onboarding & Pre-Priced Quote Modal */}
+      <DirectClientQuoteModal
+        isOpen={isDirectOnboardOpen}
+        onClose={() => setIsDirectOnboardOpen(false)}
+        onSuccess={loadDashboard}
+      />
     </div>
   );
 }

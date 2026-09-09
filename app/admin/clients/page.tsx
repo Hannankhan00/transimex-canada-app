@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { ClientProfile, ClientAccountStatus } from "@/lib/clientTypes";
 import ClientDataTable from "@/components/admin/clients/ClientDataTable";
+import DirectClientQuoteModal from "@/components/admin/clients/DirectClientQuoteModal";
 import {
   Building2,
   Users,
@@ -19,6 +20,7 @@ export default function AdminClientsPage() {
   const [counts, setCounts] = useState({ total: 0, active: 0, deactivated: 0 });
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [isOnboardModalOpen, setIsOnboardModalOpen] = useState(false);
 
   const fetchClients = useCallback(async () => {
     try {
@@ -121,6 +123,15 @@ export default function AdminClientsPage() {
             <Download className="w-3.5 h-3.5 text-[#0B2545]" />
             <span>Export CSV</span>
           </button>
+
+          <button
+            type="button"
+            onClick={() => setIsOnboardModalOpen(true)}
+            className="px-4 py-2 bg-[#d21f27] hover:bg-[#b51a21] active:scale-[0.98] text-white rounded-xl text-xs font-bold shadow-xs hover:shadow-md transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap"
+          >
+            <Plus className="w-4 h-4 stroke-[3]" />
+            <span>Direct Client &amp; Quote</span>
+          </button>
         </div>
       </div>
 
@@ -201,6 +212,13 @@ export default function AdminClientsPage() {
 
       {/* 3. CLIENT DATA TABLE */}
       <ClientDataTable clients={clients} onStatusToggled={handleStatusToggled} />
+
+      {/* Direct Client Onboarding & Pre-Priced Quote Modal */}
+      <DirectClientQuoteModal
+        isOpen={isOnboardModalOpen}
+        onClose={() => setIsOnboardModalOpen(false)}
+        onSuccess={fetchClients}
+      />
     </div>
   );
 }

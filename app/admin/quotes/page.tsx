@@ -5,6 +5,7 @@ import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { QuoteItem, QuoteStatus } from "@/lib/quoteTypes";
 import QuoteDataTable from "@/components/admin/quotes/QuoteDataTable";
 import QuoteReviewDrawer from "@/components/admin/quotes/QuoteReviewDrawer";
+import DirectClientQuoteModal from "@/components/admin/clients/DirectClientQuoteModal";
 import {
   FileSpreadsheet,
   Plus,
@@ -37,6 +38,7 @@ export default function AdminQuotesPage() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isOnboardModalOpen, setIsOnboardModalOpen] = useState(false);
 
   // Fetch quotes from API
   const fetchQuotes = useCallback(async () => {
@@ -144,6 +146,15 @@ export default function AdminQuotesPage() {
           >
             <Download className="w-3.5 h-3.5 text-[#0B2545]" />
             <span>Export CSV</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setIsOnboardModalOpen(true)}
+            className="px-4 py-2 bg-[#d21f27] hover:bg-[#b51a21] active:scale-[0.98] text-white rounded-xl text-xs font-bold shadow-xs hover:shadow-md transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap"
+          >
+            <Plus className="w-4 h-4 stroke-[3]" />
+            <span>Direct Client Quote</span>
           </button>
         </div>
       </div>
@@ -284,6 +295,13 @@ export default function AdminQuotesPage() {
         isOpen={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
         onQuoteUpdated={handleQuoteUpdated}
+      />
+
+      {/* Direct Client Onboarding & Pre-Priced Quote Modal */}
+      <DirectClientQuoteModal
+        isOpen={isOnboardModalOpen}
+        onClose={() => setIsOnboardModalOpen(false)}
+        onSuccess={fetchQuotes}
       />
     </div>
   );

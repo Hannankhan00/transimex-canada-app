@@ -1027,5 +1027,104 @@ export async function sendStaffInviteEmail({
   });
 }
 
+/**
+ * 10. Send Direct Client Onboarding & Pre-Priced Quote Email
+ * Used when an administrator onboards a client directly (in-person / phone)
+ * and provisions their account + pre-approved quotation simultaneously.
+ */
+export async function sendDirectClientOnboardingQuoteEmail({
+  to,
+  name,
+  companyName,
+  temporaryPassword,
+  quoteId,
+  origin,
+  destination,
+  transportMode,
+  commodity,
+  priceCad,
+  validUntil = "7 Business Days from Issuance",
+}: {
+  to: string;
+  name: string;
+  companyName?: string;
+  temporaryPassword?: string;
+  quoteId: string;
+  origin: string;
+  destination: string;
+  transportMode: string;
+  commodity: string;
+  priceCad: string;
+  validUntil?: string;
+}) {
+  const appUrl = getAppUrl();
+  const loginUrl = `${appUrl}/login?redirect=/dashboard/quotes`;
 
+  const credentialsBlock = temporaryPassword
+    ? `
+    <div style="background-color: #f8fafc; border: 1px solid #cbd5e1; border-radius: 10px; padding: 18px; margin: 20px 0;">
+      <div style="font-size: 11px; font-weight: 700; color: #0B2545; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">
+        Your Shipper Portal Login Credentials
+      </div>
+      <div style="font-family: monospace; font-size: 13px; color: #0f172a; line-height: 1.8;">
+        <div><strong>Login Username / Email:</strong> <span style="color: #0B2545;">${to}</span></div>
+        <div><strong>Temporary Generated Password:</strong> <span style="background-color: #e2e8f0; padding: 2px 8px; border-radius: 4px; font-weight: bold; color: #d21f27;">${temporaryPassword}</span></div>
+      </div>
+      <div style="font-size: 11px; color: #64748b; margin-top: 8px;">
+        * You can change your password at any time in your portal settings after logging in.
+      </div>
+    </div>
+    `
+    : `
+    <div style="background-color: #f8fafc; border: 1px solid #cbd5e1; border-radius: 10px; padding: 14px; margin: 18px 0; font-size: 13px; color: #334155;">
+      Your quote has been linked to your existing Transimex account (<strong>${to}</strong>). Sign in using your existing password.
+    </div>
+    `;
 
+  const content = `
+    <h1 class="h1">Commercial Freight Quote &amp; Account Provisioned</h1>
+    <p>Dear <strong>${name}</strong>${companyName ? ` (${companyName})` : ""},</p>
+    <p>Thank you for consulting directly with our logistics dispatch management team. As agreed during our discussion, your Transimex commercial portal account has been prepared and your <strong>pre-approved freight quotation</strong> is ready for your one-click acceptance.</p>
+
+    ${credentialsBlock}
+
+    <div style="background: linear-gradient(135deg, #0B2545 0%, #133E6D 100%); color: #ffffff; border-radius: 12px; padding: 22px; margin: 24px 0;">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.15); padding-bottom: 12px; margin-bottom: 14px;">
+        <div>
+          <span style="font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; opacity: 0.8;">Quote Reference</span>
+          <div style="font-size: 18px; font-weight: bold; font-family: monospace; letter-spacing: 0.5px;">${quoteId}</div>
+        </div>
+        <div style="text-align: right;">
+          <span style="font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; opacity: 0.8;">Agreed Freight Tariff</span>
+          <div style="font-size: 22px; font-weight: 800; color: #4ade80;">${priceCad} <span style="font-size: 13px; font-weight: 600;">CAD</span></div>
+        </div>
+      </div>
+
+      <div style="font-size: 13px; line-height: 1.7; opacity: 0.95;">
+        <div><strong>Freight Corridor:</strong> ${origin} &rarr; ${destination}</div>
+        <div><strong>Transport Mode:</strong> ${transportMode}</div>
+        <div><strong>Cargo Commodity:</strong> ${commodity}</div>
+        <div><strong>Rate Validity:</strong> ${validUntil}</div>
+      </div>
+    </div>
+
+    <div style="text-align: center; margin: 28px 0 16px 0;">
+      <a href="${loginUrl}" class="btn" style="background-color: #d21f27; font-size: 14px; padding: 14px 32px;" target="_blank">Sign In &amp; Accept Freight Quote</a>
+    </div>
+
+    <div class="alert-box">
+      <strong>Next Step:</strong> Simply sign in to your Transimex Client Portal, review the agreed parameters, and click <strong>&quot;Accept Rate &amp; Dispatch&quot;</strong> to immediately generate your tracking manifest number and dispatch trailer equipment.
+    </div>
+
+    <p style="font-size: 12px; color: #64748b; margin-top: 20px;">
+      If you need any adjustments or expedited scheduling, please contact your Transimex Logistics Coordinator directly or reply to this email.
+    </p>
+  `;
+
+  return sendEmail({
+    to,
+    subject: `Your Transimex Freight Quote [${quoteId}] & Shipper Account Credentials`,
+    html: emailTemplateWrapper(content, `Your agreed freight quotation ${quoteId} and portal credentials`),
+    text: `Your Transimex Freight Quote ${quoteId} has been created at ${priceCad} CAD. Login to review and accept at: ${loginUrl}. Email: ${to}${temporaryPassword ? ` | Password: ${temporaryPassword}` : ""}`,
+  });
+}
