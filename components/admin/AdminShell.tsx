@@ -14,10 +14,12 @@ export default function AdminShell({ children }: AdminShellProps) {
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [user, setUser] = useState<{
+    userId?: string;
     name?: string;
     email?: string;
     companyName?: string;
     role?: string;
+    permissions?: string[];
   } | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -65,6 +67,7 @@ export default function AdminShell({ children }: AdminShellProps) {
         mobileOpen={mobileMenuOpen}
         onCloseMobile={() => setMobileMenuOpen(false)}
         userRole={user?.role || "admin"}
+        user={user}
       />
 
       {/* Main Column (Offset by 260px on Desktop) */}

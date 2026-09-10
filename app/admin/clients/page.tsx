@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { ClientProfile, ClientAccountStatus } from "@/lib/clientTypes";
 import ClientDataTable from "@/components/admin/clients/ClientDataTable";
 import DirectClientQuoteModal from "@/components/admin/clients/DirectClientQuoteModal";
+import PermissionGuard from "@/components/admin/PermissionGuard";
 import {
   Building2,
   Users,
@@ -62,7 +63,8 @@ export default function AdminClientsPage() {
   }, 0);
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-200">
+    <PermissionGuard module="clients">
+      <div className="space-y-8 animate-in fade-in duration-200">
       {/* 1. HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -219,6 +221,7 @@ export default function AdminClientsPage() {
         onClose={() => setIsOnboardModalOpen(false)}
         onSuccess={fetchClients}
       />
-    </div>
+      </div>
+    </PermissionGuard>
   );
 }

@@ -6,6 +6,7 @@ import { QuoteItem, QuoteStatus } from "@/lib/quoteTypes";
 import QuoteDataTable from "@/components/admin/quotes/QuoteDataTable";
 import QuoteReviewDrawer from "@/components/admin/quotes/QuoteReviewDrawer";
 import DirectClientQuoteModal from "@/components/admin/clients/DirectClientQuoteModal";
+import PermissionGuard from "@/components/admin/PermissionGuard";
 import {
   FileSpreadsheet,
   Plus,
@@ -81,7 +82,8 @@ export default function AdminQuotesPage() {
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-200">
+    <PermissionGuard module="quotes">
+      <div className="space-y-8 animate-in fade-in duration-200">
       {/* 1. PAGE HEADER */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
@@ -303,6 +305,7 @@ export default function AdminQuotesPage() {
         onClose={() => setIsOnboardModalOpen(false)}
         onSuccess={fetchQuotes}
       />
-    </div>
+      </div>
+    </PermissionGuard>
   );
 }

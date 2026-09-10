@@ -11,7 +11,7 @@ export default function SettingsNavTabs() {
   const tabs = [
     {
       name: "Staff Access & Roles",
-      href: "/admin/settings/users",
+      href: "/admin/staff",
       icon: Users,
     },
     {

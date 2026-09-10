@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { CarrierVendor, TransportModeType } from "@/lib/carrierTypes";
 import CarrierDataTable from "@/components/admin/carriers/CarrierDataTable";
 import CarrierModal from "@/components/admin/carriers/CarrierModal";
+import PermissionGuard from "@/components/admin/PermissionGuard";
 import {
   Truck,
   Ship,
@@ -82,7 +83,8 @@ export default function AdminCarriersPage() {
   }).length;
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-200">
+    <PermissionGuard module="carriers">
+      <div className="space-y-8 animate-in fade-in duration-200">
       {/* 1. HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -228,6 +230,7 @@ export default function AdminCarriersPage() {
         carrierToEdit={carrierToEdit}
         onCarrierSaved={handleCarrierSaved}
       />
-    </div>
+      </div>
+    </PermissionGuard>
   );
 }

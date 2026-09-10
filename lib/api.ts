@@ -14,6 +14,7 @@ export interface AuthResponse {
     email: string;
     companyName: string;
     role: string;
+    permissions?: string[];
     phone?: string;
     address?: string;
     industry?: string;

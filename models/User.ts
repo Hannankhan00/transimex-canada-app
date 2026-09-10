@@ -11,6 +11,7 @@ export interface IUser extends Document {
   city?: string;
   province?: string;
   role?: string;
+  permissions?: string[];
   googleId?: string;
   avatar?: string;
   provider?: string;
@@ -85,8 +86,22 @@ const UserSchema = new Schema<IUser>(
     },
     role: {
       type: String,
-      enum: ["client", "user", "admin", "superadmin", "subadmin", "dispatcher"],
+      enum: [
+        "client",
+        "user",
+        "admin",
+        "superadmin",
+        "subadmin",
+        "dispatcher",
+        "customs_agent",
+        "support",
+        "custom",
+      ],
       default: "client",
+    },
+    permissions: {
+      type: [String],
+      default: [],
     },
     googleId: {
       type: String,

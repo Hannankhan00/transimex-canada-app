@@ -9,6 +9,7 @@ export interface TokenPayload {
   name: string;
   companyName: string;
   role: string;
+  permissions?: string[];
   sessionId?: string;
   tokenVersion?: number;
 }

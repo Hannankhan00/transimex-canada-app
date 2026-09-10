@@ -14,6 +14,12 @@ export async function GET() {
       await connectDB();
       const dbUser = await User.findById(payload.userId).lean<any>();
       if (dbUser) {
+        if (dbUser.accountStatus === "revoked") {
+          const res = NextResponse.json({ user: null, error: "Account deactivated" }, { status: 401 });
+          res.cookies.set("token", "", { maxAge: 0, path: "/" });
+          return res;
+        }
+
         return NextResponse.json({
           user: {
             userId: dbUser._id.toString(),
@@ -21,6 +27,7 @@ export async function GET() {
             name: dbUser.name,
             companyName: dbUser.companyName,
             role: dbUser.role || "client",
+            permissions: dbUser.permissions || [],
             phone: dbUser.phone || "",
             address: dbUser.address || "",
             industry: dbUser.industry || "",

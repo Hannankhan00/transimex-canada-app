@@ -90,8 +90,8 @@ function AuthComponent() {
         if (typeof window !== "undefined") {
           localStorage.setItem("transimex_user", JSON.stringify(res.user));
         }
-        const role = res.user.role;
-        const isStaff = role === "superadmin" || role === "admin" || role === "subadmin";
+        const role = (res.user.role || "").toLowerCase();
+        const isStaff = ["superadmin", "admin", "subadmin", "dispatcher", "customs_agent", "support", "custom"].includes(role);
         const fromParam = searchParams.get("from");
 
         if (isStaff) {

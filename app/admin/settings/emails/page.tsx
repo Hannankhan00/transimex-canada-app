@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import SettingsNavTabs from "@/components/admin/settings/SettingsNavTabs";
+import PermissionGuard from "@/components/admin/PermissionGuard";
 import { EmailTemplate } from "@/lib/emailTemplateTypes";
 import {
   Mail,
@@ -140,7 +141,8 @@ export default function AdminEmailsSettingsPage() {
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-200">
+    <PermissionGuard module="settings">
+      <div className="space-y-8 animate-in fade-in duration-200">
       {/* 1. HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -395,6 +397,7 @@ export default function AdminEmailsSettingsPage() {
           )}
         </div>
       </div>
-    </div>
+      </div>
+    </PermissionGuard>
   );
 }

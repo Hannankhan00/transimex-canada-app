@@ -43,6 +43,16 @@ export async function POST(req: Request) {
       );
     }
 
+    if (user.accountStatus === "revoked") {
+      return NextResponse.json(
+        {
+          error: "Your access has been revoked or deactivated. Please contact your system administrator.",
+          code: "ACCOUNT_DEACTIVATED",
+        },
+        { status: 403 }
+      );
+    }
+
     if (!user.isVerified) {
       return NextResponse.json(
         {
@@ -61,6 +71,7 @@ export async function POST(req: Request) {
       name: user.name,
       companyName: user.companyName,
       role: user.role || "client",
+      permissions: user.permissions || [],
       sessionId,
       tokenVersion: user.tokenVersion || 0,
     };

@@ -47,7 +47,8 @@ export function proxy(request: NextRequest) {
   const decoded = tokenCookie ? parseJwt(tokenCookie) : null;
   const isAuthenticated = !!decoded;
   const role = decoded?.role || "client";
-  const isStaff = role === "admin" || role === "superadmin" || role === "subadmin";
+  const staffRoles = ["admin", "superadmin", "subadmin", "dispatcher", "customs_agent", "support", "custom"];
+  const isStaff = staffRoles.includes(role.toLowerCase());
   const isClient = !isStaff && (role === "client" || role === "user");
 
   const isAuthRoute =

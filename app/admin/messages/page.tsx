@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { ContactInquiry } from "@/lib/inquiryTypes";
 import InquiryMasterDetail from "@/components/admin/messages/InquiryMasterDetail";
+import PermissionGuard from "@/components/admin/PermissionGuard";
 import {
   Inbox,
   Mail,
@@ -67,7 +68,8 @@ export default function AdminMessagesPage() {
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-200">
+    <PermissionGuard module="messages">
+      <div className="space-y-8 animate-in fade-in duration-200">
       {/* 1. HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -160,6 +162,7 @@ export default function AdminMessagesPage() {
         inquiries={inquiries}
         onReplySubmitted={handleReplySubmitted}
       />
-    </div>
+      </div>
+    </PermissionGuard>
   );
 }
