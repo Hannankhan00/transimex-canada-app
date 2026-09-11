@@ -36,6 +36,8 @@ import {
   Check,
 } from "lucide-react";
 
+import { getRolePreset } from "@/lib/rbac";
+
 interface MetricData {
   newQuotesCount: number;
   activeShipmentsCount: number;
@@ -46,7 +48,7 @@ interface MetricData {
 
 interface ActivityItem {
   id: string;
-  category: "quote" | "shipment" | "customs" | "inquiry" | "ticket";
+  category: "shipment" | "quote" | "customs" | "inquiry" | "ticket";
   title: string;
   titleFr: string;
   detail: string;
@@ -60,14 +62,15 @@ interface ActivityItem {
   referenceId?: string;
 }
 
-interface SubAdminItem {
-  _id?: string;
-  id?: string;
+interface StaffDutyItem {
+  id: string;
   name: string;
   email: string;
   role: string;
-  companyName: string;
-  createdAt: string;
+  jobTitle?: string;
+  department?: string;
+  permissions?: string[];
+  status?: string;
 }
 
 export default function AdminOperationsPage() {
@@ -91,18 +94,9 @@ export default function AdminOperationsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Sub-Admins Management State
-  const [isSubAdminModalOpen, setIsSubAdminModalOpen] = useState(false);
-  const [subAdminName, setSubAdminName] = useState("");
-  const [subAdminEmail, setSubAdminEmail] = useState("");
-  const [subAdminPassword, setSubAdminPassword] = useState("");
-  const [subAdminRole, setSubAdminRole] = useState<"subadmin" | "admin">("subadmin");
-  const [subAdminDept, setSubAdminDept] = useState("Dispatch & Operations");
-  const [modalLoading, setModalLoading] = useState(false);
-  const [modalError, setModalError] = useState<string | null>(null);
-  const [modalSuccess, setModalSuccess] = useState<string | null>(null);
-  const [subAdminsList, setSubAdminsList] = useState<SubAdminItem[]>([]);
-  const [loadingAdmins, setLoadingAdmins] = useState(false);
+  // Active Staff Roster
+  const [staffList, setStaffList] = useState<StaffDutyItem[]>([]);
+  const [loadingStaff, setLoadingStaff] = useState(false);
 
   // Quick New Shipment Modal
   const [isShipmentModalOpen, setIsShipmentModalOpen] = useState(false);
@@ -123,18 +117,18 @@ export default function AdminOperationsPage() {
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [loadingDashboard, setLoadingDashboard] = useState(false);
 
-  const loadSubAdmins = useCallback(async () => {
-    setLoadingAdmins(true);
+  const loadStaff = useCallback(async () => {
+    setLoadingStaff(true);
     try {
-      const res = await fetch("/api/admin/subadmins");
+      const res = await fetch("/api/admin/staff");
       const data = await res.json();
-      if (res.ok && data.admins) {
-        setSubAdminsList(data.admins);
+      if (res.ok && data.staff) {
+        setStaffList(data.staff);
       }
     } catch {
       // Fallback
     } finally {
-      setLoadingAdmins(false);
+      setLoadingStaff(false);
     }
   }, []);
 
@@ -155,51 +149,15 @@ export default function AdminOperationsPage() {
   }, []);
 
   useEffect(() => {
-    loadSubAdmins();
+    loadStaff();
     loadDashboard();
-  }, [loadSubAdmins, loadDashboard]);
+  }, [loadStaff, loadDashboard]);
 
   const handleRefresh = () => {
     setIsRefreshing(true);
-    loadDashboard().finally(() => {
+    Promise.all([loadDashboard(), loadStaff()]).finally(() => {
       setIsRefreshing(false);
     });
-  };
-
-  const handleCreateSubAdmin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setModalError(null);
-    setModalSuccess(null);
-    setModalLoading(true);
-
-    try {
-      const res = await fetch("/api/admin/subadmins", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: subAdminName,
-          email: subAdminEmail,
-          password: subAdminPassword,
-          role: subAdminRole,
-          companyName: `Transimex - ${subAdminDept}`,
-        }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || "Failed to create staff account");
-      }
-
-      setModalSuccess(`Successfully created staff account for ${subAdminName}`);
-      setSubAdminName("");
-      setSubAdminEmail("");
-      setSubAdminPassword("");
-      loadSubAdmins();
-    } catch (err: any) {
-      setModalError(err.message || "Failed to create staff account");
-    } finally {
-      setModalLoading(false);
-    }
   };
 
   const handleQuickShipmentSubmit = async (e: React.FormEvent) => {
@@ -314,11 +272,11 @@ export default function AdminOperationsPage() {
 
           <button
             type="button"
-            onClick={() => setIsSubAdminModalOpen(true)}
+            onClick={() => router.push("/admin/staff")}
             className="px-3.5 py-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-[#0B2545] shadow-2xs transition cursor-pointer flex items-center gap-1.5"
           >
-            <UserPlus className="w-3.5 h-3.5 text-[#0B2545]" />
-            <span>{language === "fr" ? "Équipe Staff" : "Manage Staff"}</span>
+            <Shield className="w-3.5 h-3.5 text-[#d21f27]" />
+            <span>{language === "fr" ? "Gestion du Personnel (RBAC)" : "Manage Staff (RBAC)"}</span>
           </button>
 
           <button
@@ -623,55 +581,80 @@ export default function AdminOperationsPage() {
 
         {/* Right Operations Side Column (1 col) */}
         <div className="space-y-6">
-          {/* Sub-Admins & Operations Team Summary */}
+          {/* Operations & Dispatch Staff On Duty */}
           <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-5 space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-bold text-[#0B2545] text-sm">
-                  {language === "fr" ? "Équipe de Répartition" : "Dispatch Staff on Duty"}
-                </h3>
-                <p className="text-[11px] text-slate-500">
-                  {subAdminsList.length} {language === "fr" ? "personnels autorisés" : "authorized staff members"}
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <h3 className="font-bold text-[#0B2545] text-sm">
+                    {language === "fr" ? "Équipe des Opérations en Service" : "Dispatch Staff on Duty"}
+                  </h3>
+                </div>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  {staffList.filter((s) => s.status !== "revoked").length}{" "}
+                  {language === "fr" ? "personnels autorisés actifs" : "active operational staff"}
                 </p>
               </div>
               <button
                 type="button"
-                onClick={() => setIsSubAdminModalOpen(true)}
-                className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition cursor-pointer"
-                title="Add Staff"
+                onClick={() => router.push("/admin/staff")}
+                className="p-1.5 rounded-lg bg-slate-100 hover:bg-[#0B2545] hover:text-white text-slate-700 transition cursor-pointer"
+                title={language === "fr" ? "Gérer le Personnel & RBAC" : "Manage Staff & RBAC"}
               >
                 <Plus className="w-4 h-4" />
               </button>
             </div>
 
             <div className="space-y-2.5">
-              {subAdminsList.length === 0 && !loadingAdmins && (
-                <p className="text-[11px] text-slate-400 text-center py-2">No authorized staff on record yet.</p>
+              {staffList.filter((s) => s.status !== "revoked").length === 0 && !loadingStaff && (
+                <p className="text-[11px] text-slate-400 text-center py-2">
+                  {language === "fr" ? "Aucun personnel actif enregistré." : "No active staff on record yet."}
+                </p>
               )}
-              {subAdminsList.map((adm) => (
-                <div
-                  key={adm._id || adm.id || adm.email}
-                  className="p-2.5 bg-white rounded-xl border border-slate-200 flex items-center justify-between text-xs"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-7 h-7 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center font-bold text-[10px]">
-                      {adm.name
-                        .split(" ")
-                        .map((n) => n[0])
-                        .slice(0, 2)
-                        .join("")}
+              {staffList
+                .filter((adm) => adm.status !== "revoked")
+                .slice(0, 5)
+                .map((adm) => {
+                  const preset = getRolePreset(adm.role);
+                  return (
+                    <div
+                      key={adm.id || adm.email}
+                      className="p-2.5 bg-slate-50/70 hover:bg-slate-50 rounded-xl border border-slate-200/80 flex items-center justify-between text-xs transition"
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-7 h-7 rounded-lg bg-[#0B2545] text-white flex items-center justify-center font-bold text-[10px] flex-shrink-0">
+                          {adm.name
+                            .split(" ")
+                            .map((n) => n[0])
+                            .slice(0, 2)
+                            .join("")
+                            .toUpperCase()}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-bold text-slate-900 leading-tight truncate">{adm.name}</p>
+                          <p className="text-[10px] text-slate-500 truncate">{adm.department || adm.email}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1.5 flex-shrink-0 ml-2">
+                        <span
+                          className={`px-2 py-0.5 rounded text-[10px] font-bold ${preset.badgeClass}`}
+                        >
+                          {preset.titleEn}
+                        </span>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-bold text-slate-900 leading-tight">{adm.name}</p>
-                      <p className="text-[10px] text-slate-500">{adm.email}</p>
-                    </div>
-                  </div>
-                  <span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 text-[10px] font-bold">
-                    {(adm.role || "subadmin").toUpperCase()}
-                  </span>
-                </div>
-              ))}
+                  );
+                })}
             </div>
+
+            <Link
+              href="/admin/staff"
+              className="flex items-center justify-between pt-3 border-t border-slate-100 text-xs font-bold text-[#0B2545] hover:text-[#d21f27] transition group"
+            >
+              <span>{language === "fr" ? "Gérer les Accès & Rôles (RBAC) →" : "Manage All Staff & Access (RBAC) →"}</span>
+              <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-[#d21f27] transition" />
+            </Link>
           </div>
         </div>
       </div>
@@ -851,125 +834,6 @@ export default function AdminOperationsPage() {
                 </div>
               </form>
             )}
-          </div>
-        </div>
-      )}
-
-      {/* 5. MODAL: MANAGE SUB-ADMIN STAFF */}
-      {isSubAdminModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4 animate-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-blue-100 text-[#0B2545] flex items-center justify-center">
-                  <UserPlus className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-[#0B2545] text-base">
-                    {language === "fr" ? "Créer un Compte Staff" : "Add Staff Dispatcher"}
-                  </h3>
-                  <p className="text-[11px] text-slate-500">Transimex Admin Privilege Control</p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsSubAdminModalOpen(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {modalError && (
-              <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-xs">
-                {modalError}
-              </div>
-            )}
-
-            {modalSuccess && (
-              <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl text-xs">
-                {modalSuccess}
-              </div>
-            )}
-
-            <form onSubmit={handleCreateSubAdmin} className="space-y-3.5 text-xs">
-              <div>
-                <label className="font-semibold text-slate-700 block mb-1">Staff Full Name</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Marc Tremblay"
-                  value={subAdminName}
-                  onChange={(e) => setSubAdminName(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 outline-none focus:border-[#0B2545] focus:bg-white"
-                />
-              </div>
-
-              <div>
-                <label className="font-semibold text-slate-700 block mb-1">Corporate Staff Email</label>
-                <input
-                  type="email"
-                  required
-                  placeholder="name@transimex.ca"
-                  value={subAdminEmail}
-                  onChange={(e) => setSubAdminEmail(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 outline-none focus:border-[#0B2545] focus:bg-white"
-                />
-              </div>
-
-              <div>
-                <label className="font-semibold text-slate-700 block mb-1">Initial Temporary Password</label>
-                <input
-                  type="password"
-                  required
-                  placeholder="••••••••"
-                  value={subAdminPassword}
-                  onChange={(e) => setSubAdminPassword(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 outline-none focus:border-[#0B2545] focus:bg-white"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="font-semibold text-slate-700 block mb-1">Role Level</label>
-                  <select
-                    value={subAdminRole}
-                    onChange={(e) => setSubAdminRole(e.target.value as any)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 outline-none focus:border-[#0B2545] focus:bg-white"
-                  >
-                    <option value="subadmin">Sub-Admin (Dispatcher)</option>
-                    <option value="admin">Full Admin</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="font-semibold text-slate-700 block mb-1">Department</label>
-                  <input
-                    type="text"
-                    value={subAdminDept}
-                    onChange={(e) => setSubAdminDept(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 outline-none focus:border-[#0B2545] focus:bg-white"
-                  />
-                </div>
-              </div>
-
-              <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setIsSubAdminModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 transition cursor-pointer"
-                >
-                  Close
-                </button>
-                <button
-                  type="submit"
-                  disabled={modalLoading}
-                  className="px-4 py-2 bg-[#0B2545] hover:bg-slate-800 text-white rounded-xl font-bold shadow-xs transition cursor-pointer disabled:opacity-50"
-                >
-                  {modalLoading ? "Creating..." : "Save Staff Member"}
-                </button>
-              </div>
-            </form>
           </div>
         </div>
       )}
