@@ -19,6 +19,8 @@ import {
   MapPin,
   X,
   TrendingUp,
+  AlertTriangle,
+  ArrowRight,
 } from "lucide-react";
 
 interface ActivityItem {
@@ -53,6 +55,7 @@ export default function DashboardPage() {
   const [deliveredTotal, setDeliveredTotal] = useState(0);
   const [documentsCount, setDocumentsCount] = useState(0);
   const [activity, setActivity] = useState<ActivityItem[]>([]);
+  const [customsHoldShipments, setCustomsHoldShipments] = useState<any[]>([]);
 
   useEffect(() => {
     api.auth.me().then((res) => {
@@ -74,6 +77,13 @@ export default function DashboardPage() {
       setPendingQuotes(quotes.filter((q) => q.status === "under_review" || q.status === "reviewing").length);
       setDocumentsCount(documentsRes.success ? documentsRes.documents.length : 0);
 
+      const holdShipments = shipments.filter(
+        (s: any) =>
+          (s.status === "customs" || s.customsStatus === "Held") &&
+          s.duties?.status === "Notice Dispatched"
+      );
+      setCustomsHoldShipments(holdShipments);
+
       const shipmentActivity: ActivityItem[] = shipments.slice(0, 3).map((s: any) => ({
         kind: "shipment",
         id: s.id,
@@ -84,6 +94,8 @@ export default function DashboardPage() {
         badgeClass:
           s.status === "delivered"
             ? "bg-emerald-100 text-emerald-800"
+            : s.status === "customs" && s.duties?.status === "Notice Dispatched"
+            ? "bg-red-100 text-red-800 border border-red-200 font-bold"
             : s.status === "customs"
             ? "bg-amber-100 text-amber-800"
             : "bg-blue-100 text-blue-800",
@@ -178,6 +190,71 @@ export default function DashboardPage() {
           </button>
         </div>
       </div>
+
+      {/* Red Alert Banner: Customs Duties & Cargo Hold Warning */}
+      {customsHoldShipments.length > 0 && (
+        <div className="space-y-3">
+          {customsHoldShipments.map((s) => (
+            <div
+              key={s.id}
+              className="bg-red-50 border-2 border-[#d21f27] rounded-2xl p-4 sm:p-5 shadow-lg shadow-red-500/10 flex flex-col md:flex-row md:items-center justify-between gap-4 animate-in fade-in slide-in-from-top-2 duration-200 ring-4 ring-red-500/10"
+            >
+              <div className="flex items-start gap-3.5">
+                <div className="w-10 h-10 rounded-xl bg-[#d21f27] text-white flex items-center justify-center flex-shrink-0 shadow-md">
+                  <AlertTriangle className="w-5 h-5 animate-pulse" />
+                </div>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="px-2.5 py-0.5 rounded-full bg-[#d21f27] text-white text-[10px] font-bold uppercase tracking-wider">
+                      {language === "fr" ? "Alerte de Paiement Douanier" : "Customs Duties Alert"}
+                    </span>
+                    <span className="font-mono font-bold text-slate-900 text-xs sm:text-sm">
+                      #{s.id}
+                    </span>
+                    {s.portOfEntry && (
+                      <span className="text-[11px] text-slate-500">
+                        • {s.portOfEntry}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs sm:text-sm font-bold text-red-950 leading-snug">
+                    {language === "fr"
+                      ? `Les droits de douane de ${s.duties?.totalOwed || s.duties?.amountCad || "montant requis"} sont requis pour libérer la cargaison. Veuillez contacter l'équipe Transimex.`
+                      : `Customs duties of ${s.duties?.totalOwed || s.duties?.amountCad || "payment required"} are required to release cargo. Please contact the Transimex team.`}
+                  </p>
+                  <div className="text-[11px] text-slate-600 flex items-center gap-3 flex-wrap pt-0.5">
+                    {s.duties?.amountCad && (
+                      <span>
+                        <strong className="text-slate-800">{language === "fr" ? "Droits:" : "Tariff Duties:"}</strong> {s.duties.amountCad}
+                      </span>
+                    )}
+                    {s.duties?.taxGstHst && (
+                      <span>
+                        <strong className="text-slate-800">GST/HST:</strong> {s.duties.taxGstHst}
+                      </span>
+                    )}
+                    {s.duties?.brokerageFeeCad && (
+                      <span>
+                        <strong className="text-slate-800">{language === "fr" ? "Frais de dossier:" : "Brokerage:"}</strong> {s.duties.brokerageFeeCad}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2.5 flex-shrink-0 self-end md:self-center">
+                <Link
+                  href={`/dashboard/shipments?id=${encodeURIComponent(s.id)}`}
+                  className="px-4 py-2.5 bg-[#d21f27] hover:bg-[#b51a21] text-white rounded-xl text-xs font-bold transition shadow-xs flex items-center gap-1.5 cursor-pointer"
+                >
+                  <span>{language === "fr" ? "Examiner & Débloquer" : "Review & Clear Duties"}</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* 4 Primary Metric Cards Grid (Institutional Logistics style) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">

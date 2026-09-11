@@ -37,6 +37,9 @@ export async function GET(req: Request) {
       shipment: {
         trackingNumber: shipment.trackingNumber,
         status: shipment.status,
+        customsStatus: shipment.customsStatus || "Pending",
+        portOfEntry: shipment.portOfEntry || "",
+        duties: shipment.duties || undefined,
         origin: shipment.route?.origin,
         destination: shipment.route?.destination,
         eta: shipment.eta,

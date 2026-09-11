@@ -78,6 +78,10 @@ export function proxy(request: NextRequest) {
       loginUrl.searchParams.set("from", pathname);
       return NextResponse.redirect(loginUrl);
     }
+    // Calculator/Estimator is hidden and inaccessible for now
+    if (pathname === "/dashboard/estimator" || pathname.startsWith("/dashboard/estimator/")) {
+      return NextResponse.redirect(new URL("/dashboard", request.url));
+    }
     return NextResponse.next();
   }
 

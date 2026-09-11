@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import {
   FreightMode,
@@ -51,6 +52,20 @@ const CURRENCY_RATES: Record<CurrencyView, { symbol: string; rate: number; label
 };
 
 export default function PriceEstimatorPage() {
+  const router = useRouter();
+  // Calculator is temporarily hidden from client portal and disabled from access
+  const isCalculatorDisabled = true;
+
+  useEffect(() => {
+    if (isCalculatorDisabled) {
+      router.replace("/dashboard");
+    }
+  }, [router, isCalculatorDisabled]);
+
+  if (isCalculatorDisabled) {
+    return null;
+  }
+
   const { t, language } = useLanguage();
 
   // Mode & Corridor

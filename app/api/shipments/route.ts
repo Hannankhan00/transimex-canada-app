@@ -39,6 +39,19 @@ function mapShipment(s: any) {
     date: formatDateLabel(s.createdAt),
     eta: s.status === "Delivered" ? "Delivered" : s.eta || "Pending",
     progress,
+    customsStatus: s.customsStatus || "Pending",
+    portOfEntry: s.portOfEntry || "",
+    cbsaPars: s.cbsaPars || "",
+    duties: s.duties
+      ? {
+          amountCad: s.duties.amountCad || "",
+          taxGstHst: s.duties.taxGstHst || "",
+          brokerageFeeCad: s.duties.brokerageFeeCad || s.duties.brokerageFee || "",
+          totalOwed: s.duties.totalOwed || "",
+          status: s.duties.status || "Unassessed",
+          dispatchedAt: s.duties.dispatchedAt || "",
+        }
+      : undefined,
   };
 }
 
