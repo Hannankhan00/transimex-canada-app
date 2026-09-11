@@ -4,6 +4,7 @@ import PortalDocument from "@/models/PortalDocument";
 import { getCurrentUser } from "@/lib/session";
 import { formatDateLabel } from "@/lib/formatDate";
 import { buildSimplePdf } from "@/lib/pdf";
+import { getFromR2 } from "@/lib/r2";
 
 export async function GET(
   req: Request,
@@ -29,17 +30,33 @@ export async function GET(
 
     const safeFilename = doc.name.replace(/[^a-zA-Z0-9_.-]/g, "_");
 
-    // Serve the actual staff-uploaded file when available.
+    // 1. Try serving from Cloudflare R2 if a storage key is present
+    if (doc.fileKey) {
+      const r2File = await getFromR2(doc.fileKey);
+      if (r2File) {
+        return new NextResponse(new Uint8Array(r2File.buffer), {
+          headers: {
+            "Content-Type": r2File.contentType || doc.mimeType || "application/pdf",
+            "Content-Disposition": `attachment; filename="${safeFilename}"`,
+            "Content-Length": String(r2File.contentLength),
+            "X-Storage-Provider": "cloudflare-r2",
+          },
+        });
+      }
+    }
+
+    // 2. Serve from database buffer if available (fallback or pre-R2 upload)
     if (doc.fileData) {
       return new NextResponse(new Uint8Array(doc.fileData), {
         headers: {
           "Content-Type": doc.mimeType || "application/pdf",
           "Content-Disposition": `attachment; filename="${safeFilename}"`,
+          "X-Storage-Provider": "mongodb-buffer",
         },
       });
     }
 
-    // Fallback for legacy records with no stored file bytes.
+    // 3. Fallback for legacy records with no stored file bytes.
     const pdf = buildSimplePdf("Transimex Canada Logistics - Official Shipping Document", [
       `Document ID: ${doc._id.toString()}`,
       `Shipment ID: ${doc.shipmentId}`,
@@ -55,6 +72,7 @@ export async function GET(
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": `attachment; filename="${safeFilename}"`,
+        "X-Storage-Provider": "generated-pdf",
       },
     });
   } catch (error: any) {
@@ -65,3 +83,4 @@ export async function GET(
     );
   }
 }
+

@@ -6,6 +6,7 @@ import PortalDocument, { PortalDocumentType } from "@/models/PortalDocument";
 import { verifyToken } from "@/lib/auth";
 import { logAudit } from "@/lib/audit";
 import { notifyUser } from "@/lib/notifications";
+import { isR2Configured, uploadToR2 } from "@/lib/r2";
 
 export async function GET(
   req: Request,
@@ -60,6 +61,39 @@ export async function POST(
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
+    const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9_.-]/g, "_");
+    const r2Key = `documents/${encodeURIComponent(id)}/${Date.now()}-${sanitizedFileName}`;
+
+    let fileKey = "";
+    let fileUrl = "";
+    let storageProvider: "r2" | "mongodb" = "mongodb";
+    let fileDataBuffer: Buffer | undefined = undefined;
+
+    if (isR2Configured()) {
+      try {
+        const r2Result = await uploadToR2({
+          key: r2Key,
+          buffer,
+          mimeType: file.type || "application/pdf",
+          metadata: {
+            shipmentId: id,
+            documentType: type,
+            originalName: file.name,
+          },
+        });
+        fileKey = r2Result.key;
+        fileUrl = r2Result.url || "";
+        storageProvider = "r2";
+      } catch (r2Err: any) {
+        console.warn("[Cloudflare R2] Upload failed, falling back to database buffer:", r2Err.message);
+        fileDataBuffer = buffer;
+        storageProvider = "mongodb";
+      }
+    } else {
+      // Graceful fallback when user has not yet entered Cloudflare R2 envs in .env.local
+      fileDataBuffer = buffer;
+      storageProvider = "mongodb";
+    }
 
     const doc = await PortalDocument.create({
       userId: shipment.client?.userId || "",
@@ -71,7 +105,10 @@ export async function POST(
       customsPars,
       mimeType: file.type || "application/pdf",
       fileSize: file.size,
-      fileData: buffer,
+      fileKey,
+      fileUrl,
+      storageProvider,
+      fileData: fileDataBuffer,
     });
 
     // Best-effort audit trail entry — never blocks the response
@@ -82,7 +119,7 @@ export async function POST(
         action: "DOCUMENT_UPLOAD",
         resourceType: "Document",
         resourceId: id,
-        details: `Uploaded document "${file.name}" (${type}) to shipment ${id}.`,
+        details: `Uploaded document "${file.name}" (${type}) to shipment ${id} via ${storageProvider.toUpperCase()}.`,
       });
     }
 
@@ -104,8 +141,9 @@ export async function POST(
 
     return NextResponse.json({
       success: true,
-      message: `Document ${file.name} successfully registered to shipment ${id}`,
+      message: `Document ${file.name} successfully registered to shipment ${id} using ${storageProvider.toUpperCase()}`,
       document: { ...docObj, id: doc._id.toString() },
+      storageProvider,
     });
   } catch (error: any) {
     console.error("Error uploading shipment document:", error);

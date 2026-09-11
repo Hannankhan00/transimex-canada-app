@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongoose";
 import Resource from "@/models/Resource";
+import { deleteFromR2 } from "@/lib/r2";
 
 export async function DELETE(
   req: Request,
@@ -13,6 +14,15 @@ export async function DELETE(
     if (!deleted) {
       return NextResponse.json({ error: "Resource not found" }, { status: 404 });
     }
+
+    if (deleted.fileKey) {
+      try {
+        await deleteFromR2(deleted.fileKey);
+      } catch (r2Err: any) {
+        console.warn(`[Cloudflare R2] Could not delete resource file ${deleted.fileKey}:`, r2Err.message);
+      }
+    }
+
     return NextResponse.json({ success: true });
   } catch (error: any) {
     console.error("Error deleting resource:", error);
@@ -22,3 +32,4 @@ export async function DELETE(
     );
   }
 }
+

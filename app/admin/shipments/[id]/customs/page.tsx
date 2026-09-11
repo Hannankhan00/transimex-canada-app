@@ -504,7 +504,7 @@ export default function ShipmentCustomsCompliancePage() {
         </div>
       </div>
 
-      {/* 4. CLOUDINARY DOCUMENT UPLOADER */}
+      {/* 4. CLOUDFLARE R2 DOCUMENT UPLOADER */}
       <CloudinaryUploader
         shipmentId={shipmentId}
         onDocumentUploaded={handleDocumentUploaded}

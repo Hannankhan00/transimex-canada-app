@@ -18,6 +18,9 @@ export interface IPortalDocument extends Document {
   customsPars?: string;
   mimeType?: string;
   fileSize?: number;
+  fileKey?: string;
+  fileUrl?: string;
+  storageProvider?: "r2" | "mongodb";
   fileData?: Buffer;
   createdAt: Date;
   updatedAt: Date;
@@ -45,6 +48,13 @@ const PortalDocumentSchema = new Schema<IPortalDocument>(
     customsPars: { type: String, default: "" },
     mimeType: { type: String, default: "application/pdf" },
     fileSize: { type: Number, default: 0 },
+    fileKey: { type: String, default: "", index: true },
+    fileUrl: { type: String, default: "" },
+    storageProvider: {
+      type: String,
+      enum: ["r2", "mongodb"],
+      default: "mongodb",
+    },
     fileData: { type: Buffer },
   },
   { timestamps: true }

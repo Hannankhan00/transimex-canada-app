@@ -142,10 +142,13 @@ export default function CloudinaryUploader({
         <div>
           <h3 className="font-bold text-[#0B2545] text-sm flex items-center gap-2">
             <UploadCloud className="w-4 h-4 text-[#d21f27]" />
-            <span>Cloudinary Logistics Paperwork Uploader</span>
+            <span>Cloudflare R2 Document Vault Uploader</span>
+            <span className="text-[10px] font-bold bg-amber-100 text-amber-900 px-2 py-0.5 rounded-full border border-amber-200">
+              Cloudflare R2
+            </span>
           </h3>
           <p className="text-[11px] text-slate-500 mt-0.5">
-            Drop verified PDFs into shipment manifest. Uploads default to{" "}
+            Encrypted cloud object storage for customs entries, waybills &amp; PODs. Uploads default to{" "}
             <strong className="text-slate-700">Internal Confidential</strong>.
           </p>
         </div>

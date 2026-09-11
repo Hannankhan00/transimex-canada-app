@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongoose";
 import PortalDocument from "@/models/PortalDocument";
 import { notifyUser } from "@/lib/notifications";
+import { deleteFromR2 } from "@/lib/r2";
 
 export async function PATCH(
   req: Request,
@@ -53,3 +54,40 @@ export async function PATCH(
     );
   }
 }
+
+export async function DELETE(
+  req: Request,
+  { params }: { params: Promise<{ id: string; docId: string }> }
+) {
+  try {
+    const { docId } = await params;
+    await connectDB();
+    const doc = await PortalDocument.findById(docId);
+    if (!doc) {
+      return NextResponse.json({ error: "Document not found" }, { status: 404 });
+    }
+
+    // Clean up from Cloudflare R2 if it has an R2 storage key
+    if (doc.fileKey) {
+      try {
+        await deleteFromR2(doc.fileKey);
+      } catch (r2Err: any) {
+        console.warn(`[Cloudflare R2] Could not delete object ${doc.fileKey}:`, r2Err.message);
+      }
+    }
+
+    await PortalDocument.findByIdAndDelete(docId);
+
+    return NextResponse.json({
+      success: true,
+      message: `Document ${doc.name} deleted successfully`,
+    });
+  } catch (error: any) {
+    console.error("Error deleting document:", error);
+    return NextResponse.json(
+      { error: error.message || "Failed to delete document" },
+      { status: 500 }
+    );
+  }
+}
+
