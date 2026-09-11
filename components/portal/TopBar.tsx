@@ -11,7 +11,6 @@ import {
   LogOut,
   Building2,
   User,
-  Shield,
   ChevronDown,
   Search,
   Bell,
@@ -225,20 +224,6 @@ export default function TopBar({
                   <User className="w-4 h-4 text-slate-400" />
                   <span>{t.nav.account}</span>
                 </button>
-
-                {isStaff && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setDropdownOpen(false);
-                      router.push("/admin");
-                    }}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-amber-700 hover:bg-amber-50 font-bold transition cursor-pointer"
-                  >
-                    <Shield className="w-4 h-4 text-amber-600" />
-                    <span>{t.nav.adminPanel}</span>
-                  </button>
-                )}
               </div>
 
               <div className="pt-1 border-t border-slate-100">

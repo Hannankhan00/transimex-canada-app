@@ -24,7 +24,6 @@ import {
   AlertTriangle,
   ArrowLeft,
   RefreshCw,
-  ExternalLink,
   Lock,
   Save,
   CheckCircle2,
@@ -262,14 +261,6 @@ export default function ShipmentCustomsCompliancePage() {
 
         {/* Quick actions */}
         <div className="flex items-center gap-2.5">
-          <Link
-            href={`/dashboard/shipments?id=${encodeURIComponent(shipmentId)}`}
-            target="_blank"
-            className="px-3.5 py-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-[#0B2545] shadow-2xs transition cursor-pointer flex items-center gap-1.5"
-          >
-            <ExternalLink className="w-3.5 h-3.5 text-[#d21f27]" />
-            <span>Preview Client Tracking</span>
-          </Link>
           <button
             type="button"
             onClick={loadData}

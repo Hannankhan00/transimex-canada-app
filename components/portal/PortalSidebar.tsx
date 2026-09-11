@@ -17,9 +17,7 @@ import {
   MapPin,
   Settings,
   HelpCircle,
-  ShieldCheck,
   X,
-  ExternalLink,
   ChevronUp,
   Download,
   LogOut,
@@ -153,8 +151,6 @@ export default function PortalSidebar({
     },
   ];
 
-  const isStaff = userRole === "admin" || userRole === "superadmin" || userRole === "subadmin";
-
   const sidebarContent = (
     <div className="h-full flex flex-col justify-between bg-[#0B2545] text-slate-200 select-none overflow-y-auto">
       {/* Top Branding Section */}
@@ -232,21 +228,7 @@ export default function PortalSidebar({
             );
           })}
 
-          {/* Admin Switcher for Staff */}
-          {isStaff && (
-            <div className="pt-3 mt-3 border-t border-white/10">
-              <Link
-                href="/admin"
-                className="flex items-center justify-between px-3.5 py-2 rounded-lg text-xs font-bold text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 transition border border-amber-500/20"
-              >
-                <div className="flex items-center gap-2.5">
-                  <ShieldCheck className="w-4 h-4" />
-                  <span>{t.nav.adminPanel}</span>
-                </div>
-                <ExternalLink className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-          )}
+
         </nav>
       </div>
 

@@ -417,11 +417,10 @@ export default function QuoteReviewDrawer({
               </p>
               <div className="mt-2 flex items-center gap-3">
                 <Link
-                  href={`/dashboard/shipments?id=${conversionSuccess.trackingId}`}
-                  target="_blank"
+                  href={`/admin/shipments/${encodeURIComponent(conversionSuccess.trackingId)}/customs`}
                   className="inline-flex items-center gap-1 font-bold text-[#0B2545] hover:underline"
                 >
-                  View Shipment in Portal <ExternalLink className="w-3 h-3" />
+                  View Shipment Record <ArrowRight className="w-3 h-3" />
                 </Link>
               </div>
             </div>

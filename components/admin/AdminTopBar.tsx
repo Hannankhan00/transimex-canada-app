@@ -19,7 +19,6 @@ import {
   Truck,
   Sparkles,
   Layers,
-  Radio,
 } from "lucide-react";
 
 interface AdminTopBarProps {
@@ -226,17 +225,6 @@ export default function AdminTopBar({
                 >
                   <Shield className="w-4 h-4 text-slate-500" />
                   <span>{language === "fr" ? "Sécurité & Accès" : "Security & Staff Access"}</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setDropdownOpen(false);
-                    router.push("/dashboard");
-                  }}
-                  className="w-full text-left px-3 py-2 rounded-lg text-slate-700 hover:text-slate-900 hover:bg-slate-100 flex items-center gap-2.5 transition font-medium"
-                >
-                  <Radio className="w-4 h-4 text-blue-500" />
-                  <span>{language === "fr" ? "Aller au Portail Client" : "Switch to Client Portal"}</span>
                 </button>
               </div>
 
