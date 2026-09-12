@@ -66,6 +66,16 @@ function QuotesContent() {
     setSelectedQuote(updatedQuote);
   };
 
+  const getPriceTag = (quote: QuoteItem) => {
+    if (quote.status === "accepted") {
+      return { label: language === "fr" ? "Garanti" : "Guaranteed", className: "text-emerald-600" };
+    }
+    if (quote.status === "quoted") {
+      return { label: language === "fr" ? "À Confirmer" : "Action Required", className: "text-sky-600" };
+    }
+    return null;
+  };
+
   const filteredQuotes = quotes.filter((q) => {
     if (filter !== "all") {
       if (filter === "under_review") {
@@ -91,30 +101,23 @@ function QuotesContent() {
       {/* Header Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <span className="text-[11px] font-bold uppercase tracking-wider text-[#d21f27]">
-            {language === "fr" ? "Tarification & Réservations" : "Freight Pricing & Quotations"}
-          </span>
-          <h1
-            className="text-2xl sm:text-3xl font-bold text-[#0B2545] tracking-tight leading-tight mt-1"
-            style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
-          >
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#0B2545] tracking-tight leading-tight">
             {t.nav.quotes}
           </h1>
-          <p className="text-slate-500 text-xs sm:text-sm mt-1">
+          <p className="text-slate-500 text-sm mt-1">
             {language === "fr"
-              ? "Historique centralisé de vos soumissions de fret, approbations et tarifs garantis."
-              : "Centralized history of all freight quotes, carrier approvals, and dispatch bookings."}
+              ? "Suivez la tarification, les approbations et l'état de vos soumissions."
+              : "Track pricing, approvals, and booking status for every quote."}
           </p>
         </div>
 
-        {/* Action Button opening the interactive blurred popup modal */}
         <button
           type="button"
           onClick={() => setNewQuoteModalOpen(true)}
           className="px-4 py-2.5 bg-[#d21f27] hover:bg-[#b51a21] active:scale-[0.98] text-white rounded-xl text-xs font-bold shadow-sm hover:shadow-md transition cursor-pointer flex items-center justify-center gap-1.5 whitespace-nowrap"
         >
           <Plus className="w-4 h-4 stroke-[3]" />
-          <span>{language === "fr" ? "Demander une Soumission" : "Request New Freight Quote"}</span>
+          <span>{language === "fr" ? "Demander une Soumission" : "Request New Quote"}</span>
         </button>
       </div>
 
@@ -233,7 +236,9 @@ function QuotesContent() {
                         {/* Transport Mode & Equipment */}
                         <td className="py-4 px-4 whitespace-nowrap">
                           <div className="font-semibold text-slate-900">{quote.transportMode}</div>
-                          <div className="text-[11px] text-slate-400">{quote.equipment}</div>
+                          {quote.equipment && quote.equipment !== quote.transportMode && (
+                            <div className="text-[11px] text-slate-400">{quote.equipment}</div>
+                          )}
                         </td>
 
                         {/* Route */}
@@ -285,9 +290,9 @@ function QuotesContent() {
                           <div className="font-bold text-[#0B2545]">
                             {quote.priceCad}
                           </div>
-                          {Boolean(quote.priceCad && quote.priceCad !== "Pending Dispatch Calculation" && quote.priceCad !== "N/A" && !quote.priceCad.includes("Pending")) && (
-                            <div className="text-[10px] text-emerald-600 font-semibold">
-                              {isQuoted ? (language === "fr" ? "À Confirmer" : "Action Required") : "Guaranteed"}
+                          {getPriceTag(quote) && (
+                            <div className={`text-[10px] font-semibold ${getPriceTag(quote)!.className}`}>
+                              {getPriceTag(quote)!.label}
                             </div>
                           )}
                         </td>
@@ -392,7 +397,13 @@ function QuotesContent() {
                         <span>{quote.destination}</span>
                       </div>
                       <div className="text-[11px] text-slate-500 pl-5">
-                        {quote.transportMode} &bull; {quote.equipment} &bull; {quote.commodity} ({quote.weight})
+                        {[
+                          quote.transportMode,
+                          quote.equipment && quote.equipment !== quote.transportMode ? quote.equipment : null,
+                          `${quote.commodity} (${quote.weight})`,
+                        ]
+                          .filter(Boolean)
+                          .join(" • ")}
                       </div>
                     </div>
 
@@ -400,6 +411,11 @@ function QuotesContent() {
                       <div>
                         <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Rate CAD</div>
                         <div className="font-bold text-[#0B2545] text-sm">{quote.priceCad}</div>
+                        {getPriceTag(quote) && (
+                          <div className={`text-[10px] font-semibold ${getPriceTag(quote)!.className}`}>
+                            {getPriceTag(quote)!.label}
+                          </div>
+                        )}
                       </div>
 
                       {isAccepted && quote.shipmentId ? (

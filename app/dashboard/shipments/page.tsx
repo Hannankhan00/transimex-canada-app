@@ -4,6 +4,7 @@ import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
+import { serializeToCsv } from "@/lib/csvExport";
 import {
   Truck,
   Search,
@@ -17,8 +18,6 @@ import {
   Building2,
   X,
   CheckCircle2,
-  HelpCircle,
-  FileText,
   Copy,
 } from "lucide-react";
 
@@ -99,6 +98,42 @@ function ShipmentsContent() {
     setTimeout(() => setCopiedField(null), 2000);
   };
 
+  const handleExportManifest = () => {
+    const rows = filteredShipments.map((s) => ({
+      id: s.id,
+      status: s.statusLabel,
+      origin: s.origin,
+      destination: s.destination,
+      equipment: s.equipment,
+      driver: s.driver,
+      date: s.date,
+      eta: s.eta,
+      progress: `${s.progress}%`,
+    }));
+    const csv = serializeToCsv(rows, [
+      { key: "id", label: "Shipment ID" },
+      { key: "status", label: "Status" },
+      { key: "origin", label: "Origin" },
+      { key: "destination", label: "Destination" },
+      { key: "equipment", label: "Equipment" },
+      { key: "driver", label: "Driver" },
+      { key: "date", label: "Date" },
+      { key: "eta", label: "ETA" },
+      { key: "progress", label: "Progress" },
+    ]);
+    if (!csv) return;
+
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `transimex-shipments-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
       {/* Header */}
@@ -107,10 +142,7 @@ function ShipmentsContent() {
           <span className="text-[11px] font-bold uppercase tracking-wider text-[#d21f27]">
             {language === "fr" ? "Gestion de Fret" : "Freight Manifests"}
           </span>
-          <h1
-            className="text-2xl sm:text-3xl font-bold text-[#0B2545] tracking-tight leading-tight mt-1"
-            style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
-          >
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#0B2545] tracking-tight leading-tight mt-1">
             {t.nav.shipments}
           </h1>
           <p className="text-slate-500 text-xs sm:text-sm mt-1">
@@ -123,7 +155,9 @@ function ShipmentsContent() {
         <div className="flex items-center gap-2">
           <button
             type="button"
-            className="px-3.5 py-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 transition shadow-xs flex items-center gap-1.5 cursor-pointer"
+            onClick={handleExportManifest}
+            disabled={filteredShipments.length === 0}
+            className="px-3.5 py-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 transition shadow-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Download className="w-3.5 h-3.5 text-slate-500" />
             <span>{language === "fr" ? "Exporter Manifeste" : "Export Manifest"}</span>
@@ -133,10 +167,10 @@ function ShipmentsContent() {
 
       {/* Page-level Alert: Customs Hold & Duties Owed */}
       {customsHoldShipments.length > 0 && (
-        <div className="bg-red-50 border-2 border-[#d21f27] rounded-2xl p-4 sm:p-5 shadow-lg shadow-red-500/10 space-y-3 ring-4 ring-red-500/10">
+        <div className="bg-red-50 border border-[#d21f27] rounded-2xl p-4 sm:p-5 space-y-3">
           <div className="flex items-start gap-3.5">
-            <div className="w-10 h-10 rounded-xl bg-[#d21f27] text-white flex items-center justify-center flex-shrink-0 shadow-md">
-              <AlertTriangle className="w-5 h-5 animate-pulse" />
+            <div className="w-10 h-10 rounded-xl bg-[#d21f27] text-white flex items-center justify-center flex-shrink-0">
+              <AlertTriangle className="w-5 h-5" />
             </div>
             <div className="flex-1 space-y-1">
               <div className="flex items-center gap-2 flex-wrap">
@@ -223,7 +257,7 @@ function ShipmentsContent() {
               id={`shipment-${shipment.id}`}
               className={`bg-white rounded-2xl p-5 border transition flex flex-col justify-between gap-4 ${
                 hasDutiesNotice
-                  ? "border-2 border-[#d21f27] bg-red-50/20 shadow-md shadow-red-500/10 ring-2 ring-red-500/20"
+                  ? "border-[#d21f27] bg-red-50/20 shadow-xs"
                   : isTargetParam
                   ? "border-2 border-[#0B2545] shadow-md ring-2 ring-[#0B2545]/20"
                   : "border-slate-200 shadow-xs hover:shadow-md"
@@ -234,7 +268,7 @@ function ShipmentsContent() {
                 <div className="p-4 bg-red-50 border border-red-200 rounded-xl space-y-3">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-red-200/60 pb-2.5">
                     <div className="flex items-center gap-2 text-xs sm:text-sm font-bold text-[#d21f27]">
-                      <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 animate-pulse text-[#d21f27]" />
+                      <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 text-[#d21f27]" />
                       <span>
                         {language === "fr"
                           ? `Les droits de douane de ${shipment.duties?.totalOwed || shipment.duties?.amountCad || "paiement requis"} sont requis. Veuillez contacter l'équipe Transimex.`
@@ -258,7 +292,7 @@ function ShipmentsContent() {
                     </div>
                     <div className="p-2.5 bg-white rounded-lg border border-red-100">
                       <span className="text-slate-400 block text-[10px] font-semibold">
-                        GST / HST (Taxes)
+                        {language === "fr" ? "TPS / TVH (Taxes)" : "GST / HST (Taxes)"}
                       </span>
                       <span className="font-bold text-slate-900">
                         {shipment.duties?.taxGstHst || "—"}
@@ -355,7 +389,9 @@ function ShipmentsContent() {
                   {/* Progress Bar */}
                   <div className="w-full max-w-md pt-1">
                     <div className="flex items-center justify-between text-[10px] text-slate-400 mb-1">
-                      <span>Transit Progress ({shipment.progress}%)</span>
+                      <span>
+                        {language === "fr" ? "Progression du Transit" : "Transit Progress"} ({shipment.progress}%)
+                      </span>
                       <span>ETA: {shipment.eta}</span>
                     </div>
                     <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
@@ -441,11 +477,17 @@ function ShipmentsContent() {
                 {selectedPaymentShipment.duties?.totalOwed || selectedPaymentShipment.duties?.amountCad || "$0.00 CAD"}
               </p>
               <div className="text-[11px] text-slate-600 flex items-center justify-center gap-3 pt-1">
-                <span>Droits: {selectedPaymentShipment.duties?.amountCad || "—"}</span>
+                <span>
+                  {language === "fr" ? "Droits" : "Duties"}: {selectedPaymentShipment.duties?.amountCad || "—"}
+                </span>
                 <span>•</span>
-                <span>GST/HST: {selectedPaymentShipment.duties?.taxGstHst || "—"}</span>
+                <span>
+                  {language === "fr" ? "TPS/TVH" : "GST/HST"}: {selectedPaymentShipment.duties?.taxGstHst || "—"}
+                </span>
                 <span>•</span>
-                <span>Filing: {selectedPaymentShipment.duties?.brokerageFeeCad || "—"}</span>
+                <span>
+                  {language === "fr" ? "Dossier" : "Filing"}: {selectedPaymentShipment.duties?.brokerageFeeCad || "—"}
+                </span>
               </div>
             </div>
 
@@ -457,7 +499,7 @@ function ShipmentsContent() {
                   <span>{language === "fr" ? "Coordonnées de Virement (EFT / Wire)" : "Electronic Funds Transfer (EFT / Wire)"}</span>
                 </span>
                 <span className="text-[10px] text-emerald-700 font-bold bg-emerald-100 px-2 py-0.5 rounded">
-                  CAD Direct Wire
+                  {language === "fr" ? "Virement CAD Direct" : "CAD Direct Wire"}
                 </span>
               </div>
 

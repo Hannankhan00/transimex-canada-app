@@ -18,9 +18,7 @@ import {
   CheckCircle2,
   Star,
   Search,
-  FileText,
   AlertTriangle,
-  X,
   Compass,
 } from "lucide-react";
 
@@ -135,16 +133,10 @@ export default function AddressesPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <span className="text-[11px] font-bold uppercase tracking-wider text-[#d21f27]">
-            {language === "fr" ? "Carnet de Lieux & Dépôts" : "Logistics Address Directory"}
-          </span>
-          <h1
-            className="text-2xl sm:text-3xl font-bold text-[#0B2545] tracking-tight leading-tight mt-1"
-            style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
-          >
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#0B2545] tracking-tight leading-tight">
             {t.nav.addresses}
           </h1>
-          <p className="text-slate-500 text-xs sm:text-sm mt-1">
+          <p className="text-slate-500 text-sm mt-1">
             {language === "fr"
               ? "Enregistrez vos quais de chargement, entrepôts et points de livraison pour accélérer vos demandes de transport."
               : "Manage frequent pickup warehouses, cross-dock terminals, and receiver delivery facilities."}
@@ -160,7 +152,7 @@ export default function AddressesPage() {
           className="px-4 py-2.5 bg-[#d21f27] hover:bg-[#b51a21] text-white rounded-xl text-xs font-bold shadow-sm hover:shadow-md transition cursor-pointer flex items-center justify-center gap-1.5 whitespace-nowrap"
         >
           <Plus className="w-4 h-4 stroke-[3]" />
-          <span>{language === "fr" ? "+ Nouvelle Adresse" : "+ Add New Address"}</span>
+          <span>{language === "fr" ? "Nouvelle Adresse" : "Add New Address"}</span>
         </button>
       </div>
 
@@ -251,7 +243,7 @@ export default function AddressesPage() {
                     {addr.isDefault && (
                       <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 border border-emerald-200">
                         <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                        Default
+                        {language === "fr" ? "Par Défaut" : "Default"}
                       </span>
                     )}
                   </div>
@@ -318,7 +310,7 @@ export default function AddressesPage() {
               </div>
 
               {/* Bottom Card Controls */}
-              <div className="flex items-center justify-between pt-3 border-t border-slate-100 text-xs">
+              <div className="pt-3 border-t border-slate-100 text-xs">
                 {!addr.isDefault ? (
                   <button
                     type="button"
@@ -331,20 +323,9 @@ export default function AddressesPage() {
                 ) : (
                   <span className="text-[11px] text-emerald-700 font-semibold flex items-center gap-1">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                    Primary Route Location
+                    {language === "fr" ? "Emplacement Principal" : "Primary Route Location"}
                   </span>
                 )}
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEditingAddress(addr);
-                    setModalOpen(true);
-                  }}
-                  className="text-[11px] font-bold text-slate-500 hover:text-slate-800 transition cursor-pointer"
-                >
-                  {language === "fr" ? "Modifier les détails" : "Edit Location"}
-                </button>
               </div>
             </div>
           ))}
@@ -360,6 +341,7 @@ export default function AddressesPage() {
         }}
         onSave={handleSaveAddress}
         initialData={editingAddress}
+        hasAddresses={addresses.length > 0}
       />
 
       {/* Delete Confirmation Modal */}

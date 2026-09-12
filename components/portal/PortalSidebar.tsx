@@ -104,45 +104,57 @@ export default function PortalSidebar({
       href: "/dashboard",
       icon: LayoutDashboard,
       exact: true,
+      section: null as "freight" | "account" | null,
     },
     {
       name: t.nav.shipments,
       href: "/dashboard/shipments",
       icon: Truck,
-      badge: "12 Live",
+      section: "freight" as const,
     },
     {
       name: t.nav.quotes,
       href: "/dashboard/quotes",
       icon: FileSpreadsheet,
+      section: "freight" as const,
     },
     {
       name: t.nav.documents,
       href: "/dashboard/documents",
       icon: FolderOpen,
+      section: "freight" as const,
     },
     {
       name: t.nav.notifications,
       href: "/dashboard/notifications",
       icon: Bell,
       badgeCount: unreadCount,
+      section: "account" as const,
     },
     {
       name: t.nav.addresses,
       href: "/dashboard/addresses",
       icon: MapPin,
+      section: "account" as const,
     },
     {
       name: t.nav.account,
       href: "/dashboard/account",
       icon: Settings,
+      section: "account" as const,
     },
     {
       name: t.nav.support,
       href: "/dashboard/support",
       icon: HelpCircle,
+      section: "account" as const,
     },
   ];
+
+  const sectionLabels: Record<"freight" | "account", string> = {
+    freight: language === "fr" ? "Fret" : "Freight",
+    account: language === "fr" ? "Compte" : "Account",
+  };
 
   const sidebarContent = (
     <div className="h-full flex flex-col justify-between bg-[#0B2545] text-slate-200 select-none overflow-y-auto">
@@ -163,65 +175,53 @@ export default function PortalSidebar({
           )}
         </div>
 
-        {/* Client Portal Tag */}
-        <div className="px-5 py-3 bg-white/5 border-b border-white/10 flex items-center justify-between text-[11px]">
-          <span className="font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            {language === "fr" ? "Portail Client Actif" : "Client Portal Active"}
-          </span>
-          <span className="text-[10px] font-mono text-[#d21f27] font-bold">EDI v4.2</span>
-        </div>
-
         {/* Navigation Links */}
-        <nav className="p-3 space-y-1 mt-2">
-          {navigationItems.map((item) => {
+        <nav className="p-3 space-y-0.5 mt-1">
+          {navigationItems.map((item, index) => {
             const isActive = item.exact
               ? pathname === item.href
               : pathname === item.href || pathname.startsWith(item.href + "/");
+            const showSectionLabel =
+              item.section && item.section !== navigationItems[index - 1]?.section;
 
             return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={onCloseMobile}
-                className={`relative group flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs font-semibold transition-all duration-150 ${
-                  isActive
-                    ? "bg-white/10 text-white font-bold shadow-xs"
-                    : "text-slate-300 hover:bg-white/5 hover:text-white"
-                }`}
-              >
-                {/* 4px Red Active Indicator specified in design.md */}
-                {isActive && (
-                  <span className="absolute left-0 top-1.5 bottom-1.5 w-1 bg-[#D21F27] rounded-r-full" />
+              <React.Fragment key={item.href}>
+                {showSectionLabel && (
+                  <div className="px-3.5 pt-4 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                    {sectionLabels[item.section as "freight" | "account"]}
+                  </div>
                 )}
+                <Link
+                  href={item.href}
+                  onClick={onCloseMobile}
+                  className={`relative group flex items-center justify-between px-3.5 py-2.5 rounded-lg text-[13px] font-semibold transition-all duration-150 ${
+                    isActive
+                      ? "bg-white/10 text-white font-bold shadow-xs"
+                      : "text-slate-300 hover:bg-white/5 hover:text-white"
+                  }`}
+                >
+                  {isActive && (
+                    <span className="absolute left-0 top-1.5 bottom-1.5 w-1 bg-[#D21F27] rounded-r-full" />
+                  )}
 
-                <div className="flex items-center gap-3">
-                  <item.icon
-                    className={`w-4 h-4 transition-colors ${
-                      isActive ? "text-[#D21F27]" : "text-slate-400 group-hover:text-slate-200"
-                    }`}
-                  />
-                  <span>{item.name}</span>
-                </div>
+                  <div className="flex items-center gap-3">
+                    <item.icon
+                      className={`w-4 h-4 transition-colors ${
+                        isActive ? "text-[#D21F27]" : "text-slate-400 group-hover:text-slate-200"
+                      }`}
+                    />
+                    <span>{item.name}</span>
+                  </div>
 
-                {/* Dynamic Red Notification Badge as required by specification */}
-                {typeof item.badgeCount === "number" && item.badgeCount > 0 && (
-                  <span className="px-1.5 py-0.5 rounded-full bg-[#D21F27] text-white text-[10px] font-bold min-w-5 text-center shadow-xs">
-                    {item.badgeCount}
-                  </span>
-                )}
-
-                {/* Custom Status Chip */}
-                {item.badge && (
-                  <span className="px-1.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 text-[10px] font-medium border border-emerald-500/30">
-                    {item.badge}
-                  </span>
-                )}
-              </Link>
+                  {typeof item.badgeCount === "number" && item.badgeCount > 0 && (
+                    <span className="px-1.5 py-0.5 rounded-full bg-[#D21F27] text-white text-[10px] font-bold min-w-5 text-center shadow-xs">
+                      {item.badgeCount}
+                    </span>
+                  )}
+                </Link>
+              </React.Fragment>
             );
           })}
-
-
         </nav>
       </div>
 

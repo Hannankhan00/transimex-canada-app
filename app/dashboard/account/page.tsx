@@ -23,21 +23,14 @@ const DEFAULT_PREFERENCES: EmailPreferences = {
   smsUrgentAlerts: true,
 };
 import {
-  Settings,
   Building2,
   User,
-  Mail,
-  Phone,
   Shield,
-  Lock,
   CheckCircle2,
   Globe2,
   Bell,
   Check,
-  Briefcase,
-  Layers,
   KeyRound,
-  FileCheck,
   ArrowUpRight,
   Monitor,
   Smartphone,
@@ -282,19 +275,13 @@ export default function AccountSettingsPage() {
 
       {/* Header */}
       <div>
-        <span className="text-[11px] font-bold uppercase tracking-wider text-[#d21f27]">
-          {language === "fr" ? "Paramètres & Personnalisation" : "Account Hub & Preferences"}
-        </span>
-        <h1
-          className="text-2xl sm:text-3xl font-bold text-[#0B2545] tracking-tight leading-tight mt-1"
-          style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
-        >
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-[#0B2545] tracking-tight leading-tight">
           {t.nav.account}
         </h1>
-        <p className="text-slate-500 text-xs sm:text-sm mt-1">
+        <p className="text-slate-500 text-sm mt-1">
           {language === "fr"
             ? "Gérez les coordonnées de votre compte, vos préférences d'alerte par courriel et la langue du portail."
-            : "Manage your administrator profile, automated email alert subscriptions, and portal language preferences."}
+            : "Manage your profile, email alert subscriptions, and portal language preferences."}
         </p>
       </div>
 
@@ -309,7 +296,7 @@ export default function AccountSettingsPage() {
               <span>{language === "fr" ? "Langue du Portail" : "Portal Language Preference"}</span>
             </div>
             <span className="text-[10px] text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
-              Instant Bilingue
+              {language === "fr" ? "Bascule Instantanée" : "Instant Toggle"}
             </span>
           </div>
   
@@ -321,7 +308,8 @@ export default function AccountSettingsPage() {
                   : "Choose your primary display language across all manifests, notifications, and quote forms."}
               </p>
               <p className="text-[11px] text-slate-400 mt-0.5">
-                Current active locale: <strong className="text-[#0B2545]">{language === "fr" ? "Français (FR)" : "English (EN)"}</strong>
+                {language === "fr" ? "Locale active actuelle :" : "Current active locale:"}{" "}
+                <strong className="text-[#0B2545]">{language === "fr" ? "Français (FR)" : "English (EN)"}</strong>
               </p>
             </div>
   
@@ -419,6 +407,17 @@ export default function AccountSettingsPage() {
                   className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#0B2545] rounded-xl text-xs outline-none transition font-medium text-slate-900"
                 />
               </div>
+
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  {language === "fr" ? "Département / Division" : "Department / Division"}
+                </label>
+                <input
+                  {...registerProfile("department")}
+                  placeholder="Supply Chain & Procurement"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#0B2545] rounded-xl text-xs outline-none transition font-medium text-slate-900"
+                />
+              </div>
             </div>
           </div>
   
@@ -429,22 +428,30 @@ export default function AccountSettingsPage() {
                 <Building2 className="w-4 h-4 text-[#d21f27]" />
                 <span>2. {language === "fr" ? "Entité Commerciale (Vérifiée)" : "Verified Corporate Commercial Entity"}</span>
               </div>
-              <span className="text-[10px] text-slate-400 font-mono">Immutable Legal Info</span>
+              <span className="text-[10px] text-slate-400 font-mono">
+                {language === "fr" ? "Info Légale Immuable" : "Immutable Legal Info"}
+              </span>
             </div>
-  
+
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
               <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/80">
-                <span className="text-[10px] uppercase font-bold text-slate-400 block">Company Name</span>
+                <span className="text-[10px] uppercase font-bold text-slate-400 block">
+                  {language === "fr" ? "Nom de l'Entreprise" : "Company Name"}
+                </span>
                 <span className="font-bold text-slate-900 mt-0.5 block">{currentUser.companyName}</span>
               </div>
-  
+
               <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/80">
-                <span className="text-[10px] uppercase font-bold text-slate-400 block">Industry Sector</span>
+                <span className="text-[10px] uppercase font-bold text-slate-400 block">
+                  {language === "fr" ? "Secteur d'Activité" : "Industry Sector"}
+                </span>
                 <span className="font-bold text-slate-900 mt-0.5 block">{currentUser.industry}</span>
               </div>
-  
+
               <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/80">
-                <span className="text-[10px] uppercase font-bold text-slate-400 block">Client ID Code</span>
+                <span className="text-[10px] uppercase font-bold text-slate-400 block">
+                  {language === "fr" ? "Code Client" : "Client ID Code"}
+                </span>
                 <span className="font-mono font-bold text-[#0B2545] mt-0.5 block">{currentUser.clientCode}</span>
               </div>
             </div>
@@ -590,7 +597,7 @@ export default function AccountSettingsPage() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                Current Password
+                {language === "fr" ? "Mot de Passe Actuel" : "Current Password"}
               </label>
               <input
                 type="password"
@@ -607,7 +614,7 @@ export default function AccountSettingsPage() {
   
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                New Password
+                {language === "fr" ? "Nouveau Mot de Passe" : "New Password"}
               </label>
               <input
                 type="password"
@@ -624,7 +631,7 @@ export default function AccountSettingsPage() {
   
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                Confirm New Password
+                {language === "fr" ? "Confirmer le Nouveau Mot de Passe" : "Confirm New Password"}
               </label>
               <input
                 type="password"
@@ -748,7 +755,7 @@ export default function AccountSettingsPage() {
         </div>
 
         {/* Right Section: Profile Snapshot & Help (4 cols) */}
-        <div className="lg:col-span-4 space-y-4">
+        <div className="lg:col-span-4 space-y-4 lg:sticky lg:top-24 lg:self-start">
           {/* Profile Snapshot Card */}
           <div className="bg-[#0B2545] rounded-2xl p-5 text-white shadow-md space-y-4 relative overflow-hidden">
             <div className="flex items-center gap-3">

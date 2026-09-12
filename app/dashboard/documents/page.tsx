@@ -17,15 +17,9 @@ import {
   FileText,
   Download,
   Search,
-  Filter,
-  CheckCircle2,
   Calendar,
   ShieldCheck,
-  FileCheck,
   ExternalLink,
-  Lock,
-  Layers,
-  Sparkles,
 } from "lucide-react";
 
 export default function DocumentsPage() {
@@ -98,29 +92,15 @@ export default function DocumentsPage() {
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <span className="text-[11px] font-bold uppercase tracking-wider text-[#d21f27]">
-            {language === "fr" ? "Coffre-Fort Numérique" : "Official Logistics Repository"}
-          </span>
-          <h1
-            className="text-2xl sm:text-3xl font-bold text-[#0B2545] tracking-tight leading-tight mt-1"
-            style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
-          >
-            {t.nav.documents}
-          </h1>
-          <p className="text-slate-500 text-xs sm:text-sm mt-1">
-            {language === "fr"
-              ? "Accédez à tous les connaissements, reçus de livraison et documents douaniers pour vos expéditions."
-              : "Centralized repository for all verified shipping paperwork, digital BOLs, customs entries, and POD receipts."}
-          </p>
-        </div>
-
-        {/* Security Compliance Badge */}
-        <div className="flex items-center gap-2 px-3.5 py-2 bg-white border border-slate-200 rounded-xl shadow-2xs text-xs font-semibold text-slate-700">
-          <ShieldCheck className="w-4 h-4 text-emerald-600" />
-          <span>{language === "fr" ? "Chiffrement AES-256 Actif" : "Secure Client Document Vault"}</span>
-        </div>
+      <div>
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-[#0B2545] tracking-tight leading-tight">
+          {t.nav.documents}
+        </h1>
+        <p className="text-slate-500 text-sm mt-1">
+          {language === "fr"
+            ? "Accédez à tous les connaissements, reçus de livraison et documents douaniers pour vos expéditions."
+            : "All your bills of lading, delivery receipts, and customs paperwork in one place."}
+        </p>
       </div>
 
       {/* Filter & Search Bar */}
@@ -181,12 +161,12 @@ export default function DocumentsPage() {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-slate-50/80 border-b border-slate-200 text-[11px] font-bold uppercase tracking-wider text-slate-500 select-none">
-                    <th className="py-3 px-4 sm:px-6">Document Name</th>
-                    <th className="py-3 px-4">Document Type</th>
-                    <th className="py-3 px-4">Linked Shipment</th>
-                    <th className="py-3 px-4">Date Uploaded</th>
-                    <th className="py-3 px-4">Verification Status</th>
-                    <th className="py-3 px-4 sm:px-6 text-right">Download PDF</th>
+                    <th className="py-3 px-4 sm:px-6">{language === "fr" ? "Nom du Document" : "Document Name"}</th>
+                    <th className="py-3 px-4">{language === "fr" ? "Type" : "Document Type"}</th>
+                    <th className="py-3 px-4">{language === "fr" ? "Expédition Liée" : "Linked Shipment"}</th>
+                    <th className="py-3 px-4">{language === "fr" ? "Date de Téléversement" : "Date Uploaded"}</th>
+                    <th className="py-3 px-4">{language === "fr" ? "Statut" : "Verification Status"}</th>
+                    <th className="py-3 px-4 sm:px-6 text-right">{language === "fr" ? "Télécharger" : "Download PDF"}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
@@ -205,9 +185,6 @@ export default function DocumentsPage() {
                             <div className="min-w-0">
                               <div className="font-bold text-slate-900 group-hover:text-[#0B2545] transition truncate max-w-xs sm:max-w-md">
                                 {doc.name}
-                              </div>
-                              <div className="text-[11px] text-slate-400 font-mono">
-                                {doc.dateUploaded}
                               </div>
                             </div>
                           </div>

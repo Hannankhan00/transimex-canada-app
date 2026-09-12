@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Playfair_Display, Noto_Serif } from "next/font/google";
 import "./globals.css";
 import { LanguageProvider } from "@/lib/i18n/LanguageContext";
+import RippleEffect from "@/components/ui/RippleEffect";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -41,6 +42,7 @@ export default function RootLayout({
         suppressHydrationWarning
         className="min-h-full flex flex-col font-sans antialiased text-[#111c2d] bg-[#f9f9ff]"
       >
+        <RippleEffect />
         <LanguageProvider>{children}</LanguageProvider>
       </body>
     </html>

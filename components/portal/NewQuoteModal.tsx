@@ -13,17 +13,10 @@ import {
   X,
   Truck,
   MapPin,
-  Calendar,
-  Package,
-  ShieldCheck,
-  Building2,
   User,
-  Phone,
   ArrowRight,
   CheckCircle2,
   FileSpreadsheet,
-  Clock,
-  Sparkles,
   Check,
   Zap,
 } from "lucide-react";
@@ -178,13 +171,10 @@ export default function NewQuoteModal({
             </div>
             <div>
               <span className="text-[10px] font-bold uppercase tracking-widest text-[#ff8f94]">
-                {language === "fr" ? "Portail de Cotation Instantanée" : "Instant Freight Quotation"}
+                {language === "fr" ? "Nouvelle Demande" : "New Quote Request"}
               </span>
-              <h3
-                className="text-lg sm:text-xl font-bold tracking-tight text-white"
-                style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
-              >
-                {language === "fr" ? "Demande de Soumission de Fret" : "Request Instant Freight Quote"}
+              <h3 className="text-lg sm:text-xl font-extrabold tracking-tight text-white">
+                {language === "fr" ? "Demande de Soumission de Fret" : "Request a Freight Quote"}
               </h3>
             </div>
           </div>
@@ -198,58 +188,39 @@ export default function NewQuoteModal({
           </button>
         </div>
 
-        {/* Visual Blurred Diagram Banner */}
-        <div className="relative overflow-hidden bg-gradient-to-r from-[#0B2545] via-[#123661] to-[#1E3A8A] text-white p-5 sm:p-6 border-b border-slate-200">
-          {/* Ambient Glows & Grid */}
-          <div className="absolute -top-10 -right-10 w-44 h-44 bg-[#d21f27]/30 rounded-full blur-2xl pointer-events-none" />
-          <div className="absolute -bottom-10 -left-10 w-44 h-44 bg-blue-500/20 rounded-full blur-2xl pointer-events-none" />
-
-          <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-4">
-            {/* Origin Box */}
-            <div className="bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl p-3.5 flex-1 w-full text-center sm:text-left shadow-lg">
-              <div className="flex items-center justify-center sm:justify-start gap-1.5 text-[10px] font-bold uppercase tracking-wider text-emerald-300">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                <span>Origin Terminal</span>
+        {/* Live Route Preview */}
+        <div className="bg-[#0B2545] text-white px-5 sm:px-6 py-4 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="min-w-0">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                {language === "fr" ? "Origine" : "Origin"}
               </div>
-              <div className="text-sm font-bold text-white mt-1 truncate">
-                {originCity || "Montreal"}, {originProv || "QC"}
-              </div>
-              <div className="text-[11px] text-slate-300 font-mono">
-                Commercial Pickup Hub
+              <div className="text-sm font-bold truncate">
+                {originCity || (language === "fr" ? "Ville d'origine" : "Origin city")}
+                {originProv ? `, ${originProv}` : ""}
               </div>
             </div>
-
-            {/* Connecting Corridor Graphic */}
-            <div className="flex flex-col items-center justify-center px-2 py-1 text-center">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-amber-300 flex items-center gap-1 mb-1">
-                <Sparkles className="w-3 h-3" />
-                <span>{selectedMode}</span>
+            <ArrowRight className="w-4 h-4 text-slate-500 flex-shrink-0" />
+            <div className="min-w-0">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                {language === "fr" ? "Destination" : "Destination"}
               </div>
-              <div className="flex items-center gap-2">
-                <div className="h-[2px] w-8 sm:w-12 bg-gradient-to-r from-emerald-400 to-[#d21f27]" />
-                <div className="w-8 h-8 rounded-full bg-[#d21f27] text-white flex items-center justify-center shadow-md animate-pulse">
-                  <Truck className="w-4 h-4" />
-                </div>
-                <div className="h-[2px] w-8 sm:w-12 bg-gradient-to-r from-[#d21f27] to-red-400" />
-              </div>
-              <div className="text-[9px] text-slate-300 mt-1 font-mono">
-                {weightLbs ? `${Number(weightLbs).toLocaleString()} lbs` : "Full Payload"}
+              <div className="text-sm font-bold truncate">
+                {destCity || (language === "fr" ? "Ville de destination" : "Destination city")}
+                {destProv ? `, ${destProv}` : ""}
               </div>
             </div>
+          </div>
 
-            {/* Destination Box */}
-            <div className="bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl p-3.5 flex-1 w-full text-center sm:text-right shadow-lg">
-              <div className="flex items-center justify-center sm:justify-end gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[#ff8f94]">
-                <MapPin className="w-3 h-3 text-[#d21f27]" />
-                <span>Destination Receiving</span>
-              </div>
-              <div className="text-sm font-bold text-white mt-1 truncate">
-                {destCity || "Detroit"}, {destProv || "MI"}
-              </div>
-              <div className="text-[11px] text-slate-300 font-mono">
-                Direct Receiving Facility
-              </div>
-            </div>
+          <div className="flex items-center gap-1.5 text-[11px] text-slate-300 flex-shrink-0">
+            <Truck className="w-3.5 h-3.5 text-[#d21f27]" />
+            <span>{selectedMode}</span>
+            {weightLbs && (
+              <>
+                <span className="text-slate-500">•</span>
+                <span>{Number(weightLbs).toLocaleString()} lbs</span>
+              </>
+            )}
           </div>
         </div>
 
@@ -265,10 +236,7 @@ export default function NewQuoteModal({
                 <span className="text-[10px] font-bold uppercase tracking-wider text-[#d21f27]">
                   {language === "fr" ? "Demande Enregistrée" : "Quote Request Registered"}
                 </span>
-                <h4
-                  className="text-xl sm:text-2xl font-bold text-[#0B2545] mt-0.5"
-                  style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
-                >
+                <h4 className="text-xl sm:text-2xl font-extrabold text-[#0B2545] mt-0.5">
                   Reference: {createdQuote.id}
                 </h4>
                 <p className="text-xs text-slate-500 max-w-md mx-auto mt-1.5 leading-relaxed">
@@ -588,6 +556,99 @@ export default function NewQuoteModal({
                     <span>Dangerous Goods / Hazmat</span>
                   </label>
                 </div>
+
+                {/* Special Instructions */}
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-600 uppercase mb-0.5">
+                    {language === "fr" ? "Instructions Spéciales (Optionnel)" : "Special Instructions (Optional)"}
+                  </label>
+                  <textarea
+                    {...register("specialInstructions")}
+                    rows={2}
+                    placeholder={
+                      language === "fr"
+                        ? "Ex. rendez-vous de quai requis, chariot élévateur nécessaire, manutention fragile..."
+                        : "e.g. dock appointment required, liftgate needed, fragile handling..."
+                    }
+                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl outline-none focus:border-[#0B2545] resize-none"
+                  />
+                  {errors.specialInstructions && (
+                    <p className="text-[10px] text-red-600 mt-1">{errors.specialInstructions.message}</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Contact Information */}
+              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-3">
+                <span className="font-bold text-[#0B2545] text-xs flex items-center gap-1.5 uppercase tracking-wider">
+                  <User className="w-3.5 h-3.5 text-[#d21f27]" />
+                  <span>3. {language === "fr" ? "Coordonnées" : "Contact Information"}</span>
+                </span>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-600 uppercase mb-0.5">
+                      {language === "fr" ? "Nom du Contact" : "Contact Name"} *
+                    </label>
+                    <input
+                      {...register("contactName")}
+                      placeholder="Jane Smith"
+                      className={`w-full px-3 py-2 bg-white border ${
+                        errors.contactName ? "border-red-500" : "border-slate-200"
+                      } rounded-xl outline-none focus:border-[#0B2545]`}
+                    />
+                    {errors.contactName && (
+                      <p className="text-[10px] text-red-600 mt-1">{errors.contactName.message}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-600 uppercase mb-0.5">
+                      {language === "fr" ? "Entreprise (Optionnel)" : "Company Name (Optional)"}
+                    </label>
+                    <input
+                      {...register("companyName")}
+                      placeholder="Acme Inc."
+                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl outline-none focus:border-[#0B2545]"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-600 uppercase mb-0.5">
+                      {language === "fr" ? "Courriel" : "Email"} *
+                    </label>
+                    <input
+                      type="email"
+                      {...register("contactEmail")}
+                      placeholder="jane@company.com"
+                      className={`w-full px-3 py-2 bg-white border ${
+                        errors.contactEmail ? "border-red-500" : "border-slate-200"
+                      } rounded-xl outline-none focus:border-[#0B2545]`}
+                    />
+                    {errors.contactEmail && (
+                      <p className="text-[10px] text-red-600 mt-1">{errors.contactEmail.message}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-600 uppercase mb-0.5">
+                      {language === "fr" ? "Téléphone" : "Phone"} *
+                    </label>
+                    <input
+                      type="tel"
+                      {...register("contactPhone")}
+                      placeholder="+1 (514) 555-0100"
+                      className={`w-full px-3 py-2 bg-white border ${
+                        errors.contactPhone ? "border-red-500" : "border-slate-200"
+                      } rounded-xl outline-none focus:border-[#0B2545]`}
+                    />
+                    {errors.contactPhone && (
+                      <p className="text-[10px] text-red-600 mt-1">{errors.contactPhone.message}</p>
+                    )}
+                  </div>
+                </div>
               </div>
 
               {/* Action Buttons */}
@@ -613,7 +674,7 @@ export default function NewQuoteModal({
                         : "Submitting Request..."
                       : language === "fr"
                       ? "Soumettre la Soumission"
-                      : "Submit Instant Quote"}
+                      : "Submit Quote Request"}
                   </span>
                 </button>
               </div>

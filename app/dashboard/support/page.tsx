@@ -12,7 +12,6 @@ import {
 } from "@/lib/validations/support";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { SupportTicket } from "@/lib/mockData";
-import { api } from "@/lib/api";
 import {
   MessageSquare,
   Plus,
@@ -33,6 +32,29 @@ import {
 interface ActiveShipmentOption {
   id: string;
   label: string;
+}
+
+const CATEGORY_LABELS_FR: Record<string, string> = {
+  "Shipment Telematics & Tracking": "Télématique et Suivi des Expéditions",
+  "Customs Clearance & CBSA": "Dédouanement et ASFC",
+  "Billing & Tariff Invoices": "Facturation et Tarifs",
+  "Document Request": "Demande de Documents",
+  "General Logistics Inquiry": "Demande Générale de Logistique",
+};
+
+const PRIORITY_LABELS_FR: Record<string, string> = {
+  Low: "Faible",
+  Medium: "Moyenne",
+  High: "Élevée",
+  "Critical Dispatch Emergency": "Urgence Critique",
+};
+
+function getCategoryLabel(category: string, language: string) {
+  return language === "fr" ? CATEGORY_LABELS_FR[category] || category : category;
+}
+
+function getPriorityLabel(priority: string, language: string) {
+  return language === "fr" ? PRIORITY_LABELS_FR[priority] || priority : priority;
 }
 
 export default function SupportPage() {
@@ -159,10 +181,7 @@ export default function SupportPage() {
           <span className="text-[11px] font-bold uppercase tracking-wider text-[#d21f27]">
             {language === "fr" ? "Centre d'Assistance & Billetterie" : "24/7 Operations Help Desk"}
           </span>
-          <h1
-            className="text-2xl sm:text-3xl font-bold text-[#0B2545] tracking-tight leading-tight mt-1"
-            style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
-          >
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#0B2545] tracking-tight leading-tight mt-1">
             {t.nav.support}
           </h1>
           <p className="text-slate-500 text-xs sm:text-sm mt-1">
@@ -176,7 +195,9 @@ export default function SupportPage() {
         <div className="flex items-center gap-2.5 px-4 py-2 bg-white border border-slate-200 rounded-2xl shadow-2xs">
           <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
           <div>
-            <div className="text-[10px] font-bold uppercase text-slate-400 tracking-wider">Priority Hotline</div>
+            <div className="text-[10px] font-bold uppercase text-slate-400 tracking-wider">
+              {language === "fr" ? "Ligne Prioritaire" : "Priority Hotline"}
+            </div>
             <div className="text-xs font-mono font-bold text-[#0B2545]">+1 (800) 555-TXMX &bull; ext. 1</div>
           </div>
         </div>
@@ -223,10 +244,7 @@ export default function SupportPage() {
                 <span className="text-[10px] font-bold uppercase tracking-wider text-[#d21f27]">
                   {language === "fr" ? "Nouvelle Requête" : "Direct Client Dispatch Ticket"}
                 </span>
-                <h3
-                  className="text-lg font-bold text-[#0B2545]"
-                  style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
-                >
+                <h3 className="text-lg font-extrabold text-[#0B2545]">
                   {language === "fr" ? "Soumettre un Billet de Support" : "Submit Support Request"}
                 </h3>
               </div>
@@ -261,7 +279,7 @@ export default function SupportPage() {
                     >
                       {ticketCategoriesEnum.map((cat) => (
                         <option key={cat} value={cat}>
-                          {cat}
+                          {getCategoryLabel(cat, language)}
                         </option>
                       ))}
                     </select>
@@ -277,7 +295,7 @@ export default function SupportPage() {
                     >
                       {ticketPrioritiesEnum.map((pri) => (
                         <option key={pri} value={pri}>
-                          {pri}
+                          {getPriorityLabel(pri, language)}
                         </option>
                       ))}
                     </select>
@@ -286,17 +304,18 @@ export default function SupportPage() {
 
                 {/* Contextual Linking Dropdown */}
                 <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-                      {language === "fr" ? "Lier à une Expédition Active (Optionnel)" : "Link to Active Shipment (Contextual)"}
-                    </label>
-                    <span className="text-[10px] text-slate-400 font-medium">Auto-attaches telematics manifest</span>
-                  </div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    {language === "fr" ? "Lier à une Expédition Active (Optionnel)" : "Link to Active Shipment (Optional)"}
+                  </label>
                   <select
                     {...register("linkedShipmentId")}
                     className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#0B2545] rounded-xl text-xs font-medium text-slate-800 outline-none transition cursor-pointer font-mono"
                   >
-                    <option value="">-- No specific shipment (General Account Inquiry) --</option>
+                    <option value="">
+                      {language === "fr"
+                        ? "-- Aucune expédition spécifique (Demande générale) --"
+                        : "-- No specific shipment (General Account Inquiry) --"}
+                    </option>
                     {activeShipments.map((ship) => (
                       <option key={ship.id} value={ship.id}>
                         {ship.label}
@@ -351,18 +370,20 @@ export default function SupportPage() {
                 <span className="text-xs font-bold text-[#0B2545] uppercase tracking-wider">
                   {language === "fr" ? "Historique des Billets" : "Submitted Support Tickets"}
                 </span>
-                <span className="text-xs text-slate-500 font-semibold">{tickets.length} total</span>
+                <span className="text-xs text-slate-500 font-semibold">
+                  {tickets.length} {language === "fr" ? "au total" : "total"}
+                </span>
               </div>
 
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
                     <tr className="bg-slate-50/50 border-b border-slate-200 text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                      <th className="py-3 px-4">Ticket ID</th>
-                      <th className="py-3 px-4">Subject & Category</th>
-                      <th className="py-3 px-4">Linked Load</th>
-                      <th className="py-3 px-4">Status</th>
-                      <th className="py-3 px-4 text-right">Action</th>
+                      <th className="py-3 px-4">{language === "fr" ? "N° de Billet" : "Ticket ID"}</th>
+                      <th className="py-3 px-4">{language === "fr" ? "Objet et Catégorie" : "Subject & Category"}</th>
+                      <th className="py-3 px-4">{language === "fr" ? "Chargement Lié" : "Linked Load"}</th>
+                      <th className="py-3 px-4">{language === "fr" ? "Statut" : "Status"}</th>
+                      <th className="py-3 px-4 text-right">{language === "fr" ? "Action" : "Action"}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 text-slate-700">
@@ -376,7 +397,9 @@ export default function SupportPage() {
                         {/* Subject */}
                         <td className="py-3.5 px-4">
                           <div className="font-bold text-slate-900 line-clamp-1">{tkt.subject}</div>
-                          <div className="text-[10px] text-slate-400 mt-0.5">{tkt.category} &bull; {tkt.createdAt}</div>
+                          <div className="text-[10px] text-slate-400 mt-0.5">
+                            {getCategoryLabel(tkt.category, language)} &bull; {tkt.createdAt}
+                          </div>
                         </td>
 
                         {/* Linked Shipment */}
@@ -390,7 +413,9 @@ export default function SupportPage() {
                               <ArrowUpRight className="w-3 h-3" />
                             </Link>
                           ) : (
-                            <span className="text-slate-400 italic text-[11px]">General</span>
+                            <span className="text-slate-400 italic text-[11px]">
+                              {language === "fr" ? "Général" : "General"}
+                            </span>
                           )}
                         </td>
 
@@ -434,16 +459,15 @@ export default function SupportPage() {
           <div className="bg-[#0B2545] rounded-2xl p-5 text-white shadow-md space-y-3 relative overflow-hidden">
             <div className="space-y-1">
               <span className="text-[10px] font-bold uppercase tracking-widest text-[#ff8f94]">
-                Emergency Logistics Line
+                {language === "fr" ? "Ligne d'Urgence Logistique" : "Emergency Logistics Line"}
               </span>
-              <h4
-                className="text-lg font-bold"
-                style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
-              >
-                24/7 Dispatch Control
+              <h4 className="text-lg font-extrabold">
+                {language === "fr" ? "Répartition 24/7" : "24/7 Dispatch Control"}
               </h4>
               <p className="text-[11px] text-slate-300 leading-snug">
-                For time-critical border delays, temperature alerts, or urgent diversion requests.
+                {language === "fr"
+                  ? "Pour les retards frontaliers critiques, les alertes de température ou les demandes de déviation urgentes."
+                  : "For time-critical border delays, temperature alerts, or urgent diversion requests."}
               </p>
             </div>
 
@@ -492,29 +516,41 @@ export default function SupportPage() {
           {/* Quick Help Topics */}
           <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs space-y-3">
             <span className="text-xs font-bold text-[#0B2545] uppercase tracking-wider block border-b border-slate-100 pb-2">
-              Common Support Topics
+              {language === "fr" ? "Sujets d'Assistance Courants" : "Common Support Topics"}
             </span>
             <div className="space-y-2 text-xs">
               {[
                 {
                   icon: FileText,
-                  title: "Customs Clearance PARS Delays",
-                  desc: "How CBSA electronic release works for bonded cargo.",
+                  title: language === "fr" ? "Retards de Dédouanement PARS" : "Customs Clearance PARS Delays",
+                  desc:
+                    language === "fr"
+                      ? "Comment fonctionne la mainlevée électronique de l'ASFC pour le fret cautionné."
+                      : "How CBSA electronic release works for bonded cargo.",
                 },
                 {
                   icon: Truck,
-                  title: "Container Demurrage Inquiries",
-                  desc: "Free time rules at Canadian and African seaports.",
+                  title: language === "fr" ? "Demandes de Surestarie de Conteneurs" : "Container Demurrage Inquiries",
+                  desc:
+                    language === "fr"
+                      ? "Règles de temps libre dans les ports canadiens et africains."
+                      : "Free time rules at Canadian and African seaports.",
                 },
                 {
                   icon: ShieldCheck,
-                  title: "Cargo Claims & Insurance",
-                  desc: "Filing a claim for damaged or missing freight.",
+                  title: language === "fr" ? "Réclamations et Assurance de Fret" : "Cargo Claims & Insurance",
+                  desc:
+                    language === "fr"
+                      ? "Comment déposer une réclamation pour fret endommagé ou manquant."
+                      : "Filing a claim for damaged or missing freight.",
                 },
                 {
                   icon: LifeBuoy,
-                  title: "Onboarding & EDI Setup",
-                  desc: "Connecting your systems to the Transimex client portal.",
+                  title: language === "fr" ? "Intégration et Configuration EDI" : "Onboarding & EDI Setup",
+                  desc:
+                    language === "fr"
+                      ? "Connecter vos systèmes au portail client Transimex."
+                      : "Connecting your systems to the Transimex client portal.",
                 },
               ].map((topic) => (
                 <div
@@ -555,15 +591,18 @@ export default function SupportPage() {
                         : "bg-emerald-100 text-emerald-800"
                     }`}
                   >
-                    {selectedTicket.status}
+                    {language === "fr" ? selectedTicket.statusFr || selectedTicket.status : selectedTicket.status}
                   </span>
                   <span className="text-[10px] text-red-700 font-bold bg-red-50 px-2 py-0.5 rounded-full">
-                    {selectedTicket.priority} Priority
+                    {language === "fr"
+                      ? `Priorité ${getPriorityLabel(selectedTicket.priority, language)}`
+                      : `${selectedTicket.priority} Priority`}
                   </span>
                 </div>
                 <h3 className="text-base font-bold text-[#0B2545] mt-1.5">{selectedTicket.subject}</h3>
                 <div className="text-[11px] text-slate-400 mt-0.5">
-                  Assigned Agent: <span className="font-semibold text-slate-700">{selectedTicket.assignedAgent}</span>
+                  {language === "fr" ? "Agent Assigné :" : "Assigned Agent:"}{" "}
+                  <span className="font-semibold text-slate-700">{selectedTicket.assignedAgent}</span>
                 </div>
               </div>
 
@@ -603,7 +642,11 @@ export default function SupportPage() {
               <div className="flex gap-2">
                 <input
                   type="text"
-                  placeholder="Type follow-up response to dispatch..."
+                  placeholder={
+                    language === "fr"
+                      ? "Écrire une réponse de suivi au répartiteur..."
+                      : "Type follow-up response to dispatch..."
+                  }
                   value={replyMessage}
                   onChange={(e) => setReplyMessage(e.target.value)}
                   onKeyDown={(e) => {
@@ -621,7 +664,7 @@ export default function SupportPage() {
                   className="px-4 py-2.5 bg-[#0B2545] hover:bg-[#123661] text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                 >
                   <Send className="w-3.5 h-3.5" />
-                  <span>Send</span>
+                  <span>{language === "fr" ? "Envoyer" : "Send"}</span>
                 </button>
               </div>
             </div>

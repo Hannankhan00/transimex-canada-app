@@ -11,14 +11,13 @@ import {
   FileSpreadsheet,
   CheckCircle2,
   FileText,
+  FolderOpen,
+  HelpCircle,
   Plus,
   Search,
   ArrowUpRight,
   Clock,
-  Shield,
-  MapPin,
   X,
-  TrendingUp,
   AlertTriangle,
   ArrowRight,
 } from "lucide-react";
@@ -152,22 +151,16 @@ export default function DashboardPage() {
       {/* Welcome Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <span className="text-[11px] font-bold uppercase tracking-wider text-[#d21f27]">
-            {language === "fr" ? "Aperçu Logistique Commercial" : "Commercial Logistics Overview"}
-          </span>
-          <h1
-            className="text-3xl sm:text-4xl font-bold text-[#0B2545] tracking-tight leading-tight mt-1"
-            style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
-          >
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#0B2545] tracking-tight leading-tight">
             {language === "fr" ? "Bienvenue," : "Welcome back,"}{" "}
             <span className="text-slate-900">
               {user?.companyName || user?.name || (language === "fr" ? "Portail Client" : "Client Portal")}
             </span>
           </h1>
-          <p className="text-slate-500 text-xs sm:text-sm mt-1">
+          <p className="text-slate-500 text-sm mt-1">
             {language === "fr"
-              ? "Surveillance en temps réel de votre chaîne d'approvisionnement et fret transfrontalier."
-              : "Real-time dispatch overview of your active freight, quotes, and customs documentation."}
+              ? "Suivez vos expéditions, gérez vos soumissions et accédez à vos documents douaniers."
+              : "Track your shipments, manage quotes, and access customs documents."}
           </p>
         </div>
 
@@ -197,11 +190,11 @@ export default function DashboardPage() {
           {customsHoldShipments.map((s) => (
             <div
               key={s.id}
-              className="bg-red-50 border-2 border-[#d21f27] rounded-2xl p-4 sm:p-5 shadow-lg shadow-red-500/10 flex flex-col md:flex-row md:items-center justify-between gap-4 animate-in fade-in slide-in-from-top-2 duration-200 ring-4 ring-red-500/10"
+              className="bg-red-50 border border-[#d21f27] rounded-2xl p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 animate-in fade-in slide-in-from-top-2 duration-200"
             >
               <div className="flex items-start gap-3.5">
-                <div className="w-10 h-10 rounded-xl bg-[#d21f27] text-white flex items-center justify-center flex-shrink-0 shadow-md">
-                  <AlertTriangle className="w-5 h-5 animate-pulse" />
+                <div className="w-10 h-10 rounded-xl bg-[#d21f27] text-white flex items-center justify-center flex-shrink-0">
+                  <AlertTriangle className="w-5 h-5" />
                 </div>
                 <div className="space-y-1">
                   <div className="flex items-center gap-2 flex-wrap">
@@ -256,109 +249,101 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* 4 Primary Metric Cards Grid (Institutional Logistics style) */}
+      {/* 4 Primary Metric Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
         {/* 1. Active Shipments */}
         <Link
           href="/dashboard/shipments"
-          className="bg-white rounded-2xl p-5 shadow-xs border border-slate-200/90 border-l-4 border-l-[#d21f27] hover:shadow-md transition flex flex-col justify-between h-32 group cursor-pointer"
+          className="bg-white rounded-2xl p-5 border border-slate-200 hover:border-slate-300 hover:shadow-sm transition flex flex-col justify-between h-28 group cursor-pointer"
         >
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold tracking-wider text-slate-500 uppercase">
               {language === "fr" ? "EXPÉDITIONS ACTIVES" : "ACTIVE SHIPMENTS"}
             </span>
-            <div className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center text-[#d21f27] group-hover:scale-110 transition-transform">
+            <div className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center text-[#d21f27]">
               <Truck className="w-4 h-4" />
             </div>
           </div>
           <div className="flex items-baseline justify-between">
             <span className="text-3xl font-bold text-[#0B2545] tracking-tight">{activeShipments}</span>
-            {activeShipments > 0 && (
-              <span className="text-xs font-semibold text-emerald-600 flex items-center gap-0.5">
-                <TrendingUp className="w-3 h-3" /> Live
-              </span>
-            )}
+            <span className="text-xs text-slate-400">
+              {language === "fr" ? "En transit" : "In transit"}
+            </span>
           </div>
         </Link>
 
         {/* 2. Pending Quotes */}
         <Link
           href="/dashboard/quotes"
-          className="bg-white rounded-2xl p-5 shadow-xs border border-slate-200/90 hover:shadow-md transition flex flex-col justify-between h-32 group cursor-pointer"
+          className="bg-white rounded-2xl p-5 border border-slate-200 hover:border-slate-300 hover:shadow-sm transition flex flex-col justify-between h-28 group cursor-pointer"
         >
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold tracking-wider text-slate-500 uppercase">
               {language === "fr" ? "SOUMISSIONS EN COURS" : "PENDING QUOTES"}
             </span>
-            <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600 group-hover:scale-110 transition-transform">
+            <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
               <FileSpreadsheet className="w-4 h-4" />
             </div>
           </div>
           <div className="flex items-baseline justify-between">
             <span className="text-3xl font-bold text-[#0B2545] tracking-tight">{pendingQuotes}</span>
-            {pendingQuotes > 0 && (
-              <span className="text-xs font-bold text-[#d21f27] bg-red-50 px-2 py-0.5 rounded-full">
-                {language === "fr" ? "Action requise" : "Action Req"}
-              </span>
-            )}
+            <span className="text-xs text-slate-400">
+              {pendingQuotes > 0
+                ? language === "fr" ? "En attente" : "Awaiting review"
+                : language === "fr" ? "À jour" : "All caught up"}
+            </span>
           </div>
         </Link>
 
         {/* 3. Delivered Total */}
         <Link
           href="/dashboard/shipments?status=delivered"
-          className="bg-white rounded-2xl p-5 shadow-xs border border-slate-200/90 hover:shadow-md transition flex flex-col justify-between h-32 group cursor-pointer"
+          className="bg-white rounded-2xl p-5 border border-slate-200 hover:border-slate-300 hover:shadow-sm transition flex flex-col justify-between h-28 group cursor-pointer"
         >
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold tracking-wider text-slate-500 uppercase">
               {language === "fr" ? "TOTAL LIVRAISONS" : "DELIVERED TOTAL"}
             </span>
-            <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600 group-hover:scale-110 transition-transform">
+            <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600">
               <CheckCircle2 className="w-4 h-4" />
             </div>
           </div>
           <div className="flex items-baseline justify-between">
             <span className="text-3xl font-bold text-[#0B2545] tracking-tight">{deliveredTotal}</span>
-            <span className="text-xs text-slate-500">YTD 2026</span>
+            <span className="text-xs text-slate-400">{language === "fr" ? "Total" : "All time"}</span>
           </div>
         </Link>
 
         {/* 4. Documents Available */}
         <Link
           href="/dashboard/documents"
-          className="bg-white rounded-2xl p-5 shadow-xs border border-slate-200/90 hover:shadow-md transition flex flex-col justify-between h-32 group cursor-pointer"
+          className="bg-white rounded-2xl p-5 border border-slate-200 hover:border-slate-300 hover:shadow-sm transition flex flex-col justify-between h-28 group cursor-pointer"
         >
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold tracking-wider text-slate-500 uppercase">
               {language === "fr" ? "DOCUMENTS DOUANIERS" : "CBSA DOCUMENTS"}
             </span>
-            <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 group-hover:scale-110 transition-transform">
+            <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
               <FileText className="w-4 h-4" />
             </div>
           </div>
           <div className="flex items-baseline justify-between">
             <span className="text-3xl font-bold text-[#0B2545] tracking-tight">{documentsCount}</span>
-            <span className="text-xs text-slate-500">BOL / Invoices</span>
+            <span className="text-xs text-slate-400">
+              {language === "fr" ? "Disponibles" : "Available"}
+            </span>
           </div>
         </Link>
       </div>
 
-      {/* 2-Column Split: Activity Stream & Operational Radar */}
+      {/* 2-Column Split: Activity Stream & Quick Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left 2 Cols: Live Activity Feed */}
-        <div className="lg:col-span-2 bg-white rounded-2xl p-6 border border-slate-200 shadow-xs space-y-5">
+        {/* Left 2 Cols: Activity Feed */}
+        <div className="lg:col-span-2 bg-white rounded-2xl p-6 border border-slate-200 space-y-5">
           <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-            <div>
-              <h2
-                className="text-xl sm:text-2xl font-bold text-[#0B2545]"
-                style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
-              >
-                {language === "fr" ? "Activité Récente de Répartition" : "Recent Dispatch Activity"}
-              </h2>
-              <p className="text-xs text-slate-500 mt-0.5">
-                {language === "fr" ? "Mises à jour automatiques télématiques EDI" : "Automated telematics & status updates"}
-              </p>
-            </div>
+            <h2 className="text-lg font-bold text-[#0B2545]">
+              {language === "fr" ? "Activité Récente" : "Recent Activity"}
+            </h2>
             <Link
               href="/dashboard/shipments"
               className="inline-flex items-center gap-1 text-xs font-bold text-[#d21f27] hover:underline"
@@ -410,55 +395,62 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Right 1 Col: Live Radar & Route Status */}
-        <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs flex flex-col justify-between space-y-6">
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <h2
-                className="text-xl font-bold text-[#0B2545]"
-                style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
-              >
-                {language === "fr" ? "Couloir Routier Canadien" : "Highway Corridors"}
-              </h2>
-              <span className="text-[10px] text-emerald-600 font-bold flex items-center gap-1 bg-emerald-50 px-2 py-0.5 rounded-md">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                Live GPS
-              </span>
-            </div>
+        {/* Right 1 Col: Quick Actions */}
+        <div className="bg-white rounded-2xl p-6 border border-slate-200">
+          <h2 className="text-lg font-bold text-[#0B2545] mb-4">
+            {language === "fr" ? "Actions Rapides" : "Quick Actions"}
+          </h2>
 
-            {/* Radar Simulation */}
-            <div className="relative w-full h-44 rounded-xl overflow-hidden bg-[#0B2545] border border-slate-800 flex items-center justify-center group">
-              <div className="absolute inset-0 opacity-30 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:16px_16px]" />
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent" />
-
-              <svg className="absolute inset-0 w-full h-full text-red-500/70 stroke-current fill-none">
-                <path d="M 30 110 Q 110 50 180 80 T 260 60" strokeWidth="2.5" strokeDasharray="5 5" className="animate-pulse" />
-                <circle cx="30" cy="110" r="5" fill="#d21f27" />
-                <circle cx="180" cy="80" r="4" fill="#38bdf8" />
-                <circle cx="260" cy="60" r="5" fill="#d21f27" />
-              </svg>
-
-              <div className="relative z-10 text-center p-3">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-white text-[11px] font-bold border border-white/20">
-                  <MapPin className="w-3.5 h-3.5 text-[#d21f27]" />
-                  Montreal - Toronto - Detroit Corridor
-                </div>
-                <div className="text-[10px] text-slate-300 mt-2">
-                  No weather delays detected across Highway 401 &amp; A-20
-                </div>
+          <div className="space-y-2">
+            <button
+              type="button"
+              onClick={() => setIsQuoteModalOpen(true)}
+              className="w-full flex items-center gap-3 px-3.5 py-3 rounded-xl border border-slate-200 hover:border-[#d21f27]/40 hover:bg-red-50/40 transition text-left cursor-pointer group"
+            >
+              <div className="w-9 h-9 rounded-lg bg-red-50 text-[#d21f27] flex items-center justify-center flex-shrink-0">
+                <Plus className="w-4 h-4 stroke-[3]" />
               </div>
-            </div>
-          </div>
+              <span className="text-sm font-semibold text-slate-800 group-hover:text-[#0B2545]">
+                {language === "fr" ? "Nouvelle Soumission" : "Request a Quote"}
+              </span>
+            </button>
 
-          {/* Institutional Compliance Card */}
-          <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-            <span className="flex items-center gap-1.5">
-              <Shield className="w-4 h-4 text-[#0B2545]" />
-              C-TPAT / PIP Certified
-            </span>
-            <span className="text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-full text-[10px]">
-              Insured $5,000,000
-            </span>
+            <button
+              type="button"
+              onClick={() => setIsTrackModalOpen(true)}
+              className="w-full flex items-center gap-3 px-3.5 py-3 rounded-xl border border-slate-200 hover:border-[#0B2545]/30 hover:bg-slate-50 transition text-left cursor-pointer group"
+            >
+              <div className="w-9 h-9 rounded-lg bg-slate-100 text-[#0B2545] flex items-center justify-center flex-shrink-0">
+                <Search className="w-4 h-4" />
+              </div>
+              <span className="text-sm font-semibold text-slate-800">
+                {language === "fr" ? "Suivre un Envoi" : "Track a Shipment"}
+              </span>
+            </button>
+
+            <Link
+              href="/dashboard/documents"
+              className="w-full flex items-center gap-3 px-3.5 py-3 rounded-xl border border-slate-200 hover:border-[#0B2545]/30 hover:bg-slate-50 transition text-left cursor-pointer group"
+            >
+              <div className="w-9 h-9 rounded-lg bg-slate-100 text-[#0B2545] flex items-center justify-center flex-shrink-0">
+                <FolderOpen className="w-4 h-4" />
+              </div>
+              <span className="text-sm font-semibold text-slate-800">
+                {language === "fr" ? "Voir les Documents" : "View Documents"}
+              </span>
+            </Link>
+
+            <Link
+              href="/dashboard/support"
+              className="w-full flex items-center gap-3 px-3.5 py-3 rounded-xl border border-slate-200 hover:border-[#0B2545]/30 hover:bg-slate-50 transition text-left cursor-pointer group"
+            >
+              <div className="w-9 h-9 rounded-lg bg-slate-100 text-[#0B2545] flex items-center justify-center flex-shrink-0">
+                <HelpCircle className="w-4 h-4" />
+              </div>
+              <span className="text-sm font-semibold text-slate-800">
+                {language === "fr" ? "Contacter le Support" : "Contact Support"}
+              </span>
+            </Link>
           </div>
         </div>
       </div>

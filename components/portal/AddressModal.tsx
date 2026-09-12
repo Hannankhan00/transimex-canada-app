@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { addressSchema, addressTypesEnum, AddressFormData, SavedAddress } from "@/lib/validations/address";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { api } from "@/lib/api";
-import { X, Building2, MapPin, User, Phone, FileText, Check } from "lucide-react";
+import { X, Check } from "lucide-react";
 import CountrySelect from "@/components/ui/CountrySelect";
 
 interface AddressModalProps {
@@ -14,6 +14,7 @@ interface AddressModalProps {
   onClose: () => void;
   onSave: (data: AddressFormData, editId?: string) => void;
   initialData?: SavedAddress | null;
+  hasAddresses?: boolean;
 }
 
 export default function AddressModal({
@@ -21,6 +22,7 @@ export default function AddressModal({
   onClose,
   onSave,
   initialData,
+  hasAddresses = true,
 }: AddressModalProps) {
   const { language } = useLanguage();
   const isEditing = Boolean(initialData);
@@ -91,10 +93,10 @@ export default function AddressModal({
         postalCode: "",
         country: "Canada",
         accessInstructions: "",
-        isDefault: false,
+        isDefault: !hasAddresses,
       });
     }
-  }, [initialData, reset, isOpen, currentUserCompany, currentUserContact, currentUserPhone]);
+  }, [initialData, reset, isOpen, currentUserCompany, currentUserContact, currentUserPhone, hasAddresses]);
 
   if (!isOpen) return null;
 
@@ -112,10 +114,7 @@ export default function AddressModal({
             <span className="text-[10px] font-bold uppercase tracking-wider text-[#d21f27]">
               {language === "fr" ? "Carnet d'Adresses" : "Address Book Management"}
             </span>
-            <h3
-              className="text-xl font-bold text-[#0B2545] mt-0.5"
-              style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
-            >
+            <h3 className="text-xl font-extrabold text-[#0B2545] mt-0.5">
               {isEditing
                 ? language === "fr"
                   ? "Modifier l'Emplacement"
@@ -187,15 +186,13 @@ export default function AddressModal({
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
                 {language === "fr" ? "Nom de l'Entreprise" : "Company Name"} *
               </label>
-              <div className="relative">
-                <input
-                  {...register("company")}
-                  placeholder="e.g. Laurentian Global Logistics Ltd."
-                  className={`w-full px-3.5 py-2.5 bg-slate-50 border ${
-                    errors.company ? "border-red-500 bg-red-50/30" : "border-slate-200"
-                  } focus:bg-white focus:border-[#0B2545] rounded-xl text-xs outline-none transition font-medium text-slate-900`}
-                />
-              </div>
+              <input
+                {...register("company")}
+                placeholder="e.g. Laurentian Global Logistics Ltd."
+                className={`w-full px-3.5 py-2.5 bg-slate-50 border ${
+                  errors.company ? "border-red-500 bg-red-50/30" : "border-slate-200"
+                } focus:bg-white focus:border-[#0B2545] rounded-xl text-xs outline-none transition font-medium text-slate-900`}
+              />
               {errors.company && (
                 <p className="text-[11px] text-red-600 mt-1 font-semibold">{errors.company.message}</p>
               )}
@@ -341,18 +338,27 @@ export default function AddressModal({
           </div>
 
           {/* Default Address Checkbox */}
-          <div className="flex items-center gap-2 pt-1">
-            <input
-              type="checkbox"
-              id="isDefault"
-              {...register("isDefault")}
-              className="w-4 h-4 text-[#d21f27] rounded-md border-slate-300 focus:ring-[#d21f27] cursor-pointer"
-            />
-            <label htmlFor="isDefault" className="text-xs font-semibold text-slate-700 cursor-pointer">
-              {language === "fr"
-                ? "Définir comme adresse d'expédition principale par défaut"
-                : "Set as default primary shipping origin / destination"}
-            </label>
+          <div>
+            <div className="flex items-center gap-2 pt-1">
+              <input
+                type="checkbox"
+                id="isDefault"
+                {...register("isDefault")}
+                className="w-4 h-4 text-[#d21f27] rounded-md border-slate-300 focus:ring-[#d21f27] cursor-pointer"
+              />
+              <label htmlFor="isDefault" className="text-xs font-semibold text-slate-700 cursor-pointer">
+                {language === "fr"
+                  ? "Définir comme adresse d'expédition principale par défaut"
+                  : "Set as default primary shipping origin / destination"}
+              </label>
+            </div>
+            {!isEditing && !hasAddresses && (
+              <p className="text-[11px] text-slate-500 mt-1 pl-6">
+                {language === "fr"
+                  ? "Votre première adresse est définie par défaut automatiquement — elle préremplira vos futures demandes de soumission."
+                  : "Your first address is set as default automatically — it will pre-fill future quote requests."}
+              </p>
+            )}
           </div>
 
           {/* Action Buttons */}

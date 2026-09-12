@@ -16,7 +16,7 @@ export const translations = {
     },
     topBar: {
       searchPlaceholder: "Search shipments, tracking #, BOL, container...",
-      newQuote: "+ Submit New Quote",
+      newQuote: "Submit New Quote",
       notificationsTooltip: "Unread operational notifications",
       statusOperational: "EDI Dispatch Operational",
       logout: "Log Out",
@@ -90,7 +90,7 @@ export const translations = {
     },
     topBar: {
       searchPlaceholder: "Rechercher expéditions, no de suivi, connaissement...",
-      newQuote: "+ Demander une soumission",
+      newQuote: "Demander une soumission",
       notificationsTooltip: "Notifications opérationnelles non lues",
       statusOperational: "Système EDI Opérationnel",
       logout: "Déconnexion",

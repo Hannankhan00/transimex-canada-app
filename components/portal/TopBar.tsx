@@ -7,7 +7,6 @@ import { api } from "@/lib/api";
 import {
   Menu,
   Globe2,
-  Plus,
   LogOut,
   Building2,
   User,
@@ -15,7 +14,28 @@ import {
   Search,
   Bell,
   Check,
+  X,
+  Truck,
+  FileText,
+  FileSpreadsheet,
+  ShieldCheck,
+  Loader2,
 } from "lucide-react";
+
+function getNotificationIcon(category: string) {
+  switch (category) {
+    case "customs":
+      return <ShieldCheck className="w-4 h-4 text-amber-600" />;
+    case "transit":
+      return <Truck className="w-4 h-4 text-blue-600" />;
+    case "document":
+      return <FileText className="w-4 h-4 text-emerald-600" />;
+    case "quote":
+      return <FileSpreadsheet className="w-4 h-4 text-indigo-600" />;
+    default:
+      return <Bell className="w-4 h-4 text-slate-600" />;
+  }
+}
 
 interface TopBarProps {
   onOpenMobileMenu: () => void;
@@ -37,8 +57,13 @@ export default function TopBar({
   const { t, language, setLanguage } = useLanguage();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [langMenuOpen, setLangMenuOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
   const langRef = useRef<HTMLDivElement>(null);
+  const notifRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLDivElement>(null);
 
   // Close dropdowns on outside click
   useEffect(() => {
@@ -49,18 +74,112 @@ export default function TopBar({
       if (langRef.current && !langRef.current.contains(event.target as Node)) {
         setLangMenuOpen(false);
       }
+      if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
+        setNotifOpen(false);
+      }
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setSearchOpen(false);
+      }
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Live notification feed (badge count + hover preview)
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [notifLoading, setNotifLoading] = useState(true);
+  const [notifLoaded, setNotifLoaded] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/notifications")
+      .then((res) => res.json())
+      .then((data) => {
+        if (active && data.success) {
+          setNotifications(data.notifications);
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (active) {
+          setNotifLoading(false);
+          setNotifLoaded(true);
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const liveUnreadCount = notifLoaded
+    ? notifications.filter((n) => n.unread).length
+    : unreadCount;
+
+  const handleNotifClick = (notif: any) => {
+    if (notif.unread) {
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === notif.id ? { ...n, unread: false } : n))
+      );
+      fetch(`/api/notifications/${notif.id}`, { method: "PATCH" }).catch(() => {});
+    }
+    setNotifOpen(false);
+    router.push(notif.link || "/dashboard/notifications");
+  };
+
+  // Global quick search across shipments & quotes (fetched once, filtered live as-you-type)
+  const [searchShipments, setSearchShipments] = useState<any[]>([]);
+  const [searchQuotes, setSearchQuotes] = useState<any[]>([]);
+  const [searchDataLoaded, setSearchDataLoaded] = useState(false);
+  const [searchLoading, setSearchLoading] = useState(false);
+
+  const loadSearchData = () => {
+    if (searchDataLoaded || searchLoading) return;
+    setSearchLoading(true);
+    Promise.all([
+      fetch("/api/shipments").then((r) => r.json()),
+      fetch("/api/quotes").then((r) => r.json()),
+    ])
+      .then(([shipmentsRes, quotesRes]) => {
+        setSearchShipments(shipmentsRes.success ? shipmentsRes.shipments : []);
+        setSearchQuotes(quotesRes.success ? quotesRes.quotes : []);
+      })
+      .catch(() => {})
+      .finally(() => {
+        setSearchLoading(false);
+        setSearchDataLoaded(true);
+      });
+  };
+
+  const trimmedQuery = searchQuery.trim().toLowerCase();
+  const matchedShipments = trimmedQuery
+    ? searchShipments
+        .filter((s) =>
+          [s.id, s.origin, s.destination, s.statusLabel]
+            .filter(Boolean)
+            .some((field) => String(field).toLowerCase().includes(trimmedQuery))
+        )
+        .slice(0, 5)
+    : [];
+  const matchedQuotes = trimmedQuery
+    ? searchQuotes
+        .filter((q) =>
+          [q.id, q.origin, q.destination]
+            .filter(Boolean)
+            .some((field) => String(field).toLowerCase().includes(trimmedQuery))
+        )
+        .slice(0, 5)
+    : [];
+  const hasSearchResults = matchedShipments.length > 0 || matchedQuotes.length > 0;
+
+  const handleSearchResultClick = (href: string) => {
+    setSearchOpen(false);
+    setSearchQuery("");
+    router.push(href);
+  };
+
   const handleLogout = async () => {
     await api.auth.logout();
     router.push("/login");
-  };
-
-  const handleNewQuote = () => {
-    router.push("/dashboard/quotes?new=true");
   };
 
   const displayName = user?.name || "Client User";
@@ -82,13 +201,101 @@ export default function TopBar({
         </button>
 
         {/* Global Logistics Quick Search */}
-        <div className="relative w-full hidden sm:flex items-center">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-          <input
-            type="text"
-            placeholder={t.topBar.searchPlaceholder}
-            className="w-full bg-slate-50 hover:bg-slate-100 focus:bg-white border border-slate-200 focus:border-[#0B2545] focus:ring-1 focus:ring-[#0B2545]/10 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-800 placeholder:text-slate-400 outline-none transition"
-          />
+        <div className="relative w-full hidden sm:block" ref={searchRef}>
+          <div className="relative flex items-center">
+            {searchLoading ? (
+              <Loader2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none animate-spin" />
+            ) : (
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+            )}
+            <input
+              type="text"
+              value={searchQuery}
+              onFocus={() => {
+                loadSearchData();
+                if (searchQuery.trim()) setSearchOpen(true);
+              }}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setSearchOpen(e.target.value.trim().length > 0);
+              }}
+              placeholder={t.topBar.searchPlaceholder}
+              className="w-full bg-slate-50 hover:bg-slate-100 focus:bg-white border border-slate-200 focus:border-[#0B2545] focus:ring-1 focus:ring-[#0B2545]/10 rounded-xl pl-9 pr-8 py-2 text-xs text-slate-800 placeholder:text-slate-400 outline-none transition"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchQuery("");
+                  setSearchOpen(false);
+                }}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-200/70 transition cursor-pointer"
+                aria-label="Clear search"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
+          {/* Live Filtered Results Dropdown */}
+          {searchOpen && trimmedQuery && (
+            <div className="absolute left-0 right-0 mt-1.5 bg-white rounded-xl shadow-lg border border-slate-200 py-1.5 z-30 max-h-96 overflow-y-auto animate-in fade-in zoom-in-95 duration-150">
+              {!searchDataLoaded ? (
+                <div className="px-3.5 py-3 text-xs text-slate-400">
+                  {language === "fr" ? "Chargement..." : "Loading..."}
+                </div>
+              ) : !hasSearchResults ? (
+                <div className="px-3.5 py-3 text-xs text-slate-400">
+                  {language === "fr" ? "Aucun résultat trouvé" : "No matches found"}
+                </div>
+              ) : (
+                <>
+                  {matchedShipments.length > 0 && (
+                    <div>
+                      <div className="px-3.5 pt-1.5 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                        {language === "fr" ? "Expéditions" : "Shipments"}
+                      </div>
+                      {matchedShipments.map((s) => (
+                        <button
+                          key={s.id}
+                          type="button"
+                          onClick={() => handleSearchResultClick(`/dashboard/shipments?id=${encodeURIComponent(s.id)}`)}
+                          className="w-full flex items-center gap-2.5 px-3.5 py-2 text-left hover:bg-slate-50 transition cursor-pointer"
+                        >
+                          <Truck className="w-3.5 h-3.5 text-[#0B2545] flex-shrink-0" />
+                          <div className="min-w-0 flex-1">
+                            <div className="text-xs font-semibold text-slate-900 truncate">{s.id}</div>
+                            <div className="text-[11px] text-slate-500 truncate">{s.origin} → {s.destination}</div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {matchedQuotes.length > 0 && (
+                    <div>
+                      <div className="px-3.5 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                        {language === "fr" ? "Soumissions" : "Quotes"}
+                      </div>
+                      {matchedQuotes.map((q) => (
+                        <button
+                          key={q.id}
+                          type="button"
+                          onClick={() => handleSearchResultClick("/dashboard/quotes")}
+                          className="w-full flex items-center gap-2.5 px-3.5 py-2 text-left hover:bg-slate-50 transition cursor-pointer"
+                        >
+                          <FileSpreadsheet className="w-3.5 h-3.5 text-[#0B2545] flex-shrink-0" />
+                          <div className="min-w-0 flex-1">
+                            <div className="text-xs font-semibold text-slate-900 truncate">{q.id}</div>
+                            <div className="text-[11px] text-slate-500 truncate">{q.origin} → {q.destination}</div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -139,30 +346,96 @@ export default function TopBar({
           )}
         </div>
 
-        {/* Notifications Quick Link */}
-        <button
-          type="button"
-          onClick={() => router.push("/dashboard/notifications")}
-          className="relative p-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 hover:text-[#0B2545] transition shadow-2xs cursor-pointer"
-          title={t.topBar.notificationsTooltip}
+        {/* Notifications: Badge Tag + Hover Preview Dropdown */}
+        <div
+          className="relative"
+          ref={notifRef}
+          onMouseEnter={() => setNotifOpen(true)}
+          onMouseLeave={() => setNotifOpen(false)}
         >
-          <Bell className="w-4 h-4" />
-          {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#D21F27] text-white text-[9px] font-bold rounded-full flex items-center justify-center shadow-xs">
-              {unreadCount}
-            </span>
-          )}
-        </button>
+          <button
+            type="button"
+            onClick={() => setNotifOpen((open) => !open)}
+            className="relative p-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 hover:text-[#0B2545] transition shadow-2xs cursor-pointer"
+            title={t.topBar.notificationsTooltip}
+          >
+            <Bell className="w-4 h-4" />
+            {liveUnreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#D21F27] text-white text-[9px] font-bold rounded-full flex items-center justify-center shadow-xs">
+                {liveUnreadCount}
+              </span>
+            )}
+          </button>
 
-        {/* Primary Action Button: Red #D21F27 CTA */}
-        <button
-          type="button"
-          onClick={handleNewQuote}
-          className="flex items-center gap-1.5 px-2.5 sm:px-4 py-2 bg-[#D21F27] hover:bg-[#b51a21] active:scale-[0.98] text-white text-xs font-bold rounded-xl shadow-sm hover:shadow-md transition cursor-pointer whitespace-nowrap"
-        >
-          <Plus className="w-4 h-4 stroke-[3]" />
-          <span className="hidden xs:inline">{t.topBar.newQuote}</span>
-        </button>
+          {notifOpen && (
+            <div className="absolute right-0 mt-1.5 w-80 max-w-[calc(100vw-2rem)] bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden z-30 animate-in fade-in zoom-in-95 duration-150">
+              <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-900">
+                  {language === "fr" ? "Notifications" : "Notifications"}
+                </span>
+                {liveUnreadCount > 0 && (
+                  <span className="text-[10px] font-bold text-white bg-[#D21F27] px-2 py-0.5 rounded-full">
+                    {liveUnreadCount} {language === "fr" ? "nouvelle(s)" : "new"}
+                  </span>
+                )}
+              </div>
+
+              <div className="max-h-80 overflow-y-auto divide-y divide-slate-100">
+                {notifLoading ? (
+                  <div className="px-4 py-6 text-center text-xs text-slate-400">
+                    {language === "fr" ? "Chargement..." : "Loading..."}
+                  </div>
+                ) : notifications.length === 0 ? (
+                  <div className="px-4 py-6 text-center text-xs text-slate-400">
+                    {language === "fr" ? "Aucune notification pour le moment" : "No notifications yet"}
+                  </div>
+                ) : (
+                  notifications.slice(0, 5).map((n) => (
+                    <button
+                      key={n.id}
+                      type="button"
+                      onClick={() => handleNotifClick(n)}
+                      className="w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-slate-50 transition cursor-pointer"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                        {getNotificationIcon(n.category)}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5">
+                          {n.unread && (
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#D21F27] flex-shrink-0" />
+                          )}
+                          <span
+                            className={`text-xs truncate ${
+                              n.unread ? "font-bold text-slate-900" : "font-semibold text-slate-700"
+                            }`}
+                          >
+                            {language === "fr" ? n.titleFr : n.title}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-2 leading-snug">
+                          {language === "fr" ? n.descFr : n.desc}
+                        </p>
+                        <span className="text-[10px] text-slate-400 mt-1 inline-block">{n.time}</span>
+                      </div>
+                    </button>
+                  ))
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setNotifOpen(false);
+                  router.push("/dashboard/notifications");
+                }}
+                className="w-full text-center py-2.5 text-xs font-bold text-[#D21F27] hover:bg-red-50 border-t border-slate-100 transition cursor-pointer"
+              >
+                {language === "fr" ? "Voir toutes les notifications" : "View All Notifications"}
+              </button>
+            </div>
+          )}
+        </div>
 
         {/* User Avatar / Profile Dropdown */}
         <div className="relative pl-1 border-l border-slate-200" ref={dropdownRef}>

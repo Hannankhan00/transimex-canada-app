@@ -7,20 +7,15 @@ import { PortalNotification, NotificationCategory } from "@/lib/mockData";
 import {
   Bell,
   CheckCircle2,
-  AlertTriangle,
-  Info,
   Clock,
   Trash2,
-  Check,
   Truck,
   ShieldCheck,
   FileText,
   FileSpreadsheet,
   ArrowRight,
-  Filter,
   CheckCheck,
   Inbox,
-  ExternalLink,
   Search,
 } from "lucide-react";
 
@@ -103,6 +98,21 @@ export default function NotificationsPage() {
     }
   };
 
+  const getCategoryLabel = (category: NotificationCategory) => {
+    switch (category) {
+      case "customs":
+        return language === "fr" ? "Douanes" : "Customs";
+      case "transit":
+        return language === "fr" ? "Transit" : "Transit";
+      case "document":
+        return language === "fr" ? "Document" : "Document";
+      case "quote":
+        return language === "fr" ? "Soumission" : "Quote";
+      default:
+        return language === "fr" ? "Système" : "System";
+    }
+  };
+
   const getCategoryBadgeClass = (category: NotificationCategory) => {
     switch (category) {
       case "customs":
@@ -132,25 +142,19 @@ export default function NotificationsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-[#d21f27]">
-              {language === "fr" ? "Flux d'Alertes Opérationnelles" : "Operations Feed & Alerts"}
-            </span>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-[#0B2545] tracking-tight leading-tight">
+              {t.nav.notifications}
+            </h1>
             {unreadCount > 0 && (
               <span className="px-2 py-0.5 rounded-full bg-[#d21f27] text-white text-[10px] font-bold">
                 {unreadCount} {language === "fr" ? "non lues" : "unread"}
               </span>
             )}
           </div>
-          <h1
-            className="text-2xl sm:text-3xl font-bold text-[#0B2545] tracking-tight leading-tight mt-1"
-            style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
-          >
-            {t.nav.notifications}
-          </h1>
-          <p className="text-slate-500 text-xs sm:text-sm mt-1">
+          <p className="text-slate-500 text-sm mt-1">
             {language === "fr"
-              ? "Historique centralisé des alertes télématiques, mainlevées douanières et documents générés."
-              : "Real-time dispatch alerts, customs clearance notices, and verified shipping documentation updates."}
+              ? "Alertes de répartition, avis de dédouanement et mises à jour de documents."
+              : "Dispatch alerts, customs clearance notices, and document updates."}
           </p>
         </div>
 
@@ -264,7 +268,7 @@ export default function NotificationsPage() {
                         notif.category
                       )}`}
                     >
-                      {notif.category}
+                      {getCategoryLabel(notif.category)}
                     </span>
                     {notif.unread && (
                       <span className="w-2 h-2 rounded-full bg-[#d21f27] animate-pulse" />
@@ -286,8 +290,7 @@ export default function NotificationsPage() {
                   <div className="flex items-center gap-3 pt-1 text-[11px] text-slate-400 flex-wrap">
                     <span className="flex items-center gap-1" title={notif.dateTime}>
                       <Clock className="w-3 h-3" />
-                      <span>{notif.dateTime}</span>
-                      <span className="text-slate-300">({notif.time})</span>
+                      <span>{notif.time}</span>
                     </span>
                     <span className="text-slate-300">&bull;</span>
                     <span className="text-[#0B2545] font-semibold flex items-center gap-1 group-hover:underline">
