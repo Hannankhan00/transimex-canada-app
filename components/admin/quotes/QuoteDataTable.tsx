@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { QuoteItem, QuoteStatus } from "@/lib/quoteTypes";
 import StatusBadge from "./StatusBadge";
 import {
@@ -11,12 +12,7 @@ import {
   Train,
   ArrowRight,
   ArrowUpDown,
-  Filter,
   Calendar,
-  Building2,
-  ChevronRight,
-  ExternalLink,
-  DollarSign,
   AlertCircle,
   Eye,
   RefreshCw,
@@ -52,6 +48,7 @@ export default function QuoteDataTable({
   onRefresh,
   isRefreshing = false,
 }: QuoteDataTableProps) {
+  const { language } = useLanguage();
   const [searchQuery, setSearchQuery] = useState("");
   const [sortField, setSortField] = useState<"date" | "ref" | "client">("date");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
@@ -128,6 +125,9 @@ export default function QuoteDataTable({
     return <Truck className="w-4 h-4 text-[#d21f27]" />;
   };
 
+  const isUnquoted = (priceCad?: string) =>
+    !priceCad || priceCad.includes("Pending") || priceCad.includes("Calculating");
+
   return (
     <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden">
       {/* 1. STATUS TABS BAR */}
@@ -146,7 +146,7 @@ export default function QuoteDataTable({
                 : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
             }`}
           >
-            <span>All Quotes</span>
+            <span>{language === "fr" ? "Toutes les Soumissions" : "All Quotes"}</span>
             <span
               className={`px-1.5 py-0.5 rounded-full text-[10px] ${
                 activeTab === "all" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-700"
@@ -168,7 +168,7 @@ export default function QuoteDataTable({
                 : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
             }`}
           >
-            <span>New (Review)</span>
+            <span>{language === "fr" ? "Nouvelles (Révision)" : "New (Review)"}</span>
             <span
               className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
                 activeTab === "under_review" ? "bg-white/20 text-white" : "bg-amber-100 text-amber-800"
@@ -190,7 +190,7 @@ export default function QuoteDataTable({
                 : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
             }`}
           >
-            <span>Rate Offered</span>
+            <span>{language === "fr" ? "Tarif Proposé" : "Rate Offered"}</span>
             <span
               className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
                 activeTab === "quoted" ? "bg-white/20 text-white" : "bg-sky-100 text-sky-800"
@@ -212,7 +212,7 @@ export default function QuoteDataTable({
                 : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
             }`}
           >
-            <span>Negotiating</span>
+            <span>{language === "fr" ? "En Négociation" : "Negotiating"}</span>
             <span
               className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
                 activeTab === "client_rejected" ? "bg-white/20 text-white" : "bg-purple-100 text-purple-800"
@@ -234,7 +234,7 @@ export default function QuoteDataTable({
                 : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
             }`}
           >
-            <span>Accepted</span>
+            <span>{language === "fr" ? "Acceptées" : "Accepted"}</span>
             <span
               className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
                 activeTab === "accepted" ? "bg-white/20 text-white" : "bg-emerald-100 text-emerald-800"
@@ -256,7 +256,7 @@ export default function QuoteDataTable({
                 : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
             }`}
           >
-            <span>Declined</span>
+            <span>{language === "fr" ? "Refusées" : "Declined"}</span>
             <span
               className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
                 activeTab === "rejected" ? "bg-white/20 text-white" : "bg-red-100 text-red-800"
@@ -273,7 +273,7 @@ export default function QuoteDataTable({
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
             <input
               type="text"
-              placeholder="Search reference, client, corridor..."
+              placeholder={language === "fr" ? "Rechercher référence, client, corridor..." : "Search reference, client, corridor..."}
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
@@ -288,7 +288,7 @@ export default function QuoteDataTable({
               type="button"
               onClick={onRefresh}
               className="p-2 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-600 transition cursor-pointer"
-              title="Refresh Quotes"
+              title={language === "fr" ? "Actualiser les Soumissions" : "Refresh Quotes"}
             >
               <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} />
             </button>
@@ -306,7 +306,7 @@ export default function QuoteDataTable({
                 className="py-3.5 px-4 cursor-pointer hover:text-slate-900 transition select-none"
               >
                 <div className="flex items-center gap-1.5">
-                  <span>Ref Number</span>
+                  <span>{language === "fr" ? "N° de Réf." : "Ref Number"}</span>
                   <ArrowUpDown className="w-3 h-3 text-slate-400" />
                 </div>
               </th>
@@ -316,27 +316,27 @@ export default function QuoteDataTable({
                 className="py-3.5 px-4 cursor-pointer hover:text-slate-900 transition select-none"
               >
                 <div className="flex items-center gap-1.5">
-                  <span>Client / Enterprise</span>
+                  <span>{language === "fr" ? "Client / Entreprise" : "Client / Enterprise"}</span>
                   <ArrowUpDown className="w-3 h-3 text-slate-400" />
                 </div>
               </th>
 
-              <th className="py-3.5 px-4">Mode &amp; Cargo</th>
-              <th className="py-3.5 px-4">Route (Corridor)</th>
+              <th className="py-3.5 px-4">{language === "fr" ? "Mode et Cargaison" : "Mode & Cargo"}</th>
+              <th className="py-3.5 px-4">{language === "fr" ? "Itinéraire (Corridor)" : "Route (Corridor)"}</th>
 
               <th
                 onClick={() => handleSortToggle("date")}
                 className="py-3.5 px-4 cursor-pointer hover:text-slate-900 transition select-none"
               >
                 <div className="flex items-center gap-1.5">
-                  <span>Submitted</span>
+                  <span>{language === "fr" ? "Soumis" : "Submitted"}</span>
                   <ArrowUpDown className="w-3 h-3 text-slate-400" />
                 </div>
               </th>
 
-              <th className="py-3.5 px-4">Rate / Quote</th>
-              <th className="py-3.5 px-4">Status</th>
-              <th className="py-3.5 px-4 text-right">Actions</th>
+              <th className="py-3.5 px-4">{language === "fr" ? "Tarif / Soumission" : "Rate / Quote"}</th>
+              <th className="py-3.5 px-4">{language === "fr" ? "Statut" : "Status"}</th>
+              <th className="py-3.5 px-4 text-right">{language === "fr" ? "Actions" : "Actions"}</th>
             </tr>
           </thead>
 
@@ -345,7 +345,11 @@ export default function QuoteDataTable({
               <tr>
                 <td colSpan={8} className="py-12 text-center text-slate-400 text-xs">
                   <AlertCircle className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                  <p>No quote requests match your current search and filter criteria.</p>
+                  <p>
+                    {language === "fr"
+                      ? "Aucune demande de soumission ne correspond à vos critères de recherche et de filtre actuels."
+                      : "No quote requests match your current search and filter criteria."}
+                  </p>
                 </td>
               </tr>
             ) : (
@@ -375,7 +379,7 @@ export default function QuoteDataTable({
                   <td className="py-3.5 px-4">
                     <div className="flex flex-col">
                       <span className="font-bold text-slate-900">
-                        {quote.clientCompany || "Commercial Enterprise"}
+                        {quote.clientCompany || (language === "fr" ? "Entreprise Commerciale" : "Commercial Enterprise")}
                       </span>
                       <span className="text-[11px] text-slate-500">
                         {quote.clientName || "—"} &bull; {quote.clientEmail}
@@ -419,13 +423,13 @@ export default function QuoteDataTable({
 
                   {/* Rate / Quoted */}
                   <td className="py-3.5 px-4 whitespace-nowrap">
-                    {quote.priceCad && !quote.priceCad.includes("Pending") && !quote.priceCad.includes("Calculating") ? (
+                    {!isUnquoted(quote.priceCad) ? (
                       <span className="font-mono font-bold text-slate-900">
                         {quote.priceCad}
                       </span>
                     ) : (
                       <span className="text-[11px] text-amber-600 font-semibold italic">
-                        Unquoted
+                        {language === "fr" ? "Non Tarifée" : "Unquoted"}
                       </span>
                     )}
                   </td>
@@ -446,7 +450,7 @@ export default function QuoteDataTable({
                       className="px-3 py-1.5 bg-[#0B2545] hover:bg-[#d21f27] text-white rounded-xl text-xs font-bold transition shadow-2xs flex items-center gap-1.5 ml-auto cursor-pointer"
                     >
                       <Eye className="w-3.5 h-3.5" />
-                      <span>Review</span>
+                      <span>{language === "fr" ? "Réviser" : "Review"}</span>
                     </button>
                   </td>
                 </tr>
@@ -461,7 +465,7 @@ export default function QuoteDataTable({
         {paginatedQuotes.length === 0 ? (
           <div className="p-8 text-center text-slate-400 text-xs">
             <AlertCircle className="w-7 h-7 text-slate-300 mx-auto mb-1.5" />
-            <p>No quotes matching current criteria.</p>
+            <p>{language === "fr" ? "Aucune soumission ne correspond aux critères actuels." : "No quotes matching current criteria."}</p>
           </div>
         ) : (
           paginatedQuotes.map((quote) => (
@@ -495,12 +499,16 @@ export default function QuoteDataTable({
 
               <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
                 <div>
-                  <div className="text-[10px] font-bold uppercase text-slate-400">Rate Quoted</div>
+                  <div className="text-[10px] font-bold uppercase text-slate-400">
+                    {language === "fr" ? "Tarif Soumis" : "Rate Quoted"}
+                  </div>
                   <div className="font-mono font-bold text-slate-900">
-                    {quote.priceCad && !quote.priceCad.includes("Pending") && !quote.priceCad.includes("Calculating") ? (
+                    {!isUnquoted(quote.priceCad) ? (
                       quote.priceCad
                     ) : (
-                      <span className="text-amber-600 font-semibold italic text-xs">Unquoted</span>
+                      <span className="text-amber-600 font-semibold italic text-xs">
+                        {language === "fr" ? "Non Tarifée" : "Unquoted"}
+                      </span>
                     )}
                   </div>
                 </div>
@@ -514,7 +522,7 @@ export default function QuoteDataTable({
                   className="px-3.5 py-1.5 bg-[#0B2545] hover:bg-[#d21f27] text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5"
                 >
                   <Eye className="w-3.5 h-3.5" />
-                  <span>Review</span>
+                  <span>{language === "fr" ? "Réviser" : "Review"}</span>
                 </button>
               </div>
             </div>
@@ -525,15 +533,31 @@ export default function QuoteDataTable({
       {/* 3. PAGINATION & SUMMARY FOOTER */}
       <div className="p-4 border-t border-slate-200 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-500">
         <div>
-          Showing{" "}
-          <strong className="text-slate-800">
-            {filteredQuotes.length === 0 ? 0 : (currentPage - 1) * pageSize + 1}
-          </strong>{" "}
-          to{" "}
-          <strong className="text-slate-800">
-            {Math.min(currentPage * pageSize, filteredQuotes.length)}
-          </strong>{" "}
-          of <strong className="text-slate-800">{filteredQuotes.length}</strong> quotes
+          {language === "fr" ? (
+            <>
+              Affichage de{" "}
+              <strong className="text-slate-800">
+                {filteredQuotes.length === 0 ? 0 : (currentPage - 1) * pageSize + 1}
+              </strong>{" "}
+              à{" "}
+              <strong className="text-slate-800">
+                {Math.min(currentPage * pageSize, filteredQuotes.length)}
+              </strong>{" "}
+              sur <strong className="text-slate-800">{filteredQuotes.length}</strong> soumissions
+            </>
+          ) : (
+            <>
+              Showing{" "}
+              <strong className="text-slate-800">
+                {filteredQuotes.length === 0 ? 0 : (currentPage - 1) * pageSize + 1}
+              </strong>{" "}
+              to{" "}
+              <strong className="text-slate-800">
+                {Math.min(currentPage * pageSize, filteredQuotes.length)}
+              </strong>{" "}
+              of <strong className="text-slate-800">{filteredQuotes.length}</strong> quotes
+            </>
+          )}
         </div>
 
         {totalPages > 1 && (
@@ -544,7 +568,7 @@ export default function QuoteDataTable({
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
               className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-40 transition cursor-pointer font-semibold"
             >
-              Previous
+              {language === "fr" ? "Précédent" : "Previous"}
             </button>
 
             {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
@@ -568,7 +592,7 @@ export default function QuoteDataTable({
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
               className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-40 transition cursor-pointer font-semibold"
             >
-              Next
+              {language === "fr" ? "Suivant" : "Next"}
             </button>
           </div>
         )}

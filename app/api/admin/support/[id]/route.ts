@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import connectDB from "@/lib/mongoose";
 import SupportTicket from "@/models/SupportTicket";
+import { verifyToken } from "@/lib/auth";
 import { sendTicketUpdateEmail } from "@/lib/email";
 import { notifyUser } from "@/lib/notifications";
 
@@ -11,7 +13,7 @@ export async function PATCH(
   try {
     const { id } = await params;
     const body = await req.json();
-    const { status, priority, message, internalNotes, responderName, isInternal } = body;
+    const { status, priority, message, internalNotes, isInternal } = body;
 
     await connectDB();
     const dbTicket = await SupportTicket.findOne({
@@ -29,9 +31,13 @@ export async function PATCH(
     if (internalNotes !== undefined) dbTicket.internalNotes = internalNotes;
 
     if (message) {
+      // The responder's name always comes from their own authenticated session,
+      // never from client-supplied input — otherwise any reply could be
+      // attributed to whatever name the request happened to send.
+      const actor = verifyToken((await cookies()).get("token")?.value || "");
       dbTicket.messages.push({
         sender: "admin",
-        senderName: responderName || "Transimex Operations",
+        senderName: actor?.name || "Transimex Operations",
         message,
         timestamp: new Date().toLocaleString(),
         isInternal: !!isInternal,

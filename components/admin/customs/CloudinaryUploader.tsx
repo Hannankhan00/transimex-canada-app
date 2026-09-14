@@ -1,16 +1,14 @@
 "use client";
 
 import React, { useState, useRef } from "react";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { DocumentType, VaultDocument } from "@/lib/documentTypes";
 import {
   UploadCloud,
   FileText,
   CheckCircle2,
   AlertCircle,
-  X,
-  FileCheck,
   Lock,
-  Sparkles,
 } from "lucide-react";
 
 interface CloudinaryUploaderProps {
@@ -31,6 +29,7 @@ export default function CloudinaryUploader({
   shipmentId,
   onDocumentUploaded,
 }: CloudinaryUploaderProps) {
+  const { language } = useLanguage();
   const [selectedType, setSelectedType] = useState<DocumentType>("Customs Entry");
   const [dragActive, setDragActive] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -55,12 +54,20 @@ export default function CloudinaryUploader({
 
     // Validate PDF / format
     if (!file.name.toLowerCase().endsWith(".pdf") && file.type !== "application/pdf") {
-      setErrorMessage("Regulatory compliance documents must be in PDF format.");
+      setErrorMessage(
+        language === "fr"
+          ? "Les documents de conformité réglementaire doivent être au format PDF."
+          : "Regulatory compliance documents must be in PDF format."
+      );
       return;
     }
 
     if (file.size > 25 * 1024 * 1024) {
-      setErrorMessage("File exceeds 25MB regulatory upload limit.");
+      setErrorMessage(
+        language === "fr"
+          ? "Le fichier dépasse la limite de téléversement réglementaire de 25 Mo."
+          : "File exceeds 25MB regulatory upload limit."
+      );
       return;
     }
 
@@ -142,19 +149,28 @@ export default function CloudinaryUploader({
         <div>
           <h3 className="font-bold text-[#0B2545] text-sm flex items-center gap-2">
             <UploadCloud className="w-4 h-4 text-[#d21f27]" />
-            <span>Cloudflare R2 Document Vault Uploader</span>
-            <span className="text-[10px] font-bold bg-amber-100 text-amber-900 px-2 py-0.5 rounded-full border border-amber-200">
-              Cloudflare R2
-            </span>
+            <span>{language === "fr" ? "Téléverseur de Documents" : "Document Vault Uploader"}</span>
           </h3>
           <p className="text-[11px] text-slate-500 mt-0.5">
-            Encrypted cloud object storage for customs entries, waybills &amp; PODs. Uploads default to{" "}
-            <strong className="text-slate-700">Internal Confidential</strong>.
+            {language === "fr" ? (
+              <>
+                Stockage sécurisé pour les entrées douanières, connaissements et preuves de livraison. Les
+                téléversements sont par défaut{" "}
+                <strong className="text-slate-700">Confidentiel Interne</strong>.
+              </>
+            ) : (
+              <>
+                Secure cloud storage for customs entries, waybills &amp; PODs. Uploads default to{" "}
+                <strong className="text-slate-700">Internal Confidential</strong>.
+              </>
+            )}
           </p>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-[11px] font-bold text-slate-600 whitespace-nowrap">Document Type:</span>
+          <span className="text-[11px] font-bold text-slate-600 whitespace-nowrap">
+            {language === "fr" ? "Type de Document :" : "Document Type:"}
+          </span>
           <select
             value={selectedType}
             onChange={(e) => setSelectedType(e.target.value as DocumentType)}
@@ -180,7 +196,17 @@ export default function CloudinaryUploader({
         <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs rounded-xl flex items-center gap-2 font-medium">
           <CheckCircle2 className="w-4 h-4 flex-shrink-0 text-emerald-600" />
           <span>
-            <strong>{recentUpload}</strong> successfully uploaded and linked to {shipmentId} as an internal confidential document.
+            {language === "fr" ? (
+              <>
+                <strong>{recentUpload}</strong> téléversé avec succès et lié à {shipmentId} en tant que document
+                confidentiel interne.
+              </>
+            ) : (
+              <>
+                <strong>{recentUpload}</strong> successfully uploaded and linked to {shipmentId} as an internal
+                confidential document.
+              </>
+            )}
           </span>
         </div>
       )}
@@ -213,10 +239,23 @@ export default function CloudinaryUploader({
 
           <div>
             <p className="font-bold text-slate-800 text-xs sm:text-sm">
-              Drag &amp; drop shipping paperwork PDF, or <span className="text-[#d21f27] underline">browse files</span>
+              {language === "fr" ? (
+                <>
+                  Glissez-déposez un PDF de documentation d'expédition, ou{" "}
+                  <span className="text-[#d21f27] underline">parcourir les fichiers</span>
+                </>
+              ) : (
+                <>
+                  Drag &amp; drop shipping paperwork PDF, or <span className="text-[#d21f27] underline">browse files</span>
+                </>
+              )}
             </p>
             <p className="text-[11px] text-slate-500 mt-0.5">
-              Target Type: <strong className="text-[#0B2545]">{selectedType}</strong> &bull; Supports official Bill of Lading, AWB, B3, POD
+              {language === "fr" ? "Type Cible :" : "Target Type:"}{" "}
+              <strong className="text-[#0B2545]">{selectedType}</strong> &bull;{" "}
+              {language === "fr"
+                ? "Prend en charge le connaissement officiel, LTA, B3, preuve de livraison"
+                : "Supports official Bill of Lading, AWB, B3, POD"}
             </p>
           </div>
         </div>
@@ -230,22 +269,30 @@ export default function CloudinaryUploader({
               />
             </div>
             <span className="text-xs font-bold text-slate-700">
-              Uploading &amp; Registering Document ({uploadProgress}%)...
+              {language === "fr"
+                ? `Téléversement et Enregistrement du Document (${uploadProgress}%)...`
+                : `Uploading & Registering Document (${uploadProgress}%)...`}
             </span>
           </div>
         )}
       </div>
 
       {/* Security Disclaimer */}
-      <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-[11px] text-slate-600 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Lock className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
-          <span>
-            Security Policy: Documents uploaded here are <strong>invisible to clients</strong> until you toggle{" "}
-            <em>Public in Client Vault</em> below.
-          </span>
-        </div>
-        <span className="text-[10px] font-bold text-[#0B2545] uppercase">STAFF GATEKEEPER</span>
+      <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-[11px] text-slate-600 flex items-center gap-2">
+        <Lock className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
+        <span>
+          {language === "fr" ? (
+            <>
+              Politique de sécurité : les documents téléversés ici sont <strong>invisibles pour les clients</strong>{" "}
+              jusqu'à ce que vous activiez <em>Public dans le Coffre Client</em> ci-dessous.
+            </>
+          ) : (
+            <>
+              Security Policy: Documents uploaded here are <strong>invisible to clients</strong> until you toggle{" "}
+              <em>Public in Client Vault</em> below.
+            </>
+          )}
+        </span>
       </div>
     </div>
   );

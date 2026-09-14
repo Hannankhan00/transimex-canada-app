@@ -4,7 +4,6 @@ import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
-import DirectClientQuoteModal from "@/components/admin/clients/DirectClientQuoteModal";
 import {
   Truck,
   FileText,
@@ -15,35 +14,28 @@ import {
   Search,
   CheckCircle2,
   Clock,
-  ArrowUpRight,
   TrendingUp,
   ChevronRight,
   Shield,
   Users,
-  Building2,
-  Lock,
-  Sparkles,
   RefreshCw,
-  ExternalLink,
-  MapPin,
-  Calendar,
-  Filter,
-  DollarSign,
-  Layers,
   X,
-  UserPlus,
-  Send,
-  Check,
 } from "lucide-react";
 
 import { getRolePreset } from "@/lib/rbac";
 
 interface MetricData {
   newQuotesCount: number;
+  newQuotesToday: number;
+  newQuotesValueCad: number;
   activeShipmentsCount: number;
+  activeCorridorsCount: number;
   customsHoldsCount: number;
+  customsHoldPorts: string[];
   unreadInquiriesCount: number;
+  unreadFreightQuoteCount: number;
   openTicketsCount: number;
+  urgentTicketsCount: number;
 }
 
 interface ActivityItem {
@@ -77,20 +69,25 @@ export default function AdminOperationsPage() {
   const router = useRouter();
   const { language } = useLanguage();
 
-  // Direct Onboarding Modal State
-  const [isDirectOnboardOpen, setIsDirectOnboardOpen] = useState(false);
-
   // Metrics State
   const [metrics, setMetrics] = useState<MetricData>({
     newQuotesCount: 0,
+    newQuotesToday: 0,
+    newQuotesValueCad: 0,
     activeShipmentsCount: 0,
+    activeCorridorsCount: 0,
     customsHoldsCount: 0,
+    customsHoldPorts: [],
     unreadInquiriesCount: 0,
+    unreadFreightQuoteCount: 0,
     openTicketsCount: 0,
+    urgentTicketsCount: 0,
   });
 
   // Activity Feed Filter
-  const [activityFilter, setActivityFilter] = useState<"all" | "shipment" | "quote" | "customs" | "inquiry" | "ticket">("all");
+  const [activityFilter, setActivityFilter] = useState<
+    "all" | "shipment" | "quote" | "customs" | "inquiry" | "ticket"
+  >("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -235,10 +232,7 @@ export default function AdminOperationsPage() {
               EST 24/7
             </span>
           </div>
-          <h1
-            className="text-3xl sm:text-4xl font-bold text-[#0B2545] tracking-tight leading-tight mt-1"
-            style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
-          >
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-[#0B2545] tracking-tight leading-tight mt-1">
             {language === "fr" ? "Aperçu des Opérations" : "Operations Overview"}
           </h1>
           <p className="text-slate-500 text-xs sm:text-sm mt-1">
@@ -255,19 +249,10 @@ export default function AdminOperationsPage() {
             onClick={handleRefresh}
             disabled={loadingDashboard}
             className="px-3.5 py-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 shadow-2xs transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
-            title="Refresh Live Metrics"
+            title={language === "fr" ? "Actualiser les Indicateurs" : "Refresh Live Metrics"}
           >
             <RefreshCw className={`w-3.5 h-3.5 text-slate-500 ${isRefreshing || loadingDashboard ? "animate-spin" : ""}`} />
             <span className="hidden sm:inline">{language === "fr" ? "Actualiser" : "Refresh"}</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setIsDirectOnboardOpen(true)}
-            className="px-3.5 py-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-[#0B2545] shadow-2xs transition cursor-pointer flex items-center gap-1.5"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-[#d21f27]" />
-            <span>{language === "fr" ? "Client & Soumission Directe" : "Direct Client & Quote"}</span>
           </button>
 
           <button
@@ -291,31 +276,36 @@ export default function AdminOperationsPage() {
       </div>
 
       {/* 2. REAL-TIME 5 HIGH-LEVEL OPERATIONAL METRIC CARDS */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
         {/* Card 1: New Quotes */}
-        <div className="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-2xs hover:shadow-md transition group">
+        <div className="bg-white rounded-xl p-4 border border-slate-200/90 shadow-2xs hover:shadow-md transition group">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
               {language === "fr" ? "Nouvelles Soumissions" : "New Quotes"}
             </span>
-            <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:scale-105 transition-transform">
-              <FileText className="w-4 h-4" />
+            <div className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0">
+              <FileText className="w-3.5 h-3.5" />
             </div>
           </div>
-          <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-[#0B2545]">{metrics.newQuotesCount}</span>
-            <span className="text-xs font-semibold text-emerald-600 flex items-center gap-0.5">
-              <TrendingUp className="w-3 h-3" /> +3 today
-            </span>
+          <div className="mt-2 flex items-baseline gap-1.5">
+            <span className="text-2xl font-bold text-[#0B2545]">{metrics.newQuotesCount}</span>
+            {metrics.newQuotesToday > 0 && (
+              <span className="text-[11px] font-semibold text-emerald-600 flex items-center gap-0.5">
+                <TrendingUp className="w-3 h-3" /> +{metrics.newQuotesToday}
+              </span>
+            )}
           </div>
-          <p className="text-[11px] text-slate-500 mt-1">
-            {language === "fr" ? "En attente de révision tarifaire" : "Awaiting pricing & dispatch review"}
-          </p>
-          <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px]">
-            <span className="font-semibold text-slate-600">$142.5k Value</span>
+          <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between gap-2 text-[11px]">
+            <span className="text-slate-500 truncate min-w-0">
+              {metrics.newQuotesValueCad > 0
+                ? `$${metrics.newQuotesValueCad.toLocaleString("en-US", { maximumFractionDigits: 0 })} CAD`
+                : language === "fr"
+                ? "Aucune valeur"
+                : "No priced value"}
+            </span>
             <Link
               href="/admin/quotes"
-              className="text-[#d21f27] font-bold hover:underline flex items-center gap-0.5"
+              className="text-[#d21f27] font-bold hover:underline flex items-center gap-0.5 flex-shrink-0"
             >
               {language === "fr" ? "Voir" : "Review"} <ChevronRight className="w-3 h-3" />
             </Link>
@@ -323,58 +313,83 @@ export default function AdminOperationsPage() {
         </div>
 
         {/* Card 2: Active Shipments */}
-        <div className="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-2xs hover:shadow-md transition group">
+        <div className="bg-white rounded-xl p-4 border border-slate-200/90 shadow-2xs hover:shadow-md transition group">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
               {language === "fr" ? "Fret en Transit" : "Active Shipments"}
             </span>
-            <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-105 transition-transform">
-              <Truck className="w-4 h-4" />
+            <div className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0">
+              <Truck className="w-3.5 h-3.5" />
             </div>
           </div>
-          <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-[#0B2545]">{metrics.activeShipmentsCount}</span>
-            <span className="text-xs font-semibold text-emerald-600">98.4% on-time</span>
+          <div className="mt-2 flex items-baseline gap-1.5">
+            <span className="text-2xl font-bold text-[#0B2545]">{metrics.activeShipmentsCount}</span>
           </div>
-          <p className="text-[11px] text-slate-500 mt-1">
-            {language === "fr" ? "Chargements actifs sur autoroutes" : "Loads in transit across corridors"}
-          </p>
-          <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px]">
-            <span className="font-semibold text-slate-600">6 Corridors</span>
+          <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between gap-2 text-[11px]">
+            <span className="text-slate-500 truncate min-w-0">
+              {metrics.activeCorridorsCount} {language === "fr" ? "corridors" : "corridors"}
+            </span>
             <Link
               href="/admin/shipments"
-              className="text-[#0B2545] font-bold hover:underline flex items-center gap-0.5"
+              className="text-[#0B2545] font-bold hover:underline flex items-center gap-0.5 flex-shrink-0"
             >
               {language === "fr" ? "Suivi" : "Track"} <ChevronRight className="w-3 h-3" />
             </Link>
           </div>
         </div>
 
-        {/* Card 3: Customs Holds (URGENT RED ALERT) */}
-        <div className="bg-white rounded-2xl p-5 border-2 border-red-200 shadow-xs hover:shadow-md transition group relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-16 h-16 bg-red-500/10 rounded-bl-full pointer-events-none" />
+        {/* Card 3: Customs Holds */}
+        <div
+          className={`bg-white rounded-xl p-4 shadow-xs hover:shadow-md transition group ${
+            metrics.customsHoldsCount > 0 ? "border border-red-200" : "border border-slate-200/90"
+          }`}
+        >
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-red-700">
+            <span
+              className={`text-[10px] font-bold uppercase tracking-wider ${
+                metrics.customsHoldsCount > 0 ? "text-red-700" : "text-slate-500"
+              }`}
+            >
               {language === "fr" ? "Blocages Douanes" : "Customs Holds"}
             </span>
-            <div className="w-9 h-9 rounded-xl bg-red-100 text-[#d21f27] flex items-center justify-center group-hover:scale-105 transition-transform">
-              <AlertTriangle className="w-4 h-4 stroke-[2.5]" />
+            <div
+              className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                metrics.customsHoldsCount > 0 ? "bg-red-100 text-[#d21f27]" : "bg-slate-100 text-slate-400"
+              }`}
+            >
+              <AlertTriangle className="w-3.5 h-3.5" />
             </div>
           </div>
-          <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-[#d21f27]">{metrics.customsHoldsCount}</span>
-            <span className="px-2 py-0.5 rounded-full bg-red-600 text-white text-[10px] font-bold animate-pulse">
-              ACTION REQUIRED
+          <div className="mt-2 flex items-baseline gap-1.5">
+            <span className={`text-2xl font-bold ${metrics.customsHoldsCount > 0 ? "text-[#d21f27]" : "text-[#0B2545]"}`}>
+              {metrics.customsHoldsCount}
             </span>
+            {metrics.customsHoldsCount > 0 && (
+              <span className="px-1.5 py-0.5 rounded-full bg-red-600 text-white text-[9px] font-bold">
+                {language === "fr" ? "ACTION REQUISE" : "ACTION REQUIRED"}
+              </span>
+            )}
           </div>
-          <p className="text-[11px] text-red-600/90 font-medium mt-1">
-            {language === "fr" ? "Signalements ASFC & PARS" : "CBSA & PARS inspection flags"}
-          </p>
-          <div className="mt-3 pt-3 border-t border-red-100 flex items-center justify-between text-[11px]">
-            <span className="font-semibold text-red-700">Dorval & Detroit Port</span>
+          <div
+            className={`mt-2 pt-2 border-t flex items-center justify-between gap-2 text-[11px] ${
+              metrics.customsHoldsCount > 0 ? "border-red-100" : "border-slate-100"
+            }`}
+          >
+            <span
+              className={`truncate min-w-0 ${metrics.customsHoldsCount > 0 ? "text-red-700" : "text-slate-500"}`}
+              title={metrics.customsHoldPorts.join(" & ")}
+            >
+              {metrics.customsHoldPorts.length > 0
+                ? metrics.customsHoldPorts.slice(0, 2).join(" & ")
+                : language === "fr"
+                ? "Aucun blocage"
+                : "No active holds"}
+            </span>
             <Link
               href="/admin/shipments?filter=customs"
-              className="text-red-700 font-bold hover:underline flex items-center gap-0.5"
+              className={`font-bold hover:underline flex items-center gap-0.5 flex-shrink-0 ${
+                metrics.customsHoldsCount > 0 ? "text-red-700" : "text-[#0B2545]"
+              }`}
             >
               {language === "fr" ? "Résoudre" : "Resolve"} <ChevronRight className="w-3 h-3" />
             </Link>
@@ -382,27 +397,26 @@ export default function AdminOperationsPage() {
         </div>
 
         {/* Card 4: Unread Inquiries */}
-        <div className="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-2xs hover:shadow-md transition group">
+        <div className="bg-white rounded-xl p-4 border border-slate-200/90 shadow-2xs hover:shadow-md transition group">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
               {language === "fr" ? "Demandes Non Lues" : "Unread Inquiries"}
             </span>
-            <div className="w-9 h-9 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center group-hover:scale-105 transition-transform">
-              <Mail className="w-4 h-4" />
+            <div className="w-7 h-7 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center flex-shrink-0">
+              <Mail className="w-3.5 h-3.5" />
             </div>
           </div>
-          <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-[#0B2545]">{metrics.unreadInquiriesCount}</span>
-            <span className="text-xs font-semibold text-purple-600">5 High Priority</span>
+          <div className="mt-2 flex items-baseline gap-1.5">
+            <span className="text-2xl font-bold text-[#0B2545]">{metrics.unreadInquiriesCount}</span>
           </div>
-          <p className="text-[11px] text-slate-500 mt-1">
-            {language === "fr" ? "Formulaires du site public" : "New public site contact leads"}
-          </p>
-          <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px]">
-            <span className="font-semibold text-slate-600">Enterprise RFQs</span>
+          <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between gap-2 text-[11px]">
+            <span className="text-slate-500 truncate min-w-0">
+              {metrics.unreadFreightQuoteCount}{" "}
+              {language === "fr" ? "demandes de fret" : "freight RFQs"}
+            </span>
             <Link
-              href="/admin/inbox"
-              className="text-[#0B2545] font-bold hover:underline flex items-center gap-0.5"
+              href="/admin/messages"
+              className="text-[#0B2545] font-bold hover:underline flex items-center gap-0.5 flex-shrink-0"
             >
               {language === "fr" ? "Ouvrir" : "View"} <ChevronRight className="w-3 h-3" />
             </Link>
@@ -410,27 +424,27 @@ export default function AdminOperationsPage() {
         </div>
 
         {/* Card 5: Open Tickets */}
-        <div className="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-2xs hover:shadow-md transition group">
+        <div className="bg-white rounded-xl p-4 border border-slate-200/90 shadow-2xs hover:shadow-md transition group">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
               {language === "fr" ? "Billets de Support" : "Open Tickets"}
             </span>
-            <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center group-hover:scale-105 transition-transform">
-              <LifeBuoy className="w-4 h-4" />
+            <div className="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center flex-shrink-0">
+              <LifeBuoy className="w-3.5 h-3.5" />
             </div>
           </div>
-          <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-[#0B2545]">{metrics.openTicketsCount}</span>
-            <span className="text-xs font-semibold text-amber-600">2 Critical SLA</span>
+          <div className="mt-2 flex items-baseline gap-1.5">
+            <span className="text-2xl font-bold text-[#0B2545]">{metrics.openTicketsCount}</span>
+            {metrics.urgentTicketsCount > 0 && (
+              <span className="text-[11px] font-semibold text-amber-600">
+                {metrics.urgentTicketsCount} {language === "fr" ? "urgent(s)" : "urgent"}
+              </span>
+            )}
           </div>
-          <p className="text-[11px] text-slate-500 mt-1">
-            {language === "fr" ? "Requêtes clients en attente" : "Client requests awaiting reply"}
-          </p>
-          <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px]">
-            <span className="font-semibold text-slate-600">&lt; 30m Avg Response</span>
+          <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
             <Link
               href="/admin/support"
-              className="text-[#0B2545] font-bold hover:underline flex items-center gap-0.5"
+              className="text-[#0B2545] font-bold hover:underline flex items-center gap-0.5 ml-auto"
             >
               {language === "fr" ? "Répondre" : "Respond"} <ChevronRight className="w-3 h-3" />
             </Link>
@@ -446,10 +460,7 @@ export default function AdminOperationsPage() {
             {/* Feed Header with Filter Tabs */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
               <div>
-                <h2
-                  className="text-xl font-bold text-[#0B2545]"
-                  style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
-                >
+                <h2 className="text-xl font-bold text-[#0B2545]">
                   {language === "fr" ? "Journal d'Activité en Temps Réel" : "Recent Operational Activity"}
                 </h2>
                 <p className="text-slate-500 text-xs mt-0.5">
@@ -458,16 +469,30 @@ export default function AdminOperationsPage() {
                     : "Chronological audit trail of all dispatch events, quote decisions, and carrier actions."}
                 </p>
               </div>
+            </div>
 
-              {/* Category Filter Pills */}
+            {/* Search & Category Filter Pills */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 pt-3 pb-1">
+              <div className="relative flex-1 min-w-0 sm:max-w-[220px]">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder={language === "fr" ? "Rechercher l'activité..." : "Search activity..."}
+                  className="w-full bg-slate-50 hover:bg-slate-100 focus:bg-white border border-slate-200 focus:border-[#0B2545] rounded-xl pl-8 pr-3 py-1.5 text-xs text-slate-800 placeholder:text-slate-400 outline-none transition"
+                />
+              </div>
+
               <div className="flex items-center gap-1 overflow-x-auto pb-1 sm:pb-0">
                 {(
                   [
-                    { key: "all", label: "All" },
-                    { key: "shipment", label: "Shipments" },
-                    { key: "quote", label: "Quotes" },
-                    { key: "customs", label: "Customs" },
-                    { key: "ticket", label: "Tickets" },
+                    { key: "all", label: language === "fr" ? "Tous" : "All" },
+                    { key: "shipment", label: language === "fr" ? "Expéditions" : "Shipments" },
+                    { key: "quote", label: language === "fr" ? "Soumissions" : "Quotes" },
+                    { key: "customs", label: language === "fr" ? "Douanes" : "Customs" },
+                    { key: "inquiry", label: language === "fr" ? "Demandes" : "Inquiries" },
+                    { key: "ticket", label: language === "fr" ? "Billets" : "Tickets" },
                   ] as const
                 ).map((tab) => (
                   <button
@@ -586,7 +611,7 @@ export default function AdminOperationsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <div className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
                   <h3 className="font-bold text-[#0B2545] text-sm">
                     {language === "fr" ? "Équipe des Opérations en Service" : "Dispatch Staff on Duty"}
                   </h3>
@@ -640,7 +665,7 @@ export default function AdminOperationsPage() {
                         <span
                           className={`px-2 py-0.5 rounded text-[10px] font-bold ${preset.badgeClass}`}
                         >
-                          {preset.titleEn}
+                          {language === "fr" ? preset.titleFr : preset.titleEn}
                         </span>
                       </div>
                     </div>
@@ -659,7 +684,7 @@ export default function AdminOperationsPage() {
         </div>
       </div>
 
-      {/* 4. MODAL: CREATE NEW SHIPMENT */}
+      {/* Modal: Create New Shipment */}
       {isShipmentModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
           <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-4 animate-in zoom-in-95 duration-150">
@@ -672,7 +697,9 @@ export default function AdminOperationsPage() {
                   <h3 className="font-bold text-[#0B2545] text-base">
                     {language === "fr" ? "Créer un Nouvel Envoi de Fret" : "Dispatch New Freight Shipment"}
                   </h3>
-                  <p className="text-[11px] text-slate-500">Transimex Institutional Dispatch Gateway</p>
+                  <p className="text-[11px] text-slate-500">
+                    {language === "fr" ? "Saisie rapide de répartition" : "Quick dispatch entry"}
+                  </p>
                 </div>
               </div>
               <button
@@ -687,8 +714,14 @@ export default function AdminOperationsPage() {
             {shipmentSuccess ? (
               <div className="p-6 text-center space-y-2">
                 <CheckCircle2 className="w-12 h-12 text-emerald-500 mx-auto animate-bounce" />
-                <h4 className="font-bold text-slate-900">Shipment Dispatched Successfully</h4>
-                <p className="text-xs text-slate-500">Manifest generated and assigned to carrier fleet.</p>
+                <h4 className="font-bold text-slate-900">
+                  {language === "fr" ? "Envoi Répartis avec Succès" : "Shipment Dispatched Successfully"}
+                </h4>
+                <p className="text-xs text-slate-500">
+                  {language === "fr"
+                    ? "Manifeste généré et assigné à la flotte de transporteurs."
+                    : "Manifest generated and assigned to carrier fleet."}
+                </p>
               </div>
             ) : (
               <form onSubmit={handleQuickShipmentSubmit} className="space-y-4 text-xs">
@@ -700,7 +733,9 @@ export default function AdminOperationsPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="font-semibold text-slate-700 block mb-1">Client Name</label>
+                    <label className="font-semibold text-slate-700 block mb-1">
+                      {language === "fr" ? "Nom du Client" : "Client Name"}
+                    </label>
                     <input
                       type="text"
                       required
@@ -710,7 +745,9 @@ export default function AdminOperationsPage() {
                     />
                   </div>
                   <div>
-                    <label className="font-semibold text-slate-700 block mb-1">Client Company</label>
+                    <label className="font-semibold text-slate-700 block mb-1">
+                      {language === "fr" ? "Entreprise du Client" : "Client Company"}
+                    </label>
                     <input
                       type="text"
                       required
@@ -722,7 +759,9 @@ export default function AdminOperationsPage() {
                 </div>
 
                 <div>
-                  <label className="font-semibold text-slate-700 block mb-1">Client Email</label>
+                  <label className="font-semibold text-slate-700 block mb-1">
+                    {language === "fr" ? "Courriel du Client" : "Client Email"}
+                  </label>
                   <input
                     type="email"
                     required
@@ -733,7 +772,9 @@ export default function AdminOperationsPage() {
                 </div>
 
                 <div>
-                  <label className="font-semibold text-slate-700 block mb-1">Origin Terminal</label>
+                  <label className="font-semibold text-slate-700 block mb-1">
+                    {language === "fr" ? "Terminal d'Origine" : "Origin Terminal"}
+                  </label>
                   <input
                     type="text"
                     required
@@ -744,7 +785,9 @@ export default function AdminOperationsPage() {
                 </div>
 
                 <div>
-                  <label className="font-semibold text-slate-700 block mb-1">Destination Facility</label>
+                  <label className="font-semibold text-slate-700 block mb-1">
+                    {language === "fr" ? "Installation de Destination" : "Destination Facility"}
+                  </label>
                   <input
                     type="text"
                     required
@@ -756,7 +799,9 @@ export default function AdminOperationsPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="font-semibold text-slate-700 block mb-1">Equipment / Mode</label>
+                    <label className="font-semibold text-slate-700 block mb-1">
+                      {language === "fr" ? "Équipement / Mode" : "Equipment / Mode"}
+                    </label>
                     <select
                       value={newFreightMode}
                       onChange={(e) => setNewFreightMode(e.target.value)}
@@ -770,7 +815,9 @@ export default function AdminOperationsPage() {
                   </div>
 
                   <div>
-                    <label className="font-semibold text-slate-700 block mb-1">Assigned Carrier / Fleet</label>
+                    <label className="font-semibold text-slate-700 block mb-1">
+                      {language === "fr" ? "Transporteur / Flotte Assigné" : "Assigned Carrier / Fleet"}
+                    </label>
                     <input
                       type="text"
                       required
@@ -783,7 +830,9 @@ export default function AdminOperationsPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
-                    <label className="font-semibold text-slate-700 block mb-1">Commodity</label>
+                    <label className="font-semibold text-slate-700 block mb-1">
+                      {language === "fr" ? "Marchandise" : "Commodity"}
+                    </label>
                     <input
                       type="text"
                       required
@@ -793,22 +842,26 @@ export default function AdminOperationsPage() {
                     />
                   </div>
                   <div>
-                    <label className="font-semibold text-slate-700 block mb-1">Weight</label>
+                    <label className="font-semibold text-slate-700 block mb-1">
+                      {language === "fr" ? "Poids" : "Weight"}
+                    </label>
                     <input
                       type="text"
                       required
-                      placeholder="e.g. 12,500 kg"
+                      placeholder={language === "fr" ? "ex. 12 500 kg" : "e.g. 12,500 kg"}
                       value={newWeight}
                       onChange={(e) => setNewWeight(e.target.value)}
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 outline-none focus:border-[#0B2545] focus:bg-white"
                     />
                   </div>
                   <div>
-                    <label className="font-semibold text-slate-700 block mb-1">Rate (CAD)</label>
+                    <label className="font-semibold text-slate-700 block mb-1">
+                      {language === "fr" ? "Tarif (CAD)" : "Rate (CAD)"}
+                    </label>
                     <input
                       type="text"
                       required
-                      placeholder="e.g. 4,200"
+                      placeholder={language === "fr" ? "ex. 4 200" : "e.g. 4,200"}
                       value={newRateCad}
                       onChange={(e) => setNewRateCad(e.target.value)}
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 outline-none focus:border-[#0B2545] focus:bg-white"
@@ -822,14 +875,20 @@ export default function AdminOperationsPage() {
                     onClick={() => setIsShipmentModalOpen(false)}
                     className="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 transition cursor-pointer"
                   >
-                    Cancel
+                    {language === "fr" ? "Annuler" : "Cancel"}
                   </button>
                   <button
                     type="submit"
                     disabled={shipmentSubmitting}
                     className="px-4 py-2 bg-[#d21f27] hover:bg-[#b51a21] text-white rounded-xl font-bold shadow-xs transition cursor-pointer disabled:opacity-50"
                   >
-                    {shipmentSubmitting ? "Dispatching..." : "Dispatch Load"}
+                    {shipmentSubmitting
+                      ? language === "fr"
+                        ? "Répartition..."
+                        : "Dispatching..."
+                      : language === "fr"
+                      ? "Répartir l'Envoi"
+                      : "Dispatch Load"}
                   </button>
                 </div>
               </form>
@@ -837,13 +896,6 @@ export default function AdminOperationsPage() {
           </div>
         </div>
       )}
-
-      {/* Direct Client Onboarding & Pre-Priced Quote Modal */}
-      <DirectClientQuoteModal
-        isOpen={isDirectOnboardOpen}
-        onClose={() => setIsDirectOnboardOpen(false)}
-        onSuccess={loadDashboard}
-      />
     </div>
   );
 }

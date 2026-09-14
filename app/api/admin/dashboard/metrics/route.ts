@@ -126,9 +126,17 @@ function ticketToActivity(t: any): ActivityItem {
   };
 }
 
+const URGENT_TICKET_PRIORITIES: Array<"Critical Dispatch Emergency" | "Urgent"> = [
+  "Critical Dispatch Emergency",
+  "Urgent",
+];
+
 export async function GET() {
   try {
     await connectDB();
+
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
 
     const [
       newQuotesCount,
@@ -139,6 +147,12 @@ export async function GET() {
       recentQuotes,
       recentShipments,
       recentTickets,
+      newQuotesToday,
+      underReviewQuotes,
+      activeShipmentRoutes,
+      customsHoldPortsRaw,
+      unreadFreightQuoteCount,
+      urgentTicketsCount,
     ] = await Promise.all([
       Quote.countDocuments({ status: "under_review" }),
       Shipment.countDocuments({ status: { $in: ACTIVE_SHIPMENT_STATUSES } }),
@@ -148,6 +162,20 @@ export async function GET() {
       Quote.find().sort({ updatedAt: -1 }).limit(8).lean(),
       Shipment.find().sort({ updatedAt: -1 }).limit(8).lean(),
       SupportTicket.find().sort({ updatedAt: -1 }).limit(8).lean(),
+      Quote.countDocuments({ createdAt: { $gte: todayStart } }),
+      Quote.find({ status: "under_review" }, "priceCad").lean(),
+      Shipment.find(
+        { status: { $in: ACTIVE_SHIPMENT_STATUSES } },
+        "route.origin route.destination"
+      ).lean(),
+      Shipment.distinct("portOfEntry", {
+        $or: [{ status: "Customs Hold" }, { customsStatus: "Held" }],
+      }),
+      Inquiry.countDocuments({ unread: true, category: "Freight Quote" }),
+      SupportTicket.countDocuments({
+        status: { $in: ["Open", "In Progress"] },
+        priority: { $in: URGENT_TICKET_PRIORITIES },
+      }),
     ]);
 
     const activities: ActivityItem[] = [
@@ -158,14 +186,35 @@ export async function GET() {
       .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
       .slice(0, 8);
 
+    const newQuotesValueCad = (underReviewQuotes as any[]).reduce((sum, q) => {
+      const n = parseFloat(String(q.priceCad || "").replace(/[^0-9.]/g, ""));
+      return sum + (isNaN(n) ? 0 : n);
+    }, 0);
+
+    const activeCorridorsCount = new Set(
+      (activeShipmentRoutes as any[])
+        .filter((s) => s.route?.origin && s.route?.destination)
+        .map((s) => `${s.route.origin}→${s.route.destination}`)
+    ).size;
+
+    const customsHoldPorts = (customsHoldPortsRaw as (string | undefined)[]).filter(
+      (p): p is string => !!p
+    );
+
     return NextResponse.json({
       success: true,
       metrics: {
         newQuotesCount,
+        newQuotesToday,
+        newQuotesValueCad,
         activeShipmentsCount,
+        activeCorridorsCount,
         customsHoldsCount,
+        customsHoldPorts,
         unreadInquiriesCount,
+        unreadFreightQuoteCount,
         openTicketsCount,
+        urgentTicketsCount,
       },
       activities,
     });

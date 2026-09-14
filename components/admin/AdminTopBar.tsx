@@ -4,22 +4,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { api } from "@/lib/api";
-import {
-  Menu,
-  Globe2,
-  Plus,
-  LogOut,
-  Building2,
-  User,
-  Shield,
-  ChevronDown,
-  Search,
-  Bell,
-  Check,
-  Truck,
-  Sparkles,
-  Layers,
-} from "lucide-react";
+import { Menu, Globe2, LogOut, Building2, Shield, ChevronDown, Check } from "lucide-react";
 
 interface AdminTopBarProps {
   onOpenMobileMenu: () => void;
@@ -29,13 +14,11 @@ interface AdminTopBarProps {
     companyName?: string;
     role?: string;
   } | null;
-  onOpenNewShipmentModal?: () => void;
 }
 
 export default function AdminTopBar({
   onOpenMobileMenu,
   user,
-  onOpenNewShipmentModal,
 }: AdminTopBarProps) {
   const router = useRouter();
   const { language, setLanguage } = useLanguage();
@@ -70,7 +53,7 @@ export default function AdminTopBar({
 
   return (
     <header className="sticky top-0 z-20 h-16 bg-white/95 backdrop-blur-md border-b border-slate-200/90 shadow-2xs px-4 sm:px-6 lg:px-8 flex items-center justify-between">
-      {/* Left Area: Mobile Menu & Operations Search */}
+      {/* Left Area: Mobile Menu */}
       <div className="flex items-center gap-3 flex-1 max-w-lg">
         <button
           type="button"
@@ -80,53 +63,10 @@ export default function AdminTopBar({
         >
           <Menu className="w-5 h-5" />
         </button>
-
-        {/* Global Logistics Quick Search */}
-        <div className="relative w-full hidden sm:flex items-center">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-          <input
-            type="text"
-            placeholder={
-              language === "fr"
-                ? "Recherche de chargement, soumission, client ou CBSA..."
-                : "Search shipments, quotes, manifests, or CBSA entry..."
-            }
-            className="w-full bg-slate-50 hover:bg-slate-100 focus:bg-white border border-slate-200 focus:border-[#0B2545] focus:ring-2 focus:ring-[#0B2545]/10 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-800 placeholder:text-slate-400 outline-none transition"
-          />
-        </div>
       </div>
 
-      {/* Right Area: Session Badge, Language Toggle, Quick Action & User Profile */}
+      {/* Right Area: Language Toggle & User Profile */}
       <div className="flex items-center gap-2 sm:gap-3.5">
-        {/* Active Session Indicator */}
-        <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-emerald-50 border border-emerald-200/80 rounded-full text-xs font-semibold text-emerald-800">
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-          </span>
-          <span className="text-[11px]">
-            {language === "fr" ? "Session Dispatch Active" : "Live Dispatch Active"}
-          </span>
-        </div>
-
-        {/* Quick Action: Create New Shipment */}
-        <button
-          type="button"
-          onClick={() => {
-            if (onOpenNewShipmentModal) {
-              onOpenNewShipmentModal();
-            } else {
-              router.push("/admin/shipments?new=true");
-            }
-          }}
-          className="px-2.5 sm:px-3.5 py-2 bg-[#d21f27] hover:bg-[#b51a21] text-white rounded-xl text-xs font-bold shadow-xs hover:shadow transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap"
-        >
-          <Plus className="w-4 h-4 stroke-[3]" />
-          <span className="hidden sm:inline">
-            {language === "fr" ? "Nouveau Fret" : "Create Shipment"}
-          </span>
-        </button>
-
         {/* Bilingual Language Switcher */}
         <div className="relative" ref={langRef}>
           <button

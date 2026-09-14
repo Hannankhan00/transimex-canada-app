@@ -1,23 +1,17 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 import AnalyticsKpiCards from "@/components/admin/analytics/AnalyticsKpiCards";
 import ModalSplitChart from "@/components/admin/analytics/ModalSplitChart";
 import VolumeTrendChart from "@/components/admin/analytics/VolumeTrendChart";
 import RevenueTrendChart from "@/components/admin/analytics/RevenueTrendChart";
 import CsvExportSuite from "@/components/admin/analytics/CsvExportSuite";
-import {
-  BarChart3,
-  RefreshCw,
-  TrendingUp,
-  MapPin,
-  Clock,
-  ShieldCheck,
-  CheckCircle2,
-  FileSpreadsheet,
-} from "lucide-react";
+import PermissionGuard from "@/components/admin/PermissionGuard";
+import { RefreshCw, MapPin } from "lucide-react";
 
 export default function AdminAnalyticsPage() {
+  const { language } = useLanguage();
   const [kpis, setKpis] = useState<any>({});
   const [chartData, setChartData] = useState<any>({});
   const [loading, setLoading] = useState(true);
@@ -53,26 +47,21 @@ export default function AdminAnalyticsPage() {
   const topCorridors: any[] = chartData.topCorridors && chartData.topCorridors.length > 0 ? chartData.topCorridors : [];
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-200">
+    <PermissionGuard module="analytics">
+      <div className="space-y-8 animate-in fade-in duration-200">
       {/* 1. HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-[#d21f27]">
-              Operations Intelligence &amp; Telemetry
-            </span>
-            <span className="px-2 py-0.5 rounded-full bg-slate-900 text-white text-[10px] font-mono font-bold">
-              BUSINESS ANALYTICS
-            </span>
-          </div>
-          <h1
-            className="text-3xl sm:text-4xl font-bold text-[#0B2545] tracking-tight leading-tight mt-1"
-            style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
-          >
-            Logistics KPI &amp; Financial Reporting
+          <span className="text-[11px] font-bold uppercase tracking-wider text-[#d21f27]">
+            {language === "fr" ? "Intelligence des Opérations" : "Operations Intelligence"}
+          </span>
+          <h1 className="text-3xl sm:text-4xl font-bold text-[#0B2545] tracking-tight leading-tight mt-1">
+            {language === "fr" ? "Analyses KPI et Rapports Financiers" : "Logistics KPI & Financial Reporting"}
           </h1>
           <p className="text-slate-500 text-xs sm:text-sm mt-1 max-w-2xl">
-            Live operations dashboard tracking freight velocity, quote conversion yields, customs clearance velocity, and raw CSV data exports.
+            {language === "fr"
+              ? "Tableau de bord opérationnel suivant la vélocité du fret, les taux de conversion des soumissions, le dédouanement et les exports de données CSV."
+              : "Operations dashboard tracking freight velocity, quote conversion yields, customs clearance rates, and raw CSV data exports."}
           </p>
         </div>
 
@@ -83,13 +72,13 @@ export default function AdminAnalyticsPage() {
             className="px-3.5 py-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 shadow-2xs transition cursor-pointer flex items-center gap-1.5"
           >
             <RefreshCw className={`w-3.5 h-3.5 text-slate-500 ${refreshing ? "animate-spin" : ""}`} />
-            <span>Refresh Analytics</span>
+            <span>{language === "fr" ? "Actualiser les Analyses" : "Refresh Analytics"}</span>
           </button>
         </div>
       </div>
 
       {/* 2. TOP-LEVEL KPI CARDS */}
-      <AnalyticsKpiCards kpis={kpis} />
+      <AnalyticsKpiCards kpis={kpis} loading={loading} />
 
       {/* 3. CHARTS ROW 1: MODAL SPLIT & MONTHLY VOLUME TREND */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -106,10 +95,12 @@ export default function AdminAnalyticsPage() {
           <div>
             <h3 className="font-bold text-[#0B2545] text-sm flex items-center gap-2">
               <MapPin className="w-4 h-4 text-[#d21f27]" />
-              <span>High-Density Transport Corridors &amp; Velocity Benchmarks</span>
+              <span>{language === "fr" ? "Corridors de Transport à Haute Densité" : "High-Density Transport Corridors"}</span>
             </h3>
             <p className="text-[11px] text-slate-500 mt-0.5">
-              Consolidated volume, on-time SLA metrics, and transit timelines across primary lanes.
+              {language === "fr"
+                ? "Volume consolidé et modes de transport à travers les principales routes."
+                : "Consolidated volume and transport modes across primary lanes."}
             </p>
           </div>
         </div>
@@ -118,18 +109,19 @@ export default function AdminAnalyticsPage() {
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="border-b border-slate-200 bg-slate-50/70 text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                <th className="py-3.5 px-4">Freight Corridor</th>
-                <th className="py-3.5 px-4">Primary Mode / Equipment</th>
-                <th className="py-3.5 px-4">Dispatched Loads</th>
-                <th className="py-3.5 px-4 text-right">Regulatory Border Crossing</th>
+                <th className="py-3.5 px-4">{language === "fr" ? "Corridor de Fret" : "Freight Corridor"}</th>
+                <th className="py-3.5 px-4">{language === "fr" ? "Mode Principal / Équipement" : "Primary Mode / Equipment"}</th>
+                <th className="py-3.5 px-4 text-right">{language === "fr" ? "Chargements Expédiés" : "Dispatched Loads"}</th>
               </tr>
             </thead>
 
             <tbody className="divide-y divide-slate-100 text-slate-700">
               {topCorridors.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="py-8 text-center text-slate-400 text-xs">
-                    No dispatched shipments yet to compute corridor performance.
+                  <td colSpan={3} className="py-8 text-center text-slate-400 text-xs">
+                    {language === "fr"
+                      ? "Aucune expédition consignée pour calculer la performance des corridors."
+                      : "No dispatched shipments yet to compute corridor performance."}
                   </td>
                 </tr>
               ) : (
@@ -143,11 +135,8 @@ export default function AdminAnalyticsPage() {
                         {c.mode}
                       </span>
                     </td>
-                    <td className="py-3.5 px-4 font-mono font-bold text-slate-800">
-                      {c.loadsMoved} Loads
-                    </td>
-                    <td className="py-3.5 px-4 text-right font-mono text-[11px] text-slate-500">
-                      CBSA ACI eManifest / PARS
+                    <td className="py-3.5 px-4 text-right font-mono font-bold text-slate-800">
+                      {c.loadsMoved} {language === "fr" ? "Chargements" : "Loads"}
                     </td>
                   </tr>
                 ))
@@ -159,6 +148,7 @@ export default function AdminAnalyticsPage() {
 
       {/* 6. ONE-CLICK CSV EXPORT SUITE */}
       <CsvExportSuite />
-    </div>
+      </div>
+    </PermissionGuard>
   );
 }

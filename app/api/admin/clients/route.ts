@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongoose";
 import User from "@/models/User";
+import Shipment from "@/models/Shipment";
+import Quote from "@/models/Quote";
 import { ClientProfile, mapUserIndustryToClientIndustry } from "@/lib/clientTypes";
 
 export async function GET(req: Request) {
@@ -11,37 +13,65 @@ export async function GET(req: Request) {
     const industry = searchParams.get("industry") || "all";
 
     await connectDB();
-    const dbUsers = await User.find({ role: { $in: ["client", "user"] } })
-      .sort({ createdAt: -1 })
-      .lean();
+    const [dbUsers, allShipments, allQuotes] = await Promise.all([
+      User.find({ role: { $in: ["client", "user"] } }).sort({ createdAt: -1 }).lean(),
+      Shipment.find({}, "client.email rateCad status").lean(),
+      Quote.find({}, "client.email status").lean(),
+    ]);
 
-    const clients: ClientProfile[] = dbUsers.map((u: any) => ({
-      id: u._id.toString(),
-      companyName: u.companyName || "",
-      primaryContact: u.name,
-      email: u.email,
-      phone: u.phone || "",
-      industry: mapUserIndustryToClientIndustry(u.industry),
-      status: u.isVerified !== false ? "Active" : "Deactivated",
-      registeredDate: u.createdAt
-        ? new Date(u.createdAt).toLocaleDateString("en-US", {
-            month: "short",
-            day: "2-digit",
-            year: "numeric",
-          })
-        : "",
-      billingAddress: u.address || "",
-      city: u.city || "",
-      province: u.province || "",
-      postalCode: "",
-      country: "Canada",
-      taxId: "",
-      paymentTerms: "Net 30 Days",
-      accountManager: "",
-      lifetimeRevenueCad: "$0.00 CAD",
-      totalShipmentsCompleted: 0,
-      activeQuotesCount: 0,
-    }));
+    // Aggregate real per-client totals from shipments/quotes rather than
+    // presenting an unconditional placeholder for every client.
+    const revenueByEmail = new Map<string, number>();
+    const completedShipmentsByEmail = new Map<string, number>();
+    for (const s of allShipments as any[]) {
+      const email = (s.client?.email || "").toLowerCase();
+      if (!email) continue;
+      const amount = parseFloat(String(s.rateCad || "").replace(/[^0-9.]/g, "")) || 0;
+      revenueByEmail.set(email, (revenueByEmail.get(email) || 0) + amount);
+      if (s.status === "Delivered") {
+        completedShipmentsByEmail.set(email, (completedShipmentsByEmail.get(email) || 0) + 1);
+      }
+    }
+    const activeQuotesByEmail = new Map<string, number>();
+    for (const q of allQuotes as any[]) {
+      const email = (q.client?.email || "").toLowerCase();
+      if (!email) continue;
+      if (q.status === "under_review" || q.status === "reviewing") {
+        activeQuotesByEmail.set(email, (activeQuotesByEmail.get(email) || 0) + 1);
+      }
+    }
+
+    const clients: ClientProfile[] = dbUsers.map((u: any) => {
+      const email = (u.email || "").toLowerCase();
+      const revenue = revenueByEmail.get(email) || 0;
+      return {
+        id: u._id.toString(),
+        companyName: u.companyName || "",
+        primaryContact: u.name,
+        email: u.email,
+        phone: u.phone || "",
+        industry: mapUserIndustryToClientIndustry(u.industry),
+        status: u.isVerified !== false ? "Active" : "Deactivated",
+        registeredDate: u.createdAt
+          ? new Date(u.createdAt).toLocaleDateString("en-US", {
+              month: "short",
+              day: "2-digit",
+              year: "numeric",
+            })
+          : "",
+        billingAddress: u.address || "",
+        city: u.city || "",
+        province: u.province || "",
+        postalCode: "",
+        country: "Canada",
+        taxId: "",
+        paymentTerms: "Net 30 Days",
+        accountManager: "",
+        lifetimeRevenueCad: `$${revenue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} CAD`,
+        totalShipmentsCompleted: completedShipmentsByEmail.get(email) || 0,
+        activeQuotesCount: activeQuotesByEmail.get(email) || 0,
+      };
+    });
 
     // Filter by search, status, and industry
     const filtered = clients.filter((c) => {

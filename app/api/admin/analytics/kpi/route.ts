@@ -73,7 +73,6 @@ export async function GET() {
           value: `${conversionRate}%`,
           accepted: acceptedQuotes,
           total: totalQuotesCount,
-          benchmark: "Industry Avg: 42%",
         },
         onTimeDeliveryRate: {
           value: onTimeRate === null ? null : `${onTimeRate}%`,

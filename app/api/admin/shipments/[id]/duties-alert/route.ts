@@ -66,7 +66,7 @@ export async function POST(
     }
     await shipment.save();
 
-    // Dispatch transactional email to client via Resend / SMTP
+    // Dispatch transactional email to client via SMTP
     try {
       await sendDutiesNoticeEmail({
         to: recipientEmail,

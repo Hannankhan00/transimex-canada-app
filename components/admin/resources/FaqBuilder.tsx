@@ -1,20 +1,20 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { FaqItem } from "@/lib/faqTypes";
-import {
-  HelpCircle,
-  Plus,
-  Trash2,
-  Edit2,
-  Save,
-  CheckCircle2,
-  Languages,
-  ChevronDown,
-  ChevronUp,
-} from "lucide-react";
+import { HelpCircle, Plus, Trash2, Edit2, CheckCircle2, ChevronDown, ChevronUp } from "lucide-react";
+
+const CATEGORY_LABELS: Record<string, { en: string; fr: string }> = {
+  All: { en: "All", fr: "Toutes" },
+  Customs: { en: "Customs", fr: "Douanes" },
+  Tracking: { en: "Tracking", fr: "Suivi" },
+  Billing: { en: "Billing", fr: "Facturation" },
+  Operations: { en: "Operations", fr: "Opérations" },
+};
 
 export default function FaqBuilder() {
+  const { language } = useLanguage();
   const [faqs, setFaqs] = useState<FaqItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
@@ -30,13 +30,7 @@ export default function FaqBuilder() {
   const [aFr, setAFr] = useState("");
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
-  const categories: ("All" | FaqItem["category"])[] = [
-    "All",
-    "Customs",
-    "Tracking",
-    "Billing",
-    "Operations",
-  ];
+  const categories: ("All" | FaqItem["category"])[] = ["All", "Customs", "Tracking", "Billing", "Operations"];
 
   const fetchFaqs = useCallback(async () => {
     try {
@@ -58,9 +52,7 @@ export default function FaqBuilder() {
     fetchFaqs();
   }, [fetchFaqs]);
 
-  const filteredFaqs = faqs.filter(
-    (f) => selectedCategory === "All" || f.category === selectedCategory
-  );
+  const filteredFaqs = faqs.filter((f) => selectedCategory === "All" || f.category === selectedCategory);
 
   const startCreate = () => {
     setEditingFaq(null);
@@ -91,10 +83,10 @@ export default function FaqBuilder() {
       if (!res.ok) throw new Error(data.error || "Failed to delete FAQ item");
 
       setFaqs((prev) => prev.filter((f) => f.id !== id));
-      setToastMsg("FAQ item deleted.");
+      setToastMsg(language === "fr" ? "Élément FAQ supprimé." : "FAQ item deleted.");
       setTimeout(() => setToastMsg(null), 2500);
     } catch (err: any) {
-      alert(err.message || "Error deleting FAQ item");
+      alert(err.message || (language === "fr" ? "Erreur lors de la suppression de l'élément FAQ" : "Error deleting FAQ item"));
     }
   };
 
@@ -117,7 +109,7 @@ export default function FaqBuilder() {
         if (!res.ok) throw new Error(data.error || "Failed to update FAQ item");
 
         setFaqs((prev) => prev.map((f) => (f.id === editingFaq.id ? data.faq : f)));
-        setToastMsg("FAQ updated successfully.");
+        setToastMsg(language === "fr" ? "FAQ mise à jour avec succès." : "FAQ updated successfully.");
       } else {
         const res = await fetch("/api/admin/faq", {
           method: "POST",
@@ -133,13 +125,13 @@ export default function FaqBuilder() {
         if (!res.ok) throw new Error(data.error || "Failed to create FAQ item");
 
         setFaqs((prev) => [...prev, data.faq]);
-        setToastMsg("New FAQ item published.");
+        setToastMsg(language === "fr" ? "Nouvelle FAQ publiée." : "New FAQ item published.");
       }
 
       setIsCreating(false);
       setTimeout(() => setToastMsg(null), 3000);
     } catch (err: any) {
-      alert(err.message || "Error saving FAQ item");
+      alert(err.message || (language === "fr" ? "Erreur lors de l'enregistrement de l'élément FAQ" : "Error saving FAQ item"));
     }
   };
 
@@ -150,10 +142,12 @@ export default function FaqBuilder() {
         <div>
           <h3 className="font-bold text-[#0B2545] text-sm flex items-center gap-2">
             <HelpCircle className="w-4 h-4 text-[#d21f27]" />
-            <span>Bilingual FAQ Accordion Builder</span>
+            <span>{language === "fr" ? "Constructeur d'Accordéon FAQ Bilingue" : "Bilingual FAQ Accordion Builder"}</span>
           </h3>
           <p className="text-[11px] text-slate-500 mt-0.5">
-            Curate questions and answers rendered in the public /resources and help sections.
+            {language === "fr"
+              ? "Gérez les questions et réponses affichées sur les sections publiques /resources et aide."
+              : "Curate questions and answers rendered in the public /resources and help sections."}
           </p>
         </div>
 
@@ -163,7 +157,7 @@ export default function FaqBuilder() {
           className="px-3 py-1.5 bg-[#0B2545] hover:bg-slate-800 text-white rounded-xl text-xs font-bold shadow-xs transition cursor-pointer flex items-center gap-1.5 self-start sm:self-auto"
         >
           <Plus className="w-3.5 h-3.5 text-[#d21f27]" />
-          <span>Add Question</span>
+          <span>{language === "fr" ? "Ajouter une Question" : "Add Question"}</span>
         </button>
       </div>
 
@@ -181,13 +175,11 @@ export default function FaqBuilder() {
             key={c}
             type="button"
             onClick={() => setSelectedCategory(c)}
-            className={`px-3 py-1 rounded-xl text-xs font-bold transition cursor-pointer ${
-              selectedCategory === c
-                ? "bg-[#0B2545] text-white"
-                : "text-slate-600 hover:bg-white"
+            className={`px-3 py-1 rounded-xl text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+              selectedCategory === c ? "bg-[#0B2545] text-white" : "text-slate-600 hover:bg-white"
             }`}
           >
-            {c}
+            {language === "fr" ? CATEGORY_LABELS[c]?.fr ?? c : CATEGORY_LABELS[c]?.en ?? c}
           </button>
         ))}
       </div>
@@ -196,33 +188,43 @@ export default function FaqBuilder() {
       {isCreating && (
         <form onSubmit={handleSaveForm} className="p-5 border-b border-slate-200 bg-slate-50/40 space-y-4 text-xs">
           <div className="flex items-center justify-between border-b border-slate-200 pb-2 font-bold text-slate-800">
-            <span>{editingFaq ? "Edit FAQ Item" : "Create New Bilingual FAQ Item"}</span>
+            <span>
+              {editingFaq
+                ? language === "fr"
+                  ? "Modifier l'Élément FAQ"
+                  : "Edit FAQ Item"
+                : language === "fr"
+                ? "Créer un Nouvel Élément FAQ Bilingue"
+                : "Create New Bilingual FAQ Item"}
+            </span>
             <button
               type="button"
               onClick={() => setIsCreating(false)}
               className="text-slate-400 hover:text-slate-600 cursor-pointer"
             >
-              Cancel
+              {language === "fr" ? "Annuler" : "Cancel"}
             </button>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label className="font-bold text-slate-700 block mb-1">Category</label>
+              <label className="font-bold text-slate-700 block mb-1">{language === "fr" ? "Catégorie" : "Category"}</label>
               <select
                 value={cat}
                 onChange={(e) => setCat(e.target.value as any)}
                 className="w-full bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-semibold outline-none"
               >
-                <option value="Customs">Customs</option>
-                <option value="Tracking">Tracking</option>
-                <option value="Billing">Billing</option>
-                <option value="Operations">Operations</option>
+                <option value="Customs">{language === "fr" ? "Douanes" : "Customs"}</option>
+                <option value="Tracking">{language === "fr" ? "Suivi" : "Tracking"}</option>
+                <option value="Billing">{language === "fr" ? "Facturation" : "Billing"}</option>
+                <option value="Operations">{language === "fr" ? "Opérations" : "Operations"}</option>
               </select>
             </div>
 
             <div className="sm:col-span-2">
-              <label className="font-bold text-slate-700 block mb-1">Question (English)</label>
+              <label className="font-bold text-slate-700 block mb-1">
+                {language === "fr" ? "Question (Anglais)" : "Question (English)"}
+              </label>
               <input
                 type="text"
                 placeholder="e.g. What documentation is required for CBSA release?"
@@ -245,7 +247,9 @@ export default function FaqBuilder() {
             </div>
 
             <div className="sm:col-span-3">
-              <label className="font-bold text-slate-700 block mb-1">Answer (English)</label>
+              <label className="font-bold text-slate-700 block mb-1">
+                {language === "fr" ? "Réponse (Anglais)" : "Answer (English)"}
+              </label>
               <textarea
                 rows={2}
                 placeholder="Comprehensive answer in English..."
@@ -274,13 +278,13 @@ export default function FaqBuilder() {
               onClick={() => setIsCreating(false)}
               className="px-3 py-1.5 rounded-xl text-slate-600 font-bold hover:bg-slate-100 transition cursor-pointer"
             >
-              Cancel
+              {language === "fr" ? "Annuler" : "Cancel"}
             </button>
             <button
               type="submit"
               className="px-4 py-1.5 bg-[#0B2545] text-white rounded-xl font-bold shadow-xs transition cursor-pointer"
             >
-              Save FAQ Item
+              {language === "fr" ? "Enregistrer l'Élément FAQ" : "Save FAQ Item"}
             </button>
           </div>
         </form>
@@ -289,10 +293,12 @@ export default function FaqBuilder() {
       {/* Accordion List */}
       <div className="divide-y divide-slate-100">
         {loading ? (
-          <div className="p-8 text-center text-slate-400 text-xs">Loading FAQ items...</div>
+          <div className="p-8 text-center text-slate-400 text-xs">
+            {language === "fr" ? "Chargement des éléments FAQ..." : "Loading FAQ items..."}
+          </div>
         ) : filteredFaqs.length === 0 ? (
           <div className="p-8 text-center text-slate-400 text-xs">
-            No FAQ items found matching criteria.
+            {language === "fr" ? "Aucun élément FAQ ne correspond aux critères." : "No FAQ items found matching criteria."}
           </div>
         ) : (
           filteredFaqs.map((faq) => {
@@ -302,18 +308,18 @@ export default function FaqBuilder() {
               <div key={faq.id} className="p-4 hover:bg-slate-50/60 transition space-y-2 text-xs">
                 <div
                   onClick={() => setExpandedId(isExpanded ? null : faq.id)}
-                  className="flex items-center justify-between cursor-pointer select-none"
+                  className="flex items-center justify-between cursor-pointer select-none gap-2"
                 >
-                  <div className="flex items-center gap-2">
-                    <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 text-[10px] font-bold">
-                      {faq.category}
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 text-[10px] font-bold flex-shrink-0">
+                      {language === "fr" ? CATEGORY_LABELS[faq.category]?.fr ?? faq.category : CATEGORY_LABELS[faq.category]?.en ?? faq.category}
                     </span>
-                    <span className="font-bold text-slate-900 text-xs sm:text-sm">
-                      {faq.question.en}
+                    <span className="font-bold text-slate-900 text-xs sm:text-sm truncate min-w-0">
+                      {language === "fr" ? faq.question.fr : faq.question.en}
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-shrink-0">
                     <button
                       type="button"
                       onClick={(e) => {
@@ -321,7 +327,7 @@ export default function FaqBuilder() {
                         startEdit(faq);
                       }}
                       className="p-1 text-slate-400 hover:text-slate-700 transition"
-                      title="Edit Item"
+                      title={language === "fr" ? "Modifier l'Élément" : "Edit Item"}
                     >
                       <Edit2 className="w-3.5 h-3.5" />
                     </button>
@@ -332,7 +338,7 @@ export default function FaqBuilder() {
                         handleDelete(faq.id);
                       }}
                       className="p-1 text-slate-400 hover:text-red-600 transition"
-                      title="Delete Item"
+                      title={language === "fr" ? "Supprimer l'Élément" : "Delete Item"}
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>

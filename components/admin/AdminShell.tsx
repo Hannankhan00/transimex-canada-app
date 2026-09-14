@@ -60,6 +60,14 @@ export default function AdminShell({ children }: AdminShellProps) {
     };
   }, [router]);
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#f5f7fa] flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-[#0B2545] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#f5f7fa] flex text-[#111c2d] antialiased selection:bg-[#d21f27] selection:text-white">
       {/* 260px Fixed Desktop Sidebar & Mobile Drawer */}

@@ -25,12 +25,14 @@ interface NewQuoteModalProps {
   isOpen: boolean;
   onClose: () => void;
   onQuoteCreated?: (newQuote: QuoteItem) => void;
+  initialValues?: Partial<QuoteRequestFormData>;
 }
 
 export default function NewQuoteModal({
   isOpen,
   onClose,
   onQuoteCreated,
+  initialValues,
 }: NewQuoteModalProps) {
   const { language } = useLanguage();
   const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
@@ -81,7 +83,7 @@ export default function NewQuoteModal({
   useEffect(() => {
     if (isOpen) {
       setCreatedQuote(null);
-      setActiveCategory(findCategoryForMode("53' Dry Van").id);
+      setActiveCategory(findCategoryForMode(initialValues?.transportMode || "53' Dry Van").id);
       async function loadInfo() {
         const me = await api.auth.me();
         if (me?.user) {
@@ -108,9 +110,20 @@ export default function NewQuoteModal({
         } catch {
           // Address book is optional; ignore fetch failures here.
         }
+
+        if (initialValues) {
+          (Object.entries(initialValues) as [keyof QuoteRequestFormData, unknown][]).forEach(
+            ([key, value]) => {
+              if (value !== undefined && value !== "") {
+                setValue(key, value as never, { shouldValidate: false });
+              }
+            }
+          );
+        }
       }
       loadInfo();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, setValue]);
 
   const handleOriginAddressSelect = (addrId: string) => {
@@ -280,11 +293,18 @@ export default function NewQuoteModal({
                     <MapPin className="w-3.5 h-3.5 text-[#d21f27]" />
                     <span>1. {language === "fr" ? "Itinéraire & Adresses" : "Origin & Destination"}</span>
                   </span>
-                  {savedAddresses.length > 0 && (
-                    <span className="text-[10px] text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">
-                      Address Book Linked
-                    </span>
-                  )}
+                  <div className="flex items-center gap-1.5">
+                    {initialValues && (
+                      <span className="text-[10px] text-[#0B2545] font-semibold bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
+                        {language === "fr" ? "Pré-rempli depuis l'Estimateur" : "Prefilled from Estimator"}
+                      </span>
+                    )}
+                    {savedAddresses.length > 0 && (
+                      <span className="text-[10px] text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">
+                        Address Book Linked
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 {/* Origin Inputs */}

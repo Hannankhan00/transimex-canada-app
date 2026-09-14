@@ -1,22 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { CarrierVendor, TransportModeType, VendorStatusType } from "@/lib/carrierTypes";
-import {
-  X,
-  Truck,
-  Ship,
-  Plane,
-  Train,
-  Shield,
-  Phone,
-  Mail,
-  MapPin,
-  Calendar,
-  Save,
-  CheckCircle2,
-  AlertTriangle,
-} from "lucide-react";
+import { X, Truck, Save, AlertTriangle } from "lucide-react";
 
 interface CarrierModalProps {
   isOpen: boolean;
@@ -31,6 +18,7 @@ export default function CarrierModal({
   carrierToEdit,
   onCarrierSaved,
 }: CarrierModalProps) {
+  const { language } = useLanguage();
   const isEditing = !!carrierToEdit;
 
   const [name, setName] = useState("");
@@ -43,10 +31,10 @@ export default function CarrierModal({
   const [headquarters, setHeadquarters] = useState("");
   const [operatingLanesStr, setOperatingLanesStr] = useState("");
   const [fleetSize, setFleetSize] = useState("");
-  const [rating, setRating] = useState("4.8");
+  const [rating, setRating] = useState("");
   const [policyNumber, setPolicyNumber] = useState("");
-  const [coverageAmount, setCoverageAmount] = useState("$5,000,000 CAD");
-  const [expiryDate, setExpiryDate] = useState("2027-12-31");
+  const [coverageAmount, setCoverageAmount] = useState("");
+  const [expiryDate, setExpiryDate] = useState("");
   const [status, setStatus] = useState<VendorStatusType>("Active");
   const [notes, setNotes] = useState("");
 
@@ -65,14 +53,16 @@ export default function CarrierModal({
       setHeadquarters(carrierToEdit.headquarters);
       setOperatingLanesStr(carrierToEdit.operatingLanes.join(", "));
       setFleetSize(carrierToEdit.fleetSize);
-      setRating(carrierToEdit.rating.toString());
+      setRating(carrierToEdit.rating ? carrierToEdit.rating.toString() : "");
       setPolicyNumber(carrierToEdit.insurance.policyNumber);
       setCoverageAmount(carrierToEdit.insurance.coverageAmount);
       setExpiryDate(carrierToEdit.insurance.expiryDate);
       setStatus(carrierToEdit.status);
       setNotes(carrierToEdit.notes || "");
     } else {
-      // Reset defaults for new partner
+      // Reset for a brand-new partner — no earned rating or shipment history
+      // exists yet, so those fields start blank/zero rather than pre-filled
+      // with plausible-looking example values.
       setName("");
       setCode("");
       setPrimaryMode("Road");
@@ -80,16 +70,17 @@ export default function CarrierModal({
       setPhone("");
       setEmail("");
       setEmergencyPhone("");
-      setHeadquarters("Montreal, QC");
-      setOperatingLanesStr("Montreal <-> Detroit, Toronto <-> Chicago");
-      setFleetSize("50+ Dedicated Units");
-      setRating("4.8");
-      setPolicyNumber(`POL-${Math.floor(1000 + Math.random() * 9000)}`);
-      setCoverageAmount("$5,000,000 CAD");
-      setExpiryDate("2027-12-31");
+      setHeadquarters("");
+      setOperatingLanesStr("");
+      setFleetSize("");
+      setRating("");
+      setPolicyNumber("");
+      setCoverageAmount("");
+      setExpiryDate("");
       setStatus("Active");
       setNotes("");
     }
+    setError(null);
   }, [carrierToEdit, isOpen]);
 
   if (!isOpen) return null;
@@ -98,8 +89,12 @@ export default function CarrierModal({
     e.preventDefault();
     setError(null);
 
-    if (!name.trim() || !code.trim() || !phone.trim() || !email.trim()) {
-      setError("Carrier Name, SCAC/Code, Dispatch Phone, and Email are required.");
+    if (!name.trim() || !code.trim() || !phone.trim() || !email.trim() || !expiryDate) {
+      setError(
+        language === "fr"
+          ? "Le nom du transporteur, le code SCAC, le téléphone de répartition, le courriel et la date d'expiration de l'assurance sont requis."
+          : "Carrier Name, SCAC/Code, Dispatch Phone, Email, and Insurance Expiry are required."
+      );
       return;
     }
 
@@ -121,13 +116,13 @@ export default function CarrierModal({
       },
       headquarters,
       operatingLanes: lanes,
-      fleetSize: fleetSize || "Dedicated Units",
-      rating: parseFloat(rating) || 4.8,
+      fleetSize: fleetSize || "",
+      rating: rating ? parseFloat(rating) : 0,
       insurance: {
         policyNumber,
         coverageAmount,
         expiryDate,
-        isCompliant: true,
+        isCompliant: new Date(expiryDate).getTime() > Date.now(),
       },
       status,
       notes,
@@ -171,10 +166,16 @@ export default function CarrierModal({
             </div>
             <div>
               <h3 className="font-bold text-[#0B2545] text-base leading-tight">
-                {isEditing ? `Edit Logistics Partner: ${carrierToEdit.name}` : "Add New Logistics Carrier Partner"}
+                {isEditing
+                  ? `${language === "fr" ? "Modifier le Partenaire :" : "Edit Logistics Partner:"} ${carrierToEdit.name}`
+                  : language === "fr"
+                  ? "Ajouter un Nouveau Partenaire Transporteur"
+                  : "Add New Logistics Carrier Partner"}
               </h3>
               <p className="text-[11px] text-slate-500">
-                Register authorized carrier credentials, compliance insurance, and standard operating corridors.
+                {language === "fr"
+                  ? "Enregistrez les identifiants du transporteur, l'assurance de conformité et les corridors d'exploitation standards."
+                  : "Register authorized carrier credentials, compliance insurance, and standard operating corridors."}
               </p>
             </div>
           </div>
@@ -198,7 +199,9 @@ export default function CarrierModal({
           {/* Section 1: Carrier Entity Info */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="sm:col-span-2">
-              <label className="font-bold text-slate-700 block mb-1">Company Name</label>
+              <label className="font-bold text-slate-700 block mb-1">
+                {language === "fr" ? "Nom de l'Entreprise" : "Company Name"}
+              </label>
               <input
                 type="text"
                 placeholder="e.g. Bison Transport Expedited"
@@ -210,7 +213,9 @@ export default function CarrierModal({
             </div>
 
             <div>
-              <label className="font-bold text-slate-700 block mb-1">SCAC / DOT Code</label>
+              <label className="font-bold text-slate-700 block mb-1">
+                {language === "fr" ? "Code SCAC / DOT" : "SCAC / DOT Code"}
+              </label>
               <input
                 type="text"
                 placeholder="e.g. BISO"
@@ -225,39 +230,46 @@ export default function CarrierModal({
           {/* Section 2: Mode & Status */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label className="font-bold text-slate-700 block mb-1">Primary Mode</label>
+              <label className="font-bold text-slate-700 block mb-1">
+                {language === "fr" ? "Mode Principal" : "Primary Mode"}
+              </label>
               <select
                 value={primaryMode}
                 onChange={(e) => setPrimaryMode(e.target.value as TransportModeType)}
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none"
               >
-                <option value="Road">Road (Highway)</option>
-                <option value="Sea">Sea (Maritime)</option>
-                <option value="Air">Air (Express)</option>
-                <option value="Rail">Rail (Intermodal)</option>
+                <option value="Road">{language === "fr" ? "Routier (Autoroute)" : "Road (Highway)"}</option>
+                <option value="Sea">{language === "fr" ? "Maritime" : "Sea (Maritime)"}</option>
+                <option value="Air">{language === "fr" ? "Aérien (Express)" : "Air (Express)"}</option>
+                <option value="Rail">{language === "fr" ? "Ferroviaire (Intermodal)" : "Rail (Intermodal)"}</option>
               </select>
             </div>
 
             <div>
-              <label className="font-bold text-slate-700 block mb-1">Carrier Status</label>
+              <label className="font-bold text-slate-700 block mb-1">
+                {language === "fr" ? "Statut du Transporteur" : "Carrier Status"}
+              </label>
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value as VendorStatusType)}
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none"
               >
-                <option value="Active">Active &amp; Compliant</option>
-                <option value="Under Review">Under Review</option>
-                <option value="Suspended">Suspended</option>
+                <option value="Active">{language === "fr" ? "Actif et Conforme" : "Active & Compliant"}</option>
+                <option value="Under Review">{language === "fr" ? "En Révision" : "Under Review"}</option>
+                <option value="Suspended">{language === "fr" ? "Suspendu" : "Suspended"}</option>
               </select>
             </div>
 
             <div>
-              <label className="font-bold text-slate-700 block mb-1">Reliability Rating (1.0 - 5.0)</label>
+              <label className="font-bold text-slate-700 block mb-1">
+                {language === "fr" ? "Cote de Fiabilité (1,0 - 5,0)" : "Reliability Rating (1.0 - 5.0)"}
+              </label>
               <input
                 type="number"
                 step="0.1"
                 min="1.0"
                 max="5.0"
+                placeholder={language === "fr" ? "Pas encore évalué" : "Not yet rated"}
                 value={rating}
                 onChange={(e) => setRating(e.target.value)}
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 outline-none"
@@ -268,11 +280,13 @@ export default function CarrierModal({
           {/* Section 3: Dispatch Contacts */}
           <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-200 space-y-3">
             <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
-              Primary Dispatch Contact
+              {language === "fr" ? "Contact de Répartition Principal" : "Primary Dispatch Contact"}
             </span>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="font-semibold text-slate-700 block mb-1">Dispatcher Name</label>
+                <label className="font-semibold text-slate-700 block mb-1">
+                  {language === "fr" ? "Nom du Répartiteur" : "Dispatcher Name"}
+                </label>
                 <input
                   type="text"
                   placeholder="e.g. Greg Sutherland"
@@ -283,7 +297,9 @@ export default function CarrierModal({
               </div>
 
               <div>
-                <label className="font-semibold text-slate-700 block mb-1">Dispatch Hotline Phone</label>
+                <label className="font-semibold text-slate-700 block mb-1">
+                  {language === "fr" ? "Téléphone de Répartition" : "Dispatch Hotline Phone"}
+                </label>
                 <input
                   type="text"
                   placeholder="+1 (800) 555-0199"
@@ -295,7 +311,9 @@ export default function CarrierModal({
               </div>
 
               <div>
-                <label className="font-semibold text-slate-700 block mb-1">Dispatch Notification Email</label>
+                <label className="font-semibold text-slate-700 block mb-1">
+                  {language === "fr" ? "Courriel de Notification" : "Dispatch Notification Email"}
+                </label>
                 <input
                   type="email"
                   placeholder="dispatch@carrier.ca"
@@ -307,7 +325,9 @@ export default function CarrierModal({
               </div>
 
               <div>
-                <label className="font-semibold text-slate-700 block mb-1">Emergency 24/7 Phone</label>
+                <label className="font-semibold text-slate-700 block mb-1">
+                  {language === "fr" ? "Téléphone d'Urgence 24/7" : "Emergency 24/7 Phone"}
+                </label>
                 <input
                   type="text"
                   placeholder="+1 (514) 555-9988"
@@ -322,7 +342,9 @@ export default function CarrierModal({
           {/* Section 4: Operational Corridors & Fleet */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="font-bold text-slate-700 block mb-1">Headquarters Terminal</label>
+              <label className="font-bold text-slate-700 block mb-1">
+                {language === "fr" ? "Terminal du Siège Social" : "Headquarters Terminal"}
+              </label>
               <input
                 type="text"
                 placeholder="e.g. Winnipeg, MB"
@@ -333,7 +355,9 @@ export default function CarrierModal({
             </div>
 
             <div>
-              <label className="font-bold text-slate-700 block mb-1">Fleet Description</label>
+              <label className="font-bold text-slate-700 block mb-1">
+                {language === "fr" ? "Description de la Flotte" : "Fleet Description"}
+              </label>
               <input
                 type="text"
                 placeholder="e.g. 450+ Dry Van & Reefer Tandems"
@@ -345,7 +369,7 @@ export default function CarrierModal({
 
             <div className="sm:col-span-2">
               <label className="font-bold text-slate-700 block mb-1">
-                Standard Operating Lanes (Comma-separated)
+                {language === "fr" ? "Corridors d'Exploitation Standards (séparés par des virgules)" : "Standard Operating Lanes (Comma-separated)"}
               </label>
               <input
                 type="text"
@@ -360,11 +384,13 @@ export default function CarrierModal({
           {/* Section 5: Insurance & Compliance */}
           <div className="p-3 bg-amber-50/50 rounded-xl border border-amber-200/80 space-y-3">
             <span className="text-[10px] font-bold text-amber-800 uppercase tracking-wider block">
-              Insurance &amp; Regulatory Compliance
+              {language === "fr" ? "Assurance et Conformité Réglementaire" : "Insurance & Regulatory Compliance"}
             </span>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
-                <label className="font-semibold text-slate-700 block mb-1">Policy Number</label>
+                <label className="font-semibold text-slate-700 block mb-1">
+                  {language === "fr" ? "Numéro de Police" : "Policy Number"}
+                </label>
                 <input
                   type="text"
                   placeholder="POL-BISO-99824"
@@ -375,7 +401,9 @@ export default function CarrierModal({
               </div>
 
               <div>
-                <label className="font-semibold text-slate-700 block mb-1">Coverage Limit</label>
+                <label className="font-semibold text-slate-700 block mb-1">
+                  {language === "fr" ? "Limite de Couverture" : "Coverage Limit"}
+                </label>
                 <input
                   type="text"
                   placeholder="$10,000,000 CAD"
@@ -386,11 +414,14 @@ export default function CarrierModal({
               </div>
 
               <div>
-                <label className="font-semibold text-slate-700 block mb-1">Expiry Date</label>
+                <label className="font-semibold text-slate-700 block mb-1">
+                  {language === "fr" ? "Date d'Expiration" : "Expiry Date"}
+                </label>
                 <input
                   type="date"
                   value={expiryDate}
                   onChange={(e) => setExpiryDate(e.target.value)}
+                  required
                   className="w-full bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 outline-none"
                 />
               </div>
@@ -399,10 +430,16 @@ export default function CarrierModal({
 
           {/* Section 6: Internal Notes */}
           <div>
-            <label className="font-bold text-slate-700 block mb-1">Internal Operations Notes</label>
+            <label className="font-bold text-slate-700 block mb-1">
+              {language === "fr" ? "Notes Opérationnelles Internes" : "Internal Operations Notes"}
+            </label>
             <textarea
               rows={2}
-              placeholder="Dispatch instructions, preferred equipment types, performance observations..."
+              placeholder={
+                language === "fr"
+                  ? "Instructions de répartition, types d'équipement préférés, observations de performance..."
+                  : "Dispatch instructions, preferred equipment types, performance observations..."
+              }
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-800 outline-none"
@@ -417,7 +454,7 @@ export default function CarrierModal({
               disabled={loading}
               className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition cursor-pointer"
             >
-              Cancel
+              {language === "fr" ? "Annuler" : "Cancel"}
             </button>
             <button
               type="submit"
@@ -425,7 +462,19 @@ export default function CarrierModal({
               className="px-4 py-2 bg-[#0B2545] hover:bg-slate-800 text-white rounded-xl text-xs font-bold shadow-xs transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
             >
               <Save className="w-3.5 h-3.5 text-[#d21f27]" />
-              <span>{loading ? "Saving Partner..." : isEditing ? "Update Partner" : "Add Carrier Partner"}</span>
+              <span>
+                {loading
+                  ? language === "fr"
+                    ? "Enregistrement..."
+                    : "Saving Partner..."
+                  : isEditing
+                  ? language === "fr"
+                    ? "Mettre à Jour le Partenaire"
+                    : "Update Partner"
+                  : language === "fr"
+                  ? "Ajouter le Partenaire Transporteur"
+                  : "Add Carrier Partner"}
+              </span>
             </button>
           </div>
         </form>

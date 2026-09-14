@@ -1,8 +1,9 @@
 "use client";
 
 import React from "react";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { QuoteStatus } from "@/lib/quoteTypes";
-import { CheckCircle2, Clock, XCircle, AlertCircle, FileSpreadsheet } from "lucide-react";
+import { CheckCircle2, Clock, XCircle, AlertCircle } from "lucide-react";
 
 interface StatusBadgeProps {
   status: QuoteStatus | string;
@@ -15,6 +16,7 @@ export default function StatusBadge({
   size = "md",
   className = "",
 }: StatusBadgeProps) {
+  const { language } = useLanguage();
   const sizeClasses =
     size === "sm"
       ? "px-2 py-0.5 text-[10px]"
@@ -28,7 +30,7 @@ export default function StatusBadge({
           className={`inline-flex items-center gap-1.5 rounded-full font-bold bg-amber-50 text-amber-700 border border-amber-200/80 shadow-2xs ${sizeClasses} ${className}`}
         >
           <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-          <span>New / Review</span>
+          <span>{language === "fr" ? "Nouvelle / Révision" : "New / Review"}</span>
         </span>
       );
 
@@ -38,7 +40,7 @@ export default function StatusBadge({
           className={`inline-flex items-center gap-1.5 rounded-full font-bold bg-blue-50 text-blue-700 border border-blue-200/80 shadow-2xs ${sizeClasses} ${className}`}
         >
           <Clock className="w-3 h-3 text-blue-500 animate-spin" style={{ animationDuration: "3s" }} />
-          <span>In Staff Review</span>
+          <span>{language === "fr" ? "En Révision Staff" : "In Staff Review"}</span>
         </span>
       );
 
@@ -48,7 +50,7 @@ export default function StatusBadge({
           className={`inline-flex items-center gap-1.5 rounded-full font-bold bg-sky-50 text-sky-800 border border-sky-200/80 shadow-2xs ${sizeClasses} ${className}`}
         >
           <span className="w-1.5 h-1.5 rounded-full bg-sky-500" />
-          <span>Rate Offered</span>
+          <span>{language === "fr" ? "Tarif Proposé" : "Rate Offered"}</span>
         </span>
       );
 
@@ -58,7 +60,7 @@ export default function StatusBadge({
           className={`inline-flex items-center gap-1.5 rounded-full font-bold bg-purple-50 text-purple-800 border border-purple-200/80 shadow-2xs ${sizeClasses} ${className}`}
         >
           <AlertCircle className="w-3 h-3 text-purple-600" />
-          <span>Negotiating (Client Declined)</span>
+          <span>{language === "fr" ? "Négociation (Client a Refusé)" : "Negotiating (Client Declined)"}</span>
         </span>
       );
 
@@ -68,7 +70,7 @@ export default function StatusBadge({
           className={`inline-flex items-center gap-1.5 rounded-full font-bold bg-emerald-50 text-emerald-800 border border-emerald-200/80 shadow-2xs ${sizeClasses} ${className}`}
         >
           <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-          <span>Accepted & Dispatched</span>
+          <span>{language === "fr" ? "Acceptée et Répartie" : "Accepted & Dispatched"}</span>
         </span>
       );
 
@@ -78,7 +80,7 @@ export default function StatusBadge({
           className={`inline-flex items-center gap-1.5 rounded-full font-bold bg-red-50 text-[#d21f27] border border-red-200/80 shadow-2xs ${sizeClasses} ${className}`}
         >
           <XCircle className="w-3 h-3 text-[#d21f27]" />
-          <span>Rejected</span>
+          <span>{language === "fr" ? "Refusée" : "Rejected"}</span>
         </span>
       );
 
@@ -88,7 +90,7 @@ export default function StatusBadge({
           className={`inline-flex items-center gap-1.5 rounded-full font-medium bg-slate-100 text-slate-600 border border-slate-200 ${sizeClasses} ${className}`}
         >
           <AlertCircle className="w-3 h-3 text-slate-400" />
-          <span>Expired</span>
+          <span>{language === "fr" ? "Expirée" : "Expired"}</span>
         </span>
       );
 

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { CustomsClearanceStatus, CustomsComplianceRecord } from "@/lib/customsTypes";
 import { VaultDocument } from "@/lib/documentTypes";
@@ -10,17 +10,12 @@ import CustomsStatusBadge from "@/components/admin/customs/CustomsStatusBadge";
 import DutiesAlertModal from "@/components/admin/customs/DutiesAlertModal";
 import CloudinaryUploader from "@/components/admin/customs/CloudinaryUploader";
 import DocumentVisibilityToggle from "@/components/admin/customs/DocumentVisibilityToggle";
+import PermissionGuard from "@/components/admin/PermissionGuard";
 import {
   Shield,
-  ShieldAlert,
   ShieldCheck,
-  Truck,
-  MapPin,
-  Calendar,
   DollarSign,
   Send,
-  Building2,
-  FileText,
   AlertTriangle,
   ArrowLeft,
   RefreshCw,
@@ -49,12 +44,11 @@ const STANDARD_PORTS = [
   "Emerson / Pembina Crossing (MB / ND)",
 ];
 
-export default function ShipmentCustomsCompliancePage() {
+function ShipmentCustomsCompliancePageInner() {
   const params = useParams();
-  const router = useRouter();
   const { language } = useLanguage();
 
-  const shipmentId = (params?.id as string) || "TMX-00839";
+  const shipmentId = params?.id as string;
 
   // State
   const [customsRecord, setCustomsRecord] = useState<CustomsComplianceRecord | null>(null);
@@ -240,22 +234,21 @@ export default function ShipmentCustomsCompliancePage() {
               className="hover:text-[#0B2545] flex items-center gap-1 transition"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Shipments Directory</span>
+              <span>{language === "fr" ? "Répertoire des Expéditions" : "Shipments Directory"}</span>
             </Link>
             <span>&bull;</span>
             <span className="font-mono text-[#d21f27] font-bold">{shipmentId}</span>
             <span>&bull;</span>
-            <span className="text-slate-800">Border Compliance</span>
+            <span className="text-slate-800">{language === "fr" ? "Conformité Douanière" : "Border Compliance"}</span>
           </div>
 
-          <h1
-            className="text-3xl sm:text-4xl font-bold text-[#0B2545] tracking-tight leading-tight"
-            style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
-          >
-            Customs Compliance Center
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-[#0B2545] tracking-tight leading-tight">
+            {language === "fr" ? "Centre de Conformité Douanière" : "Customs Compliance Center"}
           </h1>
           <p className="text-slate-500 text-xs sm:text-sm mt-0.5">
-            Manage CBSA / CBP border clearance, tariff duty notifications, and client document permissions.
+            {language === "fr"
+              ? "Gérez le dédouanement ASFC/CBP, les avis de droits tarifaires et les permissions de documents clients."
+              : "Manage CBSA / CBP border clearance, tariff duty notifications, and client document permissions."}
           </p>
         </div>
 
@@ -265,7 +258,7 @@ export default function ShipmentCustomsCompliancePage() {
             type="button"
             onClick={loadData}
             className="p-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 transition cursor-pointer"
-            title="Reload Record"
+            title={language === "fr" ? "Recharger le Dossier" : "Reload Record"}
           >
             <RefreshCw className="w-4 h-4" />
           </button>
@@ -275,7 +268,11 @@ export default function ShipmentCustomsCompliancePage() {
       {saveSuccess && (
         <div className="p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-semibold flex items-center gap-2 animate-in fade-in duration-150">
           <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-          <span>Customs regulatory status and broker details successfully updated in database.</span>
+          <span>
+            {language === "fr"
+              ? "Statut réglementaire douanier et détails du courtier mis à jour avec succès."
+              : "Customs regulatory status and broker details successfully updated in database."}
+          </span>
         </div>
       )}
 
@@ -307,12 +304,20 @@ export default function ShipmentCustomsCompliancePage() {
             <p className="text-xs text-slate-600 pt-1">
               {isHeld ? (
                 <strong className="text-red-700 flex items-center gap-1">
-                  <AlertTriangle className="w-3.5 h-3.5" /> Cargo is currently under Customs Detention. Client portal banner is illuminated red.
+                  <AlertTriangle className="w-3.5 h-3.5" />{" "}
+                  {language === "fr"
+                    ? "Cargaison actuellement en rétention douanière. La bannière du portail client est illuminée en rouge."
+                    : "Cargo is currently under Customs Detention. Client portal banner is illuminated red."}
                 </strong>
               ) : isReleased ? (
                 <strong className="text-emerald-700 flex items-center gap-1">
-                  <ShieldCheck className="w-3.5 h-3.5" /> Customs Cleared. Cargo released for immediate final delivery or carrier dispatch.
+                  <ShieldCheck className="w-3.5 h-3.5" />{" "}
+                  {language === "fr"
+                    ? "Douanes dédouanées. Cargaison libérée pour livraison finale immédiate ou répartition transporteur."
+                    : "Customs Cleared. Cargo released for immediate final delivery or carrier dispatch."}
                 </strong>
+              ) : language === "fr" ? (
+                "Documents de dédouanement transfrontalier soumis, en attente d'inspection par un agent ou un courtier."
               ) : (
                 "Cross-border clearance paperwork submitted and awaiting officer or broker inspection."
               )}
@@ -338,7 +343,17 @@ export default function ShipmentCustomsCompliancePage() {
                     : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
                 }`}
               >
-                <span>{st}</span>
+                <span>
+                  {language === "fr"
+                    ? st === "Pending"
+                      ? "En Attente"
+                      : st === "In Review"
+                      ? "En Révision"
+                      : st === "Released"
+                      ? "Libéré"
+                      : "Retenu"
+                    : st}
+                </span>
               </button>
             ))}
           </div>
@@ -350,19 +365,16 @@ export default function ShipmentCustomsCompliancePage() {
         {/* Left 2 Cols: Broker & Port Notes Form */}
         <div className="lg:col-span-2 space-y-6">
           <div className="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-5">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div>
-                <h3 className="font-bold text-[#0B2545] text-base flex items-center gap-2">
-                  <Shield className="w-4 h-4 text-[#0B2545]" />
-                  <span>Brokerage &amp; Port Crossing Documentation</span>
-                </h3>
-                <p className="text-[11px] text-slate-500 mt-0.5">
-                  Assigned broker filing credentials, crossing ports, and internal CBSA inspector audit notes.
-                </p>
-              </div>
-              <span className="font-mono text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
-                ACI / eManifest Staged
-              </span>
+            <div className="border-b border-slate-100 pb-3">
+              <h3 className="font-bold text-[#0B2545] text-base flex items-center gap-2">
+                <Shield className="w-4 h-4 text-[#0B2545]" />
+                <span>{language === "fr" ? "Documentation de Courtage et de Passage Frontalier" : "Brokerage & Port Crossing Documentation"}</span>
+              </h3>
+              <p className="text-[11px] text-slate-500 mt-0.5">
+                {language === "fr"
+                  ? "Courtier assigné, ports de passage et notes d'audit internes de l'inspecteur ASFC."
+                  : "Assigned broker filing credentials, crossing ports, and internal CBSA inspector audit notes."}
+              </p>
             </div>
 
             <form onSubmit={handleSaveComplianceRecord} className="space-y-4 text-xs">
@@ -370,7 +382,7 @@ export default function ShipmentCustomsCompliancePage() {
                 {/* Assigned Customs Broker */}
                 <div>
                   <label className="font-bold text-slate-800 block mb-1">
-                    Assigned Customs Broker
+                    {language === "fr" ? "Courtier en Douane Assigné" : "Assigned Customs Broker"}
                   </label>
                   <select
                     value={broker}
@@ -388,7 +400,7 @@ export default function ShipmentCustomsCompliancePage() {
                 {/* Port of Entry / Crossing */}
                 <div>
                   <label className="font-bold text-slate-800 block mb-1">
-                    Port of Entry / Crossing Terminal
+                    {language === "fr" ? "Port d'Entrée / Terminal de Passage" : "Port of Entry / Crossing Terminal"}
                   </label>
                   <select
                     value={portOfEntry}
@@ -407,7 +419,7 @@ export default function ShipmentCustomsCompliancePage() {
               {/* CBSA PARS / Barcode */}
               <div>
                 <label className="font-bold text-slate-800 block mb-1">
-                  CBSA PARS / PAPS Entry Barcode Number
+                  {language === "fr" ? "Numéro de Code-Barres d'Entrée PARS / PAPS de l'ASFC" : "CBSA PARS / PAPS Entry Barcode Number"}
                 </label>
                 <div className="relative">
                   <Barcode className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
@@ -426,17 +438,21 @@ export default function ShipmentCustomsCompliancePage() {
                 <div className="flex items-center justify-between mb-1">
                   <label className="font-bold text-slate-800 flex items-center gap-1.5">
                     <Lock className="w-3.5 h-3.5 text-amber-600" />
-                    <span>Port &amp; CBSA Notes (Internal Staff Only)</span>
+                    <span>{language === "fr" ? "Notes de Port et de l'ASFC (Personnel Interne Uniquement)" : "Port & CBSA Notes (Internal Staff Only)"}</span>
                   </label>
                   <span className="text-[10px] text-amber-700 font-bold uppercase">
-                    Hidden from Client
+                    {language === "fr" ? "Masqué au Client" : "Hidden from Client"}
                   </span>
                 </div>
                 <textarea
                   rows={3}
                   value={cbsaNotes}
                   onChange={(e) => setCbsaNotes(e.target.value)}
-                  placeholder="Record officer badge numbers, bay numbers, secondary inspection codes, or tariff inquiries..."
+                  placeholder={
+                    language === "fr"
+                      ? "Consignez les numéros d'insigne d'agent, numéros de baie, codes d'inspection secondaire ou demandes tarifaires..."
+                      : "Record officer badge numbers, bay numbers, secondary inspection codes, or tariff inquiries..."
+                  }
                   className="w-full bg-slate-50 border border-slate-200 focus:border-[#0B2545] focus:bg-white rounded-xl p-3 text-xs text-slate-800 outline-none leading-relaxed transition"
                 />
               </div>
@@ -449,7 +465,15 @@ export default function ShipmentCustomsCompliancePage() {
                   className="px-4 py-2.5 bg-[#0B2545] hover:bg-slate-800 text-white rounded-xl font-bold shadow-xs transition cursor-pointer flex items-center gap-2 disabled:opacity-50"
                 >
                   <Save className="w-4 h-4" />
-                  <span>{isSaving ? "Saving Compliance..." : "Save Compliance Record"}</span>
+                  <span>
+                    {isSaving
+                      ? language === "fr"
+                        ? "Enregistrement..."
+                        : "Saving Compliance..."
+                      : language === "fr"
+                      ? "Enregistrer le Dossier de Conformité"
+                      : "Save Compliance Record"}
+                  </span>
                 </button>
               </div>
             </form>
@@ -462,28 +486,35 @@ export default function ShipmentCustomsCompliancePage() {
             <div className="flex items-center justify-between border-b border-white/10 pb-3">
               <span className="font-bold uppercase tracking-wider text-xs text-amber-400 flex items-center gap-1.5">
                 <DollarSign className="w-4 h-4" />
-                <span>Duties &amp; Tax Alert Dispatcher</span>
+                <span>{language === "fr" ? "Répartiteur d'Alertes de Droits et Taxes" : "Duties & Tax Alert Dispatcher"}</span>
               </span>
-              <span className="text-[10px] font-mono text-emerald-400">RESEND GATEWAY</span>
             </div>
 
             <div className="space-y-2.5 text-xs">
               <div className="p-3 bg-white/5 border border-white/10 rounded-xl space-y-1">
-                <span className="text-[10px] text-slate-400 uppercase font-bold">Assessed Tariff &amp; Taxes</span>
+                <span className="text-[10px] text-slate-400 uppercase font-bold">
+                  {language === "fr" ? "Tarif et Taxes Évalués" : "Assessed Tariff & Taxes"}
+                </span>
                 <p className="text-xl font-mono font-bold text-white">
                   {customsRecord?.duties?.totalOwed || "$0.00 CAD"}
                 </p>
                 <div className="text-[11px] text-slate-300 space-y-0.5 pt-1">
-                  <div>Customs Duties: {customsRecord?.duties?.amountCad || "$0.00"}</div>
-                  <div>GST / HST: {customsRecord?.duties?.taxGstHst || "$0.00"}</div>
-                  <div>Filing Fee: {customsRecord?.duties?.brokerageFee || "$0.00"}</div>
+                  <div>
+                    {language === "fr" ? "Droits de Douane :" : "Customs Duties:"} {customsRecord?.duties?.amountCad || "$0.00"}
+                  </div>
+                  <div>
+                    {language === "fr" ? "TPS / TVH :" : "GST / HST:"} {customsRecord?.duties?.taxGstHst || "$0.00"}
+                  </div>
+                  <div>
+                    {language === "fr" ? "Frais de Dossier :" : "Filing Fee:"} {customsRecord?.duties?.brokerageFee || "$0.00"}
+                  </div>
                 </div>
               </div>
 
               <div className="p-2.5 bg-black/20 rounded-xl text-[11px] text-slate-300 flex items-center justify-between">
-                <span>Notice Status:</span>
+                <span>{language === "fr" ? "Statut de l'Avis :" : "Notice Status:"}</span>
                 <span className="font-bold text-amber-400">
-                  {customsRecord?.duties?.status || "Unassessed"}
+                  {customsRecord?.duties?.status || (language === "fr" ? "Non Évalué" : "Unassessed")}
                 </span>
               </div>
             </div>
@@ -494,17 +525,19 @@ export default function ShipmentCustomsCompliancePage() {
               className="w-full py-2.5 bg-[#d21f27] hover:bg-[#b51a21] text-white rounded-xl text-xs font-bold shadow-xs hover:shadow transition cursor-pointer flex items-center justify-center gap-2"
             >
               <Send className="w-4 h-4" />
-              <span>Calculate &amp; Dispatch Duties Notice</span>
+              <span>{language === "fr" ? "Calculer et Envoyer l'Avis de Droits" : "Calculate & Dispatch Duties Notice"}</span>
             </button>
 
             <p className="text-[10px] text-slate-400 leading-snug">
-              Triggers transactional payment notification via Resend with wire transfer instructions and activates the customs payment hold banner in the client portal.
+              {language === "fr"
+                ? "Déclenche une notification de paiement par courriel avec les instructions de virement et active la bannière de retenue de paiement dans le portail client."
+                : "Triggers a payment notification email with wire transfer instructions and activates the customs payment hold banner in the client portal."}
             </p>
           </div>
         </div>
       </div>
 
-      {/* 4. CLOUDFLARE R2 DOCUMENT UPLOADER */}
+      {/* 4. DOCUMENT UPLOADER */}
       <CloudinaryUploader
         shipmentId={shipmentId}
         onDocumentUploaded={handleDocumentUploaded}
@@ -527,5 +560,13 @@ export default function ShipmentCustomsCompliancePage() {
         onNoticeDispatched={handleNoticeDispatched}
       />
     </div>
+  );
+}
+
+export default function ShipmentCustomsCompliancePage() {
+  return (
+    <PermissionGuard module="shipments">
+      <ShipmentCustomsCompliancePageInner />
+    </PermissionGuard>
   );
 }

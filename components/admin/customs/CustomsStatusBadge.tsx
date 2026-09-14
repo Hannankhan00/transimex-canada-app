@@ -1,8 +1,9 @@
 "use client";
 
 import React from "react";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { CustomsClearanceStatus } from "@/lib/customsTypes";
-import { CheckCircle2, Clock, AlertTriangle, Shield, ShieldCheck } from "lucide-react";
+import { Clock, AlertTriangle, ShieldCheck } from "lucide-react";
 
 interface CustomsStatusBadgeProps {
   status: CustomsClearanceStatus | string;
@@ -15,6 +16,7 @@ export default function CustomsStatusBadge({
   size = "md",
   className = "",
 }: CustomsStatusBadgeProps) {
+  const { language } = useLanguage();
   const sizeClasses =
     size === "sm"
       ? "px-2 py-0.5 text-[10px]"
@@ -29,7 +31,7 @@ export default function CustomsStatusBadge({
           className={`inline-flex items-center gap-1.5 rounded-full bg-slate-100 text-slate-700 border border-slate-300 shadow-2xs font-semibold ${sizeClasses} ${className}`}
         >
           <Clock className="w-3 h-3 text-slate-500" />
-          <span>Pending Clearance</span>
+          <span>{language === "fr" ? "Dédouanement en Attente" : "Pending Clearance"}</span>
         </span>
       );
 
@@ -39,7 +41,7 @@ export default function CustomsStatusBadge({
           className={`inline-flex items-center gap-1.5 rounded-full bg-blue-50 text-blue-800 border border-blue-200/90 shadow-2xs font-bold ${sizeClasses} ${className}`}
         >
           <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-ping" />
-          <span>CBSA / In Review</span>
+          <span>{language === "fr" ? "ASFC / En Révision" : "CBSA / In Review"}</span>
         </span>
       );
 
@@ -49,7 +51,7 @@ export default function CustomsStatusBadge({
           className={`inline-flex items-center gap-1.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200/90 shadow-2xs font-bold ${sizeClasses} ${className}`}
         >
           <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-          <span>Customs Released</span>
+          <span>{language === "fr" ? "Douanes Libérées" : "Customs Released"}</span>
         </span>
       );
 
@@ -59,7 +61,7 @@ export default function CustomsStatusBadge({
           className={`inline-flex items-center gap-1.5 rounded-full bg-red-50 text-[#d21f27] border-2 border-red-200 shadow-xs font-bold animate-pulse ${sizeClasses} ${className}`}
         >
           <AlertTriangle className="w-3.5 h-3.5 text-[#d21f27] stroke-[2.5]" />
-          <span>CUSTOMS HELD</span>
+          <span>{language === "fr" ? "RETENU EN DOUANE" : "CUSTOMS HELD"}</span>
         </span>
       );
 

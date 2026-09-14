@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { X, AlertTriangle, Send, ShieldAlert } from "lucide-react";
 
 interface RejectionModalProps {
@@ -13,12 +14,30 @@ interface RejectionModalProps {
 }
 
 const STANDARDIZED_REASONS = [
-  "Route Unavailable / Corridors Currently Restricted or Out of Authority",
-  "Cargo Type Restricted: Hazardous or Prohibited Materials Unsupported",
-  "Axle Load Limit Exceeded: Highway corridor thaw weight limits prevent heavy haul",
-  "Equipment Capacity Exhausted: No compliant 53' Reefer/Flatbed units available in requested window",
-  "Transit Time Infeasible: Standard highway hours of service cannot meet requested ETA",
-  "Custom Operational Explanation",
+  {
+    en: "Route Unavailable / Corridors Currently Restricted or Out of Authority",
+    fr: "Itinéraire Indisponible / Corridors Actuellement Restreints ou Hors d'Autorité",
+  },
+  {
+    en: "Cargo Type Restricted: Hazardous or Prohibited Materials Unsupported",
+    fr: "Type de Cargaison Restreint : Matières Dangereuses ou Interdites Non Prises en Charge",
+  },
+  {
+    en: "Axle Load Limit Exceeded: Highway corridor thaw weight limits prevent heavy haul",
+    fr: "Limite de Charge par Essieu Dépassée : Les limites de dégel routier empêchent le transport lourd",
+  },
+  {
+    en: "Equipment Capacity Exhausted: No compliant 53' Reefer/Flatbed units available in requested window",
+    fr: "Capacité d'Équipement Épuisée : Aucune unité Reefer/Flatbed 53' conforme disponible dans la fenêtre demandée",
+  },
+  {
+    en: "Transit Time Infeasible: Standard highway hours of service cannot meet requested ETA",
+    fr: "Délai de Transit Irréalisable : Les heures de service routières standards ne peuvent pas respecter l'ETA demandée",
+  },
+  {
+    en: "Custom Operational Explanation",
+    fr: "Explication Opérationnelle Personnalisée",
+  },
 ];
 
 export default function RejectionModal({
@@ -29,7 +48,8 @@ export default function RejectionModal({
   clientCompany,
   onConfirm,
 }: RejectionModalProps) {
-  const [selectedReason, setSelectedReason] = useState(STANDARDIZED_REASONS[0]);
+  const { language } = useLanguage();
+  const [selectedReason, setSelectedReason] = useState(STANDARDIZED_REASONS[0].en);
   const [customExplanation, setCustomExplanation] = useState("");
   const [internalNotes, setInternalNotes] = useState("");
   const [loading, setLoading] = useState(false);
@@ -41,9 +61,13 @@ export default function RejectionModal({
     e.preventDefault();
     setError(null);
 
-    const isCustom = selectedReason === "Custom Operational Explanation";
+    const isCustom = selectedReason === STANDARDIZED_REASONS[STANDARDIZED_REASONS.length - 1].en;
     if (isCustom && !customExplanation.trim()) {
-      setError("Please provide an explicit explanation for the custom decline reason.");
+      setError(
+        language === "fr"
+          ? "Veuillez fournir une explication explicite pour la raison de refus personnalisée."
+          : "Please provide an explicit explanation for the custom decline reason."
+      );
       return;
     }
 
@@ -75,10 +99,11 @@ export default function RejectionModal({
             </div>
             <div>
               <h3 className="font-bold text-[#0B2545] text-base leading-tight">
-                Decline Freight Request
+                {language === "fr" ? "Refuser la Demande de Fret" : "Decline Freight Request"}
               </h3>
               <p className="text-[11px] text-slate-500">
-                Reference: <span className="font-mono font-bold text-slate-700">{quoteId}</span> &bull; {clientName}
+                {language === "fr" ? "Référence :" : "Reference:"}{" "}
+                <span className="font-mono font-bold text-slate-700">{quoteId}</span> &bull; {clientName}
               </p>
             </div>
           </div>
@@ -102,7 +127,8 @@ export default function RejectionModal({
           {/* Standardized Reason */}
           <div>
             <label className="font-bold text-slate-800 block mb-1">
-              Standardized Decline Reason <span className="text-red-500">*</span>
+              {language === "fr" ? "Raison de Refus Standardisée" : "Standardized Decline Reason"}{" "}
+              <span className="text-red-500">*</span>
             </label>
             <select
               value={selectedReason}
@@ -110,8 +136,8 @@ export default function RejectionModal({
               className="w-full bg-slate-50 border border-slate-200 focus:border-[#0B2545] focus:bg-white rounded-xl px-3 py-2 text-xs text-slate-800 outline-none transition"
             >
               {STANDARDIZED_REASONS.map((r) => (
-                <option key={r} value={r}>
-                  {r}
+                <option key={r.en} value={r.en}>
+                  {language === "fr" ? r.fr : r.en}
                 </option>
               ))}
             </select>
@@ -120,28 +146,38 @@ export default function RejectionModal({
           {/* Explanation to client */}
           <div>
             <label className="font-bold text-slate-800 block mb-1">
-              Detailed Explanation for Client Notification
+              {language === "fr" ? "Explication Détaillée pour la Notification du Client" : "Detailed Explanation for Client Notification"}
             </label>
             <textarea
               rows={3}
-              placeholder="Provide context or instructions for alternative freight booking..."
+              placeholder={
+                language === "fr"
+                  ? "Fournissez le contexte ou les instructions pour une réservation de fret alternative..."
+                  : "Provide context or instructions for alternative freight booking..."
+              }
               value={customExplanation}
               onChange={(e) => setCustomExplanation(e.target.value)}
               className="w-full bg-slate-50 border border-slate-200 focus:border-[#0B2545] focus:bg-white rounded-xl p-3 text-xs text-slate-800 outline-none transition"
             />
             <p className="text-[10px] text-slate-400 mt-1">
-              This message will be included in the automated client email notification.
+              {language === "fr"
+                ? "Ce message sera inclus dans la notification automatique par courriel au client."
+                : "This message will be included in the automated client email notification."}
             </p>
           </div>
 
           {/* Internal Staff Notes */}
           <div>
             <label className="font-bold text-slate-800 block mb-1">
-              Internal Dispatch Audit Log (Staff Eyes Only)
+              {language === "fr" ? "Journal Interne de Répartition (Réservé au Personnel)" : "Internal Dispatch Audit Log (Staff Eyes Only)"}
             </label>
             <input
               type="text"
-              placeholder="e.g. Advised by driver dispatch Hamza, carrier fleet rate too high"
+              placeholder={
+                language === "fr"
+                  ? "ex. Signalé par le répartiteur Hamza, tarif transporteur trop élevé"
+                  : "e.g. Advised by driver dispatch Hamza, carrier fleet rate too high"
+              }
               value={internalNotes}
               onChange={(e) => setInternalNotes(e.target.value)}
               className="w-full bg-slate-50 border border-slate-200 focus:border-[#0B2545] focus:bg-white rounded-xl px-3 py-2 text-xs text-slate-800 outline-none transition"
@@ -152,8 +188,17 @@ export default function RejectionModal({
           <div className="p-3 bg-amber-50/80 border border-amber-200/80 rounded-xl text-[11px] text-amber-800 flex items-start gap-2">
             <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
             <p className="leading-snug">
-              Declining this quote will mark status as <strong>Rejected</strong> and trigger an automated email to{" "}
-              <strong>{clientCompany || clientName}</strong>.
+              {language === "fr" ? (
+                <>
+                  Refuser cette soumission marquera son statut comme <strong>Refusée</strong> et déclenchera un
+                  courriel automatique à <strong>{clientCompany || clientName}</strong>.
+                </>
+              ) : (
+                <>
+                  Declining this quote will mark status as <strong>Rejected</strong> and trigger an automated email
+                  to <strong>{clientCompany || clientName}</strong>.
+                </>
+              )}
             </p>
           </div>
 
@@ -165,7 +210,7 @@ export default function RejectionModal({
               disabled={loading}
               className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition cursor-pointer"
             >
-              Cancel
+              {language === "fr" ? "Annuler" : "Cancel"}
             </button>
             <button
               type="submit"
@@ -173,7 +218,15 @@ export default function RejectionModal({
               className="px-4 py-2 bg-[#d21f27] hover:bg-[#b51a21] text-white rounded-xl text-xs font-bold shadow-xs transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
             >
               <Send className="w-3.5 h-3.5" />
-              <span>{loading ? "Processing..." : "Confirm & Send Rejection"}</span>
+              <span>
+                {loading
+                  ? language === "fr"
+                    ? "Traitement..."
+                    : "Processing..."
+                  : language === "fr"
+                  ? "Confirmer et Envoyer le Refus"
+                  : "Confirm & Send Rejection"}
+              </span>
             </button>
           </div>
         </form>

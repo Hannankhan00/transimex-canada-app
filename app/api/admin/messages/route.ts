@@ -39,11 +39,28 @@ export async function GET(req: Request) {
     }
 
     const allInquiries = docs.map(toContactInquiry);
+
+    // Real average first-response time, computed from actual reply timestamps
+    // rather than presented as a fixed placeholder.
+    const responseTimesMs: number[] = [];
+    for (const doc of docs as any[]) {
+      if (doc.reply?.repliedAt && doc.createdAt) {
+        responseTimesMs.push(
+          new Date(doc.reply.repliedAt).getTime() - new Date(doc.createdAt).getTime()
+        );
+      }
+    }
+    const avgResponseMinutes =
+      responseTimesMs.length > 0
+        ? Math.round(responseTimesMs.reduce((sum, ms) => sum + ms, 0) / responseTimesMs.length / 60000)
+        : null;
+
     const counts = {
       all: allInquiries.length,
       unread: allInquiries.filter((inq) => inq.unread).length,
       read: allInquiries.filter((inq) => !inq.unread).length,
       replied: allInquiries.filter((inq) => inq.replied).length,
+      avgResponseMinutes,
     };
 
     return NextResponse.json({

@@ -8,6 +8,10 @@ export type PermissionModule =
   | "clients"
   | "carriers"
   | "messages"
+  | "support"
+  | "analytics"
+  | "blog"
+  | "resources"
   | "staff"
   | "settings";
 
@@ -62,6 +66,38 @@ export const PERMISSION_MODULES: PermissionModuleDef[] = [
     icon: "Mail",
   },
   {
+    id: "support",
+    labelEn: "Support Tickets",
+    labelFr: "Billets de Support",
+    descriptionEn: "View and respond to client support tickets submitted from the client portal.",
+    descriptionFr: "Consulter et répondre aux billets de support soumis depuis le portail client.",
+    icon: "LifeBuoy",
+  },
+  {
+    id: "analytics",
+    labelEn: "Analytics & Reports",
+    labelFr: "Analytique & Rapports",
+    descriptionEn: "View operational KPIs, revenue and volume trends, and export reporting data.",
+    descriptionFr: "Consulter les indicateurs opérationnels, les tendances de revenus et volume, et exporter les données.",
+    icon: "BarChart3",
+  },
+  {
+    id: "blog",
+    labelEn: "Blog & Content",
+    labelFr: "Blogue & Contenu",
+    descriptionEn: "Write, edit, and publish articles on the public marketing site.",
+    descriptionFr: "Rédiger, modifier et publier des articles sur le site marketing public.",
+    icon: "Newspaper",
+  },
+  {
+    id: "resources",
+    labelEn: "Resources & FAQ",
+    labelFr: "Ressources & FAQ",
+    descriptionEn: "Manage public FAQ entries and downloadable resource files.",
+    descriptionFr: "Gérer les questions fréquentes et les fichiers de ressources téléchargeables.",
+    icon: "BookOpen",
+  },
+  {
     id: "staff",
     labelEn: "Staff & RBAC",
     labelFr: "Gestion du Personnel & RBAC",
@@ -103,7 +139,7 @@ export const ROLE_PRESETS: RolePreset[] = [
     titleFr: "Super Administrateur",
     descriptionEn: "Unrestricted master access to all operations, financial data, and staff governance.",
     badgeClass: "bg-slate-900 text-amber-400 border border-amber-400/30",
-    defaultPermissions: ["quotes", "shipments", "clients", "carriers", "messages", "staff", "settings"],
+    defaultPermissions: ["quotes", "shipments", "clients", "carriers", "messages", "support", "analytics", "blog", "resources", "staff", "settings"],
   },
   {
     id: "admin",
@@ -111,7 +147,7 @@ export const ROLE_PRESETS: RolePreset[] = [
     titleFr: "Gestionnaire Opérations",
     descriptionEn: "Full access to freight quotes, shipments, carriers, and clients without staff account creation.",
     badgeClass: "bg-[#0B2545] text-white border border-white/20",
-    defaultPermissions: ["quotes", "shipments", "clients", "carriers", "messages"],
+    defaultPermissions: ["quotes", "shipments", "clients", "carriers", "messages", "support", "analytics"],
   },
   {
     id: "dispatcher",
@@ -135,7 +171,7 @@ export const ROLE_PRESETS: RolePreset[] = [
     titleFr: "Spécialiste Service Client",
     descriptionEn: "Handles customer inquiries, leads, and basic client contact records.",
     badgeClass: "bg-purple-950 text-purple-300 border border-purple-500/30",
-    defaultPermissions: ["messages", "clients"],
+    defaultPermissions: ["messages", "clients", "support"],
   },
   {
     id: "custom",

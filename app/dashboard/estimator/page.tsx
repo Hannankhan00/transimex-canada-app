@@ -5,40 +5,26 @@ import { useRouter } from "next/navigation";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import {
   FreightMode,
-  RateCard,
   SUPPORTED_ORIGINS,
   SUPPORTED_DESTINATIONS,
-  SEED_RATE_CARDS,
 } from "@/lib/pricing/rateCards";
 import {
   calculateFreightEstimate,
   EstimateResult,
 } from "@/lib/pricing/estimator";
 import NewQuoteModal from "@/components/portal/NewQuoteModal";
+import { QuoteRequestFormData } from "@/lib/validations/quote";
 import {
-  Calculator,
   Plane,
   Ship,
   Truck,
   Layers,
   Scale,
-  Box,
-  MapPin,
-  ArrowRight,
-  ShieldCheck,
-  Clock,
-  Sparkles,
   Info,
-  DollarSign,
   Download,
-  CheckCircle2,
   AlertTriangle,
-  HelpCircle,
-  FileSpreadsheet,
   Zap,
-  Globe2,
   ChevronDown,
-  RotateCcw,
 } from "lucide-react";
 
 type UnitSystem = "metric" | "imperial";
@@ -53,19 +39,6 @@ const CURRENCY_RATES: Record<CurrencyView, { symbol: string; rate: number; label
 
 export default function PriceEstimatorPage() {
   const router = useRouter();
-  // Calculator is temporarily hidden from client portal and disabled from access
-  const isCalculatorDisabled = true;
-
-  useEffect(() => {
-    if (isCalculatorDisabled) {
-      router.replace("/dashboard");
-    }
-  }, [router, isCalculatorDisabled]);
-
-  if (isCalculatorDisabled) {
-    return null;
-  }
-
   const { t, language } = useLanguage();
 
   // Mode & Corridor
@@ -169,8 +142,41 @@ export default function PriceEstimatorPage() {
     })}`;
   };
 
-  const handleDownloadEstimatePdf = () => {
-    const content = `TRANSIMEX CANADA LOGISTICS - FREIGHT ESTIMATE SHEET\n=======================================================\nCorridor: Canada (${origin}) -> ${currentDestObj.name} (${destination})\nMode: ${estimateResult.mode_label || mode}\nHub: ${selectedHub}\nDate: ${new Date().toLocaleDateString()}\n-------------------------------------------------------\nChargeable Weight: ${estimateResult.chargeable_weight_kg} kg (Actual: ${estimateResult.actual_weight_kg} kg | Volumetric: ${estimateResult.volumetric_weight_kg} kg)\nBase Freight: CAD $${estimateResult.breakdown.base_cost.toFixed(2)}\nFuel Surcharge: CAD $${estimateResult.breakdown.fuel_surcharge.toFixed(2)}\nTerminal & Customs Handling: CAD $${estimateResult.breakdown.customs_handling_fee.toFixed(2)}\nInsurance: CAD $${estimateResult.breakdown.insurance.toFixed(2)}\n-------------------------------------------------------\nTOTAL ESTIMATE: CAD $${estimateResult.total_estimate.toFixed(2)} (${formatMoney(estimateResult.total_estimate)})\nEstimated Transit Time: ${estimateResult.transit_time_days}\n=======================================================\nNote: This is an automated estimate based on standard tariffs. Final billing is confirmed upon cargo physical verification.`;
+  const modeOptions: { id: FreightMode; name: string; icon: any; sub: string; badge: string }[] = [
+    {
+      id: "air",
+      name: language === "fr" ? "Fret Aérien" : "Air Cargo",
+      icon: Plane,
+      sub: language === "fr" ? "Tarif Volumétrique IATA 1:6000" : "IATA 1:6000 Volumetric Tariff",
+      badge: language === "fr" ? "Le Plus Rapide (3-6 j)" : "Fastest (3-6 Days)",
+    },
+    {
+      id: "sea_fcl",
+      name: language === "fr" ? "Maritime FCL" : "Ocean FCL",
+      icon: Ship,
+      sub: language === "fr" ? "Conteneur Complet 20/40 pieds" : "Full 20ft / 40ft Container",
+      badge: language === "fr" ? "Haute Capacité" : "High Capacity",
+    },
+    {
+      id: "sea_lcl",
+      name: language === "fr" ? "Maritime LCL" : "Ocean LCL",
+      icon: Layers,
+      sub: language === "fr" ? "Groupage Consolidé par CBM" : "CBM Groupage Consolidation",
+      badge: language === "fr" ? "Économique" : "Economical",
+    },
+    {
+      id: "land",
+      name: language === "fr" ? "Routier / Terrestre" : "Road / Land",
+      icon: Truck,
+      sub: language === "fr" ? "Transfrontalier et Trans-Canada" : "Cross-Border & Trans-Canada",
+      badge: language === "fr" ? "Autoroute Directe" : "Direct Highway",
+    },
+  ];
+
+  const currentModeOption = modeOptions.find((o) => o.id === mode);
+
+  const handleDownloadEstimateSummary = () => {
+    const content = `TRANSIMEX CANADA LOGISTICS - FREIGHT ESTIMATE SUMMARY\n=======================================================\nCorridor: Canada (${origin}) -> ${currentDestObj.name} (${destination})\nMode: ${estimateResult.mode_label || mode}\nHub: ${selectedHub}\nDate: ${new Date().toLocaleDateString()}\n-------------------------------------------------------\nChargeable Weight: ${estimateResult.chargeable_weight_kg} kg (Actual: ${estimateResult.actual_weight_kg} kg | Volumetric: ${estimateResult.volumetric_weight_kg} kg)\nBase Freight: CAD $${estimateResult.breakdown.base_cost.toFixed(2)}\nFuel Surcharge: CAD $${estimateResult.breakdown.fuel_surcharge.toFixed(2)}\nTerminal & Customs Handling: CAD $${estimateResult.breakdown.customs_handling_fee.toFixed(2)}\nInsurance: CAD $${estimateResult.breakdown.insurance.toFixed(2)}\n-------------------------------------------------------\nTOTAL ESTIMATE: CAD $${estimateResult.total_estimate.toFixed(2)} (${formatMoney(estimateResult.total_estimate)})\nEstimated Transit Time: ${estimateResult.transit_time_days}\n=======================================================\nNote: This is an automated estimate based on standard tariffs. Final billing is confirmed upon cargo physical verification.`;
 
     const blob = new Blob([content], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
@@ -183,55 +189,64 @@ export default function PriceEstimatorPage() {
     URL.revokeObjectURL(url);
   };
 
-  const modeOptions: { id: FreightMode; name: string; icon: any; sub: string; badge: string }[] = [
-    {
-      id: "air",
-      name: "Air Cargo",
-      icon: Plane,
-      sub: "IATA 1:6000 Volumetric Tariff",
-      badge: "Fastest (3-6 Days)",
-    },
-    {
-      id: "sea_fcl",
-      name: "Ocean FCL",
-      icon: Ship,
-      sub: "Full 20ft / 40ft Container",
-      badge: "High Capacity",
-    },
-    {
-      id: "sea_lcl",
-      name: "Ocean LCL",
-      icon: Layers,
-      sub: "CBM Groupage Consolidation",
-      badge: "Economical",
-    },
-    {
-      id: "land",
-      name: "Road / Land",
-      icon: Truck,
-      sub: "Cross-Border & Trans-Canada",
-      badge: "Direct Highway",
-    },
-  ];
+  // Prefill the booking modal with what was actually configured here, so a client
+  // never has to re-key a mode/weight/dimensions they already entered.
+  const bookingPrefill: Partial<QuoteRequestFormData> | undefined = useMemo(() => {
+    const mappedTransportMode =
+      mode === "air"
+        ? "Air Freight Expedited"
+        : mode === "sea_fcl"
+        ? containerSize === "40ft"
+          ? "40ft Container FCL"
+          : "20ft Container FCL"
+        : mode === "sea_lcl"
+        ? "Ocean LCL Groupage"
+        : "53' Dry Van";
+
+    const prefill: Partial<QuoteRequestFormData> = {
+      transportMode: mappedTransportMode as QuoteRequestFormData["transportMode"],
+      destinationCity: selectedHub || currentDestObj.name,
+    };
+
+    if (estimateResult.success) {
+      const weightLbsValue = Math.round(estimateResult.actual_weight_kg * 2.20462);
+      if (weightLbsValue > 0) {
+        prefill.weightLbs = String(weightLbsValue);
+      }
+    }
+
+    if (mode === "air" || mode === "land") {
+      const toInches = (cm: number) => String(Math.round((cm / 2.54) * 10) / 10);
+      if (metricValues.length_cm > 0) prefill.dimLengthIn = toInches(metricValues.length_cm);
+      if (metricValues.width_cm > 0) prefill.dimWidthIn = toInches(metricValues.width_cm);
+      if (metricValues.height_cm > 0) prefill.dimHeightIn = toInches(metricValues.height_cm);
+    }
+
+    return prefill;
+  }, [mode, containerSize, selectedHub, currentDestObj, estimateResult, metricValues]);
+
+  // Calculator is temporarily hidden from client portal and disabled from access
+  const isCalculatorDisabled = true;
+
+  useEffect(() => {
+    if (isCalculatorDisabled) {
+      router.replace("/dashboard");
+    }
+  }, [router, isCalculatorDisabled]);
+
+  if (isCalculatorDisabled) {
+    return null;
+  }
 
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-[#d21f27]">
-              {language === "fr" ? "Outil de Calcul Logistique" : "Logistics Tariff Engine"}
-            </span>
-            <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 border border-emerald-200">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              Live EDI Tariffs Active
-            </span>
-          </div>
-          <h1
-            className="text-2xl sm:text-3xl font-bold text-[#0B2545] tracking-tight leading-tight mt-1"
-            style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
-          >
+          <span className="text-[11px] font-bold uppercase tracking-wider text-[#d21f27]">
+            {language === "fr" ? "Outil de Calcul Logistique" : "Logistics Tariff Engine"}
+          </span>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#0B2545] tracking-tight leading-tight mt-1">
             {t.nav.estimator}
           </h1>
           <p className="text-slate-500 text-xs sm:text-sm mt-1">
@@ -269,9 +284,11 @@ export default function PriceEstimatorPage() {
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-[#0B2545] uppercase tracking-wider flex items-center gap-2">
                 <span className="w-5 h-5 rounded-full bg-[#0B2545] text-white flex items-center justify-center text-[10px] font-bold">1</span>
-                <span>Select Transport Mode</span>
+                <span>{language === "fr" ? "Sélectionner le Mode de Transport" : "Select Transport Mode"}</span>
               </span>
-              <span className="text-[11px] text-slate-400 font-medium">Standard Carrier Divisors</span>
+              <span className="text-[11px] text-slate-400 font-medium">
+                {language === "fr" ? "Diviseurs Transporteurs Standard" : "Standard Carrier Divisors"}
+              </span>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
@@ -317,14 +334,14 @@ export default function PriceEstimatorPage() {
           <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs space-y-4">
             <span className="text-xs font-bold text-[#0B2545] uppercase tracking-wider flex items-center gap-2">
               <span className="w-5 h-5 rounded-full bg-[#0B2545] text-white flex items-center justify-center text-[10px] font-bold">2</span>
-              <span>Origin & Destination Corridor</span>
+              <span>{language === "fr" ? "Corridor Origine et Destination" : "Origin & Destination Corridor"}</span>
             </span>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Origin Country */}
               <div className="space-y-1.5">
                 <label className="block text-[11px] font-bold text-slate-700 uppercase">
-                  Origin Country
+                  {language === "fr" ? "Pays d'Origine" : "Origin Country"}
                 </label>
                 <div className="relative">
                   <select
@@ -339,13 +356,15 @@ export default function PriceEstimatorPage() {
                     ))}
                   </select>
                 </div>
-                <span className="text-[10px] text-slate-400">Hub: Montreal (YUL) & Toronto (YYZ)</span>
+                <span className="text-[10px] text-slate-400">
+                  {language === "fr" ? "Plaque tournante : Montréal (YUL) et Toronto (YYZ)" : "Hub: Montreal (YUL) & Toronto (YYZ)"}
+                </span>
               </div>
 
               {/* Destination Country */}
               <div className="space-y-1.5">
                 <label className="block text-[11px] font-bold text-slate-700 uppercase">
-                  Destination Country
+                  {language === "fr" ? "Pays de Destination" : "Destination Country"}
                 </label>
                 <div className="relative">
                   <select
@@ -361,7 +380,8 @@ export default function PriceEstimatorPage() {
                   </select>
                 </div>
                 <span className="text-[10px] text-emerald-600 font-semibold">
-                  Hub: {currentDestObj.hubs[0] || "Main International Port"}
+                  {language === "fr" ? "Plaque tournante : " : "Hub: "}
+                  {currentDestObj.hubs[0] || (language === "fr" ? "Port international principal" : "Main International Port")}
                 </span>
               </div>
             </div>
@@ -372,7 +392,7 @@ export default function PriceEstimatorPage() {
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-[#0B2545] uppercase tracking-wider flex items-center gap-2">
                 <span className="w-5 h-5 rounded-full bg-[#0B2545] text-white flex items-center justify-center text-[10px] font-bold">3</span>
-                <span>Cargo Specifications</span>
+                <span>{language === "fr" ? "Spécifications de la Cargaison" : "Cargo Specifications"}</span>
               </span>
 
               {/* Unit Toggle */}
@@ -384,7 +404,7 @@ export default function PriceEstimatorPage() {
                     unitSystem === "metric" ? "bg-white text-[#0B2545] shadow-xs" : "text-slate-500"
                   }`}
                 >
-                  Metric (cm / kg)
+                  {language === "fr" ? "Métrique (cm / kg)" : "Metric (cm / kg)"}
                 </button>
                 <button
                   type="button"
@@ -393,7 +413,7 @@ export default function PriceEstimatorPage() {
                     unitSystem === "imperial" ? "bg-white text-[#0B2545] shadow-xs" : "text-slate-500"
                   }`}
                 >
-                  Imperial (in / lbs)
+                  {language === "fr" ? "Impérial (po / lb)" : "Imperial (in / lbs)"}
                 </button>
               </div>
             </div>
@@ -403,12 +423,20 @@ export default function PriceEstimatorPage() {
               /* FCL Container Size Picker */
               <div className="space-y-2">
                 <label className="block text-xs font-bold text-slate-700 uppercase">
-                  Select ISO Shipping Container Size
+                  {language === "fr" ? "Sélectionner la Taille du Conteneur ISO" : "Select ISO Shipping Container Size"}
                 </label>
                 <div className="grid grid-cols-2 gap-3">
                   {[
-                    { id: "20ft", label: "20ft Standard Dry Container", cap: "33.2 CBM / ~28,000 kg" },
-                    { id: "40ft", label: "40ft High Cube Container", cap: "76.4 CBM / ~28,500 kg" },
+                    {
+                      id: "20ft",
+                      label: language === "fr" ? "Conteneur Standard 20 pieds" : "20ft Standard Dry Container",
+                      cap: "33.2 CBM / ~28,000 kg",
+                    },
+                    {
+                      id: "40ft",
+                      label: language === "fr" ? "Conteneur High Cube 40 pieds" : "40ft High Cube Container",
+                      cap: "76.4 CBM / ~28,500 kg",
+                    },
                   ].map((cnt) => (
                     <button
                       key={cnt.id}
@@ -431,7 +459,7 @@ export default function PriceEstimatorPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <label className="block text-xs font-bold text-slate-700 uppercase">
-                    Consolidated Volume (CBM / m³)
+                    {language === "fr" ? "Volume Consolidé (CBM / m³)" : "Consolidated Volume (CBM / m³)"}
                   </label>
                   <input
                     type="number"
@@ -442,11 +470,13 @@ export default function PriceEstimatorPage() {
                     onChange={(e) => setCbmDirect(parseFloat(e.target.value) || 1)}
                     className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#0B2545] rounded-xl text-xs font-bold outline-none"
                   />
-                  <span className="text-[10px] text-slate-400">1 CBM ≈ 1,000 kg threshold</span>
+                  <span className="text-[10px] text-slate-400">
+                    {language === "fr" ? "Seuil de 1 CBM ≈ 1 000 kg" : "1 CBM ≈ 1,000 kg threshold"}
+                  </span>
                 </div>
                 <div className="space-y-1.5">
                   <label className="block text-xs font-bold text-slate-700 uppercase">
-                    Actual Gross Weight ({unitSystem === "metric" ? "kg" : "lbs"})
+                    {language === "fr" ? "Poids Brut Réel" : "Actual Gross Weight"} ({unitSystem === "metric" ? "kg" : "lbs"})
                   </label>
                   <input
                     type="number"
@@ -455,7 +485,9 @@ export default function PriceEstimatorPage() {
                     onChange={(e) => setActualWeight(parseFloat(e.target.value) || 0)}
                     className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#0B2545] rounded-xl text-xs font-bold outline-none"
                   />
-                  <span className="text-[10px] text-slate-400">Billed on volume vs weight parity</span>
+                  <span className="text-[10px] text-slate-400">
+                    {language === "fr" ? "Facturé selon la parité volume/poids" : "Billed on volume vs weight parity"}
+                  </span>
                 </div>
               </div>
             ) : (
@@ -464,7 +496,7 @@ export default function PriceEstimatorPage() {
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                   <div>
                     <label className="block text-[10px] font-bold text-slate-600 uppercase mb-1">
-                      Length ({unitSystem === "metric" ? "cm" : "in"})
+                      {language === "fr" ? "Longueur" : "Length"} ({unitSystem === "metric" ? "cm" : "in"})
                     </label>
                     <input
                       type="number"
@@ -477,7 +509,7 @@ export default function PriceEstimatorPage() {
 
                   <div>
                     <label className="block text-[10px] font-bold text-slate-600 uppercase mb-1">
-                      Width ({unitSystem === "metric" ? "cm" : "in"})
+                      {language === "fr" ? "Largeur" : "Width"} ({unitSystem === "metric" ? "cm" : "in"})
                     </label>
                     <input
                       type="number"
@@ -490,7 +522,7 @@ export default function PriceEstimatorPage() {
 
                   <div>
                     <label className="block text-[10px] font-bold text-slate-600 uppercase mb-1">
-                      Height ({unitSystem === "metric" ? "cm" : "in"})
+                      {language === "fr" ? "Hauteur" : "Height"} ({unitSystem === "metric" ? "cm" : "in"})
                     </label>
                     <input
                       type="number"
@@ -503,7 +535,7 @@ export default function PriceEstimatorPage() {
 
                   <div>
                     <label className="block text-[10px] font-bold text-slate-600 uppercase mb-1">
-                      Scale Weight ({unitSystem === "metric" ? "kg" : "lbs"})
+                      {language === "fr" ? "Poids à la Bascule" : "Scale Weight"} ({unitSystem === "metric" ? "kg" : "lbs"})
                     </label>
                     <input
                       type="number"
@@ -518,7 +550,7 @@ export default function PriceEstimatorPage() {
                 <div className="flex items-center justify-between pt-1">
                   <div className="flex items-center gap-2">
                     <label className="text-[11px] font-bold text-slate-700 uppercase">
-                      Number of Identical Pieces:
+                      {language === "fr" ? "Nombre de Colis Identiques :" : "Number of Identical Pieces:"}
                     </label>
                     <input
                       type="number"
@@ -530,7 +562,8 @@ export default function PriceEstimatorPage() {
                     />
                   </div>
                   <span className="text-[10px] text-slate-400">
-                    Divisor: {mode === "air" ? "1:6000 (IATA Cargo)" : "1:3000 (Highway)"}
+                    {language === "fr" ? "Diviseur : " : "Divisor: "}
+                    {mode === "air" ? (language === "fr" ? "1:6000 (Fret IATA)" : "1:6000 (IATA Cargo)") : (language === "fr" ? "1:3000 (Routier)" : "1:3000 (Highway)")}
                   </span>
                 </div>
               </div>
@@ -546,13 +579,15 @@ export default function PriceEstimatorPage() {
                   className="w-4 h-4 text-[#d21f27] rounded border-slate-300 focus:ring-[#d21f27]"
                 />
                 <span className="text-xs font-semibold text-slate-700">
-                  Add Marine / Air Cargo Transit Insurance
+                  {language === "fr" ? "Ajouter une Assurance Transport Maritime/Aérien" : "Add Marine / Air Cargo Transit Insurance"}
                 </span>
               </label>
 
               {includeInsurance && (
                 <div className="flex items-center gap-1.5">
-                  <span className="text-[11px] text-slate-500">Declared Value: CAD $</span>
+                  <span className="text-[11px] text-slate-500">
+                    {language === "fr" ? "Valeur Déclarée : CAD $" : "Declared Value: CAD $"}
+                  </span>
                   <input
                     type="number"
                     min="100"
@@ -577,205 +612,276 @@ export default function PriceEstimatorPage() {
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <div>
                 <span className="text-[10px] font-bold uppercase tracking-wider text-[#d21f27]">
-                  Instant Tariff Estimate
+                  {language === "fr" ? "Estimation Tarifaire Instantanée" : "Instant Tariff Estimate"}
                 </span>
                 <h3 className="text-lg font-bold text-[#0B2545] mt-0.5 flex items-center gap-1.5">
                   <span>{currentDestObj.flag}</span>
                   <span>{estimateResult.origin} → {estimateResult.destination}</span>
                 </h3>
               </div>
-              <div className="text-right">
-                <span className="text-[10px] text-slate-400 font-semibold block">Transit Lead Time</span>
-                <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                  {estimateResult.transit_time_days}
-                </span>
-              </div>
-            </div>
-
-            {/* Chargeable Weight Rule Card (Crucial specification requirement) */}
-            {(mode === "air" || mode === "land") && (
-              <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 text-xs space-y-2">
-                <div className="flex items-center justify-between text-[11px] font-bold text-slate-700">
-                  <span className="flex items-center gap-1.5">
-                    <Scale className="w-3.5 h-3.5 text-[#0B2545]" />
-                    <span>Chargeable Weight Calculation</span>
+              {estimateResult.success && (
+                <div className="text-right">
+                  <span className="text-[10px] text-slate-400 font-semibold block">
+                    {language === "fr" ? "Délai de Transit Estimé" : "Transit Lead Time"}
                   </span>
-                  <span className="text-slate-400 font-normal">MAX(Actual, Volumetric)</span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 pt-1">
-                  <div className="p-2 bg-white rounded-xl border border-slate-200 text-center">
-                    <span className="text-[10px] text-slate-400 uppercase block">Scale Weight</span>
-                    <span className="font-bold text-slate-900 text-sm">
-                      {estimateResult.actual_weight_kg} kg
-                    </span>
-                  </div>
-
-                  <div className="p-2 bg-white rounded-xl border border-slate-200 text-center">
-                    <span className="text-[10px] text-slate-400 uppercase block">Volumetric Wt</span>
-                    <span className="font-bold text-slate-900 text-sm">
-                      {estimateResult.volumetric_weight_kg} kg
-                    </span>
-                  </div>
-                </div>
-
-                <div className="text-[11px] text-slate-600 bg-blue-50/70 p-2 rounded-lg border border-blue-100 flex items-center justify-between">
-                  <span>Billed Chargeable Weight:</span>
-                  <span className="font-bold text-[#0B2545]">
-                    {estimateResult.chargeable_weight_kg} kg
+                  <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                    {estimateResult.transit_time_days}
                   </span>
-                </div>
-              </div>
-            )}
-
-            {/* Itemized Line Items */}
-            <div className="space-y-2.5 text-xs">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-                Itemized Cost Breakdown
-              </span>
-
-              {/* Base Line Haul */}
-              <div className="flex items-center justify-between text-slate-700">
-                <div className="space-y-0.5">
-                  <span className="font-semibold">Base Freight Rate</span>
-                  <span className="text-[10px] text-slate-400 block">
-                    {mode === "sea_fcl"
-                      ? `Flat ${containerSize} Container Tariff`
-                      : mode === "sea_lcl"
-                      ? `${estimateResult.cbm_calculated} CBM @ $${estimateResult.rate_applied}/CBM`
-                      : `${estimateResult.chargeable_weight_kg} kg @ $${estimateResult.rate_applied}/kg`}
-                  </span>
-                </div>
-                <span className="font-bold text-slate-900 font-mono">
-                  {formatMoney(estimateResult.breakdown.base_cost)}
-                </span>
-              </div>
-
-              {/* Fuel Surcharge */}
-              <div className="flex items-center justify-between text-slate-700">
-                <div className="space-y-0.5">
-                  <span className="font-semibold">Carrier Fuel Surcharge (FSC)</span>
-                  <span className="text-[10px] text-slate-400 block">
-                    {(estimateResult.breakdown.fuel_surcharge_pct * 100).toFixed(0)}% indexed surcharge
-                  </span>
-                </div>
-                <span className="font-bold text-slate-900 font-mono">
-                  {formatMoney(estimateResult.breakdown.fuel_surcharge)}
-                </span>
-              </div>
-
-              {/* Port & Customs Handling */}
-              <div className="flex items-center justify-between text-slate-700">
-                <div className="space-y-0.5">
-                  <span className="font-semibold">Customs & Terminal Handling</span>
-                  <span className="text-[10px] text-slate-400 block">
-                    Canadian Export Documentation & Security
-                  </span>
-                </div>
-                <span className="font-bold text-slate-900 font-mono">
-                  {formatMoney(estimateResult.breakdown.customs_handling_fee)}
-                </span>
-              </div>
-
-              {/* Cargo Insurance */}
-              {includeInsurance && (
-                <div className="flex items-center justify-between text-slate-700">
-                  <div className="space-y-0.5">
-                    <span className="font-semibold">Transit Cargo Insurance</span>
-                    <span className="text-[10px] text-slate-400 block">
-                      {(estimateResult.breakdown.insurance_pct * 100).toFixed(1)}% of CAD ${declaredValue.toLocaleString()}
-                    </span>
-                  </div>
-                  <span className="font-bold text-slate-900 font-mono">
-                    {formatMoney(estimateResult.breakdown.insurance)}
-                  </span>
-                </div>
-              )}
-
-              {/* Minimum Charge Notice if triggered */}
-              {estimateResult.min_charge_applied && (
-                <div className="p-2 bg-amber-50 rounded-lg border border-amber-200 text-[11px] text-amber-800 flex items-center justify-between">
-                  <span>Minimum Corridor Tariff Applied</span>
-                  <span className="font-bold">CAD ${estimateResult.min_charge}</span>
                 </div>
               )}
             </div>
 
-            {/* Total Section */}
-            <div className="pt-4 border-t-2 border-slate-100 space-y-2">
-              <div className="flex items-end justify-between">
-                <div>
+            {!estimateResult.success ? (
+              /* Corridor Not Covered — real state, not a fabricated $0.00 breakdown */
+              <div className="space-y-4">
+                <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-start gap-3">
+                  <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <div className="text-xs text-amber-900 space-y-1">
+                    <p className="font-bold">
+                      {language === "fr" ? "Corridor Non Encore Tarifé" : "Corridor Not Yet Rated"}
+                    </p>
+                    <p className="leading-relaxed">
+                      {language === "fr"
+                        ? `Le mode "${currentModeOption?.name}" vers ${currentDestObj.name} n'est pas encore dans notre grille tarifaire automatisée. Demandez une soumission personnalisée et notre équipe de répartition établira le prix directement.`
+                        : `The "${currentModeOption?.name}" mode to ${currentDestObj.name} isn't in our automated rate card yet. Request a custom quote and our dispatch team will price it directly.`}
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setIsBookingModalOpen(true)}
+                  className="w-full py-3.5 bg-[#d21f27] hover:bg-[#b51a21] text-white text-xs font-bold uppercase tracking-wider rounded-xl shadow-md hover:shadow-lg transition cursor-pointer flex items-center justify-center gap-2"
+                >
+                  <Zap className="w-4 h-4" />
+                  <span>{language === "fr" ? "Demander une Soumission Personnalisée" : "Request a Custom Quote"}</span>
+                </button>
+              </div>
+            ) : (
+              <>
+                {/* Chargeable Weight Rule Card (Crucial specification requirement) */}
+                {(mode === "air" || mode === "land") && (
+                  <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 text-xs space-y-2">
+                    <div className="flex items-center justify-between text-[11px] font-bold text-slate-700">
+                      <span className="flex items-center gap-1.5">
+                        <Scale className="w-3.5 h-3.5 text-[#0B2545]" />
+                        <span>{language === "fr" ? "Calcul du Poids Taxable" : "Chargeable Weight Calculation"}</span>
+                      </span>
+                      <span className="text-slate-400 font-normal">
+                        {language === "fr" ? "MAX(Réel, Volumétrique)" : "MAX(Actual, Volumetric)"}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 pt-1">
+                      <div className="p-2 bg-white rounded-xl border border-slate-200 text-center">
+                        <span className="text-[10px] text-slate-400 uppercase block">
+                          {language === "fr" ? "Poids Bascule" : "Scale Weight"}
+                        </span>
+                        <span className="font-bold text-slate-900 text-sm">
+                          {estimateResult.actual_weight_kg} kg
+                        </span>
+                      </div>
+
+                      <div className="p-2 bg-white rounded-xl border border-slate-200 text-center">
+                        <span className="text-[10px] text-slate-400 uppercase block">
+                          {language === "fr" ? "Poids Volumétrique" : "Volumetric Wt"}
+                        </span>
+                        <span className="font-bold text-slate-900 text-sm">
+                          {estimateResult.volumetric_weight_kg} kg
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="text-[11px] text-slate-600 bg-blue-50/70 p-2 rounded-lg border border-blue-100 flex items-center justify-between">
+                      <span>{language === "fr" ? "Poids Taxable Facturé :" : "Billed Chargeable Weight:"}</span>
+                      <span className="font-bold text-[#0B2545]">
+                        {estimateResult.chargeable_weight_kg} kg
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Itemized Line Items */}
+                <div className="space-y-2.5 text-xs">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-                    Estimated Freight Total ({currency})
+                    {language === "fr" ? "Détail des Coûts" : "Itemized Cost Breakdown"}
                   </span>
-                  <span className="text-2xl sm:text-3xl font-bold text-[#0B2545] tracking-tight">
-                    {formatMoney(estimateResult.total_estimate)}
-                  </span>
+
+                  {/* Base Line Haul */}
+                  <div className="flex items-center justify-between text-slate-700">
+                    <div className="space-y-0.5">
+                      <span className="font-semibold">
+                        {language === "fr" ? "Tarif de Fret de Base" : "Base Freight Rate"}
+                      </span>
+                      <span className="text-[10px] text-slate-400 block">
+                        {mode === "sea_fcl"
+                          ? `${language === "fr" ? "Tarif Forfaitaire Conteneur" : "Flat"} ${containerSize} ${language === "fr" ? "" : "Container Tariff"}`
+                          : mode === "sea_lcl"
+                          ? `${estimateResult.cbm_calculated} CBM @ $${estimateResult.rate_applied}/CBM`
+                          : `${estimateResult.chargeable_weight_kg} kg @ $${estimateResult.rate_applied}/kg`}
+                      </span>
+                    </div>
+                    <span className="font-bold text-slate-900 font-mono">
+                      {formatMoney(estimateResult.breakdown.base_cost)}
+                    </span>
+                  </div>
+
+                  {/* Fuel Surcharge */}
+                  <div className="flex items-center justify-between text-slate-700">
+                    <div className="space-y-0.5">
+                      <span className="font-semibold">
+                        {language === "fr" ? "Surcharge Carburant Transporteur (FSC)" : "Carrier Fuel Surcharge (FSC)"}
+                      </span>
+                      <span className="text-[10px] text-slate-400 block">
+                        {(estimateResult.breakdown.fuel_surcharge_pct * 100).toFixed(0)}%{" "}
+                        {language === "fr" ? "de surcharge indexée" : "indexed surcharge"}
+                      </span>
+                    </div>
+                    <span className="font-bold text-slate-900 font-mono">
+                      {formatMoney(estimateResult.breakdown.fuel_surcharge)}
+                    </span>
+                  </div>
+
+                  {/* Port & Customs Handling */}
+                  <div className="flex items-center justify-between text-slate-700">
+                    <div className="space-y-0.5">
+                      <span className="font-semibold">
+                        {language === "fr" ? "Manutention Douanière et Terminal" : "Customs & Terminal Handling"}
+                      </span>
+                      <span className="text-[10px] text-slate-400 block">
+                        {language === "fr" ? "Documentation d'Exportation et Sécurité Canadienne" : "Canadian Export Documentation & Security"}
+                      </span>
+                    </div>
+                    <span className="font-bold text-slate-900 font-mono">
+                      {formatMoney(estimateResult.breakdown.customs_handling_fee)}
+                    </span>
+                  </div>
+
+                  {/* Cargo Insurance */}
+                  {includeInsurance && (
+                    <div className="flex items-center justify-between text-slate-700">
+                      <div className="space-y-0.5">
+                        <span className="font-semibold">
+                          {language === "fr" ? "Assurance Transport de la Cargaison" : "Transit Cargo Insurance"}
+                        </span>
+                        <span className="text-[10px] text-slate-400 block">
+                          {(estimateResult.breakdown.insurance_pct * 100).toFixed(1)}%{" "}
+                          {language === "fr" ? "de" : "of"} CAD ${declaredValue.toLocaleString()}
+                        </span>
+                      </div>
+                      <span className="font-bold text-slate-900 font-mono">
+                        {formatMoney(estimateResult.breakdown.insurance)}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Minimum Charge Notice if triggered */}
+                  {estimateResult.min_charge_applied && (
+                    <div className="p-2 bg-amber-50 rounded-lg border border-amber-200 text-[11px] text-amber-800 flex items-center justify-between">
+                      <span>{language === "fr" ? "Tarif Minimum du Corridor Appliqué" : "Minimum Corridor Tariff Applied"}</span>
+                      <span className="font-bold">CAD ${estimateResult.min_charge}</span>
+                    </div>
+                  )}
                 </div>
-                <div className="text-right text-[11px] text-slate-400">
-                  CAD ${estimateResult.total_estimate.toFixed(2)}
+
+                {/* Total Section */}
+                <div className="pt-4 border-t-2 border-slate-100 space-y-2">
+                  <div className="flex items-end justify-between">
+                    <div>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                        {language === "fr" ? "Total de Fret Estimé" : "Estimated Freight Total"} ({currency})
+                      </span>
+                      <span className="text-2xl sm:text-3xl font-bold text-[#0B2545] tracking-tight">
+                        {formatMoney(estimateResult.total_estimate)}
+                      </span>
+                    </div>
+                    <div className="text-right text-[11px] text-slate-400">
+                      CAD ${estimateResult.total_estimate.toFixed(2)}
+                    </div>
+                  </div>
+
+                  <p className="text-[10px] text-slate-400 leading-tight">
+                    {language === "fr"
+                      ? "* Estimation tout inclus. Sous réserve de vérification physique officielle et d'inspection douanière au point de départ."
+                      : "* All-inclusive estimate. Subject to official physical verification and customs inspection at departure hub."}
+                  </p>
                 </div>
-              </div>
 
-              <p className="text-[10px] text-slate-400 leading-tight">
-                * All-inclusive estimate. Subject to official physical verification and customs inspection at departure hub.
-              </p>
-            </div>
+                {/* Action Buttons */}
+                <div className="space-y-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsBookingModalOpen(true)}
+                    className="w-full py-3.5 bg-[#d21f27] hover:bg-[#b51a21] text-white text-xs font-bold uppercase tracking-wider rounded-xl shadow-md hover:shadow-lg transition cursor-pointer flex items-center justify-center gap-2"
+                  >
+                    <Zap className="w-4 h-4" />
+                    <span>{language === "fr" ? "Réserver cet Envoi et Verrouiller le Tarif" : "Book This Load & Lock Tariff"}</span>
+                  </button>
 
-            {/* Action Buttons */}
-            <div className="space-y-2 pt-2">
-              <button
-                type="button"
-                onClick={() => setIsBookingModalOpen(true)}
-                className="w-full py-3.5 bg-[#d21f27] hover:bg-[#b51a21] text-white text-xs font-bold uppercase tracking-wider rounded-xl shadow-md hover:shadow-lg transition cursor-pointer flex items-center justify-center gap-2"
-              >
-                <Zap className="w-4 h-4" />
-                <span>Book This Load & Lock Tariff</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleDownloadEstimatePdf}
-                className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition cursor-pointer flex items-center justify-center gap-2"
-              >
-                <Download className="w-3.5 h-3.5" />
-                <span>Download Formal Estimate Sheet</span>
-              </button>
-            </div>
+                  <button
+                    type="button"
+                    onClick={handleDownloadEstimateSummary}
+                    className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition cursor-pointer flex items-center justify-center gap-2"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>{language === "fr" ? "Télécharger le Résumé de l'Estimation" : "Download Estimate Summary"}</span>
+                  </button>
+                </div>
+              </>
+            )}
           </div>
 
           {/* Quick Info & Transparency Accordion */}
-          <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs space-y-2">
-            <button
-              type="button"
-              onClick={() => setShowTariffAudit(!showTariffAudit)}
-              className="w-full flex items-center justify-between text-xs font-bold text-[#0B2545] cursor-pointer"
-            >
-              <div className="flex items-center gap-1.5">
-                <Info className="w-4 h-4 text-blue-600" />
-                <span>View Corridor Tariff Card Details ({estimateResult.rateCardId || "N/A"})</span>
-              </div>
-              <ChevronDown className={`w-4 h-4 transition-transform ${showTariffAudit ? "rotate-180" : ""}`} />
-            </button>
+          {estimateResult.success && (
+            <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs space-y-2">
+              <button
+                type="button"
+                onClick={() => setShowTariffAudit(!showTariffAudit)}
+                className="w-full flex items-center justify-between text-xs font-bold text-[#0B2545] cursor-pointer"
+              >
+                <div className="flex items-center gap-1.5">
+                  <Info className="w-4 h-4 text-blue-600" />
+                  <span>
+                    {language === "fr" ? "Voir les Détails de la Fiche Tarifaire du Corridor" : "View Corridor Tariff Card Details"} ({estimateResult.rateCardId || "N/A"})
+                  </span>
+                </div>
+                <ChevronDown className={`w-4 h-4 transition-transform ${showTariffAudit ? "rotate-180" : ""}`} />
+              </button>
 
-            {showTariffAudit && (
-              <div className="pt-2 text-[11px] text-slate-600 space-y-1.5 border-t border-slate-100 animate-in fade-in">
-                <div><span className="font-semibold">Corridor:</span> Canada ({origin}) → {currentDestObj.name} ({destination})</div>
-                <div><span className="font-semibold">Assigned Hub:</span> {selectedHub}</div>
-                <div><span className="font-semibold">Carrier Divisor:</span> {mode === "air" ? "6000 (IATA)" : mode === "land" ? "3000" : "1000 (CBM)"}</div>
-                <div><span className="font-semibold">Minimum Tariff:</span> CAD ${estimateResult.min_charge}</div>
-                <div><span className="font-semibold">Fuel Surcharge:</span> {(estimateResult.breakdown.fuel_surcharge_pct * 100).toFixed(0)}%</div>
-                <div><span className="font-semibold">Terminal Handling:</span> CAD ${estimateResult.breakdown.customs_handling_fee}</div>
-              </div>
-            )}
-          </div>
+              {showTariffAudit && (
+                <div className="pt-2 text-[11px] text-slate-600 space-y-1.5 border-t border-slate-100 animate-in fade-in">
+                  <div>
+                    <span className="font-semibold">{language === "fr" ? "Corridor :" : "Corridor:"}</span> Canada ({origin}) → {currentDestObj.name} ({destination})
+                  </div>
+                  <div>
+                    <span className="font-semibold">{language === "fr" ? "Plaque Tournante Assignée :" : "Assigned Hub:"}</span> {selectedHub}
+                  </div>
+                  <div>
+                    <span className="font-semibold">{language === "fr" ? "Diviseur Transporteur :" : "Carrier Divisor:"}</span>{" "}
+                    {mode === "air" ? "6000 (IATA)" : mode === "land" ? "3000" : "1000 (CBM)"}
+                  </div>
+                  <div>
+                    <span className="font-semibold">{language === "fr" ? "Tarif Minimum :" : "Minimum Tariff:"}</span> CAD ${estimateResult.min_charge}
+                  </div>
+                  <div>
+                    <span className="font-semibold">{language === "fr" ? "Surcharge Carburant :" : "Fuel Surcharge:"}</span>{" "}
+                    {(estimateResult.breakdown.fuel_surcharge_pct * 100).toFixed(0)}%
+                  </div>
+                  <div>
+                    <span className="font-semibold">{language === "fr" ? "Manutention Terminal :" : "Terminal Handling:"}</span> CAD ${estimateResult.breakdown.customs_handling_fee}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Booking Modal with Pre-populated Corridor Values */}
+      {/* Booking Modal, prefilled with the corridor/mode/weight/dimensions configured above */}
       <NewQuoteModal
         isOpen={isBookingModalOpen}
         onClose={() => setIsBookingModalOpen(false)}
+        initialValues={bookingPrefill}
       />
     </div>
   );

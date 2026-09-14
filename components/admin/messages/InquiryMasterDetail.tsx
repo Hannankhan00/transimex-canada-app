@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import { ContactInquiry, InquiryCategory } from "@/lib/inquiryTypes";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
+import { ContactInquiry } from "@/lib/inquiryTypes";
 import {
   Mail,
   Search,
@@ -9,11 +10,7 @@ import {
   Send,
   Phone,
   Building2,
-  Clock,
   Reply,
-  AlertCircle,
-  Filter,
-  UserCheck,
   ArrowLeft,
 } from "lucide-react";
 
@@ -26,13 +23,13 @@ export default function InquiryMasterDetail({
   inquiries,
   onReplySubmitted,
 }: InquiryMasterDetailProps) {
+  const { language } = useLanguage();
   const [selectedId, setSelectedId] = useState<string>(
     inquiries.length > 0 ? inquiries[0].id : ""
   );
   const [mobileView, setMobileView] = useState<"list" | "detail">("list");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "unread" | "replied">("all");
-  const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [replyText, setReplyText] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [replySuccess, setReplySuccess] = useState(false);
@@ -43,7 +40,6 @@ export default function InquiryMasterDetail({
   const filteredInquiries = inquiries.filter((inq) => {
     if (statusFilter === "unread" && !inq.unread) return false;
     if (statusFilter === "replied" && !inq.replied) return false;
-    if (categoryFilter !== "all" && inq.category !== categoryFilter) return false;
     if (search.trim()) {
       const q = search.toLowerCase().trim();
       return (
@@ -97,7 +93,7 @@ export default function InquiryMasterDetail({
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
             <input
               type="text"
-              placeholder="Search leads, sender, topic..."
+              placeholder={language === "fr" ? "Rechercher pistes, expéditeur, sujet..." : "Search leads, sender, topic..."}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-8 pr-3 py-1.5 text-xs text-slate-800 outline-none focus:border-[#0B2545]"
@@ -115,7 +111,7 @@ export default function InquiryMasterDetail({
                   : "text-slate-600 hover:bg-slate-100"
               }`}
             >
-              All ({inquiries.length})
+              {language === "fr" ? "Toutes" : "All"} ({inquiries.length})
             </button>
             <button
               type="button"
@@ -126,7 +122,7 @@ export default function InquiryMasterDetail({
                   : "text-slate-600 hover:bg-slate-100"
               }`}
             >
-              Unread ({inquiries.filter((i) => i.unread).length})
+              {language === "fr" ? "Non Lues" : "Unread"} ({inquiries.filter((i) => i.unread).length})
             </button>
             <button
               type="button"
@@ -137,7 +133,7 @@ export default function InquiryMasterDetail({
                   : "text-slate-600 hover:bg-slate-100"
               }`}
             >
-              Replied
+              {language === "fr" ? "Répondu" : "Replied"}
             </button>
           </div>
         </div>
@@ -146,7 +142,7 @@ export default function InquiryMasterDetail({
         <div className="flex-1 overflow-y-auto divide-y divide-slate-100">
           {filteredInquiries.length === 0 ? (
             <div className="p-8 text-center text-slate-400 text-xs">
-              No inquiries found matching criteria.
+              {language === "fr" ? "Aucune demande ne correspond aux critères." : "No inquiries found matching criteria."}
             </div>
           ) : (
             filteredInquiries.map((inq) => {
@@ -189,7 +185,7 @@ export default function InquiryMasterDetail({
                     {inq.replied && (
                       <span className="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-800 text-[10px] font-bold flex items-center gap-0.5">
                         <CheckCircle2 className="w-2.5 h-2.5" />
-                        <span>Replied</span>
+                        <span>{language === "fr" ? "Répondu" : "Replied"}</span>
                       </span>
                     )}
                     {inq.unread && (
@@ -217,7 +213,7 @@ export default function InquiryMasterDetail({
                 className="lg:hidden inline-flex items-center gap-1.5 text-xs font-bold text-[#0B2545] hover:text-[#d21f27] pb-1 cursor-pointer"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
-                <span>Back to Inquiries</span>
+                <span>{language === "fr" ? "Retour aux Demandes" : "Back to Inquiries"}</span>
               </button>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <h2 className="font-bold text-lg text-[#0B2545] leading-snug">
@@ -230,11 +226,11 @@ export default function InquiryMasterDetail({
                   {selectedInquiry.replied ? (
                     <span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 font-bold text-xs border border-emerald-200 flex items-center gap-1">
                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>Response Logged</span>
+                      <span>{language === "fr" ? "Réponse Consignée" : "Response Logged"}</span>
                     </span>
                   ) : (
                     <span className="px-2.5 py-1 rounded-full bg-amber-50 text-amber-800 font-bold text-xs border border-amber-200">
-                      Awaiting Response
+                      {language === "fr" ? "En Attente de Réponse" : "Awaiting Response"}
                     </span>
                   )}
                 </div>
@@ -244,7 +240,9 @@ export default function InquiryMasterDetail({
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs text-slate-600 pt-1">
                 <div className="flex items-center gap-1.5">
                   <Building2 className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
-                  <span className="font-bold text-slate-900">{selectedInquiry.company || "Independent Shipper"}</span>
+                  <span className="font-bold text-slate-900">
+                    {selectedInquiry.company || (language === "fr" ? "Expéditeur Indépendant" : "Independent Shipper")}
+                  </span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <Mail className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
@@ -254,7 +252,9 @@ export default function InquiryMasterDetail({
                 </div>
                 <div className="flex items-center gap-1.5">
                   <Phone className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
-                  <span className="font-mono">{selectedInquiry.phone || "No phone provided"}</span>
+                  <span className="font-mono">
+                    {selectedInquiry.phone || (language === "fr" ? "Aucun téléphone fourni" : "No phone provided")}
+                  </span>
                 </div>
               </div>
             </div>
@@ -271,7 +271,9 @@ export default function InquiryMasterDetail({
                   <div className="flex items-center justify-between text-[11px] font-bold text-emerald-800 border-b border-emerald-200/80 pb-1.5">
                     <span className="flex items-center gap-1">
                       <Reply className="w-3.5 h-3.5" />
-                      <span>Transimex Response by {selectedInquiry.reply.repliedBy}</span>
+                      <span>
+                        {language === "fr" ? "Réponse Transimex par" : "Transimex Response by"} {selectedInquiry.reply.repliedBy}
+                      </span>
                     </span>
                     <span className="text-emerald-700 font-mono">{selectedInquiry.reply.repliedAt}</span>
                   </div>
@@ -287,7 +289,11 @@ export default function InquiryMasterDetail({
               {replySuccess && (
                 <div className="mb-3 p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs rounded-xl flex items-center gap-2 font-semibold">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                  <span>Email reply successfully dispatched to {selectedInquiry.email}.</span>
+                  <span>
+                    {language === "fr"
+                      ? `Réponse par courriel envoyée avec succès à ${selectedInquiry.email}.`
+                      : `Email reply successfully dispatched to ${selectedInquiry.email}.`}
+                  </span>
                 </div>
               )}
 
@@ -295,16 +301,19 @@ export default function InquiryMasterDetail({
                 <div className="flex items-center justify-between text-xs">
                   <label className="font-bold text-slate-700 flex items-center gap-1.5">
                     <Reply className="w-3.5 h-3.5 text-[#d21f27]" />
-                    <span>Direct Email Reply to {selectedInquiry.name}</span>
+                    <span>
+                      {language === "fr" ? "Réponse Directe par Courriel à" : "Direct Email Reply to"} {selectedInquiry.name}
+                    </span>
                   </label>
-                  <span className="text-[10px] text-slate-400 font-mono">
-                    Delivered via Resend / SMTP Gateway
-                  </span>
                 </div>
 
                 <textarea
                   rows={4}
-                  placeholder={`Write official reply to ${selectedInquiry.email}...`}
+                  placeholder={
+                    language === "fr"
+                      ? `Rédiger une réponse officielle à ${selectedInquiry.email}...`
+                      : `Write official reply to ${selectedInquiry.email}...`
+                  }
                   value={replyText}
                   onChange={(e) => setReplyText(e.target.value)}
                   className="w-full bg-white border border-slate-200 focus:border-[#0B2545] rounded-xl p-3 text-xs text-slate-800 outline-none leading-relaxed transition"
@@ -317,7 +326,15 @@ export default function InquiryMasterDetail({
                     className="px-4 py-2 bg-[#0B2545] hover:bg-slate-800 text-white font-bold rounded-xl text-xs transition cursor-pointer flex items-center gap-1.5 shadow-xs disabled:opacity-50"
                   >
                     <Send className="w-3.5 h-3.5 text-[#d21f27]" />
-                    <span>{submitting ? "Dispatching..." : "Send Institutional Reply"}</span>
+                    <span>
+                      {submitting
+                        ? language === "fr"
+                          ? "Envoi..."
+                          : "Dispatching..."
+                        : language === "fr"
+                        ? "Envoyer la Réponse Officielle"
+                        : "Send Institutional Reply"}
+                    </span>
                   </button>
                 </div>
               </form>
@@ -325,7 +342,7 @@ export default function InquiryMasterDetail({
           </div>
         ) : (
           <div className="p-12 text-center text-slate-400 text-xs m-auto">
-            Select a message from the left inbox pane to review.
+            {language === "fr" ? "Sélectionnez un message dans la boîte de réception pour le réviser." : "Select a message from the left inbox pane to review."}
           </div>
         )}
       </div>

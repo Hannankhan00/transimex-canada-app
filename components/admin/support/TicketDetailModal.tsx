@@ -2,20 +2,15 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { SupportTicketItem } from "@/lib/supportTypes";
 import {
   X,
   Send,
   MessageSquare,
   Lock,
-  Building2,
-  Mail,
   ExternalLink,
   CheckCircle2,
-  AlertTriangle,
-  Clock,
-  ShieldAlert,
-  User,
 } from "lucide-react";
 
 interface TicketDetailModalProps {
@@ -31,13 +26,36 @@ export default function TicketDetailModal({
   ticket,
   onTicketUpdated,
 }: TicketDetailModalProps) {
+  const { language } = useLanguage();
+
   if (!isOpen || !ticket) return null;
 
+  return (
+    <TicketDetailModalInner
+      ticket={ticket}
+      onClose={onClose}
+      onTicketUpdated={onTicketUpdated}
+      language={language}
+    />
+  );
+}
+
+function TicketDetailModalInner({
+  ticket,
+  onClose,
+  onTicketUpdated,
+  language,
+}: {
+  ticket: SupportTicketItem;
+  onClose: () => void;
+  onTicketUpdated: (updatedTicket: SupportTicketItem) => void;
+  language: string;
+}) {
   const [replyMessage, setReplyMessage] = useState("");
   const [isInternal, setIsInternal] = useState(false);
   const [status, setStatus] = useState(ticket.status);
   const [priority, setPriority] = useState(ticket.priority);
-  const [internalNotes, setInternalNotes] = useState(ticket.internalNotes || "");
+  const [internalNotes] = useState(ticket.internalNotes || "");
   const [submitting, setSubmitting] = useState(false);
   const [successToast, setSuccessToast] = useState<string | null>(null);
 
@@ -59,7 +77,6 @@ export default function TicketDetailModal({
           message: replyMessage.trim() || undefined,
           isInternal,
           internalNotes,
-          responderName: "Jean-Philippe Tremblay (Operations Lead)",
         }),
       });
 
@@ -70,7 +87,11 @@ export default function TicketDetailModal({
       setReplyMessage("");
       setSuccessToast(
         isInternal
-          ? "Private staff note saved."
+          ? language === "fr"
+            ? "Note interne du personnel enregistrée."
+            : "Private staff note saved."
+          : language === "fr"
+          ? "Réponse envoyée au client et courriel expédié."
           : "Client response delivered and email dispatched."
       );
       setTimeout(() => setSuccessToast(null), 3000);
@@ -100,7 +121,7 @@ export default function TicketDetailModal({
                       : "bg-slate-100 text-slate-700"
                   }`}
                 >
-                  {ticket.priority} Priority
+                  {ticket.priority} {language === "fr" ? "Priorité" : "Priority"}
                 </span>
               </div>
               <h3 className="font-bold text-slate-900 text-sm mt-0.5">{ticket.subject}</h3>
@@ -127,23 +148,30 @@ export default function TicketDetailModal({
         <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex flex-wrap items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-4">
             <div>
-              <span className="text-[10px] font-bold text-slate-400 uppercase">Shipper Entity</span>
+              <span className="text-[10px] font-bold text-slate-400 uppercase">
+                {language === "fr" ? "Entité Expéditrice" : "Shipper Entity"}
+              </span>
               <p className="font-bold text-slate-900">
-                {ticket.client?.name || "Client Lead"} &bull; {ticket.client?.companyName || "Enterprise Shipper"}
+                {ticket.client?.name || (language === "fr" ? "Piste Client" : "Client Lead")} &bull;{" "}
+                {ticket.client?.companyName || (language === "fr" ? "Expéditeur Entreprise" : "Enterprise Shipper")}
               </p>
-              <p className="text-[11px] text-slate-500">{ticket.client?.email || "No email on record"}</p>
+              <p className="text-[11px] text-slate-500">
+                {ticket.client?.email || (language === "fr" ? "Aucun courriel enregistré" : "No email on record")}
+              </p>
             </div>
 
             {(ticket.shipmentId || ticket.linkedShipmentId) && (
               <div className="border-l border-slate-200 pl-4">
-                <span className="text-[10px] font-bold text-slate-400 uppercase">Linked Manifest</span>
+                <span className="text-[10px] font-bold text-slate-400 uppercase">
+                  {language === "fr" ? "Manifeste Lié" : "Linked Manifest"}
+                </span>
                 <p className="font-mono font-bold text-[#0B2545]">{ticket.shipmentId || ticket.linkedShipmentId}</p>
                 <Link
                   href={`/admin/shipments/${encodeURIComponent((ticket.shipmentId || ticket.linkedShipmentId) as string)}/customs`}
                   target="_blank"
                   className="text-[11px] text-[#d21f27] hover:underline flex items-center gap-1 font-bold"
                 >
-                  <span>Open Customs Center</span>
+                  <span>{language === "fr" ? "Ouvrir le Centre Douanier" : "Open Customs Center"}</span>
                   <ExternalLink className="w-3 h-3" />
                 </Link>
               </div>
@@ -153,28 +181,32 @@ export default function TicketDetailModal({
           {/* Quick status & priority switchers */}
           <div className="flex items-center gap-2">
             <div>
-              <span className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Status</span>
+              <span className="text-[10px] font-bold text-slate-400 uppercase block mb-1">
+                {language === "fr" ? "Statut" : "Status"}
+              </span>
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value as any)}
                 className="bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-800 outline-none"
               >
-                <option value="Open">Open</option>
-                <option value="In Progress">In Progress</option>
-                <option value="Resolved">Resolved</option>
+                <option value="Open">{language === "fr" ? "Ouvert" : "Open"}</option>
+                <option value="In Progress">{language === "fr" ? "En Cours" : "In Progress"}</option>
+                <option value="Resolved">{language === "fr" ? "Résolu" : "Resolved"}</option>
               </select>
             </div>
 
             <div>
-              <span className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Priority</span>
+              <span className="text-[10px] font-bold text-slate-400 uppercase block mb-1">
+                {language === "fr" ? "Priorité" : "Priority"}
+              </span>
               <select
                 value={priority}
                 onChange={(e) => setPriority(e.target.value as any)}
                 className="bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-800 outline-none"
               >
-                <option value="Normal">Normal</option>
-                <option value="High">High</option>
-                <option value="Urgent">Urgent</option>
+                <option value="Normal">{language === "fr" ? "Normale" : "Normal"}</option>
+                <option value="High">{language === "fr" ? "Élevée" : "High"}</option>
+                <option value="Urgent">{language === "fr" ? "Urgente" : "Urgent"}</option>
               </select>
             </div>
           </div>
@@ -200,7 +232,8 @@ export default function TicketDetailModal({
                 <div className="flex items-center justify-between text-[10px] font-bold">
                   <span className={isNote ? "text-amber-800 flex items-center gap-1" : isAdmin ? "text-[#0B2545]" : "text-blue-800"}>
                     {isNote && <Lock className="w-3 h-3" />}
-                    {msg.senderName} {isNote ? "(Internal Staff Audit Note)" : ""}
+                    {msg.senderName}{" "}
+                    {isNote ? (language === "fr" ? "(Note d'Audit Interne)" : "(Internal Staff Audit Note)") : ""}
                   </span>
                   <span className="text-slate-400 font-mono">{msg.timestamp}</span>
                 </div>
@@ -222,7 +255,7 @@ export default function TicketDetailModal({
                   !isInternal ? "bg-[#0B2545] text-white" : "bg-slate-100 text-slate-600"
                 }`}
               >
-                Public Client Response
+                {language === "fr" ? "Réponse Publique au Client" : "Public Client Response"}
               </button>
               <button
                 type="button"
@@ -232,12 +265,18 @@ export default function TicketDetailModal({
                 }`}
               >
                 <Lock className="w-3 h-3" />
-                <span>Internal Staff Note</span>
+                <span>{language === "fr" ? "Note Interne du Personnel" : "Internal Staff Note"}</span>
               </button>
             </div>
 
             <span className="text-[10px] text-slate-400">
-              {isInternal ? "Hidden from shipper" : "Dispatches transactional email to client"}
+              {isInternal
+                ? language === "fr"
+                  ? "Masqué à l'expéditeur"
+                  : "Hidden from shipper"
+                : language === "fr"
+                ? "Envoie un courriel transactionnel au client"
+                : "Dispatches transactional email to client"}
             </span>
           </div>
 
@@ -245,8 +284,10 @@ export default function TicketDetailModal({
             rows={3}
             placeholder={
               isInternal
-                ? "Record internal dispatch scratchpad note (not visible to client)..."
-                : `Compose response to ${ticket.client?.name || "Client"}...`
+                ? language === "fr"
+                  ? "Consignez une note interne de répartition (non visible au client)..."
+                  : "Record internal dispatch scratchpad note (not visible to client)..."
+                : `${language === "fr" ? "Rédiger une réponse à" : "Compose response to"} ${ticket.client?.name || "Client"}...`
             }
             value={replyMessage}
             onChange={(e) => setReplyMessage(e.target.value)}
@@ -257,18 +298,14 @@ export default function TicketDetailModal({
             }`}
           />
 
-          <div className="flex items-center justify-between pt-1 border-t border-slate-100">
-            <div className="text-[11px] text-slate-500">
-              Assigned Lead: <strong>Jean-Philippe Tremblay</strong>
-            </div>
-
+          <div className="flex items-center justify-end pt-1 border-t border-slate-100">
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={onClose}
                 className="px-3 py-1.5 rounded-xl text-slate-600 font-bold hover:bg-slate-100 transition cursor-pointer"
               >
-                Close
+                {language === "fr" ? "Fermer" : "Close"}
               </button>
               <button
                 type="submit"
@@ -278,7 +315,19 @@ export default function TicketDetailModal({
                 }`}
               >
                 <Send className="w-3.5 h-3.5" />
-                <span>{submitting ? "Saving..." : isInternal ? "Save Internal Note" : "Send Client Reply"}</span>
+                <span>
+                  {submitting
+                    ? language === "fr"
+                      ? "Enregistrement..."
+                      : "Saving..."
+                    : isInternal
+                    ? language === "fr"
+                      ? "Enregistrer la Note Interne"
+                      : "Save Internal Note"
+                    : language === "fr"
+                    ? "Envoyer la Réponse au Client"
+                    : "Send Client Reply"}
+                </span>
               </button>
             </div>
           </div>

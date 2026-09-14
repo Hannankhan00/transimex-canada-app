@@ -8,7 +8,6 @@ import QuoteReviewDrawer from "@/components/admin/quotes/QuoteReviewDrawer";
 import DirectClientQuoteModal from "@/components/admin/clients/DirectClientQuoteModal";
 import PermissionGuard from "@/components/admin/PermissionGuard";
 import {
-  FileSpreadsheet,
   Plus,
   RefreshCw,
   TrendingUp,
@@ -17,9 +16,6 @@ import {
   XCircle,
   DollarSign,
   Download,
-  AlertCircle,
-  Truck,
-  Layers,
 } from "lucide-react";
 
 export default function AdminQuotesPage() {
@@ -81,230 +77,226 @@ export default function AdminQuotesPage() {
     fetchQuotes();
   };
 
+  const handleExportCsv = () => {
+    const csvContent =
+      "data:text/csv;charset=utf-8," +
+      ["Ref,Client,Origin,Destination,Status,Rate"]
+        .concat(
+          quotes.map(
+            (q) =>
+              `"${q.id}","${q.clientCompany || q.clientName}","${q.origin}","${q.destination}","${q.status}","${q.priceCad || ""}"`
+          )
+        )
+        .join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `Transimex_Quotes_${Date.now()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <PermissionGuard module="quotes">
       <div className="space-y-8 animate-in fade-in duration-200">
-      {/* 1. PAGE HEADER */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-[#d21f27]">
-              {language === "fr" ? "Gestion des Soumissions" : "Commercial Freight Intake"}
-            </span>
-            <span className="px-2 py-0.5 rounded-full bg-slate-900 text-white text-[10px] font-mono font-bold">
-              PIPELINE v2.0
-            </span>
-          </div>
-          <h1
-            className="text-3xl sm:text-4xl font-bold text-[#0B2545] tracking-tight leading-tight mt-1"
-            style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
-          >
-            {language === "fr"
-              ? "Registre des Soumissions & Tarification"
-              : "Quote Pipeline & Rate Assignment"}
-          </h1>
-          <p className="text-slate-500 text-xs sm:text-sm mt-1 max-w-2xl">
-            {language === "fr"
-              ? "Évaluez les demandes de fret en temps réel, assignez les tarifs et convertissez automatiquement les soumissions en expéditions actives."
-              : "Evaluate incoming shipper requests, assign binding freight tariffs, dispatch client decisions, and spin up active tracking manifests."}
-          </p>
-        </div>
-
-        {/* Header Action Bar */}
-        <div className="flex flex-wrap items-center gap-2.5">
-          <button
-            type="button"
-            onClick={fetchQuotes}
-            className="px-3.5 py-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 shadow-2xs transition cursor-pointer flex items-center gap-1.5"
-            title="Refresh Pipeline"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 text-slate-500 ${isRefreshing ? "animate-spin" : ""}`} />
-            <span className="hidden sm:inline">Refresh</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              // Quick export simulation
-              const csvContent =
-                "data:text/csv;charset=utf-8," +
-                ["Ref,Client,Origin,Destination,Status,Rate"]
-                  .concat(
-                    quotes.map(
-                      (q) =>
-                        `"${q.id}","${q.clientCompany || q.clientName}","${q.origin}","${q.destination}","${q.status}","${q.priceCad || ""}"`
-                    )
-                  )
-                  .join("\n");
-              const encodedUri = encodeURI(csvContent);
-              const link = document.createElement("a");
-              link.setAttribute("href", encodedUri);
-              link.setAttribute("download", `Transimex_Quotes_${Date.now()}.csv`);
-              document.body.appendChild(link);
-              link.click();
-              document.body.removeChild(link);
-            }}
-            className="px-3.5 py-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-[#0B2545] shadow-2xs transition cursor-pointer flex items-center gap-1.5"
-          >
-            <Download className="w-3.5 h-3.5 text-[#0B2545]" />
-            <span>Export CSV</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setIsOnboardModalOpen(true)}
-            className="px-4 py-2 bg-[#d21f27] hover:bg-[#b51a21] active:scale-[0.98] text-white rounded-xl text-xs font-bold shadow-xs hover:shadow-md transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap"
-          >
-            <Plus className="w-4 h-4 stroke-[3]" />
-            <span>Direct Client Quote</span>
-          </button>
-        </div>
-      </div>
-
-      {/* 2. PIPELINE HIGH-LEVEL METRIC TILES */}
-      {/* 2. PIPELINE HIGH-LEVEL METRIC TILES */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
-        {/* Metric 1: Pending Rate Assignment */}
-        <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/90 shadow-2xs">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-              Awaiting Review
-            </span>
-            <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
-              <Clock className="w-4 h-4" />
+        {/* 1. PAGE HEADER */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-[#d21f27]">
+                {language === "fr" ? "Gestion des Soumissions" : "Commercial Freight Intake"}
+              </span>
             </div>
+            <h1 className="text-3xl sm:text-4xl font-extrabold text-[#0B2545] tracking-tight leading-tight mt-1">
+              {language === "fr"
+                ? "Registre des Soumissions & Tarification"
+                : "Quote Pipeline & Rate Assignment"}
+            </h1>
+            <p className="text-slate-500 text-xs sm:text-sm mt-1 max-w-2xl">
+              {language === "fr"
+                ? "Évaluez les demandes de fret en temps réel, assignez les tarifs et convertissez automatiquement les soumissions en expéditions actives."
+                : "Evaluate incoming shipper requests, assign binding freight tariffs, dispatch client decisions, and spin up active tracking manifests."}
+            </p>
           </div>
-          <div className="mt-2.5 flex items-baseline gap-2">
-            <span className="text-2xl sm:text-3xl font-bold text-[#0B2545]">
-              {counts.under_review}
-            </span>
-            <span className="text-xs font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200/60">
-              Intake
-            </span>
+
+          {/* Header Action Bar */}
+          <div className="flex flex-wrap items-center gap-2.5">
+            <button
+              type="button"
+              onClick={fetchQuotes}
+              className="px-3.5 py-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 shadow-2xs transition cursor-pointer flex items-center gap-1.5"
+              title={language === "fr" ? "Actualiser le Pipeline" : "Refresh Pipeline"}
+            >
+              <RefreshCw className={`w-3.5 h-3.5 text-slate-500 ${isRefreshing ? "animate-spin" : ""}`} />
+              <span className="hidden sm:inline">{language === "fr" ? "Actualiser" : "Refresh"}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleExportCsv}
+              className="px-3.5 py-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-[#0B2545] shadow-2xs transition cursor-pointer flex items-center gap-1.5"
+            >
+              <Download className="w-3.5 h-3.5 text-[#0B2545]" />
+              <span>{language === "fr" ? "Exporter CSV" : "Export CSV"}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setIsOnboardModalOpen(true)}
+              className="px-4 py-2 bg-[#d21f27] hover:bg-[#b51a21] active:scale-[0.98] text-white rounded-xl text-xs font-bold shadow-xs hover:shadow-md transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap"
+            >
+              <Plus className="w-4 h-4 stroke-[3]" />
+              <span>{language === "fr" ? "Soumission Client Directe" : "Direct Client Quote"}</span>
+            </button>
           </div>
-          <p className="text-[11px] text-slate-500 mt-1">
-            New requests awaiting rate evaluation
-          </p>
         </div>
 
-        {/* Metric 2: Rate Offered */}
-        <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/90 shadow-2xs">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-              Rate Offered
-            </span>
-            <div className="w-8 h-8 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center">
-              <DollarSign className="w-4 h-4" />
+        {/* 2. PIPELINE HIGH-LEVEL METRIC TILES */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
+          {/* Metric 1: Pending Rate Assignment */}
+          <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/90 shadow-2xs">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                {language === "fr" ? "En Attente de Révision" : "Awaiting Review"}
+              </span>
+              <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                <Clock className="w-4 h-4" />
+              </div>
             </div>
-          </div>
-          <div className="mt-2.5 flex items-baseline gap-2">
-            <span className="text-2xl sm:text-3xl font-bold text-[#0B2545]">
-              {counts.quoted || 0}
-            </span>
-            <span className="text-xs font-semibold text-sky-700 bg-sky-50 px-2 py-0.5 rounded-full border border-sky-200/60">
-              With Client
-            </span>
-          </div>
-          <p className="text-[11px] text-slate-500 mt-1">
-            Rates sent, awaiting client decision
-          </p>
-        </div>
-
-        {/* Metric 3: In Negotiation */}
-        <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/90 shadow-2xs">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-              In Negotiation
-            </span>
-            <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
-              <TrendingUp className="w-4 h-4" />
+            <div className="mt-2.5 flex items-baseline gap-2">
+              <span className="text-2xl sm:text-3xl font-bold text-[#0B2545]">
+                {counts.under_review}
+              </span>
+              <span className="text-xs font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200/60">
+                {language === "fr" ? "Réception" : "Intake"}
+              </span>
             </div>
+            <p className="text-[11px] text-slate-500 mt-1">
+              {language === "fr" ? "Nouvelles demandes en attente d'évaluation tarifaire" : "New requests awaiting rate evaluation"}
+            </p>
           </div>
-          <div className="mt-2.5 flex items-baseline gap-2">
-            <span className="text-2xl sm:text-3xl font-bold text-[#0B2545]">
-              {counts.client_rejected || 0}
-            </span>
-            <span className="text-xs font-semibold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200/60">
-              Callback Req.
-            </span>
-          </div>
-          <p className="text-[11px] text-slate-500 mt-1">
-            Client declined &amp; provided phone to negotiate
-          </p>
-        </div>
 
-        {/* Metric 4: Accepted & Converted */}
-        <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/90 shadow-2xs">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-              Accepted &amp; Dispatched
-            </span>
-            <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-              <CheckCircle2 className="w-4 h-4" />
+          {/* Metric 2: Rate Offered */}
+          <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/90 shadow-2xs">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                {language === "fr" ? "Tarif Proposé" : "Rate Offered"}
+              </span>
+              <div className="w-8 h-8 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center">
+                <DollarSign className="w-4 h-4" />
+              </div>
             </div>
-          </div>
-          <div className="mt-2.5 flex items-baseline gap-2">
-            <span className="text-2xl sm:text-3xl font-bold text-[#0B2545]">
-              {counts.accepted}
-            </span>
-            <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/60">
-              Booked
-            </span>
-          </div>
-          <p className="text-[11px] text-slate-500 mt-1">
-            Active shipments created from accepted quotes
-          </p>
-        </div>
-
-        {/* Metric 5: Declined Quotes */}
-        <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/90 shadow-2xs">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-              Declined
-            </span>
-            <div className="w-8 h-8 rounded-xl bg-red-50 text-[#d21f27] flex items-center justify-center">
-              <XCircle className="w-4 h-4" />
+            <div className="mt-2.5 flex items-baseline gap-2">
+              <span className="text-2xl sm:text-3xl font-bold text-[#0B2545]">
+                {counts.quoted || 0}
+              </span>
+              <span className="text-xs font-semibold text-sky-700 bg-sky-50 px-2 py-0.5 rounded-full border border-sky-200/60">
+                {language === "fr" ? "Chez le Client" : "With Client"}
+              </span>
             </div>
+            <p className="text-[11px] text-slate-500 mt-1">
+              {language === "fr" ? "Tarifs envoyés, en attente de la décision du client" : "Rates sent, awaiting client decision"}
+            </p>
           </div>
-          <div className="mt-2.5 flex items-baseline gap-2">
-            <span className="text-2xl sm:text-3xl font-bold text-[#0B2545]">
-              {counts.rejected}
-            </span>
-            <span className="text-xs font-semibold text-slate-500">
-              Archived
-            </span>
+
+          {/* Metric 3: In Negotiation */}
+          <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/90 shadow-2xs">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                {language === "fr" ? "En Négociation" : "In Negotiation"}
+              </span>
+              <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
+                <TrendingUp className="w-4 h-4" />
+              </div>
+            </div>
+            <div className="mt-2.5 flex items-baseline gap-2">
+              <span className="text-2xl sm:text-3xl font-bold text-[#0B2545]">
+                {counts.client_rejected || 0}
+              </span>
+              <span className="text-xs font-semibold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200/60">
+                {language === "fr" ? "Rappel Requis" : "Callback Req."}
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-500 mt-1">
+              {language === "fr"
+                ? "Client a refusé et fourni un téléphone pour négocier"
+                : "Client declined & provided phone to negotiate"}
+            </p>
           </div>
-          <p className="text-[11px] text-slate-500 mt-1">
-            Declined requests with logged reasons
-          </p>
+
+          {/* Metric 4: Accepted & Converted */}
+          <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/90 shadow-2xs">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                {language === "fr" ? "Acceptées et Réparties" : "Accepted & Dispatched"}
+              </span>
+              <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                <CheckCircle2 className="w-4 h-4" />
+              </div>
+            </div>
+            <div className="mt-2.5 flex items-baseline gap-2">
+              <span className="text-2xl sm:text-3xl font-bold text-[#0B2545]">
+                {counts.accepted}
+              </span>
+              <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/60">
+                {language === "fr" ? "Réservées" : "Booked"}
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-500 mt-1">
+              {language === "fr" ? "Expéditions actives créées à partir de soumissions acceptées" : "Active shipments created from accepted quotes"}
+            </p>
+          </div>
+
+          {/* Metric 5: Declined Quotes */}
+          <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/90 shadow-2xs">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                {language === "fr" ? "Refusées" : "Declined"}
+              </span>
+              <div className="w-8 h-8 rounded-xl bg-red-50 text-[#d21f27] flex items-center justify-center">
+                <XCircle className="w-4 h-4" />
+              </div>
+            </div>
+            <div className="mt-2.5 flex items-baseline gap-2">
+              <span className="text-2xl sm:text-3xl font-bold text-[#0B2545]">
+                {counts.rejected}
+              </span>
+              <span className="text-xs font-semibold text-slate-500">
+                {language === "fr" ? "Archivées" : "Archived"}
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-500 mt-1">
+              {language === "fr" ? "Demandes refusées avec motifs consignés" : "Declined requests with logged reasons"}
+            </p>
+          </div>
         </div>
-      </div>
 
-      {/* 3. MAIN QUOTE DATA TABLE */}
-      <QuoteDataTable
-        quotes={quotes}
-        counts={counts}
-        activeTab={activeTab}
-        onTabChange={(tab) => setActiveTab(tab)}
-        onSelectQuote={handleSelectQuote}
-        onRefresh={fetchQuotes}
-        isRefreshing={isRefreshing}
-      />
+        {/* 3. MAIN QUOTE DATA TABLE */}
+        <QuoteDataTable
+          quotes={quotes}
+          counts={counts}
+          activeTab={activeTab}
+          onTabChange={(tab) => setActiveTab(tab)}
+          onSelectQuote={handleSelectQuote}
+          onRefresh={fetchQuotes}
+          isRefreshing={isRefreshing}
+        />
 
-      {/* 4. SLIDING REVIEW & RATE DRAWER */}
-      <QuoteReviewDrawer
-        quote={selectedQuote}
-        isOpen={isDrawerOpen}
-        onClose={() => setIsDrawerOpen(false)}
-        onQuoteUpdated={handleQuoteUpdated}
-      />
+        {/* 4. SLIDING REVIEW & RATE DRAWER */}
+        <QuoteReviewDrawer
+          quote={selectedQuote}
+          isOpen={isDrawerOpen}
+          onClose={() => setIsDrawerOpen(false)}
+          onQuoteUpdated={handleQuoteUpdated}
+        />
 
-      {/* Direct Client Onboarding & Pre-Priced Quote Modal */}
-      <DirectClientQuoteModal
-        isOpen={isOnboardModalOpen}
-        onClose={() => setIsOnboardModalOpen(false)}
-        onSuccess={fetchQuotes}
-      />
+        {/* Direct Client Onboarding & Pre-Priced Quote Modal */}
+        <DirectClientQuoteModal
+          isOpen={isOnboardModalOpen}
+          onClose={() => setIsOnboardModalOpen(false)}
+          onSuccess={fetchQuotes}
+        />
       </div>
     </PermissionGuard>
   );

@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import { X, Send, AlertTriangle, DollarSign, Building2, CheckCircle2, ShieldAlert } from "lucide-react";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
+import { X, Send, AlertTriangle, DollarSign, CheckCircle2 } from "lucide-react";
 
 interface DutiesAlertModalProps {
   isOpen: boolean;
@@ -29,12 +30,18 @@ export default function DutiesAlertModal({
   initialDuties,
   onNoticeDispatched,
 }: DutiesAlertModalProps) {
-  const [dutiesAmount, setDutiesAmount] = useState(initialDuties?.amountCad || "1,850.00");
-  const [taxGstHst, setTaxGstHst] = useState(initialDuties?.taxGstHst || "420.00");
-  const [brokerageFee, setBrokerageFee] = useState(initialDuties?.brokerageFee || "150.00");
+  const { language } = useLanguage();
+  // No prior assessment exists for most shipments — leave every field blank rather
+  // than seeding it with an example number, so staff must enter this shipment's
+  // real duties before a notice can be dispatched to the client.
+  const [dutiesAmount, setDutiesAmount] = useState(initialDuties?.amountCad || "");
+  const [taxGstHst, setTaxGstHst] = useState(initialDuties?.taxGstHst || "");
+  const [brokerageFee, setBrokerageFee] = useState(initialDuties?.brokerageFee || "");
   const [currency, setCurrency] = useState<"CAD" | "USD">("CAD");
   const [paymentInstructions, setPaymentInstructions] = useState(
-    "Please remit funds via Electronic Funds Transfer (EFT) or corporate credit card in your Transimex client portal. Cargo release will be authorized immediately upon payment confirmation."
+    language === "fr"
+      ? "Veuillez remettre les fonds par virement électronique (EFT) ou carte de crédit corporative dans votre portail client Transimex. La libération de la cargaison sera autorisée immédiatement après confirmation du paiement."
+      : "Please remit funds via Electronic Funds Transfer (EFT) or corporate credit card in your Transimex client portal. Cargo release will be authorized immediately upon payment confirmation."
   );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -60,7 +67,11 @@ export default function DutiesAlertModal({
     setError(null);
 
     if (calculatedTotal <= 0) {
-      setError("Total duties and regulatory taxes must be greater than zero.");
+      setError(
+        language === "fr"
+          ? "Le total des droits et taxes réglementaires doit être supérieur à zéro."
+          : "Total duties and regulatory taxes must be greater than zero."
+      );
       return;
     }
 
@@ -115,10 +126,12 @@ export default function DutiesAlertModal({
             </div>
             <div>
               <h3 className="font-bold text-[#0B2545] text-base leading-tight">
-                Dispatch Duties &amp; Taxes Notice
+                {language === "fr" ? "Envoyer l'Avis de Droits et Taxes" : "Dispatch Duties & Taxes Notice"}
               </h3>
               <p className="text-[11px] text-slate-500">
-                Shipment: <span className="font-mono font-bold text-slate-700">{shipmentId}</span> &bull; {client.companyName || client.name}
+                {language === "fr" ? "Expédition :" : "Shipment:"}{" "}
+                <span className="font-mono font-bold text-slate-700">{shipmentId}</span> &bull;{" "}
+                {client.companyName || client.name}
               </p>
             </div>
           </div>
@@ -141,9 +154,21 @@ export default function DutiesAlertModal({
         {success ? (
           <div className="p-6 text-center space-y-2">
             <CheckCircle2 className="w-12 h-12 text-emerald-500 mx-auto animate-bounce" />
-            <h4 className="font-bold text-slate-900 text-sm">Duties Notice Dispatched Successfully</h4>
+            <h4 className="font-bold text-slate-900 text-sm">
+              {language === "fr" ? "Avis de Droits Envoyé avec Succès" : "Duties Notice Dispatched Successfully"}
+            </h4>
             <p className="text-xs text-slate-500">
-              Transactional email delivered to <strong>{client.email}</strong>. Client portal alert illuminated.
+              {language === "fr" ? (
+                <>
+                  Courriel transactionnel livré à <strong>{client.email}</strong>. Alerte du portail client
+                  illuminée.
+                </>
+              ) : (
+                <>
+                  Transactional email delivered to <strong>{client.email}</strong>. Client portal alert
+                  illuminated.
+                </>
+              )}
             </p>
           </div>
         ) : (
@@ -151,18 +176,19 @@ export default function DutiesAlertModal({
             {/* Recipient summary banner */}
             <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
               <div>
-                <span className="text-[10px] font-bold text-slate-400 uppercase">Notice Recipient</span>
+                <span className="text-[10px] font-bold text-slate-400 uppercase">
+                  {language === "fr" ? "Destinataire de l'Avis" : "Notice Recipient"}
+                </span>
                 <p className="font-bold text-slate-900 text-xs">{client.name} &bull; {client.companyName}</p>
                 <p className="text-[11px] text-slate-500">{client.email}</p>
               </div>
-              <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-700 text-[10px] font-bold border border-blue-200">
-                HIGH PRIORITY
-              </span>
             </div>
 
             {/* Currency selector */}
             <div className="flex items-center justify-between">
-              <span className="font-bold text-slate-700">Settlement Currency:</span>
+              <span className="font-bold text-slate-700">
+                {language === "fr" ? "Devise de Règlement :" : "Settlement Currency:"}
+              </span>
               <div className="flex items-center bg-slate-100 rounded-lg p-0.5 text-xs font-bold">
                 <button
                   type="button"
@@ -189,7 +215,7 @@ export default function DutiesAlertModal({
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <label className="font-bold text-slate-700 block mb-1">
-                  Customs Duty ({currency})
+                  {language === "fr" ? "Droit de Douane" : "Customs Duty"} ({currency})
                 </label>
                 <input
                   type="text"
@@ -202,7 +228,7 @@ export default function DutiesAlertModal({
 
               <div>
                 <label className="font-bold text-slate-700 block mb-1">
-                  GST / HST Taxes ({currency})
+                  {language === "fr" ? "Taxes TPS / TVH" : "GST / HST Taxes"} ({currency})
                 </label>
                 <input
                   type="text"
@@ -215,7 +241,7 @@ export default function DutiesAlertModal({
 
               <div>
                 <label className="font-bold text-slate-700 block mb-1">
-                  Broker Filing Fee
+                  {language === "fr" ? "Frais de Dossier du Courtier" : "Broker Filing Fee"}
                 </label>
                 <input
                   type="text"
@@ -231,21 +257,21 @@ export default function DutiesAlertModal({
             <div className="p-3.5 bg-[#0B2545] text-white rounded-xl flex items-center justify-between">
               <div>
                 <span className="text-[10px] text-slate-300 uppercase font-bold tracking-wider block">
-                  Total Duties Owed (Payable by Shipper)
+                  {language === "fr" ? "Total des Droits Dus (Payable par l'Expéditeur)" : "Total Duties Owed (Payable by Shipper)"}
                 </span>
                 <span className="text-xl font-mono font-bold text-amber-400">
                   {formattedTotal}
                 </span>
               </div>
               <span className="px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300 text-[10px] font-bold border border-amber-400/30">
-                PENDING CLEARANCE
+                {language === "fr" ? "EN ATTENTE DE DÉDOUANEMENT" : "PENDING CLEARANCE"}
               </span>
             </div>
 
             {/* Payment Instructions */}
             <div>
               <label className="font-bold text-slate-700 block mb-1">
-                Wire &amp; Payment Settlement Instructions
+                {language === "fr" ? "Instructions de Règlement et de Virement" : "Wire & Payment Settlement Instructions"}
               </label>
               <textarea
                 rows={2}
@@ -263,7 +289,7 @@ export default function DutiesAlertModal({
                 disabled={loading}
                 className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition cursor-pointer"
               >
-                Cancel
+                {language === "fr" ? "Annuler" : "Cancel"}
               </button>
               <button
                 type="submit"
@@ -271,7 +297,15 @@ export default function DutiesAlertModal({
                 className="px-4 py-2 bg-[#d21f27] hover:bg-[#b51a21] text-white rounded-xl text-xs font-bold shadow-xs transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
               >
                 <Send className="w-3.5 h-3.5" />
-                <span>{loading ? "Dispatching Notice..." : "Dispatch Duties Notice"}</span>
+                <span>
+                  {loading
+                    ? language === "fr"
+                      ? "Envoi..."
+                      : "Dispatching Notice..."
+                    : language === "fr"
+                    ? "Envoyer l'Avis de Droits"
+                    : "Dispatch Duties Notice"}
+                </span>
               </button>
             </div>
           </form>

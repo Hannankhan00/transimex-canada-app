@@ -2,23 +2,19 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { ClientProfile, ClientAccountStatus } from "@/lib/clientTypes";
 import {
   Search,
   Building2,
   Mail,
-  Phone,
-  Calendar,
-  DollarSign,
   MoreVertical,
   ExternalLink,
-  ShieldAlert,
-  ShieldCheck,
   KeyRound,
   UserX,
   UserCheck,
   CheckCircle2,
-  Filter,
+  AlertTriangle,
 } from "lucide-react";
 
 interface ClientDataTableProps {
@@ -26,27 +22,30 @@ interface ClientDataTableProps {
   onStatusToggled: (clientId: string, newStatus: ClientAccountStatus) => void;
 }
 
-const INDUSTRIES: { label: string; value: string }[] = [
-  { label: "All Industries", value: "all" },
-  { label: "Manufacturing", value: "Manufacturing" },
-  { label: "Automotive", value: "Automotive" },
-  { label: "Pharmaceutical", value: "Pharmaceutical" },
-  { label: "Retail & Consumer", value: "Retail & Consumer" },
-  { label: "Food & Cold-Chain", value: "Food & Cold-Chain" },
-  { label: "Industrial & Energy", value: "Industrial & Energy" },
-  { label: "Other", value: "Other" },
+const INDUSTRIES: { label: string; labelFr: string; value: string }[] = [
+  { label: "All Industries", labelFr: "Toutes les Industries", value: "all" },
+  { label: "Manufacturing", labelFr: "Fabrication", value: "Manufacturing" },
+  { label: "Automotive", labelFr: "Automobile", value: "Automotive" },
+  { label: "Pharmaceutical", labelFr: "Pharmaceutique", value: "Pharmaceutical" },
+  { label: "Retail & Consumer", labelFr: "Détail et Consommation", value: "Retail & Consumer" },
+  { label: "Food & Cold-Chain", labelFr: "Alimentaire et Chaîne du Froid", value: "Food & Cold-Chain" },
+  { label: "Industrial & Energy", labelFr: "Industriel et Énergie", value: "Industrial & Energy" },
+  { label: "Other", labelFr: "Autre", value: "Other" },
 ];
 
 export default function ClientDataTable({
   clients,
   onStatusToggled,
 }: ClientDataTableProps) {
+  const { language } = useLanguage();
   const [search, setSearch] = useState("");
   const [selectedIndustry, setSelectedIndustry] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [notificationMsg, setNotificationMsg] = useState<string | null>(null);
+  const [notificationIsError, setNotificationIsError] = useState(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [resettingId, setResettingId] = useState<string | null>(null);
 
   const filteredClients = clients.filter((client) => {
     if (statusFilter !== "all" && client.status.toLowerCase() !== statusFilter.toLowerCase()) {
@@ -82,8 +81,11 @@ export default function ClientDataTable({
       if (!res.ok) throw new Error(data.error || "Failed to update status");
 
       onStatusToggled(client.id, newStatus);
+      setNotificationIsError(false);
       setNotificationMsg(
-        `Client ${client.companyName} access is now ${newStatus === "Active" ? "ACTIVATED" : "DEACTIVATED"}.`
+        language === "fr"
+          ? `L'accès du client ${client.companyName} est maintenant ${newStatus === "Active" ? "ACTIVÉ" : "DÉSACTIVÉ"}.`
+          : `Client ${client.companyName} access is now ${newStatus === "Active" ? "ACTIVATED" : "DEACTIVATED"}.`
       );
       setTimeout(() => setNotificationMsg(null), 3500);
     } catch (err: any) {
@@ -93,29 +95,61 @@ export default function ClientDataTable({
     }
   };
 
-  const handlePasswordReset = (client: ClientProfile) => {
+  const handlePasswordReset = async (client: ClientProfile) => {
     setActiveMenuId(null);
-    setNotificationMsg(
-      `Password recovery dispatch triggered for ${client.email}. Client will receive institutional reset instructions.`
-    );
-    setTimeout(() => setNotificationMsg(null), 4000);
+    setResettingId(client.id);
+    try {
+      const res = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: client.email }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to send password reset email");
+
+      setNotificationIsError(false);
+      setNotificationMsg(
+        language === "fr"
+          ? `Courriel de récupération du mot de passe envoyé à ${client.email}.`
+          : `Password recovery email sent to ${client.email}.`
+      );
+    } catch (err: any) {
+      setNotificationIsError(true);
+      setNotificationMsg(
+        err.message ||
+          (language === "fr"
+            ? "Échec de l'envoi du courriel de récupération."
+            : "Failed to send the password recovery email.")
+      );
+    } finally {
+      setResettingId(null);
+      setTimeout(() => setNotificationMsg(null), 4000);
+    }
   };
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden space-y-0">
       {/* Toast Notification */}
       {notificationMsg && (
-        <div className="p-3 bg-[#0B2545] text-white text-xs font-semibold flex items-center justify-between animate-in fade-in duration-150">
+        <div
+          className={`p-3 text-white text-xs font-semibold flex items-center justify-between animate-in fade-in duration-150 ${
+            notificationIsError ? "bg-red-600" : "bg-[#0B2545]"
+          }`}
+        >
           <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+            {notificationIsError ? (
+              <AlertTriangle className="w-4 h-4 text-white flex-shrink-0" />
+            ) : (
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+            )}
             <span>{notificationMsg}</span>
           </div>
           <button
             type="button"
             onClick={() => setNotificationMsg(null)}
-            className="text-slate-300 hover:text-white text-[11px] underline cursor-pointer"
+            className="text-slate-200 hover:text-white text-[11px] underline cursor-pointer"
           >
-            Dismiss
+            {language === "fr" ? "Fermer" : "Dismiss"}
           </button>
         </div>
       )}
@@ -133,7 +167,7 @@ export default function ClientDataTable({
                 : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
             }`}
           >
-            All Accounts ({clients.length})
+            {language === "fr" ? "Tous les Comptes" : "All Accounts"} ({clients.length})
           </button>
           <button
             type="button"
@@ -144,7 +178,7 @@ export default function ClientDataTable({
                 : "bg-white text-emerald-700 border border-emerald-200 hover:bg-emerald-50"
             }`}
           >
-            Active ({clients.filter((c) => c.status === "Active").length})
+            {language === "fr" ? "Actif" : "Active"} ({clients.filter((c) => c.status === "Active").length})
           </button>
           <button
             type="button"
@@ -155,7 +189,7 @@ export default function ClientDataTable({
                 : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
             }`}
           >
-            Deactivated ({clients.filter((c) => c.status === "Deactivated").length})
+            {language === "fr" ? "Désactivé" : "Deactivated"} ({clients.filter((c) => c.status === "Deactivated").length})
           </button>
         </div>
 
@@ -168,7 +202,7 @@ export default function ClientDataTable({
           >
             {INDUSTRIES.map((ind) => (
               <option key={ind.value} value={ind.value}>
-                {ind.label}
+                {language === "fr" ? ind.labelFr : ind.label}
               </option>
             ))}
           </select>
@@ -177,7 +211,7 @@ export default function ClientDataTable({
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
             <input
               type="text"
-              placeholder="Search company, contact, email..."
+              placeholder={language === "fr" ? "Rechercher entreprise, contact, courriel..." : "Search company, contact, email..."}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="bg-white border border-slate-200 focus:border-[#0B2545] rounded-xl pl-8 pr-3 py-2 text-xs text-slate-800 outline-none w-full sm:w-64 transition"
@@ -191,13 +225,13 @@ export default function ClientDataTable({
         <table className="w-full text-left border-collapse text-xs">
           <thead>
             <tr className="border-b border-slate-200 bg-slate-50/70 text-[11px] font-bold uppercase tracking-wider text-slate-500">
-              <th className="py-3.5 px-4">Company &amp; ID</th>
-              <th className="py-3.5 px-4">Primary Contact</th>
-              <th className="py-3.5 px-4">Industry Sector</th>
-              <th className="py-3.5 px-4">Account Status</th>
-              <th className="py-3.5 px-4">Lifetime Revenue</th>
-              <th className="py-3.5 px-4">Registration</th>
-              <th className="py-3.5 px-4 text-right">Actions</th>
+              <th className="py-3.5 px-4">{language === "fr" ? "Entreprise et ID" : "Company & ID"}</th>
+              <th className="py-3.5 px-4">{language === "fr" ? "Contact Principal" : "Primary Contact"}</th>
+              <th className="py-3.5 px-4">{language === "fr" ? "Secteur d'Industrie" : "Industry Sector"}</th>
+              <th className="py-3.5 px-4">{language === "fr" ? "Statut du Compte" : "Account Status"}</th>
+              <th className="py-3.5 px-4">{language === "fr" ? "Revenu à Vie" : "Lifetime Revenue"}</th>
+              <th className="py-3.5 px-4">{language === "fr" ? "Inscription" : "Registration"}</th>
+              <th className="py-3.5 px-4 text-right">{language === "fr" ? "Actions" : "Actions"}</th>
             </tr>
           </thead>
 
@@ -205,7 +239,9 @@ export default function ClientDataTable({
             {filteredClients.length === 0 ? (
               <tr>
                 <td colSpan={7} className="py-12 text-center text-slate-400 text-xs">
-                  No registered corporate clients match your filter criteria.
+                  {language === "fr"
+                    ? "Aucun client corporatif enregistré ne correspond à vos critères de filtre."
+                    : "No registered corporate clients match your filter criteria."}
                 </td>
               </tr>
             ) : (
@@ -260,12 +296,12 @@ export default function ClientDataTable({
                       {isActive ? (
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 font-bold border border-emerald-200 text-[10px]">
                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                          <span>Active Access</span>
+                          <span>{language === "fr" ? "Accès Actif" : "Active Access"}</span>
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 font-bold border border-slate-300 text-[10px]">
                           <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
-                          <span>Deactivated</span>
+                          <span>{language === "fr" ? "Désactivé" : "Deactivated"}</span>
                         </span>
                       )}
                     </td>
@@ -288,7 +324,7 @@ export default function ClientDataTable({
                           className="px-2.5 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-[#0B2545] font-bold text-[11px] transition flex items-center gap-1"
                         >
                           <ExternalLink className="w-3 h-3 text-[#d21f27]" />
-                          <span>360° Dossier</span>
+                          <span>{language === "fr" ? "Dossier 360°" : "360° Dossier"}</span>
                         </Link>
 
                         {/* Dropdown Toggle */}
@@ -311,7 +347,7 @@ export default function ClientDataTable({
                                 onClick={() => setActiveMenuId(null)}
                               >
                                 <Building2 className="w-3.5 h-3.5 text-slate-500" />
-                                <span>Inspect 360° Profile</span>
+                                <span>{language === "fr" ? "Inspecter le Profil 360°" : "Inspect 360° Profile"}</span>
                               </Link>
 
                               <button
@@ -324,12 +360,12 @@ export default function ClientDataTable({
                                 {isActive ? (
                                   <>
                                     <UserX className="w-3.5 h-3.5 text-red-600" />
-                                    <span>Deactivate Account</span>
+                                    <span>{language === "fr" ? "Désactiver le Compte" : "Deactivate Account"}</span>
                                   </>
                                 ) : (
                                   <>
                                     <UserCheck className="w-3.5 h-3.5 text-emerald-600" />
-                                    <span>Activate Account</span>
+                                    <span>{language === "fr" ? "Activer le Compte" : "Activate Account"}</span>
                                   </>
                                 )}
                               </button>
@@ -337,10 +373,19 @@ export default function ClientDataTable({
                               <button
                                 type="button"
                                 onClick={() => handlePasswordReset(client)}
-                                className="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-50 text-slate-700 flex items-center gap-2 font-medium cursor-pointer"
+                                disabled={resettingId === client.id}
+                                className="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-50 text-slate-700 flex items-center gap-2 font-medium cursor-pointer disabled:opacity-50"
                               >
                                 <KeyRound className="w-3.5 h-3.5 text-slate-500" />
-                                <span>Trigger Password Reset</span>
+                                <span>
+                                  {resettingId === client.id
+                                    ? language === "fr"
+                                      ? "Envoi..."
+                                      : "Sending..."
+                                    : language === "fr"
+                                    ? "Envoyer la Réinitialisation du Mot de Passe"
+                                    : "Trigger Password Reset"}
+                                </span>
                               </button>
                             </div>
                           )}
@@ -359,7 +404,7 @@ export default function ClientDataTable({
       <div className="block md:hidden divide-y divide-slate-100">
         {filteredClients.length === 0 ? (
           <div className="p-8 text-center text-slate-400 text-xs">
-            No registered clients match your criteria.
+            {language === "fr" ? "Aucun client enregistré ne correspond à vos critères." : "No registered clients match your criteria."}
           </div>
         ) : (
           filteredClients.map((client) => {
@@ -383,12 +428,12 @@ export default function ClientDataTable({
                   {isActive ? (
                     <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 font-bold border border-emerald-200 text-[10px]">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                      <span>Active</span>
+                      <span>{language === "fr" ? "Actif" : "Active"}</span>
                     </span>
                   ) : (
                     <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 font-bold border border-slate-300 text-[10px]">
                       <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
-                      <span>Deactivated</span>
+                      <span>{language === "fr" ? "Désactivé" : "Deactivated"}</span>
                     </span>
                   )}
                 </div>
@@ -414,7 +459,7 @@ export default function ClientDataTable({
                     className="flex-1 justify-center px-3 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-[#0B2545] font-bold text-xs transition flex items-center gap-1"
                   >
                     <ExternalLink className="w-3.5 h-3.5 text-[#d21f27]" />
-                    <span>Dossier</span>
+                    <span>{language === "fr" ? "Dossier" : "Dossier"}</span>
                   </Link>
 
                   <button
@@ -430,12 +475,12 @@ export default function ClientDataTable({
                     {isActive ? (
                       <>
                         <UserX className="w-3.5 h-3.5" />
-                        <span>Deactivate</span>
+                        <span>{language === "fr" ? "Désactiver" : "Deactivate"}</span>
                       </>
                     ) : (
                       <>
                         <UserCheck className="w-3.5 h-3.5" />
-                        <span>Activate</span>
+                        <span>{language === "fr" ? "Activer" : "Activate"}</span>
                       </>
                     )}
                   </button>

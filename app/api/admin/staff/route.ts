@@ -4,7 +4,7 @@ import connectDB from "@/lib/mongoose";
 import User from "@/models/User";
 import { hashPassword, verifyToken } from "@/lib/auth";
 import { logAudit } from "@/lib/audit";
-import { ALL_STAFF_ROLES, getRolePreset, hasModulePermission, PermissionModule } from "@/lib/rbac";
+import { ALL_STAFF_ROLES, getRolePreset, PermissionModule } from "@/lib/rbac";
 
 export async function GET(req: Request) {
   try {
@@ -156,6 +156,15 @@ export async function POST(req: Request) {
       return NextResponse.json(
         { error: "Full Name, Corporate Email, and Initial Password are required." },
         { status: 400 }
+      );
+    }
+
+    // Protection: staff who merely hold the "staff" permission (not actual
+    // superadmins) must not be able to mint a new superadmin account directly.
+    if ((role || "").toLowerCase() === "superadmin" && actorUser.role !== "superadmin") {
+      return NextResponse.json(
+        { error: "Forbidden: Only Super Admins can create a Super Admin account." },
+        { status: 403 }
       );
     }
 

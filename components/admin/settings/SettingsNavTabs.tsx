@@ -3,24 +3,29 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Users, Mail, ShieldAlert, Settings } from "lucide-react";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
+import { Users, Mail, ShieldAlert } from "lucide-react";
 
 export default function SettingsNavTabs() {
   const pathname = usePathname();
+  const { language } = useLanguage();
 
   const tabs = [
     {
-      name: "Staff Access & Roles",
+      nameEn: "Staff Access & Roles",
+      nameFr: "Accès et Rôles du Personnel",
       href: "/admin/staff",
       icon: Users,
     },
     {
-      name: "Bilingual Email Templates",
+      nameEn: "Bilingual Email Templates",
+      nameFr: "Modèles de Courriels Bilingues",
       href: "/admin/settings/emails",
       icon: Mail,
     },
     {
-      name: "Activity Audit Log",
+      nameEn: "Activity Audit Log",
+      nameFr: "Journal d'Audit d'Activité",
       href: "/admin/settings/audit",
       icon: ShieldAlert,
     },
@@ -43,7 +48,7 @@ export default function SettingsNavTabs() {
             }`}
           >
             <Icon className={`w-3.5 h-3.5 ${isActive ? "text-[#d21f27]" : "text-slate-400"}`} />
-            <span>{t.name}</span>
+            <span>{language === "fr" ? t.nameFr : t.nameEn}</span>
           </Link>
         );
       })}

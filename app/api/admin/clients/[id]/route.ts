@@ -60,6 +60,14 @@ export async function GET(
       .sort({ createdAt: -1 })
       .lean();
 
+    // Real lifetime revenue and completed-shipment count, computed from this
+    // client's own shipments rather than an unconditional placeholder.
+    const lifetimeRevenue = linkedShipments.reduce((sum: number, s: any) => {
+      return sum + (parseFloat(String(s.rateCad || "").replace(/[^0-9.]/g, "")) || 0);
+    }, 0);
+    client.lifetimeRevenueCad = `$${lifetimeRevenue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} CAD`;
+    client.totalShipmentsCompleted = linkedShipments.filter((s: any) => s.status === "Delivered").length;
+
     const linkedQuotes = await Quote.find({
       $or: [
         { "client.email": client.email.toLowerCase() },

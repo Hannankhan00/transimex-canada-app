@@ -20,6 +20,10 @@ import {
   LogOut,
   ChevronRight,
   ShieldCheck,
+  LifeBuoy,
+  BarChart3,
+  Newspaper,
+  BookOpen,
 } from "lucide-react";
 
 interface AdminSidebarProps {
@@ -97,10 +101,34 @@ export default function AdminSidebar({
       module: "carriers",
     },
     {
+      name: language === "fr" ? "Billets de Support" : "Support Tickets",
+      href: "/admin/support",
+      icon: LifeBuoy,
+      module: "support",
+    },
+    {
       name: language === "fr" ? "Messages & Formulaires" : "Inquiries & Leads",
       href: "/admin/messages",
       icon: Mail,
       module: "messages",
+    },
+    {
+      name: language === "fr" ? "Analytique & Rapports" : "Analytics & Reports",
+      href: "/admin/analytics",
+      icon: BarChart3,
+      module: "analytics",
+    },
+    {
+      name: language === "fr" ? "Blogue & Contenu" : "Blog & Content",
+      href: "/admin/blog",
+      icon: Newspaper,
+      module: "blog",
+    },
+    {
+      name: language === "fr" ? "Ressources & FAQ" : "Resources & FAQ",
+      href: "/admin/resources",
+      icon: BookOpen,
+      module: "resources",
     },
     {
       name: language === "fr" ? "Personnel & Accès (RBAC)" : "Staff & Access (RBAC)",
@@ -145,7 +173,7 @@ export default function AdminSidebar({
         {/* Minimalist Operations Security Banner */}
         <div className="px-4 py-2.5 bg-white/5 border-b border-white/10 flex items-center justify-between text-[11px]">
           <span className="font-semibold text-slate-300 tracking-wide flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-[#d21f27] animate-pulse" />
+            <span className="w-2 h-2 rounded-full bg-[#d21f27]" />
             {language === "fr" ? "Portail Opérations" : "Operations Dispatch"}
           </span>
           <span className="text-[10px] font-mono text-emerald-400 font-bold px-1.5 py-0.5 rounded bg-emerald-400/10 border border-emerald-400/20">

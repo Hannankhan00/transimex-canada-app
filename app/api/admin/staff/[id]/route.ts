@@ -56,7 +56,18 @@ export async function PATCH(
     const body = await req.json();
     const { role, permissions, status, department, jobTitle, newPassword } = body;
 
-    let auditNote = [];
+    // Protection: staff who merely hold the "staff" permission (not actual
+    // superadmins) must not be able to mint a new superadmin — otherwise
+    // granting "staff" access to anyone is an implicit path to full
+    // privilege escalation for the whole system.
+    if (role === "superadmin" && actorUser.role !== "superadmin") {
+      return NextResponse.json(
+        { error: "Forbidden: Only Super Admins can promote an account to Super Admin." },
+        { status: 403 }
+      );
+    }
+
+    const auditNote = [];
 
     if (role && role !== targetUser.role) {
       auditNote.push(`Role changed from ${targetUser.role} to ${role}`);

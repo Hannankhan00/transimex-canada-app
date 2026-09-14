@@ -11,7 +11,7 @@ export async function GET(req: Request) {
     await connectDB();
     const dbCarriers = await Carrier.find().sort({ createdAt: -1 }).lean();
 
-    let carriers = dbCarriers.map((c: any) => ({
+    const carriers = dbCarriers.map((c: any) => ({
       id: c._id.toString(),
       name: c.name,
       code: c.code,
@@ -141,14 +141,17 @@ export async function POST(req: Request) {
       headquarters,
       operatingLanes: operatingLanes || [],
       fleetSize: fleetSize || "",
-      rating: rating ? parseFloat(rating) : 4.8,
+      // A brand-new partner has no completed loads yet, so it has no earned
+      // reliability rating either — default to 0 ("Not Yet Rated"), never a
+      // fabricated starting score.
+      rating: rating ? parseFloat(rating) : 0,
       totalShipmentsCompleted: 0,
       onTimeDeliveryRate: "0.0%",
       insurance: {
         policyNumber: insurance?.policyNumber || `POL-${code.toUpperCase()}-${new Date().getFullYear()}`,
         coverageAmount: insurance?.coverageAmount || "",
         expiryDate: insurance.expiryDate,
-        isCompliant: true,
+        isCompliant: new Date(insurance.expiryDate).getTime() > Date.now(),
       },
       status: "Active",
       notes: notes || "",

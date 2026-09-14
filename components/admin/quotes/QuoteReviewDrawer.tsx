@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { QuoteItem } from "@/lib/quoteTypes";
 import StatusBadge from "./StatusBadge";
 import RejectionModal from "./RejectionModal";
@@ -9,9 +10,7 @@ import {
   X,
   Truck,
   MapPin,
-  Calendar,
   DollarSign,
-  FileText,
   User,
   Building2,
   Mail,
@@ -19,17 +18,14 @@ import {
   CheckCircle2,
   XCircle,
   ExternalLink,
-  ShieldCheck,
   AlertTriangle,
   ArrowRight,
   Package,
-  Layers,
   Sparkles,
   Send,
   Clock,
   Edit3,
   Copy,
-  RotateCcw,
 } from "lucide-react";
 
 interface QuoteReviewDrawerProps {
@@ -45,6 +41,8 @@ export default function QuoteReviewDrawer({
   onClose,
   onQuoteUpdated,
 }: QuoteReviewDrawerProps) {
+  const { language } = useLanguage();
+
   // Rate Breakdown State
   const [currency, setCurrency] = useState<"CAD" | "USD">("CAD");
   const [lineHaul, setLineHaul] = useState("");
@@ -84,12 +82,14 @@ export default function QuoteReviewDrawer({
         setTotalRate(quote.priceCad);
         setLineHaul(quote.priceCad);
       } else {
-        // Defaults for quick evaluation
-        setLineHaul("4,850.00");
-        setFuelSurcharge("650.00");
-        setCrossBorderFee("150.00");
-        setAccessorials("200.00");
-        setTotalRate("$5,850.00 CAD");
+        // No prior rate exists yet — leave every field blank so staff must enter
+        // a real number for this specific shipment. The input placeholders below
+        // already show the expected format; they must never be treated as defaults.
+        setLineHaul("");
+        setFuelSurcharge("");
+        setCrossBorderFee("");
+        setAccessorials("");
+        setTotalRate("");
       }
     }
   }, [quote]);
@@ -123,7 +123,11 @@ export default function QuoteReviewDrawer({
     setActionError(null);
     setOfferSuccessMessage(null);
     if (!totalRate || totalRate.trim() === "") {
-      setActionError("Please input or calculate a final freight rate before sending offer.");
+      setActionError(
+        language === "fr"
+          ? "Veuillez saisir ou calculer un tarif de fret final avant d'envoyer l'offre."
+          : "Please input or calculate a final freight rate before sending offer."
+      );
       return;
     }
 
@@ -151,7 +155,12 @@ export default function QuoteReviewDrawer({
         throw new Error(data.error || "Failed to send price offer");
       }
 
-      setOfferSuccessMessage(data.message || `Price offer ${totalRate} sent to client successfully.`);
+      setOfferSuccessMessage(
+        data.message ||
+          (language === "fr"
+            ? `Offre de prix de ${totalRate} envoyée au client avec succès.`
+            : `Price offer ${totalRate} sent to client successfully.`)
+      );
       if (data.quote) {
         onQuoteUpdated(data.quote);
       }
@@ -166,7 +175,11 @@ export default function QuoteReviewDrawer({
   const handleAcceptAndGenerateShipment = async () => {
     setActionError(null);
     if (!totalRate || totalRate.trim() === "") {
-      setActionError("Please input or calculate a final freight rate before accepting.");
+      setActionError(
+        language === "fr"
+          ? "Veuillez saisir ou calculer un tarif de fret final avant d'accepter."
+          : "Please input or calculate a final freight rate before accepting."
+      );
       return;
     }
 
@@ -195,7 +208,9 @@ export default function QuoteReviewDrawer({
 
       setConversionSuccess({
         trackingId: data.trackingId,
-        message: data.message || "Shipment created successfully",
+        message:
+          data.message ||
+          (language === "fr" ? "Expédition créée avec succès" : "Shipment created successfully"),
       });
 
       if (data.quote) {
@@ -269,14 +284,12 @@ export default function QuoteReviewDrawer({
               </span>
               <StatusBadge status={quote.status} size="sm" />
             </div>
-            <h2
-              className="text-xl sm:text-2xl font-bold tracking-tight mt-1 text-white"
-              style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
-            >
-              Freight Assessment &amp; Rate Assignment
+            <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight mt-1 text-white">
+              {language === "fr" ? "Évaluation du Fret et Attribution du Tarif" : "Freight Assessment & Rate Assignment"}
             </h2>
             <p className="text-slate-300 text-xs mt-0.5">
-              Submitted on {quote.submittedDate} &bull; Valid until {quote.validUntil}
+              {language === "fr" ? "Soumis le" : "Submitted on"} {quote.submittedDate} &bull;{" "}
+              {language === "fr" ? "Valide jusqu'au" : "Valid until"} {quote.validUntil}
             </p>
           </div>
 
@@ -284,7 +297,7 @@ export default function QuoteReviewDrawer({
             type="button"
             onClick={onClose}
             className="p-2 rounded-xl text-slate-300 hover:text-white hover:bg-white/10 transition cursor-pointer"
-            aria-label="Close Drawer"
+            aria-label={language === "fr" ? "Fermer le Tiroir" : "Close Drawer"}
           >
             <X className="w-6 h-6" />
           </button>
@@ -304,10 +317,13 @@ export default function QuoteReviewDrawer({
             <CheckCircle2 className="w-5 h-5 text-sky-600 flex-shrink-0 mt-0.5" />
             <div className="text-xs">
               <p className="font-bold text-sky-800 text-sm">
-                Rate Offer Dispatched to Client!
+                {language === "fr" ? "Offre de Tarif Envoyée au Client !" : "Rate Offer Dispatched to Client!"}
               </p>
               <p className="mt-0.5 text-sky-700 leading-relaxed">
-                {offerSuccessMessage} Client has been notified by portal and email to accept or submit counter-negotiation terms.
+                {offerSuccessMessage}{" "}
+                {language === "fr"
+                  ? "Le client a été notifié par portail et courriel pour accepter ou soumettre des conditions de contre-négociation."
+                  : "Client has been notified by portal and email to accept or submit counter-negotiation terms."}
               </p>
             </div>
           </div>
@@ -319,17 +335,21 @@ export default function QuoteReviewDrawer({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 font-bold text-purple-900 text-xs sm:text-sm">
                 <Phone className="w-4 h-4 text-purple-700" />
-                <span>Client Declined Offer &amp; Requested Negotiation</span>
+                <span>
+                  {language === "fr"
+                    ? "Le Client a Refusé l'Offre et Demandé une Négociation"
+                    : "Client Declined Offer & Requested Negotiation"}
+                </span>
               </div>
               <span className="px-2 py-0.5 rounded-full bg-purple-200 text-purple-900 font-bold text-[10px]">
-                ACTION REQUIRED
+                {language === "fr" ? "ACTION REQUISE" : "ACTION REQUIRED"}
               </span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
               <div className="p-2.5 bg-white rounded-xl border border-purple-200 shadow-2xs">
                 <span className="text-[10px] text-purple-700 font-bold uppercase block tracking-wider">
-                  Client Direct Contact Phone
+                  {language === "fr" ? "Téléphone Direct du Client" : "Client Direct Contact Phone"}
                 </span>
                 <div className="flex items-center justify-between mt-1">
                   <a
@@ -337,7 +357,11 @@ export default function QuoteReviewDrawer({
                     className="font-mono font-bold text-purple-950 text-sm hover:underline flex items-center gap-1.5"
                   >
                     <Phone className="w-3.5 h-3.5 text-purple-600" />
-                    <span>{quote.clientNegotiationPhone || quote.clientPhone || "No direct phone"}</span>
+                    <span>
+                      {quote.clientNegotiationPhone ||
+                        quote.clientPhone ||
+                        (language === "fr" ? "Aucun téléphone direct" : "No direct phone")}
+                    </span>
                   </a>
                   {(quote.clientNegotiationPhone || quote.clientPhone) && (
                     <button
@@ -350,7 +374,15 @@ export default function QuoteReviewDrawer({
                       className="px-2 py-0.5 bg-purple-100 hover:bg-purple-200 text-purple-800 rounded-md text-[10px] font-bold cursor-pointer transition flex items-center gap-1"
                     >
                       <Copy className="w-3 h-3" />
-                      <span>{copiedPhone ? "Copied!" : "Copy"}</span>
+                      <span>
+                        {copiedPhone
+                          ? language === "fr"
+                            ? "Copié !"
+                            : "Copied!"
+                          : language === "fr"
+                          ? "Copier"
+                          : "Copy"}
+                      </span>
                     </button>
                   )}
                 </div>
@@ -359,7 +391,7 @@ export default function QuoteReviewDrawer({
               {quote.clientCounterBudget && (
                 <div className="p-2.5 bg-white rounded-xl border border-purple-200 shadow-2xs">
                   <span className="text-[10px] text-purple-700 font-bold uppercase block tracking-wider">
-                    Client Target / Counter-Budget
+                    {language === "fr" ? "Cible / Contre-Budget du Client" : "Client Target / Counter-Budget"}
                   </span>
                   <div className="font-mono font-bold text-emerald-700 text-sm mt-1">
                     {quote.clientCounterBudget}
@@ -371,7 +403,7 @@ export default function QuoteReviewDrawer({
             {quote.clientRejectionReason && (
               <div className="p-2.5 bg-white rounded-xl border border-purple-200 shadow-2xs text-xs">
                 <span className="text-[10px] text-purple-700 font-bold uppercase block tracking-wider mb-0.5">
-                  Reason Stated by Client for Declining
+                  {language === "fr" ? "Raison Indiquée par le Client pour le Refus" : "Reason Stated by Client for Declining"}
                 </span>
                 <p className="text-slate-800 font-medium leading-relaxed">
                   &ldquo;{quote.clientRejectionReason}&rdquo;
@@ -380,7 +412,17 @@ export default function QuoteReviewDrawer({
             )}
 
             <p className="text-[11px] text-purple-800 italic">
-              Call the client above to negotiate, adjust your rates below, and click <strong>&ldquo;Send Revised Price Offer&rdquo;</strong> to counter-offer.
+              {language === "fr" ? (
+                <>
+                  Appelez le client ci-dessus pour négocier, ajustez vos tarifs ci-dessous, puis cliquez sur{" "}
+                  <strong>&ldquo;Envoyer l'Offre de Prix Révisée&rdquo;</strong> pour faire une contre-offre.
+                </>
+              ) : (
+                <>
+                  Call the client above to negotiate, adjust your rates below, and click{" "}
+                  <strong>&ldquo;Send Revised Price Offer&rdquo;</strong> to counter-offer.
+                </>
+              )}
             </p>
           </div>
         )}
@@ -391,11 +433,20 @@ export default function QuoteReviewDrawer({
             <div className="flex items-center gap-2">
               <Clock className="w-4 h-4 text-sky-600 flex-shrink-0" />
               <span>
-                Rate of <strong>{quote.priceCad}</strong> offered to client. Awaiting client online acceptance or negotiation.
+                {language === "fr" ? (
+                  <>
+                    Tarif de <strong>{quote.priceCad}</strong> offert au client. En attente de l'acceptation en ligne du
+                    client ou d'une négociation.
+                  </>
+                ) : (
+                  <>
+                    Rate of <strong>{quote.priceCad}</strong> offered to client. Awaiting client online acceptance or negotiation.
+                  </>
+                )}
               </span>
             </div>
             <span className="px-2 py-0.5 rounded-full bg-sky-200 text-sky-900 font-bold text-[10px]">
-              AWAITING CLIENT
+              {language === "fr" ? "EN ATTENTE DU CLIENT" : "AWAITING CLIENT"}
             </span>
           </div>
         )}
@@ -406,21 +457,24 @@ export default function QuoteReviewDrawer({
             <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
             <div className="text-xs">
               <p className="font-bold text-emerald-800 text-sm">
-                Shipment Generated Successfully!
+                {language === "fr" ? "Expédition Générée avec Succès !" : "Shipment Generated Successfully!"}
               </p>
               <p className="mt-0.5 text-emerald-700 leading-relaxed">
-                Unique Tracking ID assigned:{" "}
+                {language === "fr" ? "Identifiant de suivi unique attribué :" : "Unique Tracking ID assigned:"}{" "}
                 <span className="font-mono font-bold text-[#0B2545] bg-emerald-100 px-1.5 py-0.5 rounded">
                   {conversionSuccess.trackingId}
                 </span>
-                . Resend email dispatched to client with tracking portal link.
+                .{" "}
+                {language === "fr"
+                  ? "Un courriel a été envoyé au client avec le lien du portail de suivi."
+                  : "A confirmation email with the tracking portal link has been sent to the client."}
               </p>
               <div className="mt-2 flex items-center gap-3">
                 <Link
                   href={`/admin/shipments/${encodeURIComponent(conversionSuccess.trackingId)}/customs`}
                   className="inline-flex items-center gap-1 font-bold text-[#0B2545] hover:underline"
                 >
-                  View Shipment Record <ArrowRight className="w-3 h-3" />
+                  {language === "fr" ? "Voir la Fiche d'Expédition" : "View Shipment Record"} <ArrowRight className="w-3 h-3" />
                 </Link>
               </div>
             </div>
@@ -433,12 +487,12 @@ export default function QuoteReviewDrawer({
             <div className="flex items-center gap-2">
               <Truck className="w-4 h-4 text-emerald-700" />
               <span>
-                Active Shipment:{" "}
+                {language === "fr" ? "Expédition Active :" : "Active Shipment:"}{" "}
                 <strong className="font-mono font-bold">{quote.shipmentId}</strong>
               </span>
             </div>
             <span className="px-2 py-0.5 rounded-full bg-emerald-200 text-emerald-900 font-bold text-[10px]">
-              DISPATCHED
+              {language === "fr" ? "EXPÉDIÉ" : "DISPATCHED"}
             </span>
           </div>
         )}
@@ -448,11 +502,13 @@ export default function QuoteReviewDrawer({
           <div className="p-3.5 bg-red-50 border-b border-red-200 text-xs text-red-900 space-y-1">
             <div className="flex items-center gap-2 font-bold text-red-800">
               <XCircle className="w-4 h-4 text-[#d21f27]" />
-              <span>Quote Declined by Transimex Operations</span>
+              <span>
+                {language === "fr" ? "Soumission Refusée par Transimex Opérations" : "Quote Declined by Transimex Operations"}
+              </span>
             </div>
             {quote.rejectionReason && (
               <p className="text-[11px] text-red-700 pl-6 leading-snug">
-                <strong>Reason:</strong> {quote.rejectionReason}
+                <strong>{language === "fr" ? "Raison :" : "Reason:"}</strong> {quote.rejectionReason}
               </p>
             )}
           </div>
@@ -464,7 +520,8 @@ export default function QuoteReviewDrawer({
           <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
             <div className="flex items-center justify-between border-b border-slate-200 pb-2">
               <span className="font-bold uppercase tracking-wider text-[11px] text-slate-500 flex items-center gap-1.5">
-                <MapPin className="w-3.5 h-3.5 text-[#d21f27]" /> Route &amp; Facilities
+                <MapPin className="w-3.5 h-3.5 text-[#d21f27]" />{" "}
+                {language === "fr" ? "Itinéraire et Installations" : "Route & Facilities"}
               </span>
               <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-200 text-slate-700">
                 {quote.transportMode}
@@ -473,13 +530,17 @@ export default function QuoteReviewDrawer({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <span className="text-[10px] font-bold text-slate-400 uppercase">Origin Terminal</span>
+                <span className="text-[10px] font-bold text-slate-400 uppercase">
+                  {language === "fr" ? "Terminal d'Origine" : "Origin Terminal"}
+                </span>
                 <p className="font-bold text-slate-900 text-sm">{quote.origin}</p>
                 <p className="text-slate-500 text-[11px] mt-0.5 leading-snug">{quote.originDetail}</p>
               </div>
 
               <div>
-                <span className="text-[10px] font-bold text-slate-400 uppercase">Destination Terminal</span>
+                <span className="text-[10px] font-bold text-slate-400 uppercase">
+                  {language === "fr" ? "Terminal de Destination" : "Destination Terminal"}
+                </span>
                 <p className="font-bold text-slate-900 text-sm">{quote.destination}</p>
                 <p className="text-slate-500 text-[11px] mt-0.5 leading-snug">{quote.destinationDetail}</p>
               </div>
@@ -490,51 +551,65 @@ export default function QuoteReviewDrawer({
           <div className="bg-white p-4 rounded-2xl border border-slate-200 space-y-3 shadow-2xs">
             <div className="flex items-center justify-between border-b border-slate-100 pb-2">
               <span className="font-bold uppercase tracking-wider text-[11px] text-slate-500 flex items-center gap-1.5">
-                <Package className="w-3.5 h-3.5 text-[#0B2545]" /> Cargo Specifications (Immutable)
+                <Package className="w-3.5 h-3.5 text-[#0B2545]" />{" "}
+                {language === "fr" ? "Spécifications de la Cargaison (Immuable)" : "Cargo Specifications (Immutable)"}
               </span>
               <span className="text-[10px] font-bold text-[#d21f27]">
-                {quote.cargoType || "General Freight"}
+                {quote.cargoType || (language === "fr" ? "Fret Général" : "General Freight")}
               </span>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100">
-                <span className="text-[10px] text-slate-400 font-semibold block">Total Weight</span>
+                <span className="text-[10px] text-slate-400 font-semibold block">
+                  {language === "fr" ? "Poids Total" : "Total Weight"}
+                </span>
                 <span className="font-bold text-slate-900 text-xs">{quote.weight}</span>
               </div>
 
               <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100">
-                <span className="text-[10px] text-slate-400 font-semibold block">Pallet Count</span>
-                <span className="font-bold text-slate-900 text-xs">{quote.palletCount || "FTL Volume"} Pallets</span>
+                <span className="text-[10px] text-slate-400 font-semibold block">
+                  {language === "fr" ? "Nombre de Palettes" : "Pallet Count"}
+                </span>
+                <span className="font-bold text-slate-900 text-xs">
+                  {quote.palletCount || (language === "fr" ? "Volume Complet" : "FTL Volume")}{" "}
+                  {language === "fr" ? "Palettes" : "Pallets"}
+                </span>
               </div>
 
               <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100 col-span-2 sm:col-span-1">
-                <span className="text-[10px] text-slate-400 font-semibold block">Trailer Equipment</span>
+                <span className="text-[10px] text-slate-400 font-semibold block">
+                  {language === "fr" ? "Équipement de Remorque" : "Trailer Equipment"}
+                </span>
                 <span className="font-bold text-slate-900 text-xs truncate block">{quote.equipment}</span>
               </div>
             </div>
 
             <div className="space-y-1.5 pt-1 text-[11px]">
               <div>
-                <strong className="text-slate-700">Commodity Description:</strong>{" "}
+                <strong className="text-slate-700">
+                  {language === "fr" ? "Description de la Marchandise :" : "Commodity Description:"}
+                </strong>{" "}
                 <span className="text-slate-600">{quote.commodity}</span>
               </div>
               {quote.dimensions && (
                 <div>
-                  <strong className="text-slate-700">Dimensions:</strong>{" "}
+                  <strong className="text-slate-700">{language === "fr" ? "Dimensions :" : "Dimensions:"}</strong>{" "}
                   <span className="text-slate-600">{quote.dimensions}</span>
                 </div>
               )}
               {quote.preferredPickupDate && (
                 <div>
-                  <strong className="text-slate-700">Preferred Pickup Window:</strong>{" "}
+                  <strong className="text-slate-700">
+                    {language === "fr" ? "Fenêtre de Ramassage Préférée :" : "Preferred Pickup Window:"}
+                  </strong>{" "}
                   <span className="text-slate-600">{quote.preferredPickupDate}</span>
                 </div>
               )}
               {quote.specialInstructions && (
                 <div className="p-2.5 bg-amber-50/80 border border-amber-200/60 rounded-xl text-amber-900 mt-2">
                   <strong className="block text-[10px] uppercase font-bold text-amber-800 mb-0.5">
-                    Shipper Accessorial Requirements
+                    {language === "fr" ? "Exigences Accessoires de l'Expéditeur" : "Shipper Accessorial Requirements"}
                   </strong>
                   {quote.specialInstructions}
                 </div>
@@ -546,13 +621,14 @@ export default function QuoteReviewDrawer({
           <div className="bg-white p-4 rounded-2xl border border-slate-200 space-y-3 shadow-2xs">
             <div className="flex items-center justify-between border-b border-slate-100 pb-2">
               <span className="font-bold uppercase tracking-wider text-[11px] text-slate-500 flex items-center gap-1.5">
-                <User className="w-3.5 h-3.5 text-[#0B2545]" /> Client &amp; Enterprise Account
+                <User className="w-3.5 h-3.5 text-[#0B2545]" />{" "}
+                {language === "fr" ? "Client et Compte Entreprise" : "Client & Enterprise Account"}
               </span>
               <Link
                 href="/admin/clients"
                 className="text-[11px] font-bold text-[#0B2545] hover:underline flex items-center gap-1"
               >
-                Client Profile <ExternalLink className="w-3 h-3" />
+                {language === "fr" ? "Profil Client" : "Client Profile"} <ExternalLink className="w-3 h-3" />
               </Link>
             </div>
 
@@ -560,7 +636,9 @@ export default function QuoteReviewDrawer({
               <div className="flex items-center gap-2">
                 <Building2 className="w-4 h-4 text-slate-400 flex-shrink-0" />
                 <div>
-                  <span className="text-[10px] text-slate-400 block font-semibold">Company</span>
+                  <span className="text-[10px] text-slate-400 block font-semibold">
+                    {language === "fr" ? "Entreprise" : "Company"}
+                  </span>
                   <span className="font-bold text-slate-900">{quote.clientCompany || "—"}</span>
                 </div>
               </div>
@@ -568,7 +646,9 @@ export default function QuoteReviewDrawer({
               <div className="flex items-center gap-2">
                 <User className="w-4 h-4 text-slate-400 flex-shrink-0" />
                 <div>
-                  <span className="text-[10px] text-slate-400 block font-semibold">Contact Person</span>
+                  <span className="text-[10px] text-slate-400 block font-semibold">
+                    {language === "fr" ? "Personne-Contact" : "Contact Person"}
+                  </span>
                   <span className="font-bold text-slate-900">{quote.clientName || "—"}</span>
                 </div>
               </div>
@@ -576,7 +656,9 @@ export default function QuoteReviewDrawer({
               <div className="flex items-center gap-2">
                 <Mail className="w-4 h-4 text-slate-400 flex-shrink-0" />
                 <div>
-                  <span className="text-[10px] text-slate-400 block font-semibold">Email</span>
+                  <span className="text-[10px] text-slate-400 block font-semibold">
+                    {language === "fr" ? "Courriel" : "Email"}
+                  </span>
                   <span className="font-semibold text-slate-800 truncate block">{quote.clientEmail || "—"}</span>
                 </div>
               </div>
@@ -584,7 +666,9 @@ export default function QuoteReviewDrawer({
               <div className="flex items-center gap-2">
                 <Phone className="w-4 h-4 text-slate-400 flex-shrink-0" />
                 <div>
-                  <span className="text-[10px] text-slate-400 block font-semibold">Phone</span>
+                  <span className="text-[10px] text-slate-400 block font-semibold">
+                    {language === "fr" ? "Téléphone" : "Phone"}
+                  </span>
                   <span className="font-semibold text-slate-800">{quote.clientPhone || "+1 (514) 555-0199"}</span>
                 </div>
               </div>
@@ -595,7 +679,8 @@ export default function QuoteReviewDrawer({
           <div className="bg-slate-900 text-white p-5 rounded-2xl border border-slate-800 space-y-4 shadow-md">
             <div className="flex items-center justify-between border-b border-white/10 pb-3">
               <span className="font-bold uppercase tracking-wider text-xs text-amber-400 flex items-center gap-2">
-                <DollarSign className="w-4 h-4" /> Freight Rate Calculation Engine
+                <DollarSign className="w-4 h-4" />{" "}
+                {language === "fr" ? "Calcul du Tarif de Fret" : "Freight Rate Calculation"}
               </span>
               <div className="flex items-center bg-white/10 rounded-lg p-0.5 text-[10px] font-bold">
                 <button
@@ -628,7 +713,9 @@ export default function QuoteReviewDrawer({
             {/* Breakdown Inputs */}
             <div className="grid grid-cols-2 gap-3 text-xs">
               <div>
-                <label className="font-semibold text-slate-300 block mb-1">Linehaul Base Rate ({currency})</label>
+                <label className="font-semibold text-slate-300 block mb-1">
+                  {language === "fr" ? "Tarif de Base Linehaul" : "Linehaul Base Rate"} ({currency})
+                </label>
                 <input
                   type="text"
                   placeholder="4,850.00"
@@ -643,7 +730,9 @@ export default function QuoteReviewDrawer({
               </div>
 
               <div>
-                <label className="font-semibold text-slate-300 block mb-1">Fuel Surcharge ({currency})</label>
+                <label className="font-semibold text-slate-300 block mb-1">
+                  {language === "fr" ? "Surcharge Carburant" : "Fuel Surcharge"} ({currency})
+                </label>
                 <input
                   type="text"
                   placeholder="650.00"
@@ -658,7 +747,9 @@ export default function QuoteReviewDrawer({
               </div>
 
               <div>
-                <label className="font-semibold text-slate-300 block mb-1">Cross-Border / Customs ({currency})</label>
+                <label className="font-semibold text-slate-300 block mb-1">
+                  {language === "fr" ? "Transfrontalier / Douanes" : "Cross-Border / Customs"} ({currency})
+                </label>
                 <input
                   type="text"
                   placeholder="150.00"
@@ -673,7 +764,9 @@ export default function QuoteReviewDrawer({
               </div>
 
               <div>
-                <label className="font-semibold text-slate-300 block mb-1">Accessorials &amp; Tailgate</label>
+                <label className="font-semibold text-slate-300 block mb-1">
+                  {language === "fr" ? "Accessoires et Hayon" : "Accessorials & Tailgate"}
+                </label>
                 <input
                   type="text"
                   placeholder="200.00"
@@ -692,7 +785,7 @@ export default function QuoteReviewDrawer({
             <div className="p-3.5 bg-white/5 border border-white/10 rounded-xl flex items-center justify-between">
               <div>
                 <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">
-                  Final Calculated Freight Rate
+                  {language === "fr" ? "Tarif de Fret Final Calculé" : "Final Calculated Freight Rate"}
                 </span>
                 <input
                   type="text"
@@ -704,7 +797,7 @@ export default function QuoteReviewDrawer({
                 />
               </div>
               <span className="px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-bold border border-emerald-500/30">
-                BINDING TARIFF
+                {language === "fr" ? "TARIF FERME" : "BINDING TARIFF"}
               </span>
             </div>
           </div>
@@ -713,7 +806,8 @@ export default function QuoteReviewDrawer({
           <div className="bg-white p-4 rounded-2xl border border-slate-200 space-y-2 shadow-2xs">
             <div className="flex items-center justify-between">
               <span className="font-bold uppercase tracking-wider text-[11px] text-slate-500 flex items-center gap-1.5">
-                <Edit3 className="w-3.5 h-3.5 text-[#0B2545]" /> Internal Notes (Staff Eyes Only)
+                <Edit3 className="w-3.5 h-3.5 text-[#0B2545]" />{" "}
+                {language === "fr" ? "Notes Internes (Réservé au Personnel)" : "Internal Notes (Staff Eyes Only)"}
               </span>
               {quote.status === "under_review" && (
                 <button
@@ -722,14 +816,18 @@ export default function QuoteReviewDrawer({
                   disabled={isSavingNotes}
                   className="text-[10px] font-bold text-blue-600 hover:underline cursor-pointer"
                 >
-                  Mark as In Review
+                  {language === "fr" ? "Marquer En Révision" : "Mark as In Review"}
                 </button>
               )}
             </div>
 
             <textarea
               rows={2}
-              placeholder="Internal pricing calculation notes, carrier inquiries, or equipment staging status..."
+              placeholder={
+                language === "fr"
+                  ? "Notes internes de calcul tarifaire, demandes de transporteur ou statut de mise en place de l'équipement..."
+                  : "Internal pricing calculation notes, carrier inquiries, or equipment staging status..."
+              }
               value={adminNotes}
               onChange={(e) => setAdminNotes(e.target.value)}
               className="w-full bg-slate-50 border border-slate-200 focus:border-[#0B2545] focus:bg-white rounded-xl p-3 text-xs text-slate-800 outline-none transition"
@@ -747,7 +845,7 @@ export default function QuoteReviewDrawer({
                 className="flex-1 sm:flex-none justify-center px-3.5 py-2 rounded-xl text-xs font-bold text-red-600 hover:bg-red-100/70 border border-red-200 transition cursor-pointer flex items-center gap-1.5"
               >
                 <XCircle className="w-4 h-4" />
-                <span>Decline Request</span>
+                <span>{language === "fr" ? "Refuser la Demande" : "Decline Request"}</span>
               </button>
             )}
 
@@ -757,7 +855,13 @@ export default function QuoteReviewDrawer({
               disabled={isSavingNotes}
               className="flex-1 sm:flex-none justify-center px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-200 border border-slate-200 transition cursor-pointer"
             >
-              {isSavingNotes ? "Saving..." : "Save Notes"}
+              {isSavingNotes
+                ? language === "fr"
+                  ? "Enregistrement..."
+                  : "Saving..."
+                : language === "fr"
+                ? "Enregistrer les Notes"
+                : "Save Notes"}
             </button>
           </div>
 
@@ -773,11 +877,19 @@ export default function QuoteReviewDrawer({
                   <Send className="w-4 h-4 text-amber-400" />
                   <span>
                     {isOffering
-                      ? "Sending..."
+                      ? language === "fr"
+                        ? "Envoi..."
+                        : "Sending..."
                       : isClientRejected
-                      ? "Send Revised Price Offer"
+                      ? language === "fr"
+                        ? "Envoyer l'Offre de Prix Révisée"
+                        : "Send Revised Price Offer"
                       : isQuoted
-                      ? "Update & Re-send Offer"
+                      ? language === "fr"
+                        ? "Mettre à Jour et Renvoyer l'Offre"
+                        : "Update & Re-send Offer"
+                      : language === "fr"
+                      ? "Approuver et Envoyer l'Offre de Prix"
                       : "Approve & Send Price Offer"}
                   </span>
                 </button>
@@ -787,16 +899,28 @@ export default function QuoteReviewDrawer({
                   onClick={handleAcceptAndGenerateShipment}
                   disabled={isAccepting || isOffering}
                   className="justify-center px-3 py-2.5 bg-[#d21f27] hover:bg-[#b51a21] text-white rounded-xl text-xs font-bold shadow-xs hover:shadow transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
-                  title="Direct manual override dispatch without awaiting client online response"
+                  title={
+                    language === "fr"
+                      ? "Répartition manuelle directe sans attendre la réponse en ligne du client"
+                      : "Direct manual override dispatch without awaiting client online response"
+                  }
                 >
                   <Sparkles className="w-3.5 h-3.5" />
-                  <span>{isAccepting ? "Dispatching..." : "Direct Dispatch"}</span>
+                  <span>
+                    {isAccepting
+                      ? language === "fr"
+                        ? "Répartition..."
+                        : "Dispatching..."
+                      : language === "fr"
+                      ? "Répartition Directe"
+                      : "Direct Dispatch"}
+                  </span>
                 </button>
               </>
             ) : (
               <div className="w-full sm:w-auto justify-center px-4 py-2 bg-emerald-100 text-emerald-800 rounded-xl text-xs font-bold flex items-center gap-1.5">
                 <CheckCircle2 className="w-4 h-4" />
-                <span>Accepted &amp; Dispatched</span>
+                <span>{language === "fr" ? "Accepté et Réparti" : "Accepted & Dispatched"}</span>
               </div>
             )}
           </div>

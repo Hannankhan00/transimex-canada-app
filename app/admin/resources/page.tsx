@@ -1,19 +1,10 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 import FaqBuilder from "@/components/admin/resources/FaqBuilder";
-import {
-  FolderOpen,
-  FileText,
-  Download,
-  Plus,
-  Trash2,
-  ExternalLink,
-  CheckCircle2,
-  HelpCircle,
-  FileCheck,
-  Sparkles,
-} from "lucide-react";
+import PermissionGuard from "@/components/admin/PermissionGuard";
+import { FolderOpen, FileText, Download, Plus, Trash2, CheckCircle2 } from "lucide-react";
 
 interface DownloadableResource {
   id: string;
@@ -40,6 +31,7 @@ function formatFileSize(bytes: number): string {
 }
 
 export default function AdminResourcesPage() {
+  const { language } = useLanguage();
   const [resources, setResources] = useState<DownloadableResource[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -96,10 +88,10 @@ export default function AdminResourcesPage() {
       setNewTitleFr("");
       setNewFile(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
-      setToastMsg("New downloadable shipping guide registered.");
+      setToastMsg(language === "fr" ? "Nouveau guide d'expédition téléchargeable enregistré." : "New downloadable shipping guide registered.");
       setTimeout(() => setToastMsg(null), 3000);
     } catch (err: any) {
-      alert(err.message || "Error uploading resource");
+      alert(err.message || (language === "fr" ? "Erreur lors du téléchargement de la ressource" : "Error uploading resource"));
     } finally {
       setSubmitting(false);
     }
@@ -114,34 +106,29 @@ export default function AdminResourcesPage() {
       if (!res.ok) throw new Error(data.error || "Failed to remove resource");
 
       setResources((prev) => prev.filter((r) => r.id !== id));
-      setToastMsg("Resource guide removed.");
+      setToastMsg(language === "fr" ? "Guide de ressources supprimé." : "Resource guide removed.");
       setTimeout(() => setToastMsg(null), 2500);
     } catch (err: any) {
-      alert(err.message || "Error removing resource");
+      alert(err.message || (language === "fr" ? "Erreur lors de la suppression de la ressource" : "Error removing resource"));
     }
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-200">
+    <PermissionGuard module="resources">
+      <div className="space-y-8 animate-in fade-in duration-200">
       {/* 1. HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-[#d21f27]">
-              Knowledge Base &amp; Shipper Enablement
-            </span>
-            <span className="px-2 py-0.5 rounded-full bg-slate-900 text-white text-[10px] font-mono font-bold">
-              PUBLIC PORTAL ASSETS
-            </span>
-          </div>
-          <h1
-            className="text-3xl sm:text-4xl font-bold text-[#0B2545] tracking-tight leading-tight mt-1"
-            style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
-          >
-            Resources &amp; FAQ Manager
+          <span className="text-[11px] font-bold uppercase tracking-wider text-[#d21f27]">
+            {language === "fr" ? "Base de Connaissances et Ressources Client" : "Knowledge Base & Shipper Enablement"}
+          </span>
+          <h1 className="text-3xl sm:text-4xl font-bold text-[#0B2545] tracking-tight leading-tight mt-1">
+            {language === "fr" ? "Gestionnaire de Ressources et FAQ" : "Resources & FAQ Manager"}
           </h1>
           <p className="text-slate-500 text-xs sm:text-sm mt-1 max-w-2xl">
-            Manage downloadable regulatory guides, case studies, and bilingual FAQ accordions served on the public /resources hub.
+            {language === "fr"
+              ? "Gérez les guides réglementaires téléchargeables, les études de cas et les accordéons FAQ bilingues affichés sur le portail public /resources."
+              : "Manage downloadable regulatory guides, case studies, and bilingual FAQ accordions served on the public /resources hub."}
           </p>
         </div>
 
@@ -151,7 +138,7 @@ export default function AdminResourcesPage() {
           className="px-4 py-2 bg-[#0B2545] hover:bg-slate-800 text-white rounded-xl text-xs font-bold shadow-xs transition cursor-pointer flex items-center gap-1.5 self-start sm:self-auto"
         >
           <Plus className="w-4 h-4 text-[#d21f27]" />
-          <span>Upload New Guide</span>
+          <span>{language === "fr" ? "Téléverser un Nouveau Guide" : "Upload New Guide"}</span>
         </button>
       </div>
 
@@ -168,10 +155,12 @@ export default function AdminResourcesPage() {
           <div>
             <h3 className="font-bold text-[#0B2545] text-sm flex items-center gap-2">
               <FolderOpen className="w-4 h-4 text-[#0B2545]" />
-              <span>Public Shipping Guides &amp; Whitepapers</span>
+              <span>{language === "fr" ? "Guides d'Expédition et Livres Blancs Publics" : "Public Shipping Guides & Whitepapers"}</span>
             </h3>
             <p className="text-[11px] text-slate-500 mt-0.5">
-              Certified PDFs available for immediate download by prospective shippers and clients.
+              {language === "fr"
+                ? "Documents disponibles en téléchargement immédiat pour les expéditeurs et clients potentiels."
+                : "Documents available for immediate download by prospective shippers and clients."}
             </p>
           </div>
         </div>
@@ -180,33 +169,35 @@ export default function AdminResourcesPage() {
         {isUploading && (
           <form onSubmit={handleAddResource} className="p-5 border-b border-slate-200 bg-slate-50/40 space-y-4 text-xs">
             <div className="flex items-center justify-between border-b border-slate-200 pb-2 font-bold text-slate-800">
-              <span>Register New PDF Guide</span>
+              <span>{language === "fr" ? "Enregistrer un Nouveau Guide" : "Register New Guide"}</span>
               <button
                 type="button"
                 onClick={() => setIsUploading(false)}
                 className="text-slate-400 hover:text-slate-600 cursor-pointer"
               >
-                Cancel
+                {language === "fr" ? "Annuler" : "Cancel"}
               </button>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Category</label>
+                <label className="font-bold text-slate-700 block mb-1">{language === "fr" ? "Catégorie" : "Category"}</label>
                 <select
                   value={newCategory}
                   onChange={(e) => setNewCategory(e.target.value)}
                   className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold outline-none"
                 >
-                  <option value="Customs Compliance">Customs Compliance</option>
-                  <option value="Specialized Transport">Specialized Transport</option>
-                  <option value="Heavy Haul Oversize">Heavy Haul Oversize</option>
-                  <option value="Cold-Chain">Cold-Chain</option>
+                  <option value="Customs Compliance">{language === "fr" ? "Conformité Douanière" : "Customs Compliance"}</option>
+                  <option value="Specialized Transport">{language === "fr" ? "Transport Spécialisé" : "Specialized Transport"}</option>
+                  <option value="Heavy Haul Oversize">{language === "fr" ? "Transport Hors Norme" : "Heavy Haul Oversize"}</option>
+                  <option value="Cold-Chain">{language === "fr" ? "Chaîne du Froid" : "Cold-Chain"}</option>
                 </select>
               </div>
 
               <div className="sm:col-span-2">
-                <label className="font-bold text-slate-700 block mb-1">Title (English)</label>
+                <label className="font-bold text-slate-700 block mb-1">
+                  {language === "fr" ? "Titre (Anglais)" : "Title (English)"}
+                </label>
                 <input
                   type="text"
                   placeholder="e.g. 2026 Canadian Customs Clearance Handbook"
@@ -229,7 +220,9 @@ export default function AdminResourcesPage() {
               </div>
 
               <div className="sm:col-span-3">
-                <label className="font-bold text-slate-700 block mb-1">File (PDF, DOCX, etc.)</label>
+                <label className="font-bold text-slate-700 block mb-1">
+                  {language === "fr" ? "Fichier (PDF, DOCX, etc.)" : "File (PDF, DOCX, etc.)"}
+                </label>
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -246,14 +239,14 @@ export default function AdminResourcesPage() {
                 onClick={() => setIsUploading(false)}
                 className="px-3 py-1.5 rounded-xl text-slate-600 font-bold hover:bg-slate-100 transition cursor-pointer"
               >
-                Cancel
+                {language === "fr" ? "Annuler" : "Cancel"}
               </button>
               <button
                 type="submit"
                 disabled={submitting || !newTitleEn.trim() || !newFile}
                 className="px-4 py-1.5 bg-[#0B2545] text-white rounded-xl font-bold shadow-xs transition cursor-pointer disabled:opacity-50"
               >
-                {submitting ? "Uploading..." : "Publish Guide"}
+                {submitting ? (language === "fr" ? "Téléversement..." : "Uploading...") : language === "fr" ? "Publier le Guide" : "Publish Guide"}
               </button>
             </div>
           </form>
@@ -264,11 +257,11 @@ export default function AdminResourcesPage() {
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="border-b border-slate-200 bg-slate-50/70 text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                <th className="py-3.5 px-4">Guide Name &amp; Description</th>
-                <th className="py-3.5 px-4">Category</th>
-                <th className="py-3.5 px-4">File Size</th>
-                <th className="py-3.5 px-4">Total Downloads</th>
-                <th className="py-3.5 px-4 text-right">Actions</th>
+                <th className="py-3.5 px-4">{language === "fr" ? "Nom et Description du Guide" : "Guide Name & Description"}</th>
+                <th className="py-3.5 px-4">{language === "fr" ? "Catégorie" : "Category"}</th>
+                <th className="py-3.5 px-4">{language === "fr" ? "Taille du Fichier" : "File Size"}</th>
+                <th className="py-3.5 px-4">{language === "fr" ? "Téléchargements Totaux" : "Total Downloads"}</th>
+                <th className="py-3.5 px-4 text-right">{language === "fr" ? "Actions" : "Actions"}</th>
               </tr>
             </thead>
 
@@ -276,13 +269,13 @@ export default function AdminResourcesPage() {
               {loading ? (
                 <tr>
                   <td colSpan={5} className="py-8 px-4 text-center text-slate-400">
-                    Loading resources...
+                    {language === "fr" ? "Chargement des ressources..." : "Loading resources..."}
                   </td>
                 </tr>
               ) : resources.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="py-8 px-4 text-center text-slate-400">
-                    No resources uploaded yet.
+                    {language === "fr" ? "Aucune ressource téléversée pour le moment." : "No resources uploaded yet."}
                   </td>
                 </tr>
               ) : (
@@ -292,8 +285,8 @@ export default function AdminResourcesPage() {
                       <div className="flex items-start gap-2.5">
                         <FileText className="w-4 h-4 text-[#d21f27] mt-0.5 flex-shrink-0" />
                         <div>
-                          <span className="font-bold text-slate-900 block">{res.titleEn}</span>
-                          <span className="text-[11px] text-slate-500 italic block">{res.titleFr}</span>
+                          <span className="font-bold text-slate-900 block">{language === "fr" ? res.titleFr : res.titleEn}</span>
+                          <span className="text-[11px] text-slate-500 italic block">{language === "fr" ? res.titleEn : res.titleFr}</span>
                           <span className="text-[10px] font-mono text-slate-400 block mt-0.5">{res.fileName}</span>
                         </div>
                       </div>
@@ -318,7 +311,7 @@ export default function AdminResourcesPage() {
                         <a
                           href={`/api/admin/resources/${encodeURIComponent(res.id)}/file`}
                           className="p-1.5 text-slate-400 hover:text-[#0B2545] transition"
-                          title="Download File"
+                          title={language === "fr" ? "Télécharger le Fichier" : "Download File"}
                         >
                           <Download className="w-3.5 h-3.5" />
                         </a>
@@ -326,7 +319,7 @@ export default function AdminResourcesPage() {
                           type="button"
                           onClick={() => handleDeleteResource(res.id)}
                           className="p-1.5 text-slate-400 hover:text-red-600 transition cursor-pointer"
-                          title="Remove Guide"
+                          title={language === "fr" ? "Supprimer le Guide" : "Remove Guide"}
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -342,6 +335,7 @@ export default function AdminResourcesPage() {
 
       {/* 3. BILINGUAL FAQ BUILDER ACCORDION */}
       <FaqBuilder />
-    </div>
+      </div>
+    </PermissionGuard>
   );
 }
