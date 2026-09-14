@@ -23,6 +23,8 @@ import {
 } from "lucide-react";
 
 import { getRolePreset } from "@/lib/rbac";
+import CarrierAssignModal from "@/components/admin/shipments/CarrierAssignModal";
+import { CarrierVendor, FleetUnit } from "@/lib/carrierTypes";
 
 interface MetricData {
   newQuotesCount: number;
@@ -104,6 +106,12 @@ export default function AdminOperationsPage() {
   const [newDestination, setNewDestination] = useState("Detroit, MI (Cross-Border)");
   const [newFreightMode, setNewFreightMode] = useState("53' Temperature-Controlled Reefer");
   const [newCarrier, setNewCarrier] = useState("Transimex Express Fleet #402");
+  const [newCarrierId, setNewCarrierId] = useState("");
+  const [newUnitId, setNewUnitId] = useState("");
+  const [newDriverName, setNewDriverName] = useState("");
+  const [newVehicleType, setNewVehicleType] = useState("");
+  const [newPlateNumber, setNewPlateNumber] = useState("");
+  const [isCarrierPickerOpen, setIsCarrierPickerOpen] = useState(false);
   const [newClientName, setNewClientName] = useState("");
   const [newClientCompany, setNewClientCompany] = useState("");
   const [newClientEmail, setNewClientEmail] = useState("");
@@ -177,7 +185,12 @@ export default function AdminOperationsPage() {
           weight: newWeight,
           commodity: newCommodity,
           rateCad: newRateCad,
+          carrierId: newCarrierId || undefined,
+          unitId: newUnitId || undefined,
           assignedCarrier: newCarrier,
+          driverName: newDriverName || undefined,
+          vehicleType: newVehicleType || undefined,
+          plateNumber: newPlateNumber || undefined,
         }),
       });
 
@@ -199,6 +212,11 @@ export default function AdminOperationsPage() {
         setNewCommodity("");
         setNewWeight("");
         setNewRateCad("");
+        setNewCarrierId("");
+        setNewUnitId("");
+        setNewDriverName("");
+        setNewVehicleType("");
+        setNewPlateNumber("");
       }, 1200);
     } catch (err: any) {
       setShipmentError(err.message || "Failed to create shipment");
@@ -818,13 +836,18 @@ export default function AdminOperationsPage() {
                     <label className="font-semibold text-slate-700 block mb-1">
                       {language === "fr" ? "Transporteur / Flotte Assigné" : "Assigned Carrier / Fleet"}
                     </label>
-                    <input
-                      type="text"
-                      required
-                      value={newCarrier}
-                      onChange={(e) => setNewCarrier(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 outline-none focus:border-[#0B2545] focus:bg-white"
-                    />
+                    <button
+                      type="button"
+                      onClick={() => setIsCarrierPickerOpen(true)}
+                      className="w-full text-left bg-slate-50 border border-slate-200 hover:border-[#0B2545] rounded-xl px-3 py-2 text-xs text-slate-800 outline-none transition cursor-pointer"
+                    >
+                      <span className="font-semibold">{newCarrier || (language === "fr" ? "Sélectionner un transporteur..." : "Select a saved carrier...")}</span>
+                      {(newDriverName || newVehicleType || newPlateNumber) && (
+                        <span className="block text-[10px] text-slate-500 mt-0.5">
+                          {[newDriverName, newVehicleType, newPlateNumber].filter(Boolean).join(" • ")}
+                        </span>
+                      )}
+                    </button>
                   </div>
                 </div>
 
@@ -896,6 +919,19 @@ export default function AdminOperationsPage() {
           </div>
         </div>
       )}
+
+      <CarrierAssignModal
+        isOpen={isCarrierPickerOpen}
+        onClose={() => setIsCarrierPickerOpen(false)}
+        onAssign={(carrier: CarrierVendor, unit: FleetUnit) => {
+          setNewCarrier(carrier.name);
+          setNewCarrierId(carrier.id);
+          setNewUnitId(unit.id);
+          setNewDriverName(unit.driverName || "");
+          setNewVehicleType(unit.vehicleType || "");
+          setNewPlateNumber(unit.plateNumber || "");
+        }}
+      />
     </div>
   );
 }

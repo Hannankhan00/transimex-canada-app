@@ -27,6 +27,8 @@ interface ShipmentListItem {
   destination: string;
   equipment: string;
   driver: string;
+  vehicleType?: string;
+  plateNumber?: string;
   status: string;
   statusLabel: string;
   date: string;
@@ -413,6 +415,11 @@ function ShipmentsContent() {
                 <div className="flex items-center justify-between lg:justify-end gap-3 pt-3 lg:pt-0 border-t lg:border-t-0 border-slate-100">
                   <div className="text-left sm:text-right text-xs">
                     <div className="font-semibold text-slate-900">{shipment.driver}</div>
+                    {(shipment.vehicleType || shipment.plateNumber) && (
+                      <div className="text-[11px] text-slate-500">
+                        {[shipment.vehicleType, shipment.plateNumber].filter(Boolean).join(" • ")}
+                      </div>
+                    )}
                     <div className="text-[11px] text-slate-400">{shipment.date}</div>
                   </div>
                 </div>

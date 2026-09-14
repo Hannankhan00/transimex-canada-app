@@ -1,9 +1,43 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import connectDB from "@/lib/mongoose";
 import Carrier, { TransportMode } from "@/models/Carrier";
+import User from "@/models/User";
+import { verifyToken } from "@/lib/auth";
+import { hasModulePermission } from "@/lib/rbac";
+import { mapCarrier } from "@/lib/carrierSerialize";
+
+async function requireCarrierAccess() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("token")?.value;
+  if (!token) {
+    return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
+  }
+
+  const actor = verifyToken(token);
+  if (!actor) {
+    return { error: NextResponse.json({ error: "Invalid session token" }, { status: 401 }) };
+  }
+
+  await connectDB();
+  const actorUser = await User.findById(actor.userId).lean<any>();
+  if (!actorUser || !hasModulePermission(actorUser, "carriers")) {
+    return {
+      error: NextResponse.json(
+        { error: "Forbidden: You do not have permission to access the carrier network." },
+        { status: 403 }
+      ),
+    };
+  }
+
+  return { actorUser };
+}
 
 export async function GET(req: Request) {
   try {
+    const access = await requireCarrierAccess();
+    if (access.error) return access.error;
+
     const { searchParams } = new URL(req.url);
     const mode = searchParams.get("mode") as TransportMode | null;
     const search = searchParams.get("q")?.toLowerCase() || "";
@@ -11,33 +45,7 @@ export async function GET(req: Request) {
     await connectDB();
     const dbCarriers = await Carrier.find().sort({ createdAt: -1 }).lean();
 
-    const carriers = dbCarriers.map((c: any) => ({
-      id: c._id.toString(),
-      name: c.name,
-      code: c.code,
-      primaryMode: c.primaryMode,
-      supportedModes: c.supportedModes || [c.primaryMode],
-      dispatchContact: {
-        name: c.dispatchContact?.name || "",
-        phone: c.dispatchContact?.phone || "",
-        email: c.dispatchContact?.email || "",
-        emergencyPhone: c.dispatchContact?.emergency247Phone,
-      },
-      headquarters: c.headquarters || "",
-      operatingLanes: c.operatingLanes || [],
-      fleetSize: c.fleetSize || "",
-      rating: c.rating ?? 0,
-      totalShipmentsCompleted: c.totalShipmentsCompleted || 0,
-      onTimeDeliveryRate: c.onTimeDeliveryRate || "",
-      insurance: {
-        policyNumber: c.insurance?.policyNumber || "",
-        coverageAmount: c.insurance?.coverageAmount || "",
-        expiryDate: c.insurance?.expiryDate || "",
-        isCompliant: c.insurance?.isCompliant !== false,
-      },
-      status: c.status || "Active",
-      notes: c.notes || "",
-    }));
+    const carriers = dbCarriers.map(mapCarrier);
 
     // Filter by mode
     let filtered = carriers;
@@ -84,6 +92,9 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
+    const access = await requireCarrierAccess();
+    if (access.error) return access.error;
+
     const body = await req.json();
     const {
       name,
@@ -94,6 +105,7 @@ export async function POST(req: Request) {
       headquarters,
       operatingLanes,
       fleetSize,
+      units,
       rating,
       insurance,
       notes,
@@ -141,6 +153,16 @@ export async function POST(req: Request) {
       headquarters,
       operatingLanes: operatingLanes || [],
       fleetSize: fleetSize || "",
+      units: Array.isArray(units)
+        ? units
+            .filter((u: any) => u.driverName && u.vehicleType && u.plateNumber)
+            .map((u: any) => ({
+              driverName: u.driverName,
+              vehicleType: u.vehicleType,
+              plateNumber: u.plateNumber,
+              active: u.active !== false,
+            }))
+        : [],
       // A brand-new partner has no completed loads yet, so it has no earned
       // reliability rating either — default to 0 ("Not Yet Rated"), never a
       // fabricated starting score.
@@ -160,7 +182,7 @@ export async function POST(req: Request) {
     return NextResponse.json({
       success: true,
       message: `Carrier ${name} (${code}) successfully registered`,
-      carrier: newCarrier,
+      carrier: mapCarrier(newCarrier.toObject()),
     });
   } catch (error: any) {
     console.error("Error creating carrier:", error);

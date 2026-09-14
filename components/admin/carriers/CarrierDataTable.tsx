@@ -13,21 +13,34 @@ import {
   Star,
   Phone,
   Edit2,
+  Trash2,
   AlertTriangle,
 } from "lucide-react";
 
 interface CarrierDataTableProps {
   carriers: CarrierVendor[];
   onEditCarrier: (carrier: CarrierVendor) => void;
+  onDeleteCarrier: (carrier: CarrierVendor) => void;
 }
 
 export default function CarrierDataTable({
   carriers,
   onEditCarrier,
+  onDeleteCarrier,
 }: CarrierDataTableProps) {
   const { language } = useLanguage();
   const [activeTab, setActiveTab] = useState<"All" | TransportModeType>("All");
   const [search, setSearch] = useState("");
+
+  const handleDeleteClick = (carrier: CarrierVendor) => {
+    const confirmMsg =
+      language === "fr"
+        ? `Supprimer définitivement ${carrier.name} du répertoire des transporteurs ?`
+        : `Permanently remove ${carrier.name} from the carrier directory?`;
+    if (window.confirm(confirmMsg)) {
+      onDeleteCarrier(carrier);
+    }
+  };
 
   const modeIcon = (mode: TransportModeType) => {
     switch (mode) {
@@ -164,6 +177,12 @@ export default function CarrierDataTable({
                           <span className="font-mono text-[10px] text-slate-500 block">
                             SCAC: {carrier.code} &bull; HQ: {carrier.headquarters}
                           </span>
+                          {carrier.units.length > 0 && (
+                            <span className="font-mono text-[10px] text-slate-400 block">
+                              {carrier.units.filter((u) => u.active).length}/{carrier.units.length}{" "}
+                              {language === "fr" ? "véhicule(s) actif(s)" : "active unit(s)"}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </td>
@@ -250,14 +269,24 @@ export default function CarrierDataTable({
 
                     {/* Action */}
                     <td className="py-3.5 px-4 whitespace-nowrap text-right">
-                      <button
-                        type="button"
-                        onClick={() => onEditCarrier(carrier)}
-                        className="px-3 py-1.5 rounded-xl border border-slate-200 hover:bg-[#0B2545] hover:text-white text-slate-700 font-bold text-[11px] transition cursor-pointer inline-flex items-center gap-1"
-                      >
-                        <Edit2 className="w-3 h-3" />
-                        <span>{language === "fr" ? "Modifier" : "Edit"}</span>
-                      </button>
+                      <div className="inline-flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => onEditCarrier(carrier)}
+                          className="px-3 py-1.5 rounded-xl border border-slate-200 hover:bg-[#0B2545] hover:text-white text-slate-700 font-bold text-[11px] transition cursor-pointer inline-flex items-center gap-1"
+                        >
+                          <Edit2 className="w-3 h-3" />
+                          <span>{language === "fr" ? "Modifier" : "Edit"}</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteClick(carrier)}
+                          title={language === "fr" ? "Supprimer" : "Delete"}
+                          className="p-1.5 rounded-xl border border-slate-200 hover:bg-red-600 hover:text-white hover:border-red-600 text-slate-500 transition cursor-pointer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
@@ -290,6 +319,12 @@ export default function CarrierDataTable({
                       <span className="font-mono text-[10px] text-slate-500">
                         SCAC: {carrier.code} &bull; {carrier.headquarters}
                       </span>
+                      {carrier.units.length > 0 && (
+                        <span className="font-mono text-[10px] text-slate-400 block">
+                          {carrier.units.filter((u) => u.active).length}/{carrier.units.length}{" "}
+                          {language === "fr" ? "véhicule(s) actif(s)" : "active unit(s)"}
+                        </span>
+                      )}
                     </div>
                   </div>
 
@@ -343,14 +378,22 @@ export default function CarrierDataTable({
                   ))}
                 </div>
 
-                <div className="pt-2 border-t border-slate-100 flex items-center justify-end">
+                <div className="pt-2 border-t border-slate-100 flex items-center gap-2">
                   <button
                     type="button"
                     onClick={() => onEditCarrier(carrier)}
-                    className="w-full justify-center px-3.5 py-2 rounded-xl border border-slate-200 hover:bg-[#0B2545] hover:text-white text-slate-700 font-bold text-xs transition cursor-pointer inline-flex items-center gap-1"
+                    className="flex-1 justify-center px-3.5 py-2 rounded-xl border border-slate-200 hover:bg-[#0B2545] hover:text-white text-slate-700 font-bold text-xs transition cursor-pointer inline-flex items-center gap-1"
                   >
                     <Edit2 className="w-3.5 h-3.5" />
                     <span>{language === "fr" ? "Modifier le Partenaire" : "Edit Carrier Partner"}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteClick(carrier)}
+                    title={language === "fr" ? "Supprimer" : "Delete"}
+                    className="p-2.5 rounded-xl border border-slate-200 hover:bg-red-600 hover:text-white hover:border-red-600 text-slate-500 transition cursor-pointer"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
               </div>

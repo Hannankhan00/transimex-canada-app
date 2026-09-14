@@ -3,6 +3,14 @@ import mongoose, { Document, Model, Schema } from "mongoose";
 export type TransportMode = "Road" | "Sea" | "Air" | "Rail";
 export type CarrierStatus = "Active" | "Under Review" | "Suspended";
 
+export interface IFleetUnit {
+  _id?: string;
+  driverName: string;
+  vehicleType: string;
+  plateNumber: string;
+  active: boolean; // Retired/out-of-service units stay on record but drop out of the assignment picker
+}
+
 export interface ICarrier extends Document {
   name: string;
   code: string; // SCAC, DOT, or NSC code (e.g. "SWFT", "CN-RAIL", "BISO")
@@ -17,6 +25,7 @@ export interface ICarrier extends Document {
   headquarters: string;
   operatingLanes: string[]; // e.g. ["Montreal <-> Detroit", "Toronto <-> Vancouver"]
   fleetSize: string; // e.g. "120 Units (Dry Van & Reefer)"
+  units: IFleetUnit[]; // Individual driver+vehicle combos this carrier can be assigned as
   rating: number; // e.g. 4.8
   totalShipmentsCompleted: number;
   onTimeDeliveryRate: string; // e.g. "98.4%"
@@ -52,6 +61,14 @@ const CarrierSchema = new Schema<ICarrier>(
     headquarters: { type: String, required: true },
     operatingLanes: [{ type: String }],
     fleetSize: { type: String, default: "50+ Dedicated Units" },
+    units: [
+      {
+        driverName: { type: String, required: true },
+        vehicleType: { type: String, required: true },
+        plateNumber: { type: String, required: true },
+        active: { type: Boolean, default: true },
+      },
+    ],
     rating: { type: Number, default: 4.8, min: 1, max: 5 },
     totalShipmentsCompleted: { type: Number, default: 0 },
     onTimeDeliveryRate: { type: String, default: "98.0%" },

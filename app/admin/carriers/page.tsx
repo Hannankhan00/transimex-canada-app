@@ -22,6 +22,7 @@ export default function AdminCarriersPage() {
   const [carrierToEdit, setCarrierToEdit] = useState<CarrierVendor | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const fetchCarriers = useCallback(async () => {
     try {
@@ -70,6 +71,30 @@ export default function AdminCarriersPage() {
     );
     setTimeout(() => setToastMsg(null), 3500);
     fetchCarriers();
+  };
+
+  const handleDeleteCarrier = async (carrier: CarrierVendor) => {
+    setErrorMsg(null);
+    try {
+      const res = await fetch(`/api/admin/carriers/${encodeURIComponent(carrier.id)}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to delete carrier");
+      }
+
+      setCarriers((prev) => prev.filter((c) => c.id !== carrier.id));
+      setToastMsg(
+        language === "fr"
+          ? `Transporteur ${carrier.name} supprimé du répertoire.`
+          : `Carrier ${carrier.name} removed from the directory.`
+      );
+      setTimeout(() => setToastMsg(null), 3500);
+    } catch (err: any) {
+      setErrorMsg(err.message || "Failed to delete carrier");
+      setTimeout(() => setErrorMsg(null), 5000);
+    }
   };
 
   const expiringCount = carriers.filter((c) => {
@@ -124,6 +149,13 @@ export default function AdminCarriersPage() {
           <div className="p-3.5 bg-[#0B2545] text-white rounded-xl text-xs font-semibold flex items-center gap-2 animate-in fade-in duration-150">
             <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
             <span>{toastMsg}</span>
+          </div>
+        )}
+
+        {errorMsg && (
+          <div className="p-3.5 bg-red-50 border border-red-200 text-red-700 rounded-xl text-xs font-semibold flex items-center gap-2 animate-in fade-in duration-150">
+            <ShieldAlert className="w-4 h-4 text-red-600 flex-shrink-0" />
+            <span>{errorMsg}</span>
           </div>
         )}
 
@@ -230,7 +262,11 @@ export default function AdminCarriersPage() {
         </div>
 
         {/* 3. CARRIER DATA TABLE */}
-        <CarrierDataTable carriers={carriers} onEditCarrier={handleEditCarrier} />
+        <CarrierDataTable
+          carriers={carriers}
+          onEditCarrier={handleEditCarrier}
+          onDeleteCarrier={handleDeleteCarrier}
+        />
 
         {/* Create / Edit Modal */}
         <CarrierModal

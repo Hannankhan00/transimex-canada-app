@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongoose";
 import Shipment, { ShipmentStatus } from "@/models/Shipment";
+import Carrier from "@/models/Carrier";
+import { isCarrierAssignable } from "@/lib/carrierTypes";
 
 const ACTIVE_ROAD_STATUSES: ShipmentStatus[] = ["In Transit", "Out for Delivery"];
 const NON_TERMINAL_STATUSES: ShipmentStatus[] = [
@@ -41,6 +43,10 @@ export async function GET(req: Request) {
       equipment: s.cargo?.equipment || "",
       driver: s.driverName || "",
       carrier: s.assignedCarrier || "",
+      carrierId: s.carrierId || "",
+      unitId: s.unitId || "",
+      vehicleType: s.vehicleType || "",
+      plateNumber: s.plateNumber || "",
       status: mapUiStatus(s.status),
       rawStatus: s.status,
       customsStatus: s.customsStatus || "Pending",
@@ -115,9 +121,13 @@ export async function POST(req: Request) {
       dimensions,
       cargoType,
       rateCad,
+      carrierId,
+      unitId,
       assignedCarrier,
       driverName,
       unitNumber,
+      vehicleType,
+      plateNumber,
       eta,
     } = body || {};
 
@@ -138,6 +148,21 @@ export async function POST(req: Request) {
         { error: `Missing required shipment fields: ${missing.join(", ")}` },
         { status: 400 }
       );
+    }
+
+    if (carrierId) {
+      const carrier = await Carrier.findById(carrierId).lean<any>();
+      if (!carrier) {
+        return NextResponse.json({ error: "Saved carrier not found" }, { status: 404 });
+      }
+      if (!isCarrierAssignable(carrier)) {
+        return NextResponse.json(
+          {
+            error: `Cannot assign ${carrier.name}: carrier status is "${carrier.status}" or its insurance has expired.`,
+          },
+          { status: 409 }
+        );
+      }
     }
 
     const year = new Date().getFullYear();
@@ -169,9 +194,13 @@ export async function POST(req: Request) {
       },
       status: "Pending Dispatch" as ShipmentStatus,
       rateCad,
+      ...(carrierId ? { carrierId } : {}),
+      ...(unitId ? { unitId } : {}),
       ...(assignedCarrier ? { assignedCarrier } : {}),
       ...(driverName ? { driverName } : {}),
       ...(unitNumber ? { unitNumber } : {}),
+      ...(vehicleType ? { vehicleType } : {}),
+      ...(plateNumber ? { plateNumber } : {}),
       ...(eta ? { eta } : {}),
       timeline: [
         {

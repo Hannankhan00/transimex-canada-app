@@ -5,12 +5,15 @@ import Link from "next/link";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import CustomsStatusBadge from "@/components/admin/customs/CustomsStatusBadge";
 import PermissionGuard from "@/components/admin/PermissionGuard";
+import CarrierAssignModal from "@/components/admin/shipments/CarrierAssignModal";
+import { CarrierVendor, FleetUnit } from "@/lib/carrierTypes";
 import {
   Search,
   Shield,
   ArrowRight,
   MapPin,
   AlertTriangle,
+  Truck,
 } from "lucide-react";
 
 interface AdminShipmentItem {
@@ -20,6 +23,9 @@ interface AdminShipmentItem {
   equipment: string;
   driver: string;
   carrier: string;
+  carrierId?: string;
+  vehicleType?: string;
+  plateNumber?: string;
   status: "in_transit" | "customs" | "delivered" | "pending" | "cancelled";
   customsStatus: "Pending" | "In Review" | "Released" | "Held";
   customsPars?: string;
@@ -50,6 +56,7 @@ export default function AdminShipmentsDirectoryPage() {
   });
   const [loading, setLoading] = useState(true);
   const tableRef = useRef<HTMLDivElement>(null);
+  const [assignTargetId, setAssignTargetId] = useState<string | null>(null);
 
   const loadShipments = useCallback(async () => {
     setLoading(true);
@@ -65,6 +72,9 @@ export default function AdminShipmentsDirectoryPage() {
             equipment: s.equipment,
             driver: s.driver,
             carrier: s.carrier,
+            carrierId: s.carrierId,
+            vehicleType: s.vehicleType,
+            plateNumber: s.plateNumber,
             status: s.status,
             customsStatus: s.customsStatus,
             customsPars: s.customsPars,
@@ -116,6 +126,34 @@ export default function AdminShipmentsDirectoryPage() {
   const handleReviewUrgentHold = () => {
     setFilter("customs");
     tableRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const handleAssignCarrier = async (carrier: CarrierVendor, unit: FleetUnit) => {
+    if (!assignTargetId) return;
+    const res = await fetch(`/api/admin/shipments/${encodeURIComponent(assignTargetId)}/assign-carrier`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ carrierId: carrier.id, unitId: unit.id }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.error || "Failed to assign carrier");
+    }
+
+    setShipments((prev) =>
+      prev.map((s) =>
+        s.id === assignTargetId
+          ? {
+              ...s,
+              carrier: data.shipment.carrier,
+              driver: data.shipment.driver,
+              carrierId: data.shipment.carrierId,
+              vehicleType: data.shipment.vehicleType,
+              plateNumber: data.shipment.plateNumber,
+            }
+          : s
+      )
+    );
   };
 
   return (
@@ -320,7 +358,12 @@ export default function AdminShipmentsDirectoryPage() {
                       <td className="py-3.5 px-4 whitespace-nowrap">
                         <div>
                           <span className="font-semibold text-slate-900 block">{shipment.equipment}</span>
-                          <span className="text-[11px] text-slate-500">{shipment.carrier}</span>
+                          <span className="text-[11px] text-slate-500 block">{shipment.carrier}</span>
+                          {(shipment.driver || shipment.plateNumber) && (
+                            <span className="text-[10px] text-slate-400 block">
+                              {[shipment.driver, shipment.plateNumber].filter(Boolean).join(" • ")}
+                            </span>
+                          )}
                         </div>
                       </td>
 
@@ -352,13 +395,23 @@ export default function AdminShipmentsDirectoryPage() {
 
                       {/* Compliance Action */}
                       <td className="py-3.5 px-4 whitespace-nowrap text-right">
-                        <Link
-                          href={`/admin/shipments/${encodeURIComponent(shipment.id)}/customs`}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#0B2545] hover:bg-[#d21f27] text-white rounded-xl text-xs font-bold shadow-2xs transition"
-                        >
-                          <Shield className="w-3.5 h-3.5" />
-                          <span>{language === "fr" ? "Centre Douanier" : "Customs Center"}</span>
-                        </Link>
+                        <div className="inline-flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => setAssignTargetId(shipment.id)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-xs font-bold shadow-2xs transition cursor-pointer"
+                          >
+                            <Truck className="w-3.5 h-3.5" />
+                            <span>{language === "fr" ? "Assigner" : "Assign Carrier"}</span>
+                          </button>
+                          <Link
+                            href={`/admin/shipments/${encodeURIComponent(shipment.id)}/customs`}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#0B2545] hover:bg-[#d21f27] text-white rounded-xl text-xs font-bold shadow-2xs transition"
+                          >
+                            <Shield className="w-3.5 h-3.5" />
+                            <span>{language === "fr" ? "Centre Douanier" : "Customs Center"}</span>
+                          </Link>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -394,6 +447,11 @@ export default function AdminShipmentsDirectoryPage() {
 
                   <div className="text-[11px] text-slate-500">
                     <span className="font-medium text-slate-700">{shipment.equipment}</span> &bull; {shipment.carrier}
+                    {(shipment.driver || shipment.plateNumber) && (
+                      <div className="text-[10px] text-slate-400 mt-0.5">
+                        {[shipment.driver, shipment.plateNumber].filter(Boolean).join(" • ")}
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex items-center justify-between text-[11px] text-slate-500">
@@ -408,13 +466,21 @@ export default function AdminShipmentsDirectoryPage() {
                     </span>
                   </div>
 
-                  <div className="pt-2 border-t border-slate-100 flex items-center justify-end">
+                  <div className="pt-2 border-t border-slate-100 flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setAssignTargetId(shipment.id)}
+                      className="flex-1 justify-center inline-flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-xs font-bold shadow-2xs transition cursor-pointer"
+                    >
+                      <Truck className="w-3.5 h-3.5" />
+                      <span>{language === "fr" ? "Assigner" : "Assign Carrier"}</span>
+                    </button>
                     <Link
                       href={`/admin/shipments/${encodeURIComponent(shipment.id)}/customs`}
-                      className="w-full justify-center inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#0B2545] hover:bg-[#d21f27] text-white rounded-xl text-xs font-bold shadow-2xs transition"
+                      className="flex-1 justify-center inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#0B2545] hover:bg-[#d21f27] text-white rounded-xl text-xs font-bold shadow-2xs transition"
                     >
                       <Shield className="w-3.5 h-3.5" />
-                      <span>{language === "fr" ? "Ouvrir le Centre Douanier" : "Open Customs Center"}</span>
+                      <span>{language === "fr" ? "Douanes" : "Customs"}</span>
                     </Link>
                   </div>
                 </div>
@@ -422,6 +488,19 @@ export default function AdminShipmentsDirectoryPage() {
             )}
           </div>
         </div>
+
+        <CarrierAssignModal
+          isOpen={!!assignTargetId}
+          onClose={() => setAssignTargetId(null)}
+          onAssign={handleAssignCarrier}
+          title={
+            assignTargetId
+              ? language === "fr"
+                ? `Assigner un Transporteur — ${assignTargetId}`
+                : `Assign Carrier — ${assignTargetId}`
+              : undefined
+          }
+        />
       </div>
     </PermissionGuard>
   );

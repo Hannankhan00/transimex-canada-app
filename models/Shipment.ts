@@ -43,9 +43,13 @@ export interface IShipment extends Document {
   };
   status: ShipmentStatus;
   rateCad: string;
+  carrierId?: string; // Reference to Carrier._id, set via one-click assignment
+  unitId?: string; // Reference to the specific Carrier.units[]._id assigned
   assignedCarrier?: string;
   driverName?: string;
   unitNumber?: string;
+  vehicleType?: string;
+  plateNumber?: string;
   eta?: string;
   cbsaPars?: string;
   customsStatus?: "Pending" | "In Review" | "Released" | "Held";
@@ -115,9 +119,13 @@ const ShipmentSchema = new Schema<IShipment>(
       index: true,
     },
     rateCad: { type: String, required: true },
+    carrierId: { type: String, default: "" },
+    unitId: { type: String, default: "" },
     assignedCarrier: { type: String, default: "Transimex Dedicated Express Fleet" },
     driverName: { type: String, default: "Assigned Dispatch" },
     unitNumber: { type: String, default: "TMX-400" },
+    vehicleType: { type: String, default: "" },
+    plateNumber: { type: String, default: "" },
     eta: { type: String, default: "3-5 Business Days" },
     cbsaPars: { type: String, default: "" },
     customsStatus: {

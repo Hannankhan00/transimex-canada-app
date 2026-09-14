@@ -34,6 +34,8 @@ function mapShipment(s: any) {
     destination: s.route?.destination || "",
     equipment: s.cargo?.equipment || "",
     driver: s.driverName ? `${s.driverName} (${s.unitNumber || "Unit"})` : s.assignedCarrier || "Dispatch Pending",
+    vehicleType: s.vehicleType || "",
+    plateNumber: s.plateNumber || "",
     status: STATUS_KEY[s.status] || "pending",
     statusLabel: s.status,
     date: formatDateLabel(s.createdAt),
