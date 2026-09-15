@@ -67,7 +67,6 @@ const UserSchema = new Schema<IUser>(
     },
     companyName: {
       type: String,
-      required: [true, "Company name is required"],
       trim: true,
       default: "",
     },
