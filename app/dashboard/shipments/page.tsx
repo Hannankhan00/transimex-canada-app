@@ -5,6 +5,9 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { serializeToCsv } from "@/lib/csvExport";
+import ContainerMilestoneTimeline, {
+  ContainerTrackingView,
+} from "@/components/portal/ContainerMilestoneTimeline";
 import {
   Truck,
   Search,
@@ -19,6 +22,9 @@ import {
   X,
   CheckCircle2,
   Copy,
+  Ship,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 
 interface ShipmentListItem {
@@ -37,6 +43,7 @@ interface ShipmentListItem {
   customsStatus?: string;
   portOfEntry?: string;
   cbsaPars?: string;
+  containers?: string[];
   duties?: {
     amountCad?: string;
     taxGstHst?: string;
@@ -58,6 +65,35 @@ function ShipmentsContent() {
   const [loading, setLoading] = useState(true);
   const [selectedPaymentShipment, setSelectedPaymentShipment] = useState<ShipmentListItem | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [expandedContainer, setExpandedContainer] = useState<string | null>(null);
+  const [containerTracking, setContainerTracking] = useState<Record<string, ContainerTrackingView | null>>({});
+  const [containerLoading, setContainerLoading] = useState<Record<string, boolean>>({});
+  const [containerError, setContainerError] = useState<Record<string, string | null>>({});
+
+  const toggleContainer = async (containerNumber: string) => {
+    if (expandedContainer === containerNumber) {
+      setExpandedContainer(null);
+      return;
+    }
+    setExpandedContainer(containerNumber);
+    if (containerTracking[containerNumber] !== undefined) return;
+
+    setContainerLoading((prev) => ({ ...prev, [containerNumber]: true }));
+    setContainerError((prev) => ({ ...prev, [containerNumber]: null }));
+    try {
+      const res = await fetch(`/api/shipments/containers/${encodeURIComponent(containerNumber)}`);
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setContainerTracking((prev) => ({ ...prev, [containerNumber]: data.tracking }));
+      } else {
+        setContainerError((prev) => ({ ...prev, [containerNumber]: data.error || "Failed to load tracking" }));
+      }
+    } catch {
+      setContainerError((prev) => ({ ...prev, [containerNumber]: "Failed to load tracking" }));
+    } finally {
+      setContainerLoading((prev) => ({ ...prev, [containerNumber]: false }));
+    }
+  };
 
   useEffect(() => {
     if (paramId) {
@@ -424,6 +460,46 @@ function ShipmentsContent() {
                   </div>
                 </div>
               </div>
+
+              {/* Ocean Container Tracking — only shown when at least one container is on file */}
+              {shipment.containers && shipment.containers.length > 0 && (
+                <div className="border-t border-slate-100 pt-3 space-y-2">
+                  {shipment.containers.map((containerNumber) => {
+                    const isOpen = expandedContainer === containerNumber;
+                    return (
+                      <div key={containerNumber}>
+                        <button
+                          type="button"
+                          onClick={() => toggleContainer(containerNumber)}
+                          className="w-full flex items-center justify-between gap-2 text-left cursor-pointer"
+                        >
+                          <span className="flex items-center gap-1.5 text-xs font-semibold text-slate-600">
+                            <Ship className="w-3.5 h-3.5 text-[#0B2545]" />
+                            <span>
+                              {language === "fr" ? "Suivi du Conteneur" : "Container Tracking"}
+                            </span>
+                            <span className="font-mono text-slate-400">{containerNumber}</span>
+                          </span>
+                          {isOpen ? (
+                            <ChevronUp className="w-4 h-4 text-slate-400" />
+                          ) : (
+                            <ChevronDown className="w-4 h-4 text-slate-400" />
+                          )}
+                        </button>
+                        {isOpen && (
+                          <div className="mt-3 p-4 bg-slate-50 rounded-xl border border-slate-200">
+                            <ContainerMilestoneTimeline
+                              tracking={containerTracking[containerNumber] ?? null}
+                              loading={containerLoading[containerNumber]}
+                              error={containerError[containerNumber]}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           );
         })}

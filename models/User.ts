@@ -22,6 +22,7 @@ export interface IUser extends Document {
   resetTokenExpires?: Date;
   jobTitle?: string;
   department?: string;
+  isProfileComplete?: boolean;
   accountStatus?: "active" | "pending" | "revoked";
   lastLoginAt?: Date;
   tokenVersion?: number;
@@ -137,6 +138,10 @@ const UserSchema = new Schema<IUser>(
     department: {
       type: String,
       default: "",
+    },
+    isProfileComplete: {
+      type: Boolean,
+      default: true,
     },
     accountStatus: {
       type: String,

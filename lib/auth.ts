@@ -12,6 +12,7 @@ export interface TokenPayload {
   permissions?: string[];
   sessionId?: string;
   tokenVersion?: number;
+  isProfileComplete?: boolean;
 }
 
 export async function hashPassword(password: string): Promise<string> {

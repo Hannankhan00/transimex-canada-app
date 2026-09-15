@@ -5,7 +5,9 @@ interface DecodedToken {
   userId?: string;
   email?: string;
   name?: string;
+  companyName?: string;
   role?: string;
+  isProfileComplete?: boolean;
   exp?: number;
 }
 
@@ -46,6 +48,7 @@ export function proxy(request: NextRequest) {
   const tokenCookie = request.cookies.get("token")?.value;
   const decoded = tokenCookie ? parseJwt(tokenCookie) : null;
   const isAuthenticated = !!decoded;
+  const isProfileComplete = decoded?.isProfileComplete !== false;
   const role = decoded?.role || "client";
   const staffRoles = ["admin", "superadmin", "subadmin", "dispatcher", "customs_agent", "support", "custom"];
   const isStaff = staffRoles.includes(role.toLowerCase());
@@ -57,12 +60,17 @@ export function proxy(request: NextRequest) {
     pathname === "/forgot-password" ||
     pathname === "/reset-password";
 
+  const isCompleteProfileRoute = pathname === "/complete-profile";
   const isDashboardRoute = pathname === "/dashboard" || pathname.startsWith("/dashboard/");
   const isAdminRoute = pathname === "/admin" || pathname.startsWith("/admin/");
 
-  // 1. Auth routes (/login, /register, etc.)
-  if (isAuthRoute) {
-    if (isAuthenticated) {
+  // 1. Profile Completion Route (/complete-profile)
+  if (isCompleteProfileRoute) {
+    if (!isAuthenticated) {
+      return NextResponse.redirect(new URL("/login", request.url));
+    }
+    // If profile is already complete, redirect to appropriate destination
+    if (isProfileComplete) {
       if (isStaff) {
         return NextResponse.redirect(new URL("/admin", request.url));
       }
@@ -71,12 +79,29 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // 2. Client Dashboard routes (/dashboard, /dashboard/*)
+  // 2. Auth routes (/login, /register, etc.)
+  if (isAuthRoute) {
+    if (isAuthenticated) {
+      if (!isProfileComplete) {
+        return NextResponse.redirect(new URL("/complete-profile", request.url));
+      }
+      if (isStaff) {
+        return NextResponse.redirect(new URL("/admin", request.url));
+      }
+      return NextResponse.redirect(new URL("/dashboard", request.url));
+    }
+    return NextResponse.next();
+  }
+
+  // 3. Client Dashboard routes (/dashboard, /dashboard/*)
   if (isDashboardRoute) {
     if (!isAuthenticated) {
       const loginUrl = new URL("/login", request.url);
       loginUrl.searchParams.set("from", pathname);
       return NextResponse.redirect(loginUrl);
+    }
+    if (!isProfileComplete) {
+      return NextResponse.redirect(new URL("/complete-profile", request.url));
     }
     // Calculator/Estimator is hidden and inaccessible for now
     if (pathname === "/dashboard/estimator" || pathname.startsWith("/dashboard/estimator/")) {
@@ -85,12 +110,15 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // 3. Admin routes (/admin, /admin/*)
+  // 4. Admin routes (/admin, /admin/*)
   if (isAdminRoute) {
     if (!isAuthenticated) {
       const loginUrl = new URL("/login", request.url);
       loginUrl.searchParams.set("from", pathname);
       return NextResponse.redirect(loginUrl);
+    }
+    if (!isProfileComplete) {
+      return NextResponse.redirect(new URL("/complete-profile", request.url));
     }
     // Strict Guard: Standard client attempting to access any /admin route is kicked to /dashboard
     if (isClient) {
@@ -112,5 +140,6 @@ export const config = {
     "/register",
     "/forgot-password",
     "/reset-password",
+    "/complete-profile",
   ],
 };

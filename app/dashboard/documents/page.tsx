@@ -3,15 +3,6 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
-interface PortalDocumentItem {
-  id: string;
-  name: string;
-  type: string;
-  shipmentId: string;
-  dateUploaded: string;
-  statusText: string;
-  customsPars?: string;
-}
 import {
   FolderOpen,
   FileText,
@@ -20,7 +11,20 @@ import {
   Calendar,
   ShieldCheck,
   ExternalLink,
+  Eye,
 } from "lucide-react";
+
+interface PortalDocumentItem {
+  id: string;
+  name: string;
+  type: string;
+  shipmentId: string;
+  dateUploaded: string;
+  statusText: string;
+  customsPars?: string;
+  mimeType?: string;
+  fileSize?: number;
+}
 
 export default function DocumentsPage() {
   const { t, language } = useLanguage();
@@ -156,7 +160,7 @@ export default function DocumentsPage() {
           </div>
         ) : (
           <>
-            {/* Desktop Table (Preserved 100%) */}
+            {/* Desktop Table */}
             <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
@@ -166,7 +170,7 @@ export default function DocumentsPage() {
                     <th className="py-3 px-4">{language === "fr" ? "Expédition Liée" : "Linked Shipment"}</th>
                     <th className="py-3 px-4">{language === "fr" ? "Date de Téléversement" : "Date Uploaded"}</th>
                     <th className="py-3 px-4">{language === "fr" ? "Statut" : "Verification Status"}</th>
-                    <th className="py-3 px-4 sm:px-6 text-right">{language === "fr" ? "Télécharger" : "Download PDF"}</th>
+                    <th className="py-3 px-4 sm:px-6 text-right">{language === "fr" ? "Actions" : "Actions"}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
@@ -176,16 +180,28 @@ export default function DocumentsPage() {
                         key={doc.id}
                         className="hover:bg-slate-50/80 transition group"
                       >
-                        {/* Document Name & Icon */}
+                        {/* Document Name & Icon (Opens fast in native Chrome viewer) */}
                         <td className="py-4 px-4 sm:px-6">
                           <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center flex-shrink-0 border border-blue-100">
+                            <a
+                              href={`/api/documents/${doc.id}/view`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="w-9 h-9 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 flex items-center justify-center flex-shrink-0 border border-blue-100 transition cursor-pointer"
+                              title={language === "fr" ? "Ouvrir dans un nouvel onglet" : "Open in new browser tab"}
+                            >
                               <FileText className="w-4 h-4" />
-                            </div>
+                            </a>
                             <div className="min-w-0">
-                              <div className="font-bold text-slate-900 group-hover:text-[#0B2545] transition truncate max-w-xs sm:max-w-md">
+                              <a
+                                href={`/api/documents/${doc.id}/view`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="font-bold text-slate-900 group-hover:text-[#0B2545] transition truncate max-w-xs sm:max-w-md text-left cursor-pointer hover:underline block"
+                                title={language === "fr" ? "Ouvrir dans le visualiseur Chrome" : "Open in Chrome document viewer"}
+                              >
                                 {doc.name}
-                              </div>
+                              </a>
                             </div>
                           </div>
                         </td>
@@ -225,23 +241,39 @@ export default function DocumentsPage() {
                           </div>
                         </td>
 
-                        {/* One-Click PDF Download Action */}
+                        {/* Actions: Direct Chrome Tab Viewer + Download PDF */}
                         <td className="py-4 px-4 sm:px-6 text-right whitespace-nowrap">
-                          <button
-                            type="button"
-                            onClick={() => handleDownloadPdf(doc)}
-                            disabled={downloadingId === doc.id}
-                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-[#0B2545] hover:bg-[#123661] text-white text-xs font-bold rounded-xl shadow-xs transition cursor-pointer disabled:opacity-50"
-                          >
-                            <Download className="w-3.5 h-3.5" />
-                            <span>
-                              {downloadingId === doc.id
-                                ? language === "fr"
-                                  ? "Téléchargement..."
-                                  : "Downloading..."
-                                : "PDF"}
-                            </span>
-                          </button>
+                          <div className="inline-flex items-center justify-end gap-2">
+                            {/* Open in New Tab with Chrome PDF Viewer */}
+                            <a
+                              href={`/api/documents/${doc.id}/view`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-[#0B2545] text-xs font-bold rounded-xl border border-blue-200 transition cursor-pointer"
+                              title={language === "fr" ? "Ouvrir dans un nouvel onglet" : "Open in Chrome document viewer"}
+                            >
+                              <Eye className="w-3.5 h-3.5 text-blue-700" />
+                              <span>{language === "fr" ? "Afficher" : "View"}</span>
+                            </a>
+
+                            {/* Download PDF Button */}
+                            <button
+                              type="button"
+                              onClick={() => handleDownloadPdf(doc)}
+                              disabled={downloadingId === doc.id}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#0B2545] hover:bg-[#123661] text-white text-xs font-bold rounded-xl shadow-xs transition cursor-pointer disabled:opacity-50"
+                              title={language === "fr" ? "Télécharger le fichier PDF" : "Download PDF file"}
+                            >
+                              <Download className="w-3.5 h-3.5" />
+                              <span>
+                                {downloadingId === doc.id
+                                  ? language === "fr"
+                                    ? "..."
+                                    : "..."
+                                  : "PDF"}
+                              </span>
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -255,13 +287,23 @@ export default function DocumentsPage() {
               {filteredDocs.map((doc) => (
                 <div key={doc.id} className="p-4 space-y-3">
                   <div className="flex items-start gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center flex-shrink-0 border border-blue-100 mt-0.5">
+                    <a
+                      href={`/api/documents/${doc.id}/view`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-9 h-9 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center flex-shrink-0 border border-blue-100 mt-0.5"
+                    >
                       <FileText className="w-4 h-4" />
-                    </div>
+                    </a>
                     <div className="flex-1 min-w-0">
-                      <div className="font-bold text-slate-900 text-xs leading-snug">
+                      <a
+                        href={`/api/documents/${doc.id}/view`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-bold text-slate-900 text-xs leading-snug text-left hover:underline truncate block w-full"
+                      >
                         {doc.name}
-                      </div>
+                      </a>
                       <div className="text-[10px] text-slate-400 font-mono mt-0.5">
                         {doc.dateUploaded}
                       </div>
@@ -278,24 +320,38 @@ export default function DocumentsPage() {
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
+                  <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs gap-2">
                     <Link
                       href={`/dashboard/shipments?id=${doc.shipmentId}`}
-                      className="inline-flex items-center gap-1 font-mono font-bold text-[#0B2545] text-xs hover:text-[#d21f27]"
+                      className="inline-flex items-center gap-1 font-mono font-bold text-[#0B2545] text-xs hover:text-[#d21f27] truncate"
                     >
                       <span>Shipment {doc.shipmentId}</span>
-                      <ExternalLink className="w-3 h-3 text-slate-400" />
+                      <ExternalLink className="w-3 h-3 text-slate-400 flex-shrink-0" />
                     </Link>
 
-                    <button
-                      type="button"
-                      onClick={() => handleDownloadPdf(doc)}
-                      disabled={downloadingId === doc.id}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#0B2545] hover:bg-[#123661] text-white text-xs font-bold rounded-xl shadow-xs transition"
-                    >
-                      <Download className="w-3.5 h-3.5" />
-                      <span>{downloadingId === doc.id ? "..." : "PDF"}</span>
-                    </button>
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      {/* Mobile View in New Tab Button */}
+                      <a
+                        href={`/api/documents/${doc.id}/view`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-[#0B2545] text-xs font-bold rounded-xl border border-blue-200 transition"
+                      >
+                        <Eye className="w-3.5 h-3.5 text-blue-700" />
+                        <span>{language === "fr" ? "Afficher" : "View"}</span>
+                      </a>
+
+                      {/* Mobile Download Button */}
+                      <button
+                        type="button"
+                        onClick={() => handleDownloadPdf(doc)}
+                        disabled={downloadingId === doc.id}
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-[#0B2545] hover:bg-[#123661] text-white text-xs font-bold rounded-xl shadow-xs transition disabled:opacity-50"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        <span>{downloadingId === doc.id ? "..." : "PDF"}</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}

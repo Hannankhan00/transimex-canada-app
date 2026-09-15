@@ -28,9 +28,6 @@ export async function GET(
       return NextResponse.json({ error: "Document not found" }, { status: 404 });
     }
 
-    const { searchParams } = new URL(req.url);
-    const isInline = searchParams.get("inline") === "true" || searchParams.get("view") === "true";
-    const disposition = isInline ? "inline" : "attachment";
     const safeFilename = doc.name.replace(/[^a-zA-Z0-9_.-]/g, "_");
 
     // 1. Try serving from Cloudflare R2 if a storage key is present
@@ -38,10 +35,12 @@ export async function GET(
       const r2File = await getFromR2(doc.fileKey);
       if (r2File) {
         return new NextResponse(new Uint8Array(r2File.buffer), {
+          status: 200,
           headers: {
             "Content-Type": r2File.contentType || doc.mimeType || "application/pdf",
-            "Content-Disposition": `${disposition}; filename="${safeFilename}"`,
+            "Content-Disposition": `inline; filename="${safeFilename}"`,
             "Content-Length": String(r2File.contentLength),
+            "Cache-Control": "private, max-age=3600",
             "X-Storage-Provider": "cloudflare-r2",
           },
         });
@@ -51,15 +50,16 @@ export async function GET(
     // 2. Serve from database buffer if available (fallback or pre-R2 upload)
     if (doc.fileData) {
       return new NextResponse(new Uint8Array(doc.fileData), {
+        status: 200,
         headers: {
           "Content-Type": doc.mimeType || "application/pdf",
-          "Content-Disposition": `${disposition}; filename="${safeFilename}"`,
+          "Content-Disposition": `inline; filename="${safeFilename}"`,
           "X-Storage-Provider": "mongodb-buffer",
         },
       });
     }
 
-    // 3. Fallback for legacy records with no stored file bytes.
+    // 3. Fallback for legacy records with no stored file bytes
     const pdf = buildSimplePdf("Transimex Canada Logistics - Official Shipping Document", [
       `Document ID: ${doc._id.toString()}`,
       `Shipment ID: ${doc.shipmentId}`,
@@ -72,18 +72,18 @@ export async function GET(
     ].filter(Boolean));
 
     return new NextResponse(new Uint8Array(pdf), {
+      status: 200,
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `${disposition}; filename="${safeFilename}"`,
+        "Content-Disposition": `inline; filename="${safeFilename}"`,
         "X-Storage-Provider": "generated-pdf",
       },
     });
   } catch (error: any) {
-    console.error("Error downloading document:", error);
+    console.error("Error viewing document:", error);
     return NextResponse.json(
-      { error: error.message || "Failed to download document" },
+      { error: error.message || "Failed to view document" },
       { status: 500 }
     );
   }
 }
-

@@ -20,7 +20,9 @@ export type AuditActionType =
   | "ACCESS_REVOKED"
   | "CARRIER_ASSIGNED"
   | "EMAIL_TEMPLATE_UPDATED"
-  | "ADMIN_DIRECT_ONBOARDING_QUOTE";
+  | "ADMIN_DIRECT_ONBOARDING_QUOTE"
+  | "CONTAINER_LINKED"
+  | "CONTAINER_UNLINKED";
 
 export type AuditResourceType =
   | "Shipment"

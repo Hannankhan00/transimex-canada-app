@@ -44,6 +44,7 @@ function mapShipment(s: any) {
     customsStatus: s.customsStatus || "Pending",
     portOfEntry: s.portOfEntry || "",
     cbsaPars: s.cbsaPars || "",
+    containers: (s.containers || []).map((c: any) => c.containerNumber),
     duties: s.duties
       ? {
           amountCad: s.duties.amountCad || "",

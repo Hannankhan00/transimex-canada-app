@@ -92,19 +92,36 @@ export async function GET(req: Request) {
       user = await User.create({
         name: displayName,
         email: googleUser.email.toLowerCase(),
-        companyName: `${displayName}'s Company`,
+        companyName: "",
+        phone: "",
+        address: "",
         role: "client",
         googleId: googleUser.sub,
         avatar: googleUser.picture,
         provider: "google",
         isVerified: true,
+        isProfileComplete: false,
       });
     } else {
       // Update Google ID and avatar if needed
       if (!user.googleId) user.googleId = googleUser.sub;
       if (googleUser.picture && !user.avatar) user.avatar = googleUser.picture;
+
+      // If key profile details are missing or have temporary defaults, mark incomplete
+      const hasMissingDetails =
+        !user.companyName ||
+        !user.phone ||
+        !user.address ||
+        user.companyName.includes("'s Company") ||
+        user.isProfileComplete === false;
+
+      if (hasMissingDetails) {
+        user.isProfileComplete = false;
+      }
       await user.save();
     }
+
+    const isProfileComplete = user.isProfileComplete !== false;
 
     // 4. Generate JWT Token
     const sessionId = await createUserSession(user._id.toString(), req);
@@ -117,12 +134,14 @@ export async function GET(req: Request) {
       role: user.role || "client",
       sessionId,
       tokenVersion: user.tokenVersion || 0,
+      isProfileComplete,
     };
 
     const token = signToken(tokenPayload);
 
     // 5. Create redirect response and set cookie
-    const response = NextResponse.redirect(new URL("/dashboard", req.url));
+    const targetPath = isProfileComplete ? "/dashboard" : "/complete-profile";
+    const response = NextResponse.redirect(new URL(targetPath, req.url));
 
     response.cookies.set("token", token, {
       httpOnly: true,

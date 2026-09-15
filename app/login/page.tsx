@@ -726,9 +726,13 @@ function AuthComponent() {
                   <span>
                     {googleLoading
                       ? t.common.loading
+                      : activeTab === "signup"
+                      ? language === "fr"
+                        ? "S'inscrire avec Google"
+                        : "Sign up with Google"
                       : language === "fr"
-                      ? "Continuer avec Google"
-                      : "Continue with Google"}
+                      ? "Se connecter avec Google"
+                      : "Sign in with Google"}
                   </span>
                 </button>
               </>

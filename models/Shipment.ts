@@ -16,6 +16,12 @@ export interface IShipmentTimelineEvent {
   completed: boolean;
 }
 
+export interface IShipmentContainer {
+  containerNumber: string;
+  /** Explicit carrier, captured here at booking/entry time — preferred over the owner-prefix guess. */
+  carrier?: "MAERSK" | "CMA_CGM" | "MSC";
+}
+
 export interface IShipment extends Document {
   trackingNumber: string; // e.g. "TMX-2026-00847"
   quoteId?: string; // Linked quote reference, e.g. "QT-2026-00124"
@@ -65,6 +71,8 @@ export interface IShipment extends Document {
     dispatchedAt?: string;
   };
   timeline: IShipmentTimelineEvent[];
+  /** Ocean containers entered against this shipment — each is synced from its carrier's Track & Trace API into a linked TrackedContainer record. */
+  containers: IShipmentContainer[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -156,6 +164,12 @@ const ShipmentSchema = new Schema<IShipment>(
         timestamp: { type: String, required: true },
         statusText: { type: String, required: true },
         completed: { type: Boolean, default: false },
+      },
+    ],
+    containers: [
+      {
+        containerNumber: { type: String, required: true, trim: true, uppercase: true },
+        carrier: { type: String, enum: ["MAERSK", "CMA_CGM", "MSC"] },
       },
     ],
   },

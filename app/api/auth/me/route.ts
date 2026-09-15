@@ -35,6 +35,9 @@ export async function GET() {
             province: dbUser.province || "",
             jobTitle: dbUser.jobTitle || "",
             department: dbUser.department || "",
+            avatar: dbUser.avatar || "",
+            provider: dbUser.provider || "credentials",
+            isProfileComplete: dbUser.isProfileComplete ?? Boolean(dbUser.companyName && dbUser.phone && dbUser.address && !dbUser.companyName.includes("'s Company")),
           },
         });
       }

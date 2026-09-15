@@ -39,6 +39,10 @@ export default function PortalShell({ children }: PortalShellProps) {
         const { user: currentUser } = await api.auth.me();
         if (isMounted) {
           if (currentUser) {
+            if (currentUser.isProfileComplete === false) {
+              router.push("/complete-profile");
+              return;
+            }
             setUser(currentUser);
           } else {
             localStorage.removeItem("transimex_user");

@@ -29,6 +29,9 @@ export async function GET() {
         dateUploaded: formatDateLabel(d.createdAt),
         statusText: d.statusText,
         customsPars: d.customsPars || "",
+        mimeType: d.mimeType || "application/pdf",
+        fileSize: d.fileSize || 0,
+        storageProvider: d.storageProvider || "mongodb",
       })),
     });
   } catch (error: any) {

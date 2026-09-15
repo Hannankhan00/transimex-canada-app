@@ -14,6 +14,7 @@ import {
   MapPin,
   AlertTriangle,
   Truck,
+  Ship,
 } from "lucide-react";
 
 interface AdminShipmentItem {
@@ -405,6 +406,13 @@ export default function AdminShipmentsDirectoryPage() {
                             <span>{language === "fr" ? "Assigner" : "Assign Carrier"}</span>
                           </button>
                           <Link
+                            href={`/admin/shipments/${encodeURIComponent(shipment.id)}/containers`}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-xs font-bold shadow-2xs transition"
+                          >
+                            <Ship className="w-3.5 h-3.5 text-[#0B2545]" />
+                            <span>{language === "fr" ? "Conteneurs" : "Containers"}</span>
+                          </Link>
+                          <Link
                             href={`/admin/shipments/${encodeURIComponent(shipment.id)}/customs`}
                             className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#0B2545] hover:bg-[#d21f27] text-white rounded-xl text-xs font-bold shadow-2xs transition"
                           >
@@ -466,18 +474,25 @@ export default function AdminShipmentsDirectoryPage() {
                     </span>
                   </div>
 
-                  <div className="pt-2 border-t border-slate-100 flex items-center gap-2">
+                  <div className="pt-2 border-t border-slate-100 flex items-center gap-2 flex-wrap">
                     <button
                       type="button"
                       onClick={() => setAssignTargetId(shipment.id)}
-                      className="flex-1 justify-center inline-flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-xs font-bold shadow-2xs transition cursor-pointer"
+                      className="flex-1 min-w-[100px] justify-center inline-flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-xs font-bold shadow-2xs transition cursor-pointer"
                     >
                       <Truck className="w-3.5 h-3.5" />
                       <span>{language === "fr" ? "Assigner" : "Assign Carrier"}</span>
                     </button>
                     <Link
+                      href={`/admin/shipments/${encodeURIComponent(shipment.id)}/containers`}
+                      className="flex-1 min-w-[100px] justify-center inline-flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-xs font-bold shadow-2xs transition"
+                    >
+                      <Ship className="w-3.5 h-3.5 text-[#0B2545]" />
+                      <span>{language === "fr" ? "Conteneurs" : "Containers"}</span>
+                    </Link>
+                    <Link
                       href={`/admin/shipments/${encodeURIComponent(shipment.id)}/customs`}
-                      className="flex-1 justify-center inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#0B2545] hover:bg-[#d21f27] text-white rounded-xl text-xs font-bold shadow-2xs transition"
+                      className="flex-1 min-w-[100px] justify-center inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#0B2545] hover:bg-[#d21f27] text-white rounded-xl text-xs font-bold shadow-2xs transition"
                     >
                       <Shield className="w-3.5 h-3.5" />
                       <span>{language === "fr" ? "Douanes" : "Customs"}</span>

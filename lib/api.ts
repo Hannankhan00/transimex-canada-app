@@ -20,6 +20,11 @@ export interface AuthResponse {
     industry?: string;
     city?: string;
     province?: string;
+    jobTitle?: string;
+    department?: string;
+    avatar?: string;
+    provider?: string;
+    isProfileComplete?: boolean;
   };
   error?: string;
 }
@@ -114,6 +119,30 @@ export const api = {
         localStorage.removeItem("transimex_user");
       }
       return { user: null };
+    },
+
+    async completeProfile(data: {
+      companyName: string;
+      phone: string;
+      address: string;
+      city?: string;
+      province?: string;
+      industry?: string;
+      jobTitle?: string;
+    }): Promise<AuthResponse> {
+      const res = await fetch("/api/auth/complete-profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      const result = await res.json();
+      if (!res.ok) {
+        throw new Error(result.error || "Failed to complete profile");
+      }
+      if (result.user && typeof window !== "undefined") {
+        localStorage.setItem("transimex_user", JSON.stringify(result.user));
+      }
+      return result;
     },
 
     async logout(): Promise<void> {
