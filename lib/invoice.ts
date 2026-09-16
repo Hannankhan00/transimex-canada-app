@@ -1,6 +1,6 @@
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import connectDB from "@/lib/mongoose";
-import Invoice, { IInvoice } from "@/models/Invoice";
+import Invoice, { IInvoice, IInvoiceBankSnapshot } from "@/models/Invoice";
 import BankAccount, { IBankAccount, BankAccountCurrency } from "@/models/BankAccount";
 import { IQuote } from "@/models/Quote";
 import { IShipment } from "@/models/Shipment";
@@ -52,6 +52,29 @@ export async function getDefaultBankAccount(
   return BankAccount.findOne({ currency, isDefault: true, isActive: true });
 }
 
+/**
+ * Returns the default active bank account for every currency (CAD and USD),
+ * so an invoice can show both wire options regardless of what currency the
+ * invoice total itself is billed in.
+ */
+export async function getAllDefaultBankAccounts(): Promise<IBankAccount[]> {
+  await connectDB();
+  return BankAccount.find({ isDefault: true, isActive: true }).sort({ currency: 1 });
+}
+
+function toBankSnapshot(account: IBankAccount) {
+  return {
+    bankName: account.bankName,
+    beneficiaryName: account.beneficiaryName,
+    accountNumber: account.accountNumber,
+    transitNumber: account.transitNumber || "",
+    institutionNumber: account.institutionNumber || "",
+    swiftBic: account.swiftBic || "",
+    bankAddress: account.bankAddress || "",
+    currency: account.currency,
+  };
+}
+
 function addDays(dateIso: string, days: number): string {
   const d = new Date(dateIso);
   d.setDate(d.getDate() + days);
@@ -94,7 +117,7 @@ export async function createInvoiceForQuote(
   const subtotal = lineItems.reduce((sum, li) => sum + li.amount, 0);
   const total = quote.breakdown?.total ? parseAmount(quote.breakdown.total) : subtotal || parseAmount(primaryPrice);
 
-  const bankAccount = await getDefaultBankAccount(currency);
+  const bankAccounts = await getAllDefaultBankAccounts();
   const issueDate = new Date().toISOString();
 
   const invoice = await Invoice.create({
@@ -121,18 +144,7 @@ export async function createInvoiceForQuote(
     status: "unpaid",
     issueDate,
     dueDate: addDays(issueDate, 15),
-    bankSnapshot: bankAccount
-      ? {
-          bankName: bankAccount.bankName,
-          beneficiaryName: bankAccount.beneficiaryName,
-          accountNumber: bankAccount.accountNumber,
-          transitNumber: bankAccount.transitNumber || "",
-          institutionNumber: bankAccount.institutionNumber || "",
-          swiftBic: bankAccount.swiftBic || "",
-          bankAddress: bankAccount.bankAddress || "",
-          currency,
-        }
-      : undefined,
+    bankSnapshots: bankAccounts.map(toBankSnapshot),
   });
 
   await storeInvoicePdf(invoice);
@@ -141,9 +153,9 @@ export async function createInvoiceForQuote(
 }
 
 /**
- * Fills in an invoice's bank details when they're blank because no bank
- * account existed yet at invoice-creation time — bankSnapshot is a frozen
- * snapshot taken at creation, not a live reference, so adding a bank
+ * Fills in an invoice's bank details when they're blank/incomplete because
+ * no bank account existed yet at invoice-creation time — bankSnapshots is a
+ * frozen snapshot taken at creation, not a live reference, so adding a bank
  * account afterward doesn't retroactively update past invoices on its own.
  * Also re-renders the stored PDF so downloads pick up the fix. A paid
  * invoice's snapshot is left untouched since it recorded what was actually
@@ -151,21 +163,12 @@ export async function createInvoiceForQuote(
  */
 export async function ensureBankSnapshot(invoice: IInvoice): Promise<IInvoice> {
   if (invoice.status === "paid") return invoice;
-  if (invoice.bankSnapshot?.bankName) return invoice;
+  if (invoice.bankSnapshots?.some((b) => b.bankName)) return invoice;
 
-  const bankAccount = await getDefaultBankAccount(invoice.currency);
-  if (!bankAccount) return invoice;
+  const bankAccounts = await getAllDefaultBankAccounts();
+  if (bankAccounts.length === 0) return invoice;
 
-  invoice.bankSnapshot = {
-    bankName: bankAccount.bankName,
-    beneficiaryName: bankAccount.beneficiaryName,
-    accountNumber: bankAccount.accountNumber,
-    transitNumber: bankAccount.transitNumber || "",
-    institutionNumber: bankAccount.institutionNumber || "",
-    swiftBic: bankAccount.swiftBic || "",
-    bankAddress: bankAccount.bankAddress || "",
-    currency: invoice.currency,
-  };
+  invoice.bankSnapshots = bankAccounts.map(toBankSnapshot);
   await invoice.save();
   await storeInvoicePdf(invoice);
   return invoice;
@@ -206,19 +209,7 @@ export async function createInvoiceForDuties(
 
   const subtotal = lineItems.reduce((sum, li) => sum + li.amount, 0);
   const total = duties.totalOwed ? parseAmount(duties.totalOwed) : subtotal;
-  const bankAccount = await getDefaultBankAccount(duties.currency);
-  const bankSnapshot = bankAccount
-    ? {
-        bankName: bankAccount.bankName,
-        beneficiaryName: bankAccount.beneficiaryName,
-        accountNumber: bankAccount.accountNumber,
-        transitNumber: bankAccount.transitNumber || "",
-        institutionNumber: bankAccount.institutionNumber || "",
-        swiftBic: bankAccount.swiftBic || "",
-        bankAddress: bankAccount.bankAddress || "",
-        currency: duties.currency,
-      }
-    : undefined;
+  const bankAccounts = await getAllDefaultBankAccounts();
 
   const existing = await Invoice.findOne({ shipmentTrackingNumber: shipment.trackingNumber, kind: "duties" });
   if (existing) {
@@ -229,7 +220,7 @@ export async function createInvoiceForDuties(
     existing.subtotal = subtotal;
     existing.total = total;
     existing.amountDisplay = formatAmount(total, duties.currency);
-    existing.bankSnapshot = bankSnapshot;
+    existing.bankSnapshots = bankAccounts.map(toBankSnapshot);
     existing.status = "unpaid";
     existing.paymentRejectionReason = "";
     await existing.save();
@@ -262,7 +253,7 @@ export async function createInvoiceForDuties(
     status: "unpaid",
     issueDate,
     dueDate: addDays(issueDate, 15),
-    bankSnapshot,
+    bankSnapshots: bankAccounts.map(toBankSnapshot),
   });
 
   await storeInvoicePdf(invoice);
@@ -364,44 +355,69 @@ export async function renderInvoicePdf(invoice: IInvoice): Promise<Buffer> {
 
   y -= 50;
 
-  // Payment instructions box
-  const boxTop = y;
-  const boxHeight = 118;
-  page.drawRectangle({
-    x: 50,
-    y: boxTop - boxHeight,
-    width: width - 100,
-    height: boxHeight,
-    color: rgb(0.98, 0.98, 0.99),
-    borderColor: borderGray,
-    borderWidth: 1,
-  });
-  let by = boxTop - 18;
-  page.drawText("WIRE / EFT PAYMENT INSTRUCTIONS", { x: 62, y: by, size: 9.5, font: fontBold, color: navy });
-  by -= 18;
+  // Payment instructions box(es) — one per available currency's default bank
+  const banks = (
+    invoice.bankSnapshots && invoice.bankSnapshots.length > 0
+      ? invoice.bankSnapshots
+      : invoice.bankSnapshot
+      ? [invoice.bankSnapshot]
+      : []
+  ).filter((b) => b?.bankName);
 
-  const bank = invoice.bankSnapshot;
-  if (bank?.bankName) {
-    const bankRow = (label: string, value?: string) => {
-      if (!value) return;
-      page.drawText(`${label}:`, { x: 62, y: by, size: 9, font: fontBold, color: lightSlate });
-      page.drawText(value, { x: 62 + 120, y: by, size: 9, font: fontRegular, color: slate });
-      by -= 15;
-    };
-    bankRow("Bank", bank.bankName);
-    bankRow("Beneficiary", bank.beneficiaryName);
-    bankRow("Account No.", bank.accountNumber);
-    bankRow("Transit No.", bank.transitNumber);
-    bankRow("Institution No.", bank.institutionNumber);
-    bankRow("SWIFT / BIC", bank.swiftBic);
-  } else {
-    page.drawText("Contact accounts@transimex-canada.com for current wire instructions.", {
-      x: 62,
-      y: by,
-      size: 9,
-      font: fontRegular,
-      color: lightSlate,
+  const drawBankBox = (bank: IInvoiceBankSnapshot | undefined, label: string) => {
+    const rows: [string, string][] = bank
+      ? ([
+          ["Bank", bank.bankName],
+          ["Beneficiary", bank.beneficiaryName],
+          ["Account No.", bank.accountNumber],
+          ["Transit No.", bank.transitNumber],
+          ["Institution No.", bank.institutionNumber],
+          ["SWIFT / BIC", bank.swiftBic],
+        ].filter(([, value]) => value) as [string, string][])
+      : [];
+
+    const boxTop = y;
+    const boxHeight = bank ? 32 + rows.length * 15 : 50;
+    page.drawRectangle({
+      x: 50,
+      y: boxTop - boxHeight,
+      width: width - 100,
+      height: boxHeight,
+      color: rgb(0.98, 0.98, 0.99),
+      borderColor: borderGray,
+      borderWidth: 1,
     });
+    let by = boxTop - 18;
+    page.drawText(label, { x: 62, y: by, size: 9.5, font: fontBold, color: navy });
+    by -= 18;
+
+    if (bank) {
+      for (const [rowLabel, value] of rows) {
+        page.drawText(`${rowLabel}:`, { x: 62, y: by, size: 9, font: fontBold, color: lightSlate });
+        page.drawText(value, { x: 62 + 120, y: by, size: 9, font: fontRegular, color: slate });
+        by -= 15;
+      }
+    } else {
+      page.drawText("Contact accounts@transimex-canada.com for current wire instructions.", {
+        x: 62,
+        y: by,
+        size: 9,
+        font: fontRegular,
+        color: lightSlate,
+      });
+    }
+
+    y = boxTop - boxHeight - 14;
+  };
+
+  if (banks.length === 0) {
+    drawBankBox(undefined, "WIRE / EFT PAYMENT INSTRUCTIONS");
+  } else if (banks.length === 1) {
+    drawBankBox(banks[0], "WIRE / EFT PAYMENT INSTRUCTIONS");
+  } else {
+    for (const bank of banks) {
+      drawBankBox(bank, `WIRE / EFT PAYMENT INSTRUCTIONS (${bank.currency})`);
+    }
   }
 
   page.drawText(

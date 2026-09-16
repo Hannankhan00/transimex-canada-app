@@ -96,16 +96,23 @@ export default function ClientInvoiceDetailPage() {
     );
   }
 
-  const bankRows: { label: string; value?: string }[] = invoice.bankSnapshot?.bankName
-    ? [
-        { label: language === "fr" ? "Banque" : "Bank", value: invoice.bankSnapshot.bankName },
-        { label: language === "fr" ? "Bénéficiaire" : "Beneficiary", value: invoice.bankSnapshot.beneficiaryName },
-        { label: language === "fr" ? "Numéro de Compte" : "Account Number", value: invoice.bankSnapshot.accountNumber },
-        { label: language === "fr" ? "No. de Transit" : "Transit Number", value: invoice.bankSnapshot.transitNumber },
-        { label: language === "fr" ? "No. d'Institution" : "Institution Number", value: invoice.bankSnapshot.institutionNumber },
-        { label: "SWIFT / BIC", value: invoice.bankSnapshot.swiftBic },
-      ].filter((r) => r.value)
-    : [];
+  const banks = (
+    invoice.bankSnapshots && invoice.bankSnapshots.length > 0
+      ? invoice.bankSnapshots
+      : invoice.bankSnapshot?.bankName
+      ? [invoice.bankSnapshot]
+      : []
+  ).filter((b) => b.bankName);
+
+  const bankRowsFor = (bank: (typeof banks)[number]): { label: string; value?: string }[] =>
+    [
+      { label: language === "fr" ? "Banque" : "Bank", value: bank.bankName },
+      { label: language === "fr" ? "Bénéficiaire" : "Beneficiary", value: bank.beneficiaryName },
+      { label: language === "fr" ? "Numéro de Compte" : "Account Number", value: bank.accountNumber },
+      { label: language === "fr" ? "No. de Transit" : "Transit Number", value: bank.transitNumber },
+      { label: language === "fr" ? "No. d'Institution" : "Institution Number", value: bank.institutionNumber },
+      { label: "SWIFT / BIC", value: bank.swiftBic },
+    ].filter((r) => r.value);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-200 max-w-3xl">
@@ -233,39 +240,42 @@ export default function ClientInvoiceDetailPage() {
             </div>
           ) : (
             <>
-              {invoice.bankSnapshot?.bankName && (
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+              {banks.map((bank) => (
+                <div key={bank.currency} className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
                   <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center gap-2">
                     <Landmark className="w-4 h-4 text-[#d21f27]" />
                     <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                      {language === "fr" ? "Instructions de Virement Bancaire" : "Wire Transfer Instructions"}
+                      {language === "fr" ? "Instructions de Virement Bancaire" : "Wire Transfer Instructions"} ({bank.currency})
                     </h3>
                   </div>
                   <div className="p-4 sm:p-5 space-y-2.5">
-                    {bankRows.map((row) => (
-                      <div key={row.label} className="flex items-center justify-between text-xs">
-                        <span className="text-slate-500 font-semibold">{row.label}</span>
-                        <button
-                          type="button"
-                          onClick={() => handleCopy(row.label, row.value!)}
-                          className="flex items-center gap-1.5 font-mono font-bold text-slate-800 hover:text-[#0B2545] cursor-pointer"
-                        >
-                          {row.value}
-                          {copiedField === row.label ? (
-                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                          ) : (
-                            <Copy className="w-3.5 h-3.5 text-slate-400" />
-                          )}
-                        </button>
-                      </div>
-                    ))}
+                    {bankRowsFor(bank).map((row) => {
+                      const fieldKey = `${bank.currency}-${row.label}`;
+                      return (
+                        <div key={row.label} className="flex items-center justify-between text-xs">
+                          <span className="text-slate-500 font-semibold">{row.label}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleCopy(fieldKey, row.value!)}
+                            className="flex items-center gap-1.5 font-mono font-bold text-slate-800 hover:text-[#0B2545] cursor-pointer"
+                          >
+                            {row.value}
+                            {copiedField === fieldKey ? (
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                            ) : (
+                              <Copy className="w-3.5 h-3.5 text-slate-400" />
+                            )}
+                          </button>
+                        </div>
+                      );
+                    })}
                     <div className="pt-2 mt-2 border-t border-slate-100 flex items-center justify-between text-xs">
                       <span className="text-slate-500 font-semibold">{language === "fr" ? "Référence Requise" : "Required Reference"}</span>
                       <span className="font-mono font-bold text-[#d21f27]">{invoice.invoiceNumber}</span>
                     </div>
                   </div>
                 </div>
-              )}
+              ))}
 
               <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-4 sm:p-5 space-y-3">
                 <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">

@@ -63,7 +63,8 @@ export interface IInvoice extends Document {
   status: InvoiceStatus;
   issueDate: string;
   dueDate: string;
-  bankSnapshot?: IInvoiceBankSnapshot;
+  bankSnapshot?: IInvoiceBankSnapshot; // legacy: single default account, kept for old invoices
+  bankSnapshots?: IInvoiceBankSnapshot[]; // current: default account per currency (CAD + USD)
   pdfFile?: IInvoicePdfFile;
   paymentProof?: IInvoicePaymentProof;
   paymentRejectionReason?: string;
@@ -118,6 +119,22 @@ const InvoiceSchema = new Schema<IInvoice>(
       swiftBic: { type: String, default: "" },
       bankAddress: { type: String, default: "" },
       currency: { type: String, enum: ["CAD", "USD"], default: "CAD" },
+    },
+    bankSnapshots: {
+      type: [
+        {
+          _id: false,
+          bankName: { type: String, default: "" },
+          beneficiaryName: { type: String, default: "" },
+          accountNumber: { type: String, default: "" },
+          transitNumber: { type: String, default: "" },
+          institutionNumber: { type: String, default: "" },
+          swiftBic: { type: String, default: "" },
+          bankAddress: { type: String, default: "" },
+          currency: { type: String, enum: ["CAD", "USD"] },
+        },
+      ],
+      default: undefined,
     },
     pdfFile: {
       fileKey: { type: String, default: "" },

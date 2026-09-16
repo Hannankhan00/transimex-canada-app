@@ -51,7 +51,8 @@ export interface InvoiceItem {
   status: InvoiceStatus;
   issueDate: string;
   dueDate: string;
-  bankSnapshot?: InvoiceBankSnapshot;
+  bankSnapshot?: InvoiceBankSnapshot; // legacy: single default account, kept for old invoices
+  bankSnapshots?: InvoiceBankSnapshot[]; // current: default account per currency (CAD + USD)
   paymentProof?: InvoicePaymentProof;
   paymentRejectionReason?: string;
   rejectedAt?: string;

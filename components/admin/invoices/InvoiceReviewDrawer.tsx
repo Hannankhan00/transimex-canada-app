@@ -163,21 +163,38 @@ export default function InvoiceReviewDrawer({ invoice, isOpen, onClose, onInvoic
             </p>
           </div>
 
-          {/* Bank used */}
-          {invoice.bankSnapshot?.bankName && (
-            <div>
-              <h3 className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2.5 flex items-center gap-1.5">
-                <Landmark className="w-3.5 h-3.5" />
-                {language === "fr" ? "Compte Bancaire Utilisé" : "Bank Account Used"}
-              </h3>
-              <div className="border border-slate-200 rounded-2xl p-4 text-xs text-slate-600 font-mono space-y-1">
-                <div>{invoice.bankSnapshot.bankName} &bull; {invoice.bankSnapshot.beneficiaryName}</div>
-                <div>{language === "fr" ? "Compte" : "Account"}: {invoice.bankSnapshot.accountNumber}</div>
-                {invoice.bankSnapshot.transitNumber && <div>{language === "fr" ? "Transit" : "Transit"}: {invoice.bankSnapshot.transitNumber}</div>}
-                {invoice.bankSnapshot.swiftBic && <div>SWIFT/BIC: {invoice.bankSnapshot.swiftBic}</div>}
+          {/* Bank(s) used */}
+          {(() => {
+            const banks = (
+              invoice.bankSnapshots && invoice.bankSnapshots.length > 0
+                ? invoice.bankSnapshots
+                : invoice.bankSnapshot?.bankName
+                ? [invoice.bankSnapshot]
+                : []
+            ).filter((b) => b.bankName);
+
+            if (banks.length === 0) return null;
+
+            return (
+              <div>
+                <h3 className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2.5 flex items-center gap-1.5">
+                  <Landmark className="w-3.5 h-3.5" />
+                  {language === "fr" ? "Compte Bancaire Utilisé" : "Bank Account Used"}
+                </h3>
+                <div className="space-y-2">
+                  {banks.map((bank) => (
+                    <div key={bank.currency} className="border border-slate-200 rounded-2xl p-4 text-xs text-slate-600 font-mono space-y-1">
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 not-italic">{bank.currency}</div>
+                      <div>{bank.bankName} &bull; {bank.beneficiaryName}</div>
+                      <div>{language === "fr" ? "Compte" : "Account"}: {bank.accountNumber}</div>
+                      {bank.transitNumber && <div>{language === "fr" ? "Transit" : "Transit"}: {bank.transitNumber}</div>}
+                      {bank.swiftBic && <div>SWIFT/BIC: {bank.swiftBic}</div>}
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
 
           {/* Payment proof */}
           {invoice.paymentProof && (invoice.paymentProof.fileKey || invoice.paymentProof.uploadedAt) && (
