@@ -129,7 +129,7 @@ export default function VolumeTrendChart({ data }: VolumeTrendChartProps) {
           </div>
 
           {/* Footer Info */}
-          <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+          <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[11px] text-slate-500">
             <span>
               {language === "fr" ? "Sélectionné :" : "Selected:"}{" "}
               <strong className="text-slate-800">{items[selectedIdx].month}</strong> &bull;{" "}

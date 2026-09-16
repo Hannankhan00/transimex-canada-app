@@ -325,13 +325,13 @@ function ShipmentCustomsCompliancePageInner() {
           </div>
 
           {/* Prominent Clearance Status Switcher Buttons */}
-          <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200">
+          <div className="flex flex-wrap sm:flex-nowrap items-center gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200 overflow-x-auto max-w-full">
             {(["Pending", "In Review", "Released", "Held"] as CustomsClearanceStatus[]).map((st) => (
               <button
                 key={st}
                 type="button"
                 onClick={() => handleStatusChange(st)}
-                className={`px-3.5 py-2 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+                className={`flex-1 sm:flex-none justify-center px-3 sm:px-3.5 py-2 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5 flex-shrink-0 whitespace-nowrap ${
                   status === st
                     ? st === "Held"
                       ? "bg-[#d21f27] text-white shadow-xs"

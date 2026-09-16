@@ -123,11 +123,11 @@ export default function AdminCarriersPage() {
           </div>
 
           {/* Action Buttons */}
-          <div className="flex items-center gap-2.5">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
               onClick={fetchCarriers}
-              className="px-3.5 py-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 shadow-2xs transition cursor-pointer flex items-center gap-1.5"
+              className="flex-1 sm:flex-none justify-center px-3.5 py-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 shadow-2xs transition cursor-pointer flex items-center gap-1.5"
               title={language === "fr" ? "Actualiser le Répertoire" : "Refresh Directory"}
             >
               <RefreshCw className={`w-3.5 h-3.5 text-slate-500 ${refreshing ? "animate-spin" : ""}`} />
@@ -137,7 +137,7 @@ export default function AdminCarriersPage() {
             <button
               type="button"
               onClick={handleOpenCreateModal}
-              className="px-4 py-2 bg-[#0B2545] hover:bg-slate-800 text-white rounded-xl text-xs font-bold shadow-xs transition cursor-pointer flex items-center gap-1.5"
+              className="w-full sm:w-auto justify-center px-4 py-2 bg-[#0B2545] hover:bg-slate-800 text-white rounded-xl text-xs font-bold shadow-xs transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap"
             >
               <Plus className="w-4 h-4 text-[#d21f27]" />
               <span>{language === "fr" ? "Ajouter un Partenaire Transporteur" : "Add Carrier Partner"}</span>

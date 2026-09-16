@@ -296,9 +296,9 @@ export default function DirectClientQuoteModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150 overflow-y-auto">
       <div className="bg-white w-full max-w-3xl rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col my-auto max-h-[92vh]">
         {/* HEADER BAR */}
-        <div className="bg-[#0B2545] text-white px-6 py-4 flex items-center justify-between border-b border-white/10 relative">
+        <div className="bg-[#0B2545] text-white px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between border-b border-white/10 relative">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-[#d21f27] text-white flex items-center justify-center shadow-xs">
+            <div className="w-8 h-8 rounded-xl bg-[#d21f27] text-white flex items-center justify-center shadow-xs shrink-0">
               <Zap className="w-4 h-4" />
             </div>
             <div>
@@ -307,7 +307,7 @@ export default function DirectClientQuoteModal({
                   {language === "fr" ? "Consultation Directe" : "Direct Consultation Intake"}
                 </span>
               </div>
-              <h2 className="text-lg sm:text-xl font-extrabold tracking-tight text-white mt-0.5">
+              <h2 className="text-base sm:text-xl font-extrabold tracking-tight text-white mt-0.5">
                 {language === "fr"
                   ? "Intégration Client Directe & Soumission Pré-Tarifée"
                   : "Direct Client Onboarding & Pre-Priced Quote"}
@@ -326,13 +326,13 @@ export default function DirectClientQuoteModal({
 
         {/* STEP PROGRESS TRACKER (Only shown when not in success view) */}
         {!successData && (
-          <div className="bg-slate-50 border-b border-slate-200 px-6 py-3 flex items-center justify-between text-xs">
-            <div className="flex items-center gap-6 sm:gap-8">
+          <div className="bg-slate-50 border-b border-slate-200 px-3 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between text-xs overflow-x-auto">
+            <div className="flex items-center gap-3 sm:gap-8 flex-nowrap min-w-max">
               {/* Step 1 */}
               <button
                 type="button"
                 onClick={() => setActiveStep(1)}
-                className={`flex items-center gap-2 font-semibold transition cursor-pointer ${
+                className={`flex items-center gap-2 font-semibold transition cursor-pointer whitespace-nowrap shrink-0 ${
                   activeStep === 1 ? "text-[#0B2545]" : "text-slate-500 hover:text-slate-800"
                 }`}
               >
@@ -348,7 +348,7 @@ export default function DirectClientQuoteModal({
                 <span>{language === "fr" ? "Profil Client" : "Client Profile"}</span>
               </button>
 
-              <ArrowRight className="w-3.5 h-3.5 text-slate-300" />
+              <ArrowRight className="w-3.5 h-3.5 text-slate-300 shrink-0" />
 
               {/* Step 2 */}
               <button
@@ -356,7 +356,7 @@ export default function DirectClientQuoteModal({
                 onClick={() => {
                   if (validateStep1()) setActiveStep(2);
                 }}
-                className={`flex items-center gap-2 font-semibold transition cursor-pointer ${
+                className={`flex items-center gap-2 font-semibold transition cursor-pointer whitespace-nowrap shrink-0 ${
                   activeStep === 2 ? "text-[#0B2545]" : "text-slate-500 hover:text-slate-800"
                 }`}
               >
@@ -372,7 +372,7 @@ export default function DirectClientQuoteModal({
                 <span>{language === "fr" ? "Soumission (Spécifications)" : "Quote Form (Freight Specs)"}</span>
               </button>
 
-              <ArrowRight className="w-3.5 h-3.5 text-slate-300" />
+              <ArrowRight className="w-3.5 h-3.5 text-slate-300 shrink-0" />
 
               {/* Step 3 */}
               <button
@@ -380,7 +380,7 @@ export default function DirectClientQuoteModal({
                 onClick={() => {
                   if (validateStep1() && validateStep2()) setActiveStep(3);
                 }}
-                className={`flex items-center gap-2 font-semibold transition cursor-pointer ${
+                className={`flex items-center gap-2 font-semibold transition cursor-pointer whitespace-nowrap shrink-0 ${
                   activeStep === 3 ? "text-[#0B2545]" : "text-slate-500 hover:text-slate-800"
                 }`}
               >

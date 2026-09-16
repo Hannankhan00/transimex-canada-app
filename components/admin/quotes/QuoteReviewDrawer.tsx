@@ -837,7 +837,7 @@ export default function QuoteReviewDrawer({
 
         {/* Drawer Action Footer */}
         <div className="p-4 sm:p-5 bg-slate-50 border-t border-slate-200 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-3 flex-shrink-0">
-          <div className="flex items-center gap-2 w-full sm:w-auto">
+          <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:w-auto">
             {!isRejected && (
               <button
                 type="button"
@@ -865,14 +865,14 @@ export default function QuoteReviewDrawer({
             </button>
           </div>
 
-          <div className="flex items-center gap-2 w-full sm:w-auto">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
             {!isAccepted ? (
               <>
                 <button
                   type="button"
                   onClick={handleOfferPrice}
                   disabled={isOffering || isAccepting}
-                  className="flex-1 sm:flex-none justify-center px-4 py-2.5 bg-[#0B2545] hover:bg-[#123661] text-white rounded-xl text-xs font-bold shadow-xs hover:shadow transition cursor-pointer flex items-center gap-2 disabled:opacity-50"
+                  className="w-full sm:w-auto justify-center px-4 py-2.5 bg-[#0B2545] hover:bg-[#123661] text-white rounded-xl text-xs font-bold shadow-xs hover:shadow transition cursor-pointer flex items-center gap-2 disabled:opacity-50"
                 >
                   <Send className="w-4 h-4 text-amber-400" />
                   <span>
@@ -898,7 +898,7 @@ export default function QuoteReviewDrawer({
                   type="button"
                   onClick={handleAcceptAndGenerateShipment}
                   disabled={isAccepting || isOffering}
-                  className="justify-center px-3 py-2.5 bg-[#d21f27] hover:bg-[#b51a21] text-white rounded-xl text-xs font-bold shadow-xs hover:shadow transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                  className="w-full sm:w-auto justify-center px-3.5 py-2.5 bg-[#d21f27] hover:bg-[#b51a21] text-white rounded-xl text-xs font-bold shadow-xs hover:shadow transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
                   title={
                     language === "fr"
                       ? "Répartition manuelle directe sans attendre la réponse en ligne du client"

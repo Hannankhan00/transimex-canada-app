@@ -109,29 +109,75 @@ export default function InvoiceDataTable({
           </p>
         </div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100">
-                <th className="py-3 px-4">{language === "fr" ? "Facture" : "Invoice"}</th>
-                <th className="py-3 px-4">{language === "fr" ? "Type" : "Type"}</th>
-                <th className="py-3 px-4">{language === "fr" ? "Client" : "Client"}</th>
-                <th className="py-3 px-4">{language === "fr" ? "Expédition" : "Shipment"}</th>
-                <th className="py-3 px-4">{language === "fr" ? "Montant" : "Amount"}</th>
-                <th className="py-3 px-4">{language === "fr" ? "Échéance" : "Due"}</th>
-                <th className="py-3 px-4">{language === "fr" ? "Statut" : "Status"}</th>
-                <th className="py-3 px-4"></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {filteredInvoices.map((inv) => (
-                <tr
-                  key={inv.id}
-                  onClick={() => onSelectInvoice(inv)}
-                  className="hover:bg-slate-50/70 cursor-pointer transition"
-                >
-                  <td className="py-3.5 px-4 font-mono font-bold text-[#0B2545] text-xs whitespace-nowrap">{inv.invoiceNumber}</td>
-                  <td className="py-3.5 px-4 whitespace-nowrap">
+        <>
+          {/* Desktop Table View */}
+          <div className="hidden md:block overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100">
+                  <th className="py-3 px-4">{language === "fr" ? "Facture" : "Invoice"}</th>
+                  <th className="py-3 px-4">{language === "fr" ? "Type" : "Type"}</th>
+                  <th className="py-3 px-4">{language === "fr" ? "Client" : "Client"}</th>
+                  <th className="py-3 px-4">{language === "fr" ? "Expédition" : "Shipment"}</th>
+                  <th className="py-3 px-4">{language === "fr" ? "Montant" : "Amount"}</th>
+                  <th className="py-3 px-4">{language === "fr" ? "Échéance" : "Due"}</th>
+                  <th className="py-3 px-4">{language === "fr" ? "Statut" : "Status"}</th>
+                  <th className="py-3 px-4"></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filteredInvoices.map((inv) => (
+                  <tr
+                    key={inv.id}
+                    onClick={() => onSelectInvoice(inv)}
+                    className="hover:bg-slate-50/70 cursor-pointer transition"
+                  >
+                    <td className="py-3.5 px-4 font-mono font-bold text-[#0B2545] text-xs whitespace-nowrap">{inv.invoiceNumber}</td>
+                    <td className="py-3.5 px-4 whitespace-nowrap">
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                          inv.kind === "duties"
+                            ? "bg-amber-50 text-amber-700 border-amber-200/60"
+                            : "bg-sky-50 text-sky-700 border-sky-200/60"
+                        }`}
+                      >
+                        {inv.kind === "duties"
+                          ? language === "fr" ? "Douanes" : "Duties"
+                          : language === "fr" ? "Fret" : "Freight"}
+                      </span>
+                    </td>
+                    <td className="py-3.5 px-4">
+                      <div className="text-xs font-semibold text-slate-800">{inv.client.name}</div>
+                      {inv.client.companyName && <div className="text-[11px] text-slate-400">{inv.client.companyName}</div>}
+                    </td>
+                    <td className="py-3.5 px-4 font-mono text-xs text-slate-600 whitespace-nowrap">{inv.shipmentTrackingNumber}</td>
+                    <td className="py-3.5 px-4 font-mono font-bold text-slate-900 text-xs whitespace-nowrap">{inv.amountDisplay}</td>
+                    <td className="py-3.5 px-4 text-xs text-slate-500 whitespace-nowrap">{fmtDate(inv.dueDate)}</td>
+                    <td className="py-3.5 px-4">
+                      <InvoiceStatusBadge status={inv.status} />
+                    </td>
+                    <td className="py-3.5 px-4 text-right">
+                      <Eye className="w-4 h-4 text-slate-400" />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile Card View for Phone Viewports */}
+          <div className="block md:hidden divide-y divide-slate-100">
+            {filteredInvoices.map((inv) => (
+              <div
+                key={inv.id}
+                onClick={() => onSelectInvoice(inv)}
+                className="p-4 space-y-3 cursor-pointer hover:bg-slate-50 transition active:bg-slate-100/70"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono font-bold text-[#0B2545] text-xs">
+                      {inv.invoiceNumber}
+                    </span>
                     <span
                       className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
                         inv.kind === "duties"
@@ -143,25 +189,60 @@ export default function InvoiceDataTable({
                         ? language === "fr" ? "Douanes" : "Duties"
                         : language === "fr" ? "Fret" : "Freight"}
                     </span>
-                  </td>
-                  <td className="py-3.5 px-4">
-                    <div className="text-xs font-semibold text-slate-800">{inv.client.name}</div>
-                    {inv.client.companyName && <div className="text-[11px] text-slate-400">{inv.client.companyName}</div>}
-                  </td>
-                  <td className="py-3.5 px-4 font-mono text-xs text-slate-600 whitespace-nowrap">{inv.shipmentTrackingNumber}</td>
-                  <td className="py-3.5 px-4 font-mono font-bold text-slate-900 text-xs whitespace-nowrap">{inv.amountDisplay}</td>
-                  <td className="py-3.5 px-4 text-xs text-slate-500 whitespace-nowrap">{fmtDate(inv.dueDate)}</td>
-                  <td className="py-3.5 px-4">
-                    <InvoiceStatusBadge status={inv.status} />
-                  </td>
-                  <td className="py-3.5 px-4 text-right">
-                    <Eye className="w-4 h-4 text-slate-400" />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                  </div>
+                  <InvoiceStatusBadge status={inv.status} />
+                </div>
+
+                <div>
+                  <div className="text-xs font-bold text-slate-800">{inv.client.name}</div>
+                  {inv.client.companyName && (
+                    <div className="text-[11px] text-slate-500">{inv.client.companyName}</div>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-between text-xs text-slate-600">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] font-bold uppercase text-slate-400">
+                      {language === "fr" ? "Suivi :" : "Tracking:"}
+                    </span>
+                    <span className="font-mono text-xs font-semibold text-slate-700">
+                      {inv.shipmentTrackingNumber}
+                    </span>
+                  </div>
+                  <div className="text-[11px] text-slate-500">
+                    <span className="text-[10px] text-slate-400">
+                      {language === "fr" ? "Échéance : " : "Due: "}
+                    </span>
+                    <span className="font-medium text-slate-700">{fmtDate(inv.dueDate)}</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+                  <div>
+                    <span className="text-[10px] font-bold uppercase text-slate-400 block">
+                      {language === "fr" ? "Montant Total" : "Total Amount"}
+                    </span>
+                    <span className="font-mono font-extrabold text-[#0B2545] text-sm">
+                      {inv.amountDisplay}
+                    </span>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onSelectInvoice(inv);
+                    }}
+                    className="px-3 py-1.5 bg-[#0B2545] hover:bg-[#d21f27] text-white rounded-xl text-xs font-bold transition shadow-2xs flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                    <span>{language === "fr" ? "Détails" : "Details"}</span>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
       )}
     </div>
   );

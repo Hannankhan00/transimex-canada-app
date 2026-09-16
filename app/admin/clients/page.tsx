@@ -101,11 +101,11 @@ export default function AdminClientsPage() {
           </div>
 
           {/* Action Bar */}
-          <div className="flex items-center gap-2.5">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
               onClick={fetchClients}
-              className="px-3.5 py-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 shadow-2xs transition cursor-pointer flex items-center gap-1.5"
+              className="flex-1 sm:flex-none justify-center px-3.5 py-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 shadow-2xs transition cursor-pointer flex items-center gap-1.5"
               title={language === "fr" ? "Actualiser le Répertoire" : "Refresh Directory"}
             >
               <RefreshCw className={`w-3.5 h-3.5 text-slate-500 ${refreshing ? "animate-spin" : ""}`} />
@@ -115,7 +115,7 @@ export default function AdminClientsPage() {
             <button
               type="button"
               onClick={handleExportCsv}
-              className="px-3.5 py-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-[#0B2545] shadow-2xs transition cursor-pointer flex items-center gap-1.5"
+              className="flex-1 sm:flex-none justify-center px-3.5 py-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-[#0B2545] shadow-2xs transition cursor-pointer flex items-center gap-1.5"
             >
               <Download className="w-3.5 h-3.5 text-[#0B2545]" />
               <span>{language === "fr" ? "Exporter CSV" : "Export CSV"}</span>
@@ -124,7 +124,7 @@ export default function AdminClientsPage() {
             <button
               type="button"
               onClick={() => setIsOnboardModalOpen(true)}
-              className="px-4 py-2 bg-[#d21f27] hover:bg-[#b51a21] active:scale-[0.98] text-white rounded-xl text-xs font-bold shadow-xs hover:shadow-md transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap"
+              className="w-full sm:w-auto justify-center px-4 py-2 bg-[#d21f27] hover:bg-[#b51a21] active:scale-[0.98] text-white rounded-xl text-xs font-bold shadow-xs hover:shadow-md transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap"
             >
               <Plus className="w-4 h-4 stroke-[3]" />
               <span>{language === "fr" ? "Client et Soumission Directe" : "Direct Client & Quote"}</span>

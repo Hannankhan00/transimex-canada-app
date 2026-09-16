@@ -286,35 +286,35 @@ export default function InvoiceReviewDrawer({ invoice, isOpen, onClose, onInvoic
         </div>
 
         {/* Footer actions */}
-        <div className="p-4 sm:p-5 border-t border-slate-200 bg-white flex-shrink-0 flex flex-wrap items-center gap-2.5">
+        <div className="p-4 sm:p-5 border-t border-slate-200 bg-white flex-shrink-0 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
           <a
             href={`/api/admin/invoices/${invoice.invoiceNumber}/pdf`}
-            className="px-3.5 py-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 shadow-2xs transition cursor-pointer flex items-center gap-1.5"
+            className="w-full sm:w-auto justify-center px-3.5 py-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 shadow-2xs transition cursor-pointer flex items-center gap-1.5"
           >
             <Download className="w-3.5 h-3.5" />
-            {language === "fr" ? "Télécharger PDF" : "Download PDF"}
+            <span>{language === "fr" ? "Télécharger PDF" : "Download PDF"}</span>
           </a>
 
           {invoice.status === "pending_verification" && !showRejectForm && (
-            <>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
               <button
                 type="button"
                 onClick={() => setShowRejectForm(true)}
-                className="px-3.5 py-2 bg-white hover:bg-red-50 border border-slate-200 rounded-xl text-xs font-bold text-[#d21f27] shadow-2xs transition cursor-pointer flex items-center gap-1.5"
+                className="w-full sm:w-auto justify-center px-3.5 py-2 bg-white hover:bg-red-50 border border-slate-200 rounded-xl text-xs font-bold text-[#d21f27] shadow-2xs transition cursor-pointer flex items-center gap-1.5"
               >
                 <XCircle className="w-3.5 h-3.5" />
-                {language === "fr" ? "Rejeter" : "Reject"}
+                <span>{language === "fr" ? "Rejeter" : "Reject"}</span>
               </button>
               <button
                 type="button"
                 onClick={handleVerify}
                 disabled={isVerifying}
-                className="ml-auto px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white rounded-xl text-xs font-bold shadow-xs transition cursor-pointer flex items-center gap-1.5"
+                className="w-full sm:w-auto justify-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white rounded-xl text-xs font-bold shadow-xs transition cursor-pointer flex items-center gap-1.5"
               >
                 <CheckCircle2 className="w-3.5 h-3.5" />
-                {isVerifying ? (language === "fr" ? "Vérification..." : "Verifying...") : language === "fr" ? "Vérifier le Paiement" : "Verify Payment"}
+                <span>{isVerifying ? (language === "fr" ? "Vérification..." : "Verifying...") : language === "fr" ? "Vérifier le Paiement" : "Verify Payment"}</span>
               </button>
-            </>
+            </div>
           )}
         </div>
       </div>

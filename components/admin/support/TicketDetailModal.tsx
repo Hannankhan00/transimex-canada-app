@@ -103,8 +103,8 @@ function TicketDetailModalInner({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="bg-white rounded-2xl max-w-3xl w-full p-6 shadow-2xl border border-slate-100 space-y-4 max-h-[92vh] flex flex-col animate-in zoom-in-95 duration-150">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
+      <div className="bg-white rounded-2xl max-w-3xl w-full p-4 sm:p-6 shadow-2xl border border-slate-100 space-y-4 max-h-[92vh] flex flex-col animate-in zoom-in-95 duration-150">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
           <div className="flex items-center gap-2.5">
@@ -146,7 +146,7 @@ function TicketDetailModalInner({
 
         {/* Client Context Panel */}
         <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex flex-wrap items-center justify-between gap-3 text-xs">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 w-full lg:w-auto">
             <div>
               <span className="text-[10px] font-bold text-slate-400 uppercase">
                 {language === "fr" ? "Entité Expéditrice" : "Shipper Entity"}
@@ -161,7 +161,7 @@ function TicketDetailModalInner({
             </div>
 
             {(ticket.shipmentId || ticket.linkedShipmentId) && (
-              <div className="border-l border-slate-200 pl-4">
+              <div className="border-t sm:border-t-0 sm:border-l border-slate-200 pt-2 sm:pt-0 sm:pl-4">
                 <span className="text-[10px] font-bold text-slate-400 uppercase">
                   {language === "fr" ? "Manifeste Lié" : "Linked Manifest"}
                 </span>
