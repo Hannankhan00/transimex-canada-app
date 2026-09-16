@@ -164,7 +164,7 @@ export default function InvoiceReviewDrawer({ invoice, isOpen, onClose, onInvoic
           </div>
 
           {/* Bank used */}
-          {invoice.bankSnapshot && (
+          {invoice.bankSnapshot?.bankName && (
             <div>
               <h3 className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2.5 flex items-center gap-1.5">
                 <Landmark className="w-3.5 h-3.5" />

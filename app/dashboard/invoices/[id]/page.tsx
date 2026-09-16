@@ -96,7 +96,7 @@ export default function ClientInvoiceDetailPage() {
     );
   }
 
-  const bankRows: { label: string; value?: string }[] = invoice.bankSnapshot
+  const bankRows: { label: string; value?: string }[] = invoice.bankSnapshot?.bankName
     ? [
         { label: language === "fr" ? "Banque" : "Bank", value: invoice.bankSnapshot.bankName },
         { label: language === "fr" ? "Bénéficiaire" : "Beneficiary", value: invoice.bankSnapshot.beneficiaryName },
@@ -233,7 +233,7 @@ export default function ClientInvoiceDetailPage() {
             </div>
           ) : (
             <>
-              {invoice.bankSnapshot && (
+              {invoice.bankSnapshot?.bankName && (
                 <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
                   <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center gap-2">
                     <Landmark className="w-4 h-4 text-[#d21f27]" />

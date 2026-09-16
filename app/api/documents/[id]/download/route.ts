@@ -6,7 +6,7 @@ import { getCurrentUser } from "@/lib/session";
 import { formatDateLabel } from "@/lib/formatDate";
 import { buildSimplePdf } from "@/lib/pdf";
 import { getFromR2 } from "@/lib/r2";
-import { getInvoicePdfBuffer } from "@/lib/invoice";
+import { getInvoicePdfBuffer, ensureBankSnapshot } from "@/lib/invoice";
 
 function isInvoiceOwner(invoice: any, currentUser: { userId: string; email: string }) {
   return (
@@ -37,6 +37,7 @@ export async function GET(
       if (!invoice || !isInvoiceOwner(invoice, currentUser)) {
         return NextResponse.json({ error: "Document not found" }, { status: 404 });
       }
+      await ensureBankSnapshot(invoice);
       const pdf = await getInvoicePdfBuffer(invoice);
       return new NextResponse(new Uint8Array(pdf), {
         headers: {

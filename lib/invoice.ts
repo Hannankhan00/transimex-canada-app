@@ -140,6 +140,37 @@ export async function createInvoiceForQuote(
   return invoice;
 }
 
+/**
+ * Fills in an invoice's bank details when they're blank because no bank
+ * account existed yet at invoice-creation time — bankSnapshot is a frozen
+ * snapshot taken at creation, not a live reference, so adding a bank
+ * account afterward doesn't retroactively update past invoices on its own.
+ * Also re-renders the stored PDF so downloads pick up the fix. A paid
+ * invoice's snapshot is left untouched since it recorded what was actually
+ * paid against.
+ */
+export async function ensureBankSnapshot(invoice: IInvoice): Promise<IInvoice> {
+  if (invoice.status === "paid") return invoice;
+  if (invoice.bankSnapshot?.bankName) return invoice;
+
+  const bankAccount = await getDefaultBankAccount(invoice.currency);
+  if (!bankAccount) return invoice;
+
+  invoice.bankSnapshot = {
+    bankName: bankAccount.bankName,
+    beneficiaryName: bankAccount.beneficiaryName,
+    accountNumber: bankAccount.accountNumber,
+    transitNumber: bankAccount.transitNumber || "",
+    institutionNumber: bankAccount.institutionNumber || "",
+    swiftBic: bankAccount.swiftBic || "",
+    bankAddress: bankAccount.bankAddress || "",
+    currency: invoice.currency,
+  };
+  await invoice.save();
+  await storeInvoicePdf(invoice);
+  return invoice;
+}
+
 export interface DutiesAssessment {
   dutiesAmount?: string;
   taxesAmount?: string;
@@ -350,7 +381,7 @@ export async function renderInvoicePdf(invoice: IInvoice): Promise<Buffer> {
   by -= 18;
 
   const bank = invoice.bankSnapshot;
-  if (bank) {
+  if (bank?.bankName) {
     const bankRow = (label: string, value?: string) => {
       if (!value) return;
       page.drawText(`${label}:`, { x: 62, y: by, size: 9, font: fontBold, color: lightSlate });
