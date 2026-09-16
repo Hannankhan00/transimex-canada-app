@@ -4,6 +4,7 @@
 
 export type PermissionModule =
   | "quotes"
+  | "invoices"
   | "shipments"
   | "clients"
   | "carriers"
@@ -32,6 +33,14 @@ export const PERMISSION_MODULES: PermissionModuleDef[] = [
     descriptionEn: "Review, calculate freight rates, approve and reject quote requests.",
     descriptionFr: "Examiner, calculer les taux de fret, approuver et rejeter les demandes de soumission.",
     icon: "FileText",
+  },
+  {
+    id: "invoices",
+    labelEn: "Invoices & Payments",
+    labelFr: "Factures & Paiements",
+    descriptionEn: "Review generated invoices, verify uploaded payment proofs, and manage billing status.",
+    descriptionFr: "Consulter les factures générées, vérifier les preuves de paiement téléversées et gérer le statut de facturation.",
+    icon: "Receipt",
   },
   {
     id: "shipments",
@@ -139,7 +148,7 @@ export const ROLE_PRESETS: RolePreset[] = [
     titleFr: "Super Administrateur",
     descriptionEn: "Unrestricted master access to all operations, financial data, and staff governance.",
     badgeClass: "bg-slate-900 text-amber-400 border border-amber-400/30",
-    defaultPermissions: ["quotes", "shipments", "clients", "carriers", "messages", "support", "analytics", "blog", "resources", "staff", "settings"],
+    defaultPermissions: ["quotes", "invoices", "shipments", "clients", "carriers", "messages", "support", "analytics", "blog", "resources", "staff", "settings"],
   },
   {
     id: "admin",
@@ -147,7 +156,7 @@ export const ROLE_PRESETS: RolePreset[] = [
     titleFr: "Gestionnaire Opérations",
     descriptionEn: "Full access to freight quotes, shipments, carriers, and clients without staff account creation.",
     badgeClass: "bg-[#0B2545] text-white border border-white/20",
-    defaultPermissions: ["quotes", "shipments", "clients", "carriers", "messages", "support", "analytics"],
+    defaultPermissions: ["quotes", "invoices", "shipments", "clients", "carriers", "messages", "support", "analytics"],
   },
   {
     id: "dispatcher",

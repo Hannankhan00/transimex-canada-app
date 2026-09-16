@@ -6,8 +6,9 @@ import Shipment from "@/models/Shipment";
 import { getCurrentUser } from "@/lib/session";
 import { verifyToken } from "@/lib/auth";
 import { logAudit } from "@/lib/audit";
-import { sendQuoteAcceptedEmail } from "@/lib/email";
+import { sendQuoteAcceptedEmail, sendInvoiceGeneratedEmail } from "@/lib/email";
 import { notifyUser } from "@/lib/notifications";
+import { createInvoiceForQuote } from "@/lib/invoice";
 
 export async function POST(
   req: Request,
@@ -71,7 +72,7 @@ export async function POST(
     await existingQuote.save();
 
     // Create the active commercial shipment
-    await Shipment.create({
+    const shipment = await Shipment.create({
       trackingNumber: trackingId,
       quoteId: existingQuote.refNumber,
       client: existingQuote.client,
@@ -99,6 +100,8 @@ export async function POST(
       ],
     });
 
+    const invoice = await createInvoiceForQuote(existingQuote, shipment);
+
     // Send email confirmation
     if (existingQuote.client?.email) {
       try {
@@ -115,6 +118,20 @@ export async function POST(
         });
       } catch (mailErr) {
         console.warn("[Email Notification] Could not send accepted email:", mailErr);
+      }
+
+      try {
+        await sendInvoiceGeneratedEmail({
+          to: existingQuote.client.email,
+          name: existingQuote.client.name,
+          companyName: existingQuote.client.companyName || "",
+          invoiceNumber: invoice.invoiceNumber,
+          amountDisplay: invoice.amountDisplay,
+          dueDate: invoice.dueDate,
+          shipmentId: trackingId,
+        });
+      } catch (mailErr) {
+        console.warn("[Email Notification] Could not send invoice generated email:", mailErr);
       }
     }
 
@@ -140,12 +157,20 @@ export async function POST(
         resourceId: existingQuote.refNumber,
         details: `Client accepted quote ${existingQuote.refNumber} at ${existingQuote.priceCad} CAD. Converted to shipment ${trackingId}.`,
       });
+      await logAudit({
+        actor,
+        action: "INVOICE_GENERATED",
+        resourceType: "Invoice",
+        resourceId: invoice.invoiceNumber,
+        details: `Invoice ${invoice.invoiceNumber} (${invoice.amountDisplay}) generated for shipment ${trackingId}.`,
+      });
     }
 
     return NextResponse.json({
       success: true,
       message: `Quote accepted successfully! Shipment ${trackingId} generated.`,
       trackingId,
+      invoiceNumber: invoice.invoiceNumber,
       quote: existingQuote.toObject(),
     });
   } catch (error: any) {

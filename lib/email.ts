@@ -1128,3 +1128,181 @@ export async function sendDirectClientOnboardingQuoteEmail({
     text: `Your Transimex Freight Quote ${quoteId} has been created at ${priceCad} CAD. Login to review and accept at: ${loginUrl}. Email: ${to}${temporaryPassword ? ` | Password: ${temporaryPassword}` : ""}`,
   });
 }
+
+/**
+ * Invoice generated & ready for payment — sent to the client immediately
+ * after their quote is accepted and converted to a shipment.
+ */
+export async function sendInvoiceGeneratedEmail({
+  to,
+  name,
+  companyName,
+  invoiceNumber,
+  amountDisplay,
+  dueDate,
+  shipmentId,
+}: {
+  to: string;
+  name: string;
+  companyName?: string;
+  invoiceNumber: string;
+  amountDisplay: string;
+  dueDate: string;
+  shipmentId: string;
+}) {
+  const appUrl = getAppUrl();
+  const invoiceUrl = `${appUrl}/dashboard/invoices/${invoiceNumber}`;
+  const dueDateText = new Date(dueDate).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "2-digit" });
+
+  const content = `
+    <h1 class="h1">Invoice Ready — Payment Due</h1>
+    <p>Dear <strong>${name}</strong> ${companyName ? `(${companyName})` : ""},</p>
+    <p>Your freight booking has been confirmed as shipment <strong>${shipmentId}</strong> and an invoice has been generated for the agreed freight rate.</p>
+
+    <div class="cred-box">
+      <div style="font-size: 15px; font-weight: bold; color: #0B2545; margin-bottom: 8px;">
+        Invoice: <span style="color: #D21F27;">${invoiceNumber}</span>
+      </div>
+      <div style="font-size: 16px; margin-bottom: 6px;"><strong>Amount Due:</strong> <span style="color: #0B2545; font-weight: bold;">${amountDisplay}</span></div>
+      <div style="margin-top: 4px;"><strong>Due Date:</strong> ${dueDateText}</div>
+      <div style="margin-top: 4px;"><strong>Shipment:</strong> ${shipmentId}</div>
+    </div>
+
+    <div style="text-align: center; margin-top: 24px;">
+      <a href="${invoiceUrl}" class="btn" target="_blank">View Invoice &amp; Payment Instructions</a>
+    </div>
+
+    <div class="alert-box">
+      <strong>How to Pay:</strong> Open the invoice in your client portal for our current wire/EFT banking details. After sending payment, upload a screenshot or receipt on the invoice page so our team can verify and mark it paid.
+    </div>
+  `;
+
+  return sendEmail({
+    to,
+    subject: `Invoice ${invoiceNumber} Ready — ${amountDisplay} Due — Transimex Canada`,
+    html: emailTemplateWrapper(content, `Invoice ${invoiceNumber} for ${amountDisplay} is ready for payment`),
+    text: `Invoice ${invoiceNumber} for ${amountDisplay} is ready. Due ${dueDateText}. View and pay at: ${invoiceUrl}`,
+  });
+}
+
+/**
+ * Alert sent to staff (admin/superadmin/subadmin/dispatcher) when a client
+ * uploads a payment proof screenshot that needs verification.
+ */
+export async function sendPaymentProofUploadedAdminAlert({
+  to,
+  invoiceNumber,
+  clientName,
+  companyName,
+  amountDisplay,
+}: {
+  to: string;
+  invoiceNumber: string;
+  clientName: string;
+  companyName?: string;
+  amountDisplay: string;
+}) {
+  const appUrl = getAppUrl();
+  const adminUrl = `${appUrl}/admin/invoices`;
+
+  const content = `
+    <h1 class="h1">Payment Proof Uploaded — Verification Needed</h1>
+    <p>A client has uploaded a payment proof for invoice <strong>${invoiceNumber}</strong> and it is now awaiting verification.</p>
+
+    <div class="cred-box">
+      <div><strong>Invoice:</strong> ${invoiceNumber}</div>
+      <div><strong>Client:</strong> ${clientName} ${companyName ? `(${companyName})` : ""}</div>
+      <div><strong>Amount:</strong> ${amountDisplay}</div>
+    </div>
+
+    <div style="text-align: center; margin-top: 24px;">
+      <a href="${adminUrl}" class="btn" target="_blank">Review Payment Proof</a>
+    </div>
+  `;
+
+  return sendEmail({
+    to,
+    subject: `Payment Proof Uploaded [${invoiceNumber}] — Verification Needed`,
+    html: emailTemplateWrapper(content, `Invoice ${invoiceNumber} has a payment proof awaiting verification`),
+    text: `${clientName} uploaded a payment proof for invoice ${invoiceNumber} (${amountDisplay}). Review at: ${adminUrl}`,
+  });
+}
+
+/**
+ * Sent to the client once staff confirms the payment was received.
+ */
+export async function sendPaymentVerifiedEmail({
+  to,
+  name,
+  invoiceNumber,
+  amountDisplay,
+}: {
+  to: string;
+  name: string;
+  invoiceNumber: string;
+  amountDisplay: string;
+}) {
+  const appUrl = getAppUrl();
+  const invoiceUrl = `${appUrl}/dashboard/invoices/${invoiceNumber}`;
+
+  const content = `
+    <h1 class="h1">Payment Verified — Thank You</h1>
+    <p>Dear <strong>${name}</strong>,</p>
+    <p>We have confirmed receipt of your payment for invoice <strong>${invoiceNumber}</strong>. This invoice is now marked as <strong>Paid</strong>.</p>
+
+    <div class="cred-box">
+      <div><strong>Invoice:</strong> ${invoiceNumber}</div>
+      <div><strong>Amount Paid:</strong> ${amountDisplay}</div>
+      <div style="margin-top: 4px;"><strong>Status:</strong> <span style="color: #16a34a; font-weight: bold;">Paid &amp; Verified</span></div>
+    </div>
+
+    <div style="text-align: center; margin-top: 24px;">
+      <a href="${invoiceUrl}" class="btn" target="_blank">View Invoice</a>
+    </div>
+  `;
+
+  return sendEmail({
+    to,
+    subject: `Payment Verified [${invoiceNumber}] — Transimex Canada`,
+    html: emailTemplateWrapper(content, `Your payment for invoice ${invoiceNumber} has been verified`),
+    text: `Your payment of ${amountDisplay} for invoice ${invoiceNumber} has been verified. View at: ${invoiceUrl}`,
+  });
+}
+
+/**
+ * Sent to the client when staff rejects an uploaded payment proof (e.g.
+ * illegible, wrong amount) and asks them to re-upload.
+ */
+export async function sendPaymentRejectedEmail({
+  to,
+  name,
+  invoiceNumber,
+  reason,
+}: {
+  to: string;
+  name: string;
+  invoiceNumber: string;
+  reason?: string;
+}) {
+  const appUrl = getAppUrl();
+  const invoiceUrl = `${appUrl}/dashboard/invoices/${invoiceNumber}`;
+
+  const content = `
+    <h1 class="h1">Payment Proof Needs Attention</h1>
+    <p>Dear <strong>${name}</strong>,</p>
+    <p>We were unable to verify the payment proof submitted for invoice <strong>${invoiceNumber}</strong>. Please review and re-upload.</p>
+
+    ${reason ? `<div class="alert-box"><strong>Reason:</strong> ${reason}</div>` : ""}
+
+    <div style="text-align: center; margin-top: 24px;">
+      <a href="${invoiceUrl}" class="btn" target="_blank">Re-Upload Payment Proof</a>
+    </div>
+  `;
+
+  return sendEmail({
+    to,
+    subject: `Action Needed — Payment Proof for Invoice ${invoiceNumber}`,
+    html: emailTemplateWrapper(content, `Your payment proof for invoice ${invoiceNumber} needs attention`),
+    text: `We could not verify your payment proof for invoice ${invoiceNumber}. ${reason || ""} Re-upload at: ${invoiceUrl}`,
+  });
+}

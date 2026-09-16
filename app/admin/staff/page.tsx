@@ -35,6 +35,7 @@ import {
   BarChart3,
   Newspaper,
   BookOpen,
+  Receipt,
 } from "lucide-react";
 
 interface StaffItem {
@@ -52,6 +53,7 @@ interface StaffItem {
 
 const MODULE_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   quotes: FileText,
+  invoices: Receipt,
   shipments: Truck,
   clients: Users,
   carriers: Briefcase,

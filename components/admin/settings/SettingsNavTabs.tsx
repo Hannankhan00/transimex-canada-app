@@ -4,7 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
-import { Users, Mail, ShieldAlert } from "lucide-react";
+import { Users, Mail, ShieldAlert, Landmark } from "lucide-react";
 
 export default function SettingsNavTabs() {
   const pathname = usePathname();
@@ -22,6 +22,12 @@ export default function SettingsNavTabs() {
       nameFr: "Modèles de Courriels Bilingues",
       href: "/admin/settings/emails",
       icon: Mail,
+    },
+    {
+      nameEn: "Bank Accounts",
+      nameFr: "Comptes Bancaires",
+      href: "/admin/settings/banks",
+      icon: Landmark,
     },
     {
       nameEn: "Activity Audit Log",

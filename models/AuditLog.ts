@@ -22,7 +22,14 @@ export type AuditActionType =
   | "EMAIL_TEMPLATE_UPDATED"
   | "ADMIN_DIRECT_ONBOARDING_QUOTE"
   | "CONTAINER_LINKED"
-  | "CONTAINER_UNLINKED";
+  | "CONTAINER_UNLINKED"
+  | "INVOICE_GENERATED"
+  | "PAYMENT_PROOF_UPLOADED"
+  | "PAYMENT_VERIFIED"
+  | "PAYMENT_REJECTED"
+  | "BANK_ACCOUNT_CREATED"
+  | "BANK_ACCOUNT_UPDATED"
+  | "BANK_ACCOUNT_DELETED";
 
 export type AuditResourceType =
   | "Shipment"
@@ -31,7 +38,9 @@ export type AuditResourceType =
   | "StaffUser"
   | "Document"
   | "Customs"
-  | "EmailTemplate";
+  | "EmailTemplate"
+  | "Invoice"
+  | "BankAccount";
 
 export interface IAuditLog extends Document {
   actorId?: string;

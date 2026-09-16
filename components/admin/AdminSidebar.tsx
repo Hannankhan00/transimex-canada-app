@@ -24,6 +24,7 @@ import {
   BarChart3,
   Newspaper,
   BookOpen,
+  Receipt,
 } from "lucide-react";
 
 interface AdminSidebarProps {
@@ -81,6 +82,12 @@ export default function AdminSidebar({
       href: "/admin/quotes",
       icon: FileText,
       module: "quotes",
+    },
+    {
+      name: language === "fr" ? "Factures & Paiements" : "Invoices & Payments",
+      href: "/admin/invoices",
+      icon: Receipt,
+      module: "invoices",
     },
     {
       name: language === "fr" ? "Fret & Expéditions" : "Freight & Shipments",

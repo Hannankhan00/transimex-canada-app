@@ -12,6 +12,7 @@ import {
   Truck,
   FileSpreadsheet,
   FolderOpen,
+  Receipt,
   Bell,
   MapPin,
   Settings,
@@ -116,6 +117,12 @@ export default function PortalSidebar({
       name: t.nav.quotes,
       href: "/dashboard/quotes",
       icon: FileSpreadsheet,
+      section: "freight" as const,
+    },
+    {
+      name: t.nav.invoices,
+      href: "/dashboard/invoices",
+      icon: Receipt,
       section: "freight" as const,
     },
     {
