@@ -7,6 +7,7 @@ import { verifyToken } from "@/lib/auth";
 import { logAudit } from "@/lib/audit";
 import { sendQuoteNegotiationStaffEmail } from "@/lib/email";
 import { notifyUser } from "@/lib/notifications";
+import { mapQuote } from "@/lib/quoteTypes";
 
 export async function POST(
   req: Request,
@@ -112,7 +113,7 @@ export async function POST(
     return NextResponse.json({
       success: true,
       message: `Negotiation request submitted. A Transimex freight specialist will reach out to you at ${phone.trim()}.`,
-      quote: existingQuote.toObject(),
+      quote: mapQuote(existingQuote.toObject()),
     });
   } catch (error: any) {
     console.error("Error declining quote:", error);

@@ -6,6 +6,7 @@ import { verifyToken } from "@/lib/auth";
 import { logAudit } from "@/lib/audit";
 import { sendQuoteRejectedEmail } from "@/lib/email";
 import { notifyUser } from "@/lib/notifications";
+import { mapQuote } from "@/lib/quoteTypes";
 
 export async function PATCH(
   req: Request,
@@ -78,7 +79,7 @@ export async function PATCH(
     return NextResponse.json({
       success: true,
       message: `Quote ${id} has been declined`,
-      quote: existingQuote.toObject(),
+      quote: mapQuote(existingQuote.toObject()),
     });
   } catch (error: any) {
     console.error("Error rejecting quote:", error);

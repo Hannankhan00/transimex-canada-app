@@ -1,10 +1,19 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongoose";
 import PortalDocument from "@/models/PortalDocument";
+import Invoice from "@/models/Invoice";
 import { getCurrentUser } from "@/lib/session";
 import { formatDateLabel } from "@/lib/formatDate";
 import { buildSimplePdf } from "@/lib/pdf";
 import { getFromR2 } from "@/lib/r2";
+import { getInvoicePdfBuffer } from "@/lib/invoice";
+
+function isInvoiceOwner(invoice: any, currentUser: { userId: string; email: string }) {
+  return (
+    (invoice.client?.userId && invoice.client.userId === currentUser.userId) ||
+    (invoice.client?.email && invoice.client.email.toLowerCase() === currentUser.email.toLowerCase())
+  );
+}
 
 export async function GET(
   req: Request,
@@ -18,6 +27,23 @@ export async function GET(
   try {
     const { id } = await params;
     await connectDB();
+
+    if (id.startsWith("inv_")) {
+      const invoice = await Invoice.findById(id.slice(4));
+      if (!invoice || !isInvoiceOwner(invoice, currentUser)) {
+        return NextResponse.json({ error: "Document not found" }, { status: 404 });
+      }
+      const pdf = await getInvoicePdfBuffer(invoice);
+      return new NextResponse(new Uint8Array(pdf), {
+        status: 200,
+        headers: {
+          "Content-Type": "application/pdf",
+          "Content-Disposition": `inline; filename="${invoice.invoiceNumber}.pdf"`,
+          "Cache-Control": "private, max-age=3600",
+        },
+      });
+    }
+
     const doc = await PortalDocument.findOne({
       _id: id,
       userId: currentUser.userId,

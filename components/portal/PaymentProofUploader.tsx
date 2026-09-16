@@ -36,8 +36,8 @@ export default function PaymentProofUploader({ invoiceNumber, onUploaded }: Paym
       );
       return;
     }
-    if (file.size > 10 * 1024 * 1024) {
-      setErrorMessage(language === "fr" ? "Le fichier dépasse la limite de 10 Mo." : "File exceeds the 10MB upload limit.");
+    if (file.size > 4 * 1024 * 1024) {
+      setErrorMessage(language === "fr" ? "Le fichier dépasse la limite de 4 Mo." : "File exceeds the 4MB upload limit.");
       return;
     }
 
@@ -50,6 +50,16 @@ export default function PaymentProofUploader({ invoiceNumber, onUploaded }: Paym
         method: "POST",
         body: formData,
       });
+
+      const contentType = res.headers.get("content-type") || "";
+      if (!contentType.includes("application/json")) {
+        throw new Error(
+          language === "fr"
+            ? "Le fichier est trop volumineux ou la connexion a été interrompue. Essayez un fichier plus petit."
+            : "The file is too large or the connection was interrupted. Please try a smaller file."
+        );
+      }
+
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to upload payment proof");
 
@@ -116,7 +126,7 @@ export default function PaymentProofUploader({ invoiceNumber, onUploaded }: Paym
             )}
           </p>
           <p className="text-[11px] text-slate-500">
-            {language === "fr" ? "JPG, PNG, WEBP ou PDF, jusqu'à 10 Mo" : "JPG, PNG, WEBP, or PDF, up to 10MB"}
+            {language === "fr" ? "JPG, PNG, WEBP ou PDF, jusqu'à 4 Mo" : "JPG, PNG, WEBP, or PDF, up to 4MB"}
           </p>
         </div>
 

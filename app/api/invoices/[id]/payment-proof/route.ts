@@ -9,7 +9,10 @@ import { hasModulePermission } from "@/lib/rbac";
 import { isR2Configured, uploadToR2, getFromR2 } from "@/lib/r2";
 import { findInvoiceByIdOrNumber, stripInvoiceBuffers } from "@/lib/invoice";
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+// Vercel serverless functions hard-cap the request body at ~4.5MB; anything
+// close to that gets rejected by the platform itself (plain-text 413) before
+// this handler ever runs, so the app's own limit must stay safely under it.
+const MAX_FILE_SIZE = 4 * 1024 * 1024; // 4MB
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/heic", "application/pdf"];
 
 function isOwner(invoice: any, currentUser: { userId: string; email: string }) {
@@ -100,7 +103,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       );
     }
     if (file.size > MAX_FILE_SIZE) {
-      return NextResponse.json({ error: "File exceeds the 10MB upload limit" }, { status: 400 });
+      return NextResponse.json({ error: "File exceeds the 4MB upload limit" }, { status: 400 });
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());

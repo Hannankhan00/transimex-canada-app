@@ -9,6 +9,7 @@ import { logAudit } from "@/lib/audit";
 import { sendQuoteAcceptedEmail, sendInvoiceGeneratedEmail } from "@/lib/email";
 import { notifyUser } from "@/lib/notifications";
 import { createInvoiceForQuote } from "@/lib/invoice";
+import { mapQuote } from "@/lib/quoteTypes";
 
 export async function POST(
   req: Request,
@@ -56,7 +57,7 @@ export async function POST(
           success: true,
           message: "Quote has already been accepted and booked.",
           trackingId: existingQuote.shipmentId,
-          quote: existingQuote.toObject(),
+          quote: mapQuote(existingQuote.toObject()),
         },
         { status: 200 }
       );
@@ -182,7 +183,7 @@ export async function POST(
       message: `Quote accepted successfully! Shipment ${trackingId} generated.`,
       trackingId,
       invoiceNumber: invoice.invoiceNumber,
-      quote: existingQuote.toObject(),
+      quote: mapQuote(existingQuote.toObject()),
     });
   } catch (error: any) {
     console.error("Error accepting quote:", error);

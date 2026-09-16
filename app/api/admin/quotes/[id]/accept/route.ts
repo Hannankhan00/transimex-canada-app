@@ -8,6 +8,7 @@ import { logAudit } from "@/lib/audit";
 import { sendQuoteAcceptedEmail, sendInvoiceGeneratedEmail } from "@/lib/email";
 import { notifyUser } from "@/lib/notifications";
 import { createInvoiceForQuote } from "@/lib/invoice";
+import { mapQuote } from "@/lib/quoteTypes";
 
 export async function PATCH(
   req: Request,
@@ -159,7 +160,7 @@ export async function PATCH(
       message: `Quote ${id} successfully accepted and converted to shipment ${trackingId}`,
       trackingId,
       invoiceNumber: invoice.invoiceNumber,
-      quote: existingQuote.toObject(),
+      quote: mapQuote(existingQuote.toObject()),
     });
   } catch (error: any) {
     console.error("Error accepting quote:", error);

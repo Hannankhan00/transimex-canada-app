@@ -6,6 +6,7 @@ import { verifyToken } from "@/lib/auth";
 import { logAudit } from "@/lib/audit";
 import { sendQuotePriceOfferedEmail } from "@/lib/email";
 import { notifyUser } from "@/lib/notifications";
+import { mapQuote } from "@/lib/quoteTypes";
 
 export async function PATCH(
   req: Request,
@@ -101,7 +102,7 @@ export async function PATCH(
     return NextResponse.json({
       success: true,
       message: `Price offer ${priceCad} sent to client for quote ${existingQuote.refNumber}`,
-      quote: existingQuote.toObject(),
+      quote: mapQuote(existingQuote.toObject()),
     });
   } catch (error: any) {
     console.error("Error offering quote price:", error);
