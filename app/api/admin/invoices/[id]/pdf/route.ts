@@ -4,7 +4,7 @@ import connectDB from "@/lib/mongoose";
 import User from "@/models/User";
 import { verifyToken } from "@/lib/auth";
 import { hasModulePermission } from "@/lib/rbac";
-import { findInvoiceByIdOrNumber, renderInvoicePdf } from "@/lib/invoice";
+import { findInvoiceByIdOrNumber, getInvoicePdfBuffer } from "@/lib/invoice";
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -28,7 +28,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     const invoice = await findInvoiceByIdOrNumber(id);
     if (!invoice) return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
 
-    const pdf = await renderInvoicePdf(invoice);
+    const pdf = await getInvoicePdfBuffer(invoice);
     const { searchParams } = new URL(req.url);
     const disposition = searchParams.get("inline") === "true" ? "inline" : "attachment";
 

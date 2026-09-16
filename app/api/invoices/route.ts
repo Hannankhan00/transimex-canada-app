@@ -14,7 +14,7 @@ export async function GET() {
     const invoices = await Invoice.find({
       $or: [{ "client.userId": currentUser.userId }, { "client.email": currentUser.email.toLowerCase() }],
     })
-      .select("-paymentProof.fileData")
+      .select("-paymentProof.fileData -pdfFile.fileData")
       .sort({ createdAt: -1 })
       .lean();
 

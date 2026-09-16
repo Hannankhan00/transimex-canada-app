@@ -7,7 +7,7 @@ import { notifyUser } from "@/lib/notifications";
 import { sendPaymentProofUploadedAdminAlert } from "@/lib/email";
 import { hasModulePermission } from "@/lib/rbac";
 import { isR2Configured, uploadToR2, getFromR2 } from "@/lib/r2";
-import { findInvoiceByIdOrNumber } from "@/lib/invoice";
+import { findInvoiceByIdOrNumber, stripInvoiceBuffers } from "@/lib/invoice";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/heic", "application/pdf"];
@@ -191,8 +191,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       details: `Payment proof "${file.name}" uploaded for invoice ${invoice.invoiceNumber} via ${storageProvider.toUpperCase()}.`,
     });
 
-    const invoiceObj: any = invoice.toObject();
-    if (invoiceObj.paymentProof) delete invoiceObj.paymentProof.fileData;
+    const invoiceObj: any = stripInvoiceBuffers(invoice.toObject());
 
     return NextResponse.json({
       success: true,

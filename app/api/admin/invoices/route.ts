@@ -46,7 +46,7 @@ export async function GET(req: Request) {
     if (status && status !== "all") query.status = status;
 
     const invoices = await Invoice.find(query)
-      .select("-paymentProof.fileData")
+      .select("-paymentProof.fileData -pdfFile.fileData")
       .sort({ createdAt: -1 })
       .lean();
 

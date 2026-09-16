@@ -4,7 +4,7 @@ import connectDB from "@/lib/mongoose";
 import User from "@/models/User";
 import { verifyToken } from "@/lib/auth";
 import { hasModulePermission } from "@/lib/rbac";
-import { findInvoiceByIdOrNumber } from "@/lib/invoice";
+import { findInvoiceByIdOrNumber, stripInvoiceBuffers } from "@/lib/invoice";
 
 async function requireInvoicesAccess() {
   const cookieStore = await cookies();
@@ -41,8 +41,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     const invoice = await findInvoiceByIdOrNumber(id);
     if (!invoice) return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
 
-    const invoiceObj: any = invoice.toObject();
-    if (invoiceObj.paymentProof) delete invoiceObj.paymentProof.fileData;
+    const invoiceObj: any = stripInvoiceBuffers(invoice.toObject());
 
     return NextResponse.json({ success: true, invoice: { ...invoiceObj, id: invoice._id.toString() } });
   } catch (error: any) {

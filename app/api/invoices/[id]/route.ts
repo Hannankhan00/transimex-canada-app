@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/session";
-import { findInvoiceByIdOrNumber } from "@/lib/invoice";
+import { findInvoiceByIdOrNumber, stripInvoiceBuffers } from "@/lib/invoice";
 
 function isOwner(invoice: any, currentUser: { userId: string; email: string }) {
   return (
@@ -22,8 +22,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
     }
 
-    const invoiceObj: any = invoice.toObject();
-    if (invoiceObj.paymentProof) delete invoiceObj.paymentProof.fileData;
+    const invoiceObj: any = stripInvoiceBuffers(invoice.toObject());
 
     return NextResponse.json({ success: true, invoice: { ...invoiceObj, id: invoice._id.toString() } });
   } catch (error: any) {

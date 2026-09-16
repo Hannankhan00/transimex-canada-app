@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/session";
-import { findInvoiceByIdOrNumber, renderInvoicePdf } from "@/lib/invoice";
+import { findInvoiceByIdOrNumber, getInvoicePdfBuffer } from "@/lib/invoice";
 
 function isOwner(invoice: any, currentUser: { userId: string; email: string }) {
   return (
@@ -22,7 +22,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
     }
 
-    const pdf = await renderInvoicePdf(invoice);
+    const pdf = await getInvoicePdfBuffer(invoice);
     const { searchParams } = new URL(req.url);
     const disposition = searchParams.get("inline") === "true" ? "inline" : "attachment";
 

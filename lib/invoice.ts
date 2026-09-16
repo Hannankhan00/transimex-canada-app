@@ -4,6 +4,7 @@ import Invoice, { IInvoice } from "@/models/Invoice";
 import BankAccount, { IBankAccount, BankAccountCurrency } from "@/models/BankAccount";
 import { IQuote } from "@/models/Quote";
 import { IShipment } from "@/models/Shipment";
+import { isR2Configured, uploadToR2, getFromR2 } from "@/lib/r2";
 
 /**
  * Parses a free-text price string like "$4,250.00 CAD" or "4250" into a number.
@@ -18,6 +19,17 @@ export function parseAmount(priceStr?: string): number {
 
 export function formatAmount(amount: number, currency: BankAccountCurrency): string {
   return `$${amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency}`;
+}
+
+/**
+ * Strips large binary buffers (payment proof file, stored PDF) from an
+ * invoice before it's sent back as JSON — they're served through their own
+ * dedicated file routes instead.
+ */
+export function stripInvoiceBuffers(invoiceObj: any): any {
+  if (invoiceObj?.paymentProof) delete invoiceObj.paymentProof.fileData;
+  if (invoiceObj?.pdfFile) delete invoiceObj.pdfFile.fileData;
+  return invoiceObj;
 }
 
 export async function findInvoiceByIdOrNumber(id: string) {
@@ -123,6 +135,8 @@ export async function createInvoiceForQuote(
       : undefined,
   });
 
+  await storeInvoicePdf(invoice);
+
   return invoice;
 }
 
@@ -188,6 +202,7 @@ export async function createInvoiceForDuties(
     existing.status = "unpaid";
     existing.paymentRejectionReason = "";
     await existing.save();
+    await storeInvoicePdf(existing);
     return existing;
   }
 
@@ -218,6 +233,8 @@ export async function createInvoiceForDuties(
     dueDate: addDays(issueDate, 15),
     bankSnapshot,
   });
+
+  await storeInvoicePdf(invoice);
 
   return invoice;
 }
@@ -363,4 +380,72 @@ export async function renderInvoicePdf(invoice: IInvoice): Promise<Buffer> {
 
   const bytes = await pdfDoc.save();
   return Buffer.from(bytes);
+}
+
+/**
+ * Renders the invoice PDF once and persists it (Cloudflare R2, falling back
+ * to a MongoDB buffer exactly like payment proofs / portal documents do) so
+ * repeated downloads don't re-render and the file has a permanent record.
+ * Called at creation time and again whenever a duties invoice is revised —
+ * never blocks the caller if storage fails.
+ */
+export async function storeInvoicePdf(invoice: IInvoice): Promise<void> {
+  try {
+    const buffer = await renderInvoicePdf(invoice);
+    const key = `invoices/${encodeURIComponent(invoice.invoiceNumber)}.pdf`;
+
+    if (isR2Configured()) {
+      try {
+        const r2Result = await uploadToR2({
+          key,
+          buffer,
+          mimeType: "application/pdf",
+          metadata: { invoiceNumber: invoice.invoiceNumber },
+        });
+        invoice.pdfFile = {
+          fileKey: r2Result.key,
+          fileUrl: r2Result.url || "",
+          storageProvider: "r2",
+          generatedAt: new Date().toISOString(),
+        };
+      } catch (r2Err) {
+        console.warn("[Cloudflare R2] Invoice PDF upload failed, falling back to database buffer:", r2Err);
+        invoice.pdfFile = {
+          storageProvider: "mongodb",
+          fileData: buffer,
+          generatedAt: new Date().toISOString(),
+        };
+      }
+    } else {
+      invoice.pdfFile = {
+        storageProvider: "mongodb",
+        fileData: buffer,
+        generatedAt: new Date().toISOString(),
+      };
+    }
+
+    await invoice.save();
+  } catch (err) {
+    console.error("[Invoice] Failed to generate/store invoice PDF:", err);
+  }
+}
+
+/**
+ * Returns the invoice's PDF bytes — from stored R2/Mongo storage when
+ * available, otherwise renders it on the fly (covers invoices created
+ * before this stored-PDF feature existed, or a prior storage failure).
+ */
+export async function getInvoicePdfBuffer(invoice: IInvoice): Promise<Buffer> {
+  const stored = invoice.pdfFile;
+
+  if (stored?.fileKey) {
+    const r2File = await getFromR2(stored.fileKey);
+    if (r2File) return r2File.buffer;
+  }
+
+  if (stored?.fileData) {
+    return Buffer.isBuffer(stored.fileData) ? stored.fileData : Buffer.from(stored.fileData);
+  }
+
+  return renderInvoicePdf(invoice);
 }

@@ -29,6 +29,14 @@ export interface IInvoicePaymentProof {
   uploadedAt?: string;
 }
 
+export interface IInvoicePdfFile {
+  fileKey?: string;
+  fileUrl?: string;
+  storageProvider?: "r2" | "mongodb";
+  fileData?: Buffer;
+  generatedAt?: string;
+}
+
 export type InvoiceKind = "freight" | "duties";
 
 export interface IInvoice extends Document {
@@ -56,6 +64,7 @@ export interface IInvoice extends Document {
   issueDate: string;
   dueDate: string;
   bankSnapshot?: IInvoiceBankSnapshot;
+  pdfFile?: IInvoicePdfFile;
   paymentProof?: IInvoicePaymentProof;
   paymentRejectionReason?: string;
   rejectedAt?: string;
@@ -109,6 +118,13 @@ const InvoiceSchema = new Schema<IInvoice>(
       swiftBic: { type: String, default: "" },
       bankAddress: { type: String, default: "" },
       currency: { type: String, enum: ["CAD", "USD"], default: "CAD" },
+    },
+    pdfFile: {
+      fileKey: { type: String, default: "" },
+      fileUrl: { type: String, default: "" },
+      storageProvider: { type: String, enum: ["r2", "mongodb"], default: "mongodb" },
+      fileData: { type: Buffer },
+      generatedAt: { type: String, default: "" },
     },
     paymentProof: {
       fileKey: { type: String, default: "" },

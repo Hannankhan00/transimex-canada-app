@@ -7,7 +7,7 @@ import { hasModulePermission } from "@/lib/rbac";
 import { logAudit } from "@/lib/audit";
 import { notifyUser } from "@/lib/notifications";
 import { sendPaymentVerifiedEmail, sendPaymentRejectedEmail } from "@/lib/email";
-import { findInvoiceByIdOrNumber } from "@/lib/invoice";
+import { findInvoiceByIdOrNumber, stripInvoiceBuffers } from "@/lib/invoice";
 
 async function requireInvoicesAccess() {
   const cookieStore = await cookies();
@@ -132,8 +132,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       });
     }
 
-    const invoiceObj: any = invoice.toObject();
-    if (invoiceObj.paymentProof) delete invoiceObj.paymentProof.fileData;
+    const invoiceObj: any = stripInvoiceBuffers(invoice.toObject());
 
     return NextResponse.json({
       success: true,
