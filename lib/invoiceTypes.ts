@@ -1,4 +1,5 @@
 export type InvoiceStatus = "unpaid" | "pending_verification" | "paid";
+export type InvoiceKind = "freight" | "duties";
 
 export interface InvoiceLineItem {
   description: string;
@@ -28,6 +29,7 @@ export interface InvoicePaymentProof {
 export interface InvoiceItem {
   id: string;
   invoiceNumber: string;
+  kind: InvoiceKind;
   quoteRefNumber: string;
   shipmentTrackingNumber: string;
   client: {

@@ -56,7 +56,7 @@ export async function createInvoiceForQuote(
 ): Promise<IInvoice> {
   await connectDB();
 
-  const existing = await Invoice.findOne({ quoteRefNumber: quote.refNumber });
+  const existing = await Invoice.findOne({ quoteRefNumber: quote.refNumber, kind: "freight" });
   if (existing) return existing;
 
   const currency: BankAccountCurrency = quote.priceUsd && !quote.priceCad ? "USD" : "CAD";
@@ -87,6 +87,7 @@ export async function createInvoiceForQuote(
 
   const invoice = await Invoice.create({
     invoiceNumber: generateInvoiceNumber(),
+    kind: "freight",
     quoteRefNumber: quote.refNumber,
     shipmentTrackingNumber: shipment.trackingNumber,
     client: {
@@ -120,6 +121,102 @@ export async function createInvoiceForQuote(
           currency,
         }
       : undefined,
+  });
+
+  return invoice;
+}
+
+export interface DutiesAssessment {
+  dutiesAmount?: string;
+  taxesAmount?: string;
+  brokerageFee?: string;
+  totalOwed: string;
+  currency: BankAccountCurrency;
+}
+
+/**
+ * Creates (or, if one is already outstanding for this shipment, revises in
+ * place) the duties/customs invoice for a shipment placed on customs hold.
+ * A paid duties invoice is never overwritten by a later re-assessment.
+ */
+export async function createInvoiceForDuties(
+  shipment: IShipment,
+  duties: DutiesAssessment
+): Promise<IInvoice> {
+  await connectDB();
+
+  const lineItems: { description: string; amount: number }[] = [];
+  if (duties.dutiesAmount) {
+    lineItems.push({ description: "Customs Duty", amount: parseAmount(duties.dutiesAmount) });
+  }
+  if (duties.taxesAmount) {
+    lineItems.push({ description: "GST / HST Taxes", amount: parseAmount(duties.taxesAmount) });
+  }
+  if (duties.brokerageFee) {
+    lineItems.push({ description: "Broker Filing Fee", amount: parseAmount(duties.brokerageFee) });
+  }
+  if (lineItems.length === 0) {
+    lineItems.push({ description: "Customs Duties & Taxes", amount: parseAmount(duties.totalOwed) });
+  }
+
+  const subtotal = lineItems.reduce((sum, li) => sum + li.amount, 0);
+  const total = duties.totalOwed ? parseAmount(duties.totalOwed) : subtotal;
+  const bankAccount = await getDefaultBankAccount(duties.currency);
+  const bankSnapshot = bankAccount
+    ? {
+        bankName: bankAccount.bankName,
+        beneficiaryName: bankAccount.beneficiaryName,
+        accountNumber: bankAccount.accountNumber,
+        transitNumber: bankAccount.transitNumber || "",
+        institutionNumber: bankAccount.institutionNumber || "",
+        swiftBic: bankAccount.swiftBic || "",
+        bankAddress: bankAccount.bankAddress || "",
+        currency: duties.currency,
+      }
+    : undefined;
+
+  const existing = await Invoice.findOne({ shipmentTrackingNumber: shipment.trackingNumber, kind: "duties" });
+  if (existing) {
+    if (existing.status === "paid") return existing;
+
+    existing.currency = duties.currency;
+    existing.lineItems = lineItems;
+    existing.subtotal = subtotal;
+    existing.total = total;
+    existing.amountDisplay = formatAmount(total, duties.currency);
+    existing.bankSnapshot = bankSnapshot;
+    existing.status = "unpaid";
+    existing.paymentRejectionReason = "";
+    await existing.save();
+    return existing;
+  }
+
+  const issueDate = new Date().toISOString();
+  const invoice = await Invoice.create({
+    invoiceNumber: generateInvoiceNumber(),
+    kind: "duties",
+    quoteRefNumber: shipment.quoteId || shipment.trackingNumber,
+    shipmentTrackingNumber: shipment.trackingNumber,
+    client: {
+      name: shipment.client.name,
+      companyName: shipment.client.companyName || "",
+      email: shipment.client.email,
+      phone: shipment.client.phone || "",
+      userId: shipment.client.userId || "",
+    },
+    route: {
+      origin: shipment.route?.origin || "",
+      destination: shipment.route?.destination || "",
+    },
+    currency: duties.currency,
+    lineItems,
+    subtotal,
+    total,
+    amountDisplay: formatAmount(total, duties.currency),
+    status: "unpaid",
+    issueDate,
+    dueDate: addDays(issueDate, 15),
+    bankSnapshot,
   });
 
   return invoice;
@@ -180,7 +277,11 @@ export async function renderInvoicePdf(invoice: IInvoice): Promise<Buffer> {
   };
   metaRow("Issue Date:", fmtDate(invoice.issueDate));
   metaRow("Due Date:", fmtDate(invoice.dueDate));
-  metaRow("Quote Ref:", invoice.quoteRefNumber);
+  if (invoice.kind === "duties") {
+    metaRow("Type:", "Customs Duties & Taxes");
+  } else {
+    metaRow("Quote Ref:", invoice.quoteRefNumber);
+  }
   metaRow("Shipment:", invoice.shipmentTrackingNumber);
   if (invoice.route?.origin) {
     metaRow("Route:", `${invoice.route.origin} -> ${invoice.route.destination}`);

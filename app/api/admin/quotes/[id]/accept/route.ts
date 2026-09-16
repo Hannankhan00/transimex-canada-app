@@ -124,6 +124,17 @@ export async function PATCH(
       link: `/dashboard/shipments?id=${trackingId}`,
     });
 
+    await notifyUser({
+      userId: existingQuote.client?.userId,
+      category: "quote",
+      shipmentId: trackingId,
+      title: `Invoice Ready — ${invoice.invoiceNumber}`,
+      titleFr: `Facture Prête — ${invoice.invoiceNumber}`,
+      desc: `Invoice ${invoice.invoiceNumber} for ${invoice.amountDisplay} is ready. Pay and upload your proof of payment in your Invoices page.`,
+      descFr: `La facture ${invoice.invoiceNumber} de ${invoice.amountDisplay} est prête. Payez et téléversez votre preuve de paiement dans votre page Factures.`,
+      link: `/dashboard/invoices/${invoice.invoiceNumber}`,
+    });
+
     const cookieStore = await cookies();
     const actor = verifyToken(cookieStore.get("token")?.value || "");
     if (actor) {

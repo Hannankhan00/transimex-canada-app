@@ -114,6 +114,7 @@ export default function InvoiceDataTable({
             <thead>
               <tr className="text-left text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100">
                 <th className="py-3 px-4">{language === "fr" ? "Facture" : "Invoice"}</th>
+                <th className="py-3 px-4">{language === "fr" ? "Type" : "Type"}</th>
                 <th className="py-3 px-4">{language === "fr" ? "Client" : "Client"}</th>
                 <th className="py-3 px-4">{language === "fr" ? "Expédition" : "Shipment"}</th>
                 <th className="py-3 px-4">{language === "fr" ? "Montant" : "Amount"}</th>
@@ -130,6 +131,19 @@ export default function InvoiceDataTable({
                   className="hover:bg-slate-50/70 cursor-pointer transition"
                 >
                   <td className="py-3.5 px-4 font-mono font-bold text-[#0B2545] text-xs whitespace-nowrap">{inv.invoiceNumber}</td>
+                  <td className="py-3.5 px-4 whitespace-nowrap">
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                        inv.kind === "duties"
+                          ? "bg-amber-50 text-amber-700 border-amber-200/60"
+                          : "bg-sky-50 text-sky-700 border-sky-200/60"
+                      }`}
+                    >
+                      {inv.kind === "duties"
+                        ? language === "fr" ? "Douanes" : "Duties"
+                        : language === "fr" ? "Fret" : "Freight"}
+                    </span>
+                  </td>
                   <td className="py-3.5 px-4">
                     <div className="text-xs font-semibold text-slate-800">{inv.client.name}</div>
                     {inv.client.companyName && <div className="text-[11px] text-slate-400">{inv.client.companyName}</div>}

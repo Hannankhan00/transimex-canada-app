@@ -6,6 +6,8 @@ import { verifyToken } from "@/lib/auth";
 import { logAudit } from "@/lib/audit";
 import { sendDutiesNoticeEmail } from "@/lib/email";
 import { notifyUser } from "@/lib/notifications";
+import { createInvoiceForDuties } from "@/lib/invoice";
+import { BankAccountCurrency } from "@/models/BankAccount";
 
 export async function POST(
   req: Request,
@@ -66,6 +68,23 @@ export async function POST(
     }
     await shipment.save();
 
+    // Auto-generate (or revise, if one is already outstanding) the duties
+    // invoice for this shipment, using the company's current default bank
+    // account for the assessed currency — never blocks the notice below.
+    const dutiesCurrency: BankAccountCurrency = /USD/i.test(totalOwed) ? "USD" : "CAD";
+    let invoice;
+    try {
+      invoice = await createInvoiceForDuties(shipment, {
+        dutiesAmount,
+        taxesAmount,
+        brokerageFee,
+        totalOwed,
+        currency: dutiesCurrency,
+      });
+    } catch (invoiceErr) {
+      console.warn("[Invoice] Could not generate duties invoice:", invoiceErr);
+    }
+
     // Dispatch transactional email to client via SMTP
     try {
       await sendDutiesNoticeEmail({
@@ -89,14 +108,18 @@ export async function POST(
       userId: shipment.client?.userId,
       category: "customs",
       shipmentId: shipment.trackingNumber,
-      title: `Duties Payment Required — ${shipment.trackingNumber}`,
-      titleFr: `Paiement de Droits Requis — ${shipment.trackingNumber}`,
-      desc: `A total of ${totalOwed} in duties and taxes has been assessed for shipment ${shipment.trackingNumber}. Check your email for payment instructions.`,
-      descFr: `Un total de ${totalOwed} en droits et taxes a été évalué pour l'expédition ${shipment.trackingNumber}. Consultez votre courriel pour les instructions de paiement.`,
-      link: `/dashboard/shipments?id=${shipment.trackingNumber}`,
+      title: `Duties Invoice Generated — ${shipment.trackingNumber}`,
+      titleFr: `Facture de Droits Générée — ${shipment.trackingNumber}`,
+      desc: invoice
+        ? `A total of ${totalOwed} in duties and taxes has been assessed for shipment ${shipment.trackingNumber}. Invoice ${invoice.invoiceNumber} is ready in your Invoices page — pay and upload your proof of payment there.`
+        : `A total of ${totalOwed} in duties and taxes has been assessed for shipment ${shipment.trackingNumber}. Check your email for payment instructions.`,
+      descFr: invoice
+        ? `Un total de ${totalOwed} en droits et taxes a été évalué pour l'expédition ${shipment.trackingNumber}. La facture ${invoice.invoiceNumber} est prête dans votre page Factures — payez et téléversez votre preuve de paiement là-bas.`
+        : `Un total de ${totalOwed} en droits et taxes a été évalué pour l'expédition ${shipment.trackingNumber}. Consultez votre courriel pour les instructions de paiement.`,
+      link: invoice ? `/dashboard/invoices/${invoice.invoiceNumber}` : `/dashboard/shipments?id=${shipment.trackingNumber}`,
     });
 
-    // Best-effort audit trail entry — never blocks the response
+    // Best-effort audit trail entries — never block the response
     const actor = verifyToken((await cookies()).get("token")?.value || "");
     if (actor) {
       await logAudit({
@@ -106,6 +129,15 @@ export async function POST(
         resourceId: shipment.trackingNumber,
         details: `Dispatched duties notice to ${recipientEmail}: ${totalOwed} total owed.`,
       });
+      if (invoice) {
+        await logAudit({
+          actor,
+          action: "INVOICE_GENERATED",
+          resourceType: "Invoice",
+          resourceId: invoice.invoiceNumber,
+          details: `Duties invoice ${invoice.invoiceNumber} (${invoice.amountDisplay}) generated for shipment ${shipment.trackingNumber}.`,
+        });
+      }
     }
 
     return NextResponse.json({
@@ -114,6 +146,7 @@ export async function POST(
       shipmentId: shipment.trackingNumber,
       totalOwed,
       dispatchedTo: recipientEmail,
+      invoiceNumber: invoice?.invoiceNumber,
     });
   } catch (error: any) {
     console.error("Error dispatching duties notice:", error);

@@ -96,12 +96,22 @@ export default function InvoiceReviewDrawer({ invoice, isOpen, onClose, onInvoic
                 {invoice.invoiceNumber}
               </span>
               <InvoiceStatusBadge status={invoice.status} />
+              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-white/10 text-slate-200">
+                {invoice.kind === "duties"
+                  ? language === "fr" ? "Droits Douaniers" : "Customs Duties"
+                  : language === "fr" ? "Fret" : "Freight"}
+              </span>
             </div>
             <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight mt-1 text-white">
               {language === "fr" ? "Détails de la Facture" : "Invoice Details"}
             </h2>
             <p className="text-slate-300 text-xs mt-0.5">
-              {language === "fr" ? "Expédition" : "Shipment"} {invoice.shipmentTrackingNumber} &bull; {language === "fr" ? "Soumission" : "Quote"} {invoice.quoteRefNumber}
+              {language === "fr" ? "Expédition" : "Shipment"} {invoice.shipmentTrackingNumber}
+              {invoice.kind !== "duties" && (
+                <>
+                  {" "}&bull; {language === "fr" ? "Soumission" : "Quote"} {invoice.quoteRefNumber}
+                </>
+              )}
             </p>
           </div>
           <button type="button" onClick={onClose} className="p-2 rounded-lg hover:bg-white/10 cursor-pointer flex-shrink-0">

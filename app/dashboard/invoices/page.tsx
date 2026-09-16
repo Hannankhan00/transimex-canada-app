@@ -128,6 +128,7 @@ export default function ClientInvoicesPage() {
               <thead>
                 <tr className="bg-slate-50/80 border-b border-slate-200 text-[11px] font-bold uppercase tracking-wider text-slate-500 select-none">
                   <th className="py-3 px-4 sm:px-6">{language === "fr" ? "Facture" : "Invoice"}</th>
+                  <th className="py-3 px-4">{language === "fr" ? "Type" : "Type"}</th>
                   <th className="py-3 px-4">{language === "fr" ? "Expédition" : "Shipment"}</th>
                   <th className="py-3 px-4">{language === "fr" ? "Montant" : "Amount"}</th>
                   <th className="py-3 px-4">{language === "fr" ? "Échéance" : "Due Date"}</th>
@@ -139,6 +140,19 @@ export default function ClientInvoicesPage() {
                 {filtered.map((inv) => (
                   <tr key={inv.id} className="hover:bg-slate-50/80 transition group">
                     <td className="py-4 px-4 sm:px-6 font-mono font-bold text-[#0B2545]">{inv.invoiceNumber}</td>
+                    <td className="py-4 px-4">
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                          inv.kind === "duties"
+                            ? "bg-amber-50 text-amber-700 border-amber-200/60"
+                            : "bg-sky-50 text-sky-700 border-sky-200/60"
+                        }`}
+                      >
+                        {inv.kind === "duties"
+                          ? language === "fr" ? "Douanes" : "Duties"
+                          : language === "fr" ? "Fret" : "Freight"}
+                      </span>
+                    </td>
                     <td className="py-4 px-4 font-mono text-slate-600">{inv.shipmentTrackingNumber}</td>
                     <td className="py-4 px-4 font-mono font-bold text-slate-900">{inv.amountDisplay}</td>
                     <td className="py-4 px-4 text-slate-500 whitespace-nowrap">

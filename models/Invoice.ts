@@ -29,8 +29,11 @@ export interface IInvoicePaymentProof {
   uploadedAt?: string;
 }
 
+export type InvoiceKind = "freight" | "duties";
+
 export interface IInvoice extends Document {
   invoiceNumber: string; // e.g. "INV-2026-00124"
+  kind: InvoiceKind;
   quoteRefNumber: string;
   shipmentTrackingNumber: string;
   client: {
@@ -65,6 +68,7 @@ export interface IInvoice extends Document {
 const InvoiceSchema = new Schema<IInvoice>(
   {
     invoiceNumber: { type: String, required: true, unique: true, trim: true, index: true },
+    kind: { type: String, enum: ["freight", "duties"], default: "freight", index: true },
     quoteRefNumber: { type: String, required: true, index: true },
     shipmentTrackingNumber: { type: String, required: true, index: true },
     client: {
