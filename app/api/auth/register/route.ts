@@ -102,7 +102,7 @@ export async function POST(req: Request) {
         token: verificationToken,
       });
     } catch (emailErr) {
-      console.error("Failed to send welcome email via SMTP:", emailErr);
+      console.error("Failed to send verification email:", emailErr);
       emailDispatched = false;
     }
 

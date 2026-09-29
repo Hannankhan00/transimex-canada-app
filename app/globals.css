@@ -49,3 +49,57 @@ body {
   color: var(--on-background);
   font-family: var(--font-sans);
 }
+
+/* Minimal sleek scrollbar for sidebars */
+aside,
+aside *,
+.custom-sidebar-scrollbar,
+.custom-sidebar-scrollbar * {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+}
+
+aside::-webkit-scrollbar,
+aside *::-webkit-scrollbar,
+.custom-sidebar-scrollbar::-webkit-scrollbar,
+.custom-sidebar-scrollbar *::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+aside::-webkit-scrollbar-track,
+aside *::-webkit-scrollbar-track,
+.custom-sidebar-scrollbar::-webkit-scrollbar-track,
+.custom-sidebar-scrollbar *::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+aside::-webkit-scrollbar-thumb,
+aside *::-webkit-scrollbar-thumb,
+.custom-sidebar-scrollbar::-webkit-scrollbar-thumb,
+.custom-sidebar-scrollbar *::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.15);
+  border-radius: 9999px;
+  transition: background-color 0.2s ease;
+}
+
+aside:hover::-webkit-scrollbar-thumb,
+aside *:hover::-webkit-scrollbar-thumb,
+.custom-sidebar-scrollbar:hover::-webkit-scrollbar-thumb,
+.custom-sidebar-scrollbar *:hover::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.28);
+}
+
+aside::-webkit-scrollbar-thumb:hover,
+aside *::-webkit-scrollbar-thumb:hover,
+.custom-sidebar-scrollbar::-webkit-scrollbar-thumb:hover,
+.custom-sidebar-scrollbar *::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.45);
+}
+
+aside::-webkit-scrollbar-corner,
+aside *::-webkit-scrollbar-corner,
+.custom-sidebar-scrollbar::-webkit-scrollbar-corner,
+.custom-sidebar-scrollbar *::-webkit-scrollbar-corner {
+  background: transparent;
+}

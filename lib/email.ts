@@ -1,4 +1,3 @@
-import nodemailer from "nodemailer";
 import connectDB from "@/lib/mongoose";
 import EmailTemplate from "@/models/EmailTemplate";
 
@@ -7,6 +6,26 @@ interface SendEmailParams {
   subject: string;
   html: string;
   text?: string;
+  replyTo?: string;
+  /** Resend tag for filtering in the Resend dashboard, e.g. "password-reset". */
+  category?: string;
+}
+
+const DEFAULT_FROM = "Transimex Canada <no-reply@transimex-canada.com>";
+
+/**
+ * Escapes user-supplied text before it is interpolated into email HTML.
+ * Names, company names and subjects come from public forms and are sent to
+ * arbitrary addresses, so unescaped values would let anyone inject links or
+ * markup into mail sent from our verified domain.
+ */
+export function escapeHtml(value: string | undefined | null): string {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 const getAppUrl = () => {
@@ -17,76 +36,60 @@ const getAppUrl = () => {
   );
 };
 
-// Create reusable SMTP Transporter
-export function getTransporter() {
-  const host = process.env.SMTP_HOST;
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASSWORD || process.env.SMTP_PASS;
-  const port = parseInt(process.env.SMTP_PORT || "587", 10);
-  const secure = process.env.SMTP_SECURE === "true" || port === 465;
-
-  if (!host || !user || !pass) {
-    return null;
-  }
-
-  const isGmail = host.toLowerCase().includes("gmail.com");
-
-  // For Gmail, using service: 'gmail' automatically uses port 465 with SSL,
-  // preventing port 587 ISP/firewall timeout blocks.
-  if (isGmail) {
-    return nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user,
-        pass,
-      },
-      connectionTimeout: 6000,
-      greetingTimeout: 6000,
-      socketTimeout: 8000,
-    });
-  }
-
-  return nodemailer.createTransport({
-    host,
-    port,
-    secure,
-    auth: {
-      user,
-      pass,
+/** Sends through the Resend HTTP API. Throws on a non-2xx response. */
+async function sendViaResend(
+  apiKey: string,
+  { to, subject, html, text, replyTo, category }: SendEmailParams
+): Promise<{ success: boolean; messageId?: string }> {
+  const replyToAddress = replyTo || process.env.EMAIL_REPLY_TO;
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
     },
-    tls: {
-      rejectUnauthorized: process.env.NODE_ENV === "production",
-    },
-    connectionTimeout: 6000,
-    greetingTimeout: 6000,
-    socketTimeout: 8000,
+    body: JSON.stringify({
+      from: process.env.EMAIL_FROM || DEFAULT_FROM,
+      to: [to],
+      subject,
+      html,
+      text: text || "Please view this email in an HTML-compatible client.",
+      ...(replyToAddress ? { reply_to: replyToAddress } : {}),
+      ...(category ? { tags: [{ name: "category", value: category.replace(/[^A-Za-z0-9_-]/g, "_") }] } : {}),
+    }),
+    signal: AbortSignal.timeout(10000),
   });
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(`[Resend] ${res.status} ${data?.name || ""}: ${data?.message || "Failed to send email"}`);
+  }
+  return { success: true, messageId: data.id };
 }
 
-export async function sendEmail({ to, subject, html, text }: SendEmailParams): Promise<{ success: boolean; messageId?: string }> {
-  const from = process.env.SMTP_FROM || `"Transimex Canada Logistics" <${process.env.SMTP_USER || "notifications@transimex-canada.com"}>`;
-  const transporter = getTransporter();
+/**
+ * Sends a transactional email through Resend. Without RESEND_API_KEY it logs
+ * a mock send in development and throws in production, so a missing key
+ * can never silently swallow password resets or verification links.
+ */
+export async function sendEmail(params: SendEmailParams): Promise<{ success: boolean; messageId?: string }> {
+  const resendKey = process.env.RESEND_API_KEY;
 
-  if (!transporter) {
+  if (!resendKey) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("[Email] RESEND_API_KEY is not configured");
+    }
     console.warn("\n================ [MOCK EMAIL SERVICE] ================");
-    console.warn(`[SMTP Warning] SMTP credentials not set in .env.local.`);
-    console.warn(`To: ${to}`);
-    console.warn(`Subject: ${subject}`);
-    console.warn(`Message preview available in terminal.\n`);
+    console.warn(`[Email Warning] RESEND_API_KEY is not set in .env.local — email not sent.`);
+    console.warn(`To: ${params.to}`);
+    console.warn(`Subject: ${params.subject}\n`);
     return { success: true, messageId: "simulated-dev-id" };
   }
 
   try {
-    const info = await transporter.sendMail({
-      from,
-      to,
-      subject,
-      text: text || "Please view this email in an HTML-compatible client.",
-      html,
-    });
-    return { success: true, messageId: info.messageId };
-  } catch (error: any) {
-    console.error("[Nodemailer Error] Failed to send email:", error);
+    return await sendViaResend(resendKey, params);
+  } catch (error) {
+    console.error("[Resend Error] Failed to send email:", error);
     throw error;
   }
 }
@@ -192,7 +195,7 @@ export async function sendPasswordResetEmail({
 
   const content = `
     <h1 class="h1">Password Recovery Request</h1>
-    <p>Hello ${name ? `<strong>${name}</strong>` : "there"},</p>
+    <p>Hello ${name ? `<strong>${escapeHtml(name)}</strong>` : "there"},</p>
     <p>We received a request to reset the password for your Transimex Canada commercial portal account associated with <strong>${to}</strong>.</p>
     
     <div style="text-align: center;">
@@ -214,6 +217,7 @@ export async function sendPasswordResetEmail({
     subject: "Reset Your Transimex Portal Password",
     html: emailTemplateWrapper(content, "Reset your password for Transimex Canada Client Portal"),
     text: `Reset your Transimex password by visiting: ${resetUrl}`,
+    category: "password-reset",
   });
 }
 
@@ -238,8 +242,8 @@ export async function sendVerificationEmail({
 
   const content = `
     <h1 class="h1">Verify Your Corporate Logistics Account</h1>
-    <p>Dear <strong>${name}</strong>,</p>
-    <p>Thank you for submitting a commercial registration for <strong>${companyName}</strong> with Transimex Canada Logistics.</p>
+    <p>Dear <strong>${escapeHtml(name)}</strong>,</p>
+    <p>Thank you for submitting a commercial registration for <strong>${escapeHtml(companyName)}</strong> with Transimex Canada Logistics.</p>
     <p>To confirm your email address and verify your dispatch permissions, please click the verification button below:</p>
 
     <div style="text-align: center;">
@@ -247,12 +251,13 @@ export async function sendVerificationEmail({
     </div>
 
     <div class="alert-box">
-      <strong>Verification Link:</strong> This verification request is active for <strong>24 hours</strong>. Once confirmed, you can submit real-time freight quotes and track highway manifests across Canada.
+      <strong>Verification Link:</strong> This verification link is active for <strong>24 hours</strong>. Once confirmed, you can submit real-time freight quotes and track highway manifests across Canada.
     </div>
 
     <p style="font-size: 12px; color: #64748b; margin-top: 24px;">
       Direct link: <a href="${verifyUrl}" style="color: #0B2545; word-break: break-all;">${verifyUrl}</a>
     </p>
+    <p style="font-size: 12px; color: #64748b;">If you didn't create a Transimex account, you can safely ignore this email.</p>
   `;
 
   return sendEmail({
@@ -260,6 +265,110 @@ export async function sendVerificationEmail({
     subject: "Verify Your Transimex Canada Logistics Account",
     html: emailTemplateWrapper(content, "Verify your corporate email for Transimex Canada"),
     text: `Verify your Transimex account by visiting: ${verifyUrl}`,
+    category: "email-verification",
+  });
+}
+
+/**
+ * 2b. Welcome Email — sent once the account is verified and active
+ * (after email verification, or immediately for Google sign-ups).
+ */
+export async function sendWelcomeEmail({
+  to,
+  name,
+  companyName,
+}: {
+  to: string;
+  name: string;
+  companyName?: string;
+}) {
+  const appUrl = getAppUrl();
+  const dashboardUrl = `${appUrl}/dashboard`;
+  const quoteUrl = `${appUrl}/quote`;
+
+  const content = `
+    <h1 class="h1">Welcome to Transimex Canada</h1>
+    <p>Dear <strong>${escapeHtml(name)}</strong>,</p>
+    <p>Your client portal account${companyName ? ` for <strong>${escapeHtml(companyName)}</strong>` : ""} is now active. Here's what you can do from your dashboard:</p>
+
+    <div class="cred-box" style="font-family: inherit; line-height: 1.9;">
+      <div>&#10003;&nbsp; Request freight quotes and receive guaranteed pricing</div>
+      <div>&#10003;&nbsp; Track shipments and container milestones in real time</div>
+      <div>&#10003;&nbsp; Follow CBSA customs status and duties notices</div>
+      <div>&#10003;&nbsp; Access invoices, documents and support tickets in one place</div>
+    </div>
+
+    <div style="text-align: center;">
+      <a href="${dashboardUrl}" class="btn" target="_blank">Open My Dashboard</a>
+    </div>
+
+    <p>Ready to move freight? <a href="${quoteUrl}" style="color: #d21f27; font-weight: 600;">Request your first quote</a> and our dispatch team will get back to you with a rate.</p>
+  `;
+
+  return sendEmail({
+    to,
+    subject: "Welcome to Transimex Canada — your portal is ready",
+    html: emailTemplateWrapper(content, "Your Transimex Canada client portal is ready"),
+    text: `Welcome to Transimex Canada, ${name}. Your client portal is active: ${dashboardUrl}\nRequest a quote: ${quoteUrl}`,
+    category: "welcome",
+  });
+}
+
+/**
+ * 2c. New-Device Login Alert
+ */
+export async function sendLoginAlertEmail({
+  to,
+  name,
+  browser,
+  os,
+  device,
+  ip,
+  loginAt,
+}: {
+  to: string;
+  name: string;
+  browser: string;
+  os: string;
+  device: string;
+  ip?: string;
+  loginAt: Date;
+}) {
+  const appUrl = getAppUrl();
+  const forgotUrl = `${appUrl}/forgot-password`;
+  const timeLabel = loginAt.toLocaleString("en-CA", {
+    timeZone: "America/Toronto",
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+
+  const content = `
+    <h1 class="h1">New Sign-In to Your Account</h1>
+    <p>Hello <strong>${escapeHtml(name)}</strong>,</p>
+    <p>Your Transimex Canada account was just signed in to from a device we haven't seen before.</p>
+
+    <div class="cred-box" style="font-family: inherit;">
+      <div><strong>Device:</strong> ${escapeHtml(browser)} on ${escapeHtml(os)} (${escapeHtml(device)})</div>
+      <div style="margin-top: 4px;"><strong>Time:</strong> ${timeLabel} ET</div>
+      ${ip ? `<div style="margin-top: 4px;"><strong>IP address:</strong> ${escapeHtml(ip)}</div>` : ""}
+    </div>
+
+    <p>If this was you, no action is needed.</p>
+    <div class="alert-box">
+      <strong>Don't recognize this sign-in?</strong> Reset your password right away and use "Log out all devices" in Account Settings.
+    </div>
+
+    <div style="text-align: center;">
+      <a href="${forgotUrl}" class="btn" target="_blank">Secure My Account</a>
+    </div>
+  `;
+
+  return sendEmail({
+    to,
+    subject: "New sign-in to your Transimex Canada account",
+    html: emailTemplateWrapper(content, `New sign-in from ${browser} on ${os}`),
+    text: `New sign-in to your Transimex account from ${browser} on ${os} (${device}) at ${timeLabel} ET${ip ? `, IP ${ip}` : ""}. If this wasn't you, reset your password: ${forgotUrl}`,
+    category: "login-alert",
   });
 }
 
@@ -603,7 +712,7 @@ export async function sendQuoteNegotiationStaffEmail({
   destination: string;
   offeredRate?: string;
 }) {
-  const to = staffEmail || process.env.SMTP_USER || "operations@transimex-canada.com";
+  const to = staffEmail || process.env.ADMIN_EMAIL || "operations@transimex-canada.com";
   const appUrl = getAppUrl();
   const adminQuoteUrl = `${appUrl}/admin/quotes`;
 
@@ -1304,5 +1413,176 @@ export async function sendPaymentRejectedEmail({
     subject: `Action Needed — Payment Proof for Invoice ${invoiceNumber}`,
     html: emailTemplateWrapper(content, `Your payment proof for invoice ${invoiceNumber} needs attention`),
     text: `We could not verify your payment proof for invoice ${invoiceNumber}. ${reason || ""} Re-upload at: ${invoiceUrl}`,
+  });
+}
+
+/**
+ * Contact / inquiry form confirmation, sent to whoever submitted the public
+ * contact form. The form is unauthenticated and the recipient address is
+ * user-supplied, so this deliberately does NOT echo the message body — only
+ * an escaped, truncated subject — to keep it from being usable as a relay.
+ */
+export async function sendInquiryReceivedEmail({
+  to,
+  name,
+  subject,
+  category,
+  inquiryId,
+}: {
+  to: string;
+  name: string;
+  subject: string;
+  category: string;
+  inquiryId: string;
+}) {
+  const appUrl = getAppUrl();
+  const reference = `INQ-${inquiryId.slice(-6).toUpperCase()}`;
+  const shortSubject = subject.length > 120 ? `${subject.slice(0, 117)}...` : subject;
+
+  const content = `
+    <h1 class="h1">We've Received Your Message</h1>
+    <p>Dear <strong>${escapeHtml(name)}</strong>,</p>
+    <p>Thank you for contacting Transimex Canada. Your inquiry has been logged and routed to the right team. We typically respond within one business day.</p>
+
+    <div class="cred-box" style="font-family: inherit;">
+      <div style="font-size: 15px; font-weight: bold; color: #0B2545; margin-bottom: 8px;">
+        Reference: <span style="color: #D21F27;">${reference}</span>
+      </div>
+      <div><strong>Topic:</strong> ${escapeHtml(category)}</div>
+      <div style="margin-top: 4px;"><strong>Subject:</strong> ${escapeHtml(shortSubject)}</div>
+    </div>
+
+    <p>Need a freight rate? Existing clients can request a quote directly from the portal for the fastest turnaround.</p>
+    <div style="text-align: center;">
+      <a href="${appUrl}/quote" class="btn" target="_blank">Request a Quote</a>
+    </div>
+    <p style="font-size: 12px; color: #64748b;">If you didn't submit this inquiry, you can ignore this email.</p>
+  `;
+
+  return sendEmail({
+    to,
+    subject: `We received your inquiry [${reference}]`,
+    html: emailTemplateWrapper(content, "Thanks for contacting Transimex Canada"),
+    text: `Thank you for contacting Transimex Canada. Your inquiry (${reference}, ${category}) has been received and we typically respond within one business day.`,
+    category: "inquiry-received",
+  });
+}
+
+/**
+ * Staff alert for a new public contact-form inquiry. Goes to ADMIN_EMAIL;
+ * Reply-To is the submitter so staff can answer straight from their inbox.
+ */
+export async function sendNewInquiryAdminAlertEmail({
+  name,
+  email,
+  phone,
+  company,
+  subject,
+  category,
+  message,
+}: {
+  name: string;
+  email: string;
+  phone?: string;
+  company?: string;
+  subject: string;
+  category: string;
+  message: string;
+}) {
+  const adminEmail = process.env.ADMIN_EMAIL;
+  if (!adminEmail) return { success: false };
+
+  const appUrl = getAppUrl();
+  const content = `
+    <h1 class="h1">New Website Inquiry</h1>
+    <div class="cred-box" style="font-family: inherit;">
+      <div><strong>From:</strong> ${escapeHtml(name)} &lt;${escapeHtml(email)}&gt;</div>
+      ${company ? `<div style="margin-top: 4px;"><strong>Company:</strong> ${escapeHtml(company)}</div>` : ""}
+      ${phone ? `<div style="margin-top: 4px;"><strong>Phone:</strong> ${escapeHtml(phone)}</div>` : ""}
+      <div style="margin-top: 4px;"><strong>Topic:</strong> ${escapeHtml(category)}</div>
+      <div style="margin-top: 4px;"><strong>Subject:</strong> ${escapeHtml(subject)}</div>
+    </div>
+    <div style="color: #334155; font-size: 14px; line-height: 1.7; white-space: pre-wrap;">${escapeHtml(message)}</div>
+    <div style="text-align: center;">
+      <a href="${appUrl}/admin/messages" class="btn" target="_blank">Open in Admin Portal</a>
+    </div>
+  `;
+
+  return sendEmail({
+    to: adminEmail,
+    replyTo: email,
+    subject: `[Website Inquiry] ${category}: ${subject.slice(0, 100)}`,
+    html: emailTemplateWrapper(content, `New inquiry from ${name}`),
+    text: `New inquiry from ${name} <${email}>\nTopic: ${category}\nSubject: ${subject}\n\n${message}`,
+    category: "inquiry-admin-alert",
+  });
+}
+
+/**
+ * Shipment status change notification (customs hold/release today; carrier
+ * tracking milestones once live tracking is integrated).
+ */
+export async function sendShipmentStatusUpdateEmail({
+  to,
+  name,
+  trackingNumber,
+  previousStatus,
+  newStatus,
+  origin,
+  destination,
+  eta,
+  note,
+}: {
+  to: string;
+  name: string;
+  trackingNumber: string;
+  previousStatus?: string;
+  newStatus: string;
+  origin?: string;
+  destination?: string;
+  eta?: string;
+  note?: string;
+}) {
+  const appUrl = getAppUrl();
+  const shipmentUrl = `${appUrl}/dashboard/shipments?id=${encodeURIComponent(trackingNumber)}`;
+
+  const STATUS_COLORS: Record<string, string> = {
+    "Pending Dispatch": "#64748b",
+    "In Transit": "#2563eb",
+    "Customs Hold": "#d97706",
+    "Out for Delivery": "#7c3aed",
+    Delivered: "#059669",
+    Cancelled: "#dc2626",
+  };
+  const color = STATUS_COLORS[newStatus] || "#0B2545";
+
+  const content = `
+    <h1 class="h1">Shipment Update: ${escapeHtml(newStatus)}</h1>
+    <p>Dear <strong>${escapeHtml(name)}</strong>,</p>
+    <p>The status of your shipment <strong>${escapeHtml(trackingNumber)}</strong> has changed.</p>
+
+    <div class="cred-box" style="font-family: inherit;">
+      <div style="font-size: 15px; font-weight: bold; color: #0B2545; margin-bottom: 8px;">
+        Status: <span style="color: ${color};">${escapeHtml(newStatus)}</span>
+        ${previousStatus && previousStatus !== newStatus ? `<span style="font-weight: normal; font-size: 12px; color: #64748b;">&nbsp;(was ${escapeHtml(previousStatus)})</span>` : ""}
+      </div>
+      ${origin && destination ? `<div><strong>Route:</strong> ${escapeHtml(origin)} &rarr; ${escapeHtml(destination)}</div>` : ""}
+      ${eta ? `<div style="margin-top: 4px;"><strong>ETA:</strong> ${escapeHtml(eta)}</div>` : ""}
+    </div>
+
+    ${note ? `<div class="alert-box">${escapeHtml(note)}</div>` : ""}
+
+    <div style="text-align: center;">
+      <a href="${shipmentUrl}" class="btn" target="_blank">Track Shipment</a>
+    </div>
+    <p style="font-size: 12px; color: #64748b;">You can turn shipment emails off in your <a href="${appUrl}/dashboard/account" style="color: #0B2545;">account settings</a>.</p>
+  `;
+
+  return sendEmail({
+    to,
+    subject: `Shipment ${trackingNumber}: ${newStatus}`,
+    html: emailTemplateWrapper(content, `Your shipment ${trackingNumber} is now ${newStatus}`),
+    text: `Shipment ${trackingNumber} status changed to ${newStatus}${previousStatus ? ` (was ${previousStatus})` : ""}.${note ? ` ${note}` : ""} Track it: ${shipmentUrl}`,
+    category: "shipment-status",
   });
 }

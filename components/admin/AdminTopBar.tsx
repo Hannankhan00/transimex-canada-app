@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { api } from "@/lib/api";
 import { Menu, Globe2, LogOut, Building2, Shield, ChevronDown, Check } from "lucide-react";
+import AdminSearchBar from "./AdminSearchBar";
 
 interface AdminTopBarProps {
   onOpenMobileMenu: () => void;
@@ -52,17 +53,20 @@ export default function AdminTopBar({
   const displayRole = (user?.role || "admin").toUpperCase();
 
   return (
-    <header className="sticky top-0 z-20 h-16 bg-white/95 backdrop-blur-md border-b border-slate-200/90 shadow-2xs px-4 sm:px-6 lg:px-8 flex items-center justify-between">
-      {/* Left Area: Mobile Menu */}
-      <div className="flex items-center gap-3 flex-1 max-w-lg">
+    <header className="sticky top-0 z-20 h-16 bg-white/95 backdrop-blur-md border-b border-slate-200/90 shadow-2xs px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-3">
+      {/* Left Area: Mobile Menu & Progressive Search Bar */}
+      <div className="flex items-center gap-2 sm:gap-3 flex-1 max-w-xl">
         <button
           type="button"
           onClick={onOpenMobileMenu}
-          className="md:hidden p-2 rounded-lg text-slate-600 hover:text-[#0B2545] hover:bg-slate-100 transition cursor-pointer"
+          className="md:hidden p-2 rounded-lg text-slate-600 hover:text-[#0B2545] hover:bg-slate-100 transition cursor-pointer shrink-0"
           aria-label="Open Navigation Menu"
         >
           <Menu className="w-5 h-5" />
         </button>
+
+        {/* Progressive Search Bar */}
+        <AdminSearchBar />
       </div>
 
       {/* Right Area: Language Toggle & User Profile */}

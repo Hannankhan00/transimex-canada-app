@@ -1,8 +1,9 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import connectDB from "@/lib/mongoose";
 import User from "@/models/User";
 import { comparePassword, signToken } from "@/lib/auth";
 import { createUserSession } from "@/lib/authSession";
+import { recordLoginDevice } from "@/lib/accountSecurity";
 
 export async function POST(req: Request) {
   try {
@@ -64,6 +65,7 @@ export async function POST(req: Request) {
     }
 
     const sessionId = await createUserSession(user._id.toString(), req);
+    after(() => recordLoginDevice(user, req));
 
     const tokenPayload = {
       userId: user._id.toString(),

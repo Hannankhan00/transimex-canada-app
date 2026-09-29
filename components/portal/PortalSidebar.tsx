@@ -164,26 +164,27 @@ export default function PortalSidebar({
   };
 
   const sidebarContent = (
-    <div className="h-full flex flex-col justify-between bg-[#0B2545] text-slate-200 select-none overflow-y-auto">
-      {/* Top Branding Section */}
-      <div>
-        <div className="p-5 flex items-center justify-between border-b border-white/10">
-          <Link href="/dashboard" className="flex items-center gap-2">
-            <TransimexLogo variant="dark" size="sm" />
-          </Link>
-          {onCloseMobile && (
-            <button
-              type="button"
-              onClick={onCloseMobile}
-              className="md:hidden p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          )}
-        </div>
+    <div className="h-full flex flex-col bg-[#0B2545] text-slate-200 select-none overflow-hidden">
+      {/* Upper Sticky Logo Card */}
+      <div className="shrink-0 sticky top-0 z-10 bg-[#0B2545] border-b border-white/10 p-5 flex items-center justify-between">
+        <Link href="/dashboard" className="flex items-center gap-2">
+          <TransimexLogo variant="dark" size="sm" />
+        </Link>
+        {onCloseMobile && (
+          <button
+            type="button"
+            onClick={onCloseMobile}
+            className="md:hidden p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition cursor-pointer"
+            aria-label="Close sidebar"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        )}
+      </div>
 
-        {/* Navigation Links */}
-        <nav className="p-3 space-y-0.5 mt-1">
+      {/* Scrollable Navigation Links */}
+      <div className="flex-1 min-h-0 overflow-y-auto custom-sidebar-scrollbar">
+        <nav className="p-3 space-y-0.5">
           {navigationItems.map((item, index) => {
             const isActive = item.exact
               ? pathname === item.href
@@ -214,7 +215,7 @@ export default function PortalSidebar({
                   <div className="flex items-center gap-3">
                     <item.icon
                       className={`w-4 h-4 transition-colors ${
-                        isActive ? "text-[#D21F27]" : "text-slate-400 group-hover:text-slate-200"
+                        isActive ? "text-white" : "text-slate-400 group-hover:text-slate-200"
                       }`}
                     />
                     <span>{item.name}</span>
@@ -232,10 +233,10 @@ export default function PortalSidebar({
         </nav>
       </div>
 
-      {/* Bottom Nameplate & Account Menu */}
-      <div className="p-3 relative" ref={menuRef}>
+      {/* Lower Sticky Nameplate & Account Menu */}
+      <div className="shrink-0 sticky bottom-0 z-10 p-3 border-t border-white/10 bg-[#0B2545]/95 backdrop-blur-xs relative" ref={menuRef}>
         {menuOpen && (
-          <div className="absolute bottom-full left-3 right-3 mb-2 bg-[#132a52] border border-white/10 rounded-xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-150 z-10">
+          <div className="absolute bottom-full left-3 right-3 mb-2 bg-[#132a52] border border-white/10 rounded-xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-150 z-20">
             {installHint && (
               <div className="px-3.5 py-2.5 text-[11px] text-slate-300 leading-snug border-b border-white/10 bg-white/5">
                 {installHint}

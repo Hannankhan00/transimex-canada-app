@@ -1,8 +1,10 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import connectDB from "@/lib/mongoose";
 import User from "@/models/User";
 import { signToken } from "@/lib/auth";
 import { createUserSession } from "@/lib/authSession";
+import { recordLoginDevice } from "@/lib/accountSecurity";
+import { sendWelcomeEmail } from "@/lib/email";
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
@@ -102,6 +104,13 @@ export async function GET(req: Request) {
         isVerified: true,
         isProfileComplete: false,
       });
+
+      const newUser = user;
+      after(() =>
+        sendWelcomeEmail({ to: newUser.email, name: newUser.name }).catch((err) =>
+          console.warn("[Email] Could not send welcome email:", err)
+        )
+      );
     } else {
       // Update Google ID and avatar if needed
       if (!user.googleId) user.googleId = googleUser.sub;
@@ -125,6 +134,8 @@ export async function GET(req: Request) {
 
     // 4. Generate JWT Token
     const sessionId = await createUserSession(user._id.toString(), req);
+    const signedInUser = user;
+    after(() => recordLoginDevice(signedInUser, req));
 
     const tokenPayload = {
       userId: user._id.toString(),

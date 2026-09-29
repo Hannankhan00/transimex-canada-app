@@ -5,6 +5,8 @@ import Shipment from "@/models/Shipment";
 import { verifyToken } from "@/lib/auth";
 import { logAudit } from "@/lib/audit";
 import { notifyUser } from "@/lib/notifications";
+import { sendShipmentStatusUpdateEmail } from "@/lib/email";
+import User from "@/models/User";
 
 export async function GET(
   req: Request,
@@ -70,6 +72,7 @@ export async function PATCH(
     }
 
     const previousStatus = shipment.customsStatus;
+    const previousShipmentStatus = shipment.status;
 
     if (status) shipment.customsStatus = status;
     if (broker) shipment.customsBroker = broker;
@@ -124,6 +127,41 @@ export async function PATCH(
             : `L'expédition ${shipment.trackingNumber} a été dédouanée et est de nouveau en transit.`,
         link: `/dashboard/shipments?id=${shipment.trackingNumber}`,
       });
+    }
+
+    if (shipment.status !== previousShipmentStatus) {
+      try {
+        // Linked portal users may have opted out; shipments without a portal
+        // account fall back to the client contact on the shipment itself.
+        const client = shipment.client?.userId
+          ? await User.findById(shipment.client.userId).select("email name emailPreferences").lean<any>()
+          : null;
+        const prefs = client?.emailPreferences;
+        const wantsEmail =
+          shipment.status === "Customs Hold"
+            ? prefs?.emailCustomsHolds !== false
+            : prefs?.emailShipmentUpdates !== false;
+        const to = client?.email || shipment.client?.email;
+
+        if (to && wantsEmail) {
+          await sendShipmentStatusUpdateEmail({
+            to,
+            name: client?.name || shipment.client?.name || "",
+            trackingNumber: shipment.trackingNumber,
+            previousStatus: previousShipmentStatus,
+            newStatus: shipment.status,
+            origin: shipment.route?.origin,
+            destination: shipment.route?.destination,
+            eta: shipment.eta,
+            note:
+              shipment.status === "Customs Hold"
+                ? `This shipment has been placed on hold by CBSA.${cbsaNotes ? ` ${cbsaNotes}` : ""} Our customs team is working on it and will contact you if anything is needed.`
+                : "This shipment has cleared customs and is back in transit.",
+          });
+        }
+      } catch (mailErr) {
+        console.warn("[Email Notification] Could not send shipment status email:", mailErr);
+      }
     }
 
     return NextResponse.json({

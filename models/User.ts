@@ -18,6 +18,7 @@ export interface IUser extends Document {
   isVerified?: boolean;
   verificationToken?: string;
   verificationTokenExpires?: Date;
+  knownDevices?: { fingerprint: string; lastSeenAt: Date }[];
   resetToken?: string;
   resetTokenExpires?: Date;
   jobTitle?: string;
@@ -123,6 +124,17 @@ const UserSchema = new Schema<IUser>(
     },
     verificationTokenExpires: {
       type: Date,
+    },
+    // Browser/OS fingerprints this user has signed in from, for new-device login alerts
+    knownDevices: {
+      type: [
+        {
+          _id: false,
+          fingerprint: { type: String, required: true },
+          lastSeenAt: { type: Date, default: Date.now },
+        },
+      ],
+      default: [],
     },
     resetToken: {
       type: String,

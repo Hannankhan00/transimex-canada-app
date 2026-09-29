@@ -97,6 +97,16 @@ export default function AdminShipmentsDirectoryPage() {
     loadShipments();
   }, [loadShipments]);
 
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const q = params.get("search");
+      if (q) {
+        setSearch(q);
+      }
+    }
+  }, []);
+
   const heldShipments = useMemo(
     () => shipments.filter((s) => s.customsStatus === "Held" || s.status === "customs"),
     [shipments]

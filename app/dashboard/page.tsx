@@ -146,43 +146,61 @@ export default function DashboardPage() {
     }
   };
 
-  return (
-    <div className="space-y-8 animate-in fade-in duration-200">
-      {/* Welcome Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#0B2545] tracking-tight leading-tight">
-            {language === "fr" ? "Bienvenue," : "Welcome back,"}{" "}
-            <span className="text-slate-900">
-              {user?.companyName || user?.name || (language === "fr" ? "Portail Client" : "Client Portal")}
-            </span>
-          </h1>
-          <p className="text-slate-500 text-sm mt-1">
-            {language === "fr"
-              ? "Suivez vos expéditions, gérez vos soumissions et accédez à vos documents douaniers."
-              : "Track your shipments, manage quotes, and access customs documents."}
-          </p>
-        </div>
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (language === "fr") {
+      if (hour < 12) return "BONJOUR,";
+      if (hour < 18) return "BON APRÈS-MIDI,";
+      return "BONSOIR,";
+    }
+    if (hour < 12) return "GOOD MORNING,";
+    if (hour < 18) return "GOOD AFTERNOON,";
+    return "GOOD EVENING,";
+  };
 
-        <div className="flex items-center gap-2.5">
-          <button
-            type="button"
-            onClick={() => setIsTrackModalOpen(true)}
-            className="px-4 py-2.5 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-[#0B2545] shadow-xs transition cursor-pointer flex items-center gap-1.5"
-          >
-            <Search className="w-3.5 h-3.5 text-[#d21f27]" />
-            <span>{language === "fr" ? "Suivre un Envoi" : "Track Shipment"}</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setIsQuoteModalOpen(true)}
-            className="px-4 py-2.5 bg-[#d21f27] hover:bg-[#b51a21] text-white rounded-xl text-xs font-bold shadow-sm hover:shadow-md transition cursor-pointer flex items-center gap-1.5"
-          >
-            <Plus className="w-4 h-4 stroke-[3]" />
-            <span>{t.topBar.newQuote}</span>
-          </button>
+  return (
+    <div className="animate-in fade-in duration-200">
+      {/* Flush Welcome Hero Banner - Sits directly flush against TopBar and right side wall */}
+      <div className="w-full bg-[#F5F7FA] relative overflow-hidden">
+        <div className="w-full flex flex-col md:flex-row md:items-stretch justify-between min-h-[120px] lg:min-h-[135px]">
+          {/* Left Text */}
+          <div className="py-5 sm:py-6 pl-4 sm:pl-6 lg:pl-8 pr-4 z-10 max-w-xl lg:max-w-2xl flex flex-col justify-center">
+            <p className="text-[11px] sm:text-xs font-bold tracking-wider text-slate-400 uppercase mb-1">
+              {getGreeting()}
+            </p>
+            <h1 className="text-2xl sm:text-3xl lg:text-[32px] font-extrabold text-[#0B2545] tracking-tight leading-tight">
+              {language === "fr" ? "Bienvenue," : "Welcome back,"}{" "}
+              <span className="text-slate-900">
+                {user?.companyName || user?.name || (language === "fr" ? "Portail Client" : "Client Portal")}
+              </span>
+            </h1>
+            <p className="text-slate-500 text-xs sm:text-sm mt-1 leading-relaxed">
+              {language === "fr"
+                ? "Suivez vos expéditions, gérez vos soumissions et accédez à vos documents douaniers — le tout au même endroit."
+                : "Track your shipments, manage quotes, and access customs documents — all in one place."}
+            </p>
+          </div>
+
+          {/* Right Hero / Port Ship Image (Flush against top, bottom, and right side wall; hidden in mobile view) */}
+          <div className="hidden md:flex items-center justify-end relative flex-1 min-w-0 overflow-hidden select-none pointer-events-none">
+            {/* The Container Ship Image anchored to the right wall */}
+            <div className="relative h-full w-full max-w-[760px] flex items-center justify-end">
+              <img
+                src="/assets/dashboard.png"
+                alt="Transimex Canada Logistics"
+                className="absolute inset-y-0 right-0 h-full w-auto max-w-none object-cover object-right"
+                style={{
+                  maskImage: "linear-gradient(to right, transparent 0%, black 25%)",
+                  WebkitMaskImage: "linear-gradient(to right, transparent 0%, black 25%)",
+                }}
+              />
+            </div>
+          </div>
         </div>
       </div>
+
+      {/* Main Dashboard Content Area with standard comfortable padding */}
+      <div className="p-4 sm:p-6 lg:p-8 max-w-[1440px] mx-auto space-y-8">
 
       {/* Red Alert Banner: Customs Duties & Cargo Hold Warning */}
       {customsHoldShipments.length > 0 && (
@@ -453,6 +471,7 @@ export default function DashboardPage() {
             </Link>
           </div>
         </div>
+      </div>
       </div>
 
       {/* Quote Request Modal (shared with the Quotes page) */}

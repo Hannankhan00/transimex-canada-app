@@ -42,7 +42,7 @@ export async function POST(req: Request) {
         token: resetToken,
       });
     } catch (emailErr) {
-      console.error("Failed to send password reset email via SMTP:", emailErr);
+      console.error("Failed to send password reset email:", emailErr);
       return NextResponse.json(
         { error: "We couldn't send the recovery email right now. Please try again shortly." },
         { status: 502 }

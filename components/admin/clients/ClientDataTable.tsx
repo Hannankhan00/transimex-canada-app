@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { ClientProfile, ClientAccountStatus } from "@/lib/clientTypes";
@@ -46,6 +46,16 @@ export default function ClientDataTable({
   const [notificationIsError, setNotificationIsError] = useState(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [resettingId, setResettingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const q = params.get("search");
+      if (q) {
+        setSearch(q);
+      }
+    }
+  }, []);
 
   const filteredClients = clients.filter((client) => {
     if (statusFilter !== "all" && client.status.toLowerCase() !== statusFilter.toLowerCase()) {

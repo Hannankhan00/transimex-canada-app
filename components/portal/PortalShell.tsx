@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { api } from "@/lib/api";
 import PortalSidebar from "./PortalSidebar";
 import TopBar from "./TopBar";
@@ -12,6 +12,8 @@ interface PortalShellProps {
 
 export default function PortalShell({ children }: PortalShellProps) {
   const router = useRouter();
+  const pathname = usePathname();
+  const isDashboardHome = pathname === "/dashboard";
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [user, setUser] = useState<{
@@ -87,8 +89,8 @@ export default function PortalShell({ children }: PortalShellProps) {
         />
 
         {/* Main Content Area */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8">
-          <div className="max-w-[1440px] mx-auto">
+        <main className={`flex-1 ${isDashboardHome ? "p-0" : "p-4 sm:p-6 lg:p-8"}`}>
+          <div className={isDashboardHome ? "w-full" : "max-w-[1440px] mx-auto"}>
             {children}
           </div>
         </main>

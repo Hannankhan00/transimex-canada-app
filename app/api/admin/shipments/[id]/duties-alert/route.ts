@@ -85,7 +85,7 @@ export async function POST(
       console.warn("[Invoice] Could not generate duties invoice:", invoiceErr);
     }
 
-    // Dispatch transactional email to client via SMTP
+    // Dispatch transactional email to client via Resend
     try {
       await sendDutiesNoticeEmail({
         to: recipientEmail,

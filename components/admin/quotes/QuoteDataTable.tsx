@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { QuoteItem, QuoteStatus } from "@/lib/quoteTypes";
 import StatusBadge from "./StatusBadge";
@@ -54,6 +54,16 @@ export default function QuoteDataTable({
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const q = params.get("search");
+      if (q) {
+        setSearchQuery(q);
+      }
+    }
+  }, []);
 
   // Filter quotes by search
   const filteredQuotes = useMemo(() => {

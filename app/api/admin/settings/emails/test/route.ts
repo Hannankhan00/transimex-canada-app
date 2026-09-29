@@ -1,12 +1,21 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { sendEmail, emailTemplateWrapper } from "@/lib/email";
+import { verifyToken } from "@/lib/auth";
+import { hasModulePermission, isStaffRole } from "@/lib/rbac";
 
 export async function POST(req: Request) {
+  // This route sends arbitrary HTML from our verified domain — never leave it open.
+  const actor = verifyToken((await cookies()).get("token")?.value || "");
+  if (!actor || !isStaffRole(actor.role) || !hasModulePermission(actor, "settings")) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const body = await req.json();
     const { to, templateId, lang, subject, heading, content } = body;
 
-    const targetEmail = to || process.env.ADMIN_EMAIL || "dispatch@transimex.ca";
+    const targetEmail = to || process.env.ADMIN_EMAIL || actor.email;
 
     // Inject generic, clearly-labeled sample data for previewing — never a
     // specific-looking real client name, email, or dollar figure.

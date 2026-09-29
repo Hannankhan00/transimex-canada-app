@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import connectDB from "@/lib/mongoose";
 import User from "@/models/User";
+import { sendWelcomeEmail } from "@/lib/email";
 
 export async function POST(req: Request) {
   try {
@@ -26,10 +27,21 @@ export async function POST(req: Request) {
       );
     }
 
+    const wasVerified = user.isVerified;
+
     user.isVerified = true;
     user.verificationToken = undefined;
     user.verificationTokenExpires = undefined;
     await user.save();
+
+    if (!wasVerified) {
+      const { email: to, name, companyName } = user;
+      after(() =>
+        sendWelcomeEmail({ to, name, companyName }).catch((err) =>
+          console.warn("[Email] Could not send welcome email:", err)
+        )
+      );
+    }
 
     return NextResponse.json({
       success: true,

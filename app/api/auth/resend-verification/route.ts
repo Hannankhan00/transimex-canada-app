@@ -3,6 +3,8 @@ import connectDB from "@/lib/mongoose";
 import User from "@/models/User";
 import crypto from "crypto";
 import { sendVerificationEmail } from "@/lib/email";
+const VERIFICATION_LINK_TTL_MS = 86400000; // 24 hours
+const RESEND_COOLDOWN_MS = 60 * 1000;
 
 export async function POST(req: Request) {
   try {
@@ -21,10 +23,16 @@ export async function POST(req: Request) {
       await connectDB();
       const user = await User.findOne({ email: emailLower });
 
-      if (user && !user.isVerified) {
+      // The last link was issued at (expiry - TTL); skip if that was under a minute ago
+      const lastSentAt = user?.verificationTokenExpires
+        ? user.verificationTokenExpires.getTime() - VERIFICATION_LINK_TTL_MS
+        : 0;
+      const inCooldown = Date.now() - lastSentAt < RESEND_COOLDOWN_MS;
+
+      if (user && !user.isVerified && !inCooldown) {
         const verificationToken = "vtx-" + crypto.randomBytes(24).toString("hex");
         user.verificationToken = verificationToken;
-        user.verificationTokenExpires = new Date(Date.now() + 86400000); // 24 hours
+        user.verificationTokenExpires = new Date(Date.now() + VERIFICATION_LINK_TTL_MS);
         await user.save();
 
         await sendVerificationEmail({
@@ -33,7 +41,7 @@ export async function POST(req: Request) {
           companyName: user.companyName,
           token: verificationToken,
         }).catch((emailErr) => {
-          console.error("Failed to resend verification email via SMTP:", emailErr);
+          console.error("Failed to resend verification email:", emailErr);
         });
       }
     } catch (dbErr) {
