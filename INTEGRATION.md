@@ -54,17 +54,36 @@ field names differ from the fixture).
   reported 6–12 hour data lag and thinner event detail; as an existing
   partner, request escalation to the **partner tier** through the account/
   commercial contact rather than relying on public-tier self-registration.
-- Env vars: `CMACGM_API_BASE_URL`, `CMACGM_API_KEY`, `CMACGM_API_SECRET` (if
-  issued), `CMACGM_USE_MOCK_DATA=false`.
-- Auth header used in the adapter: `Authorization: Bearer <CMACGM_API_KEY>` —
-  confirm the partner-tier auth scheme with the account team once escalated.
-- Data source: CMA CGM's own Track & Trace API — not DCSA-standardized, so
-  `lib/tracking/adapters/cmacgm.ts`'s status-label map
-  (`STATUS_TO_TYPE`) is CMA CGM-specific and will need re-verification once
-  partner-tier docs are in hand (field names may differ from the public
-  tier this mock approximates). EDI (UN/EDIFACT) is available as an
-  alternative channel if the partner-tier API proves insufficient for any
-  booking/BL workflow.
+- API: Track & Trace `operation.trackandtrace.v1` (DCSA T&T 2.2.0, CMA
+  version 1.2.9). The adapter calls
+  `GET {CMACGM_API_BASE_URL}/operation/trackandtrace/v1/events/{containerNumber}?limit=100`
+  and follows the `Next-Page` header (cursor) for more pages. The response is
+  a flat array of DCSA TRANSPORT (ARRI/DEPA) and EQUIPMENT
+  (GTOT/GTIN/LOAD/DISC/STRP/DROP) events. CMA CGM doesn't send SHIPMENT events yet.
+- Env vars: `CMACGM_API_BASE_URL` (API gateway, default
+  `https://apis.cma-cgm.net`, **not** the api-portal host), `CMACGM_API_KEY`,
+  `CMACGM_API_SECRET`, `CMACGM_USE_MOCK_DATA=false`. Optional:
+  `CMACGM_BEHALF_OF` (partner ID, required only when calling as a third
+  party), `CMACGM_TOKEN_URL`, `CMACGM_OAUTH_SCOPE`.
+- Auth (both from the spec):
+  - **Public** (key only): `keyId: <CMACGM_API_KEY>` header. Gives standard
+    equipment moves, transshipment moves and planned vessel dates.
+  - **Private** (set `CMACGM_API_SECRET`): OAuth2 client credentials against
+    `https://auth.cma-cgm.com/as/token.oauth2` with scopes
+    `tandtcommercial:read:be tandtpublic:read:be`. The token is cached until
+    about a minute before it expires. Adds rail/ramp moves and inland planned
+    dates for bookings where we are a named party.
+- Mapping (`lib/tracking/adapters/cmacgm.ts`): each event is first placed on
+  the journey using `carrierSpecificData.shipmentLocationType` (POL/PTS/POD/…).
+  If that field is missing, it falls back to `transportationPhase` or matches
+  against the first vessel LOAD (the POL) and the last vessel DISC (the POD).
+  Mapping to our milestones: empty GTOT on the export side → BOOKING, full
+  GTIN → GATE_IN, LOAD/DEPA at POL → LOADED/VESSEL_DEPARTURE, any move at a
+  PTS → TRANSSHIPMENT (one arrival row and one departure row), ARRI/DISC at
+  POD → DISCHARGE, full GTOT at POD → GATE_OUT, and STRP/DROP/empty return →
+  DELIVERED. When there are several PLN/EST/ACT events for the same milestone,
+  they collapse into one row. ACT is preferred, and the latest estimate is kept
+  in `estimatedDateTime`.
 - Webhooks: not offered by CMA CGM per the current integration doc — this
   carrier stays on the scheduled polling job (`syncAllInTransit`), not the
   webhook receiver.

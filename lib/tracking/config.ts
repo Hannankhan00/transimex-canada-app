@@ -58,7 +58,9 @@ export function getCarrierConfig(carrier: CarrierCode): CarrierConfig {
       return {
         carrier,
         useMock: boolEnv(process.env.CMACGM_USE_MOCK_DATA, GLOBAL_USE_MOCK_DATA),
-        baseUrl: process.env.CMACGM_API_BASE_URL || "https://api-portal.cma-cgm.com",
+        // API gateway host (api-portal.cma-cgm.com is only the developer portal).
+        // The spec's server path `/operation/trackandtrace/v1` is appended by the adapter.
+        baseUrl: process.env.CMACGM_API_BASE_URL || "https://apis.cma-cgm.net",
         apiKey: process.env.CMACGM_API_KEY || "",
         apiSecret: process.env.CMACGM_API_SECRET || "",
         rateLimit: {
@@ -80,6 +82,22 @@ export function getCarrierConfig(carrier: CarrierCode): CarrierConfig {
         },
       };
   }
+}
+
+/**
+ * CMA CGM Track & Trace auth options, per its OpenAPI spec:
+ * - Public connection: API key sent in the `keyId` header (CMACGM_API_KEY only).
+ * - Private connection: OAuth2 client credentials (CMACGM_API_KEY = client id,
+ *   CMACGM_API_SECRET = client secret). Unlocks rail/ramp moves and inland
+ *   planned dates for bookings where we're a named party.
+ * `behalfOf` is mandatory only when calling as a third party for an end customer.
+ */
+export function getCmaCgmAuthConfig() {
+  return {
+    tokenUrl: process.env.CMACGM_TOKEN_URL || "https://auth.cma-cgm.com/as/token.oauth2",
+    scope: process.env.CMACGM_OAUTH_SCOPE || "tandtcommercial:read:be tandtpublic:read:be",
+    behalfOf: process.env.CMACGM_BEHALF_OF || "",
+  };
 }
 
 /** Shared secret the cron trigger must present — set CRON_SECRET before exposing the route publicly. */
