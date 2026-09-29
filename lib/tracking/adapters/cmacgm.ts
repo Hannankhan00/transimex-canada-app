@@ -217,7 +217,10 @@ function docReference(events: CmaCgmEvent[], type: "BKG" | "TRD"): string | unde
   for (const e of events) {
     // Spec enum is "BKG (Booking)" / "TRD (Transport Document)"; accept the bare code too.
     const ref = e.documentReferences?.find((r) => r.documentReferenceType?.toUpperCase().startsWith(type));
-    if (ref?.documentReferenceValue) return ref.documentReferenceValue;
+    // The public connection sends a hashed value (64 hex chars) instead of the real reference — skip it.
+    if (ref?.documentReferenceValue && !/^[0-9a-f]{32,}$/i.test(ref.documentReferenceValue)) {
+      return ref.documentReferenceValue;
+    }
   }
   return undefined;
 }

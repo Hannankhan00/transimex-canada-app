@@ -5,12 +5,25 @@ The adapter (`lib/tracking/adapters/cmacgm.ts`) was rebuilt on 2026-09-29 to fol
 https://api-portal.cma-cgm.com/products/visibility?summaryId=operation.trackandtrace.v1).
 It has only been tested against the mock data and mocked `fetch`, not against the real API.
 
+## Confirmed with the real API (2026-09-30)
+
+- The host `https://apis.cma-cgm.net` and the public `keyId` API key work: HTTP 200, `api-version: 2.2.0`.
+  Tested with booking `CAN1029559`.
+- The real response ran through the adapter correctly: Montreal → Tanger Med → Bata → Douala, with the right
+  vessel for each leg.
+- **Rate limit on this key: only 20 requests per hour** (`x-ratelimit-limit-hour: 20`). The app's limiter
+  defaults to 50,000/day and 5/s and has no per-hour window. Before turning on the scheduled sync, add a per-hour
+  cap to `lib/tracking/rateLimiter.ts` or ask CMA CGM for a higher quota.
+- The public connection sends the booking reference as a 64-character hash. The adapter now ignores it, so
+  `bookingNumber` will be empty unless the private (OAuth) connection returns the real value.
+- Before a container is assigned, a booking only returns planned vessel events (ARRI/DEPA), with no equipment events.
+
 ## Before switching it on
 
-1. **Confirm the API host.** The code uses `https://apis.cma-cgm.net` by default. The spec only gives the path
-   (`/operation/trackandtrace/v1`), not the host, so check the host on the portal.
-   To use a different host, set `CMACGM_API_BASE_URL`.
-2. **Check the `Next-Page` header on a real response.** The spec's example looks like a bare cursor. The code
+1. **Switch off mock mode.** `CMACGM_USE_MOCK_DATA` is empty, so it falls back to `TRACKING_USE_MOCK_DATA=true`.
+   Set `CMACGM_USE_MOCK_DATA=false` to call the real API.
+2. **Check the `Next-Page` header on a real response.** The first test returned a single page, so only the
+   `current-page` header has been seen so far (a bare cursor). The spec's example looks like a bare cursor. The code
    handles both a bare cursor and a full URL, but confirm which one the API sends.
 3. **Review the mapping choices below.** The spec doesn't say what counts as "booked" or "delivered", so I made
    these choices:
