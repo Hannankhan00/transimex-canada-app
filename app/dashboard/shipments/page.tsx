@@ -72,6 +72,15 @@ function ShipmentsContent() {
   const [selectedPaymentShipment, setSelectedPaymentShipment] = useState<ShipmentListItem | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [expandedContainer, setExpandedContainer] = useState<string | null>(null);
+  // Voyage details (vessel card + container tracking) stay collapsed until the client opens them.
+  const [openDetails, setOpenDetails] = useState<Set<string>>(new Set());
+  const toggleDetails = (id: string) =>
+    setOpenDetails((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
   const [containerTracking, setContainerTracking] = useState<Record<string, ContainerTrackingView | null>>({});
   const [containerLoading, setContainerLoading] = useState<Record<string, boolean>>({});
   const [containerError, setContainerError] = useState<Record<string, string | null>>({});
@@ -493,9 +502,56 @@ function ShipmentsContent() {
                 </div>
               )}
 
+              {/* Voyage details toggle — only when there is a vessel or a container to show */}
+              {(shipment.vessel || (shipment.containers && shipment.containers.length > 0)) && (
+                <div className="flex items-center gap-3">
+                  <span className="flex-1 h-px bg-slate-100" />
+                  <button
+                    type="button"
+                    onClick={() => toggleDetails(shipment.id)}
+                    aria-expanded={openDetails.has(shipment.id)}
+                    aria-label={
+                      openDetails.has(shipment.id)
+                        ? language === "fr"
+                          ? "Masquer les détails du voyage"
+                          : "Hide voyage details"
+                        : language === "fr"
+                        ? "Afficher les détails du voyage"
+                        : "Show voyage details"
+                    }
+                    title={
+                      openDetails.has(shipment.id)
+                        ? language === "fr"
+                          ? "Masquer les détails"
+                          : "Hide details"
+                        : language === "fr"
+                        ? "Afficher les détails"
+                        : "Show details"
+                    }
+                    className={`w-8 h-8 rounded-full border flex items-center justify-center transition cursor-pointer flex-shrink-0 ${
+                      openDetails.has(shipment.id)
+                        ? "bg-[#0B2545] border-[#0B2545] text-white"
+                        : "bg-white border-slate-200 text-slate-500 hover:border-[#0B2545] hover:text-[#0B2545]"
+                    }`}
+                  >
+                    <ChevronDown
+                      className={`w-4 h-4 transition-transform duration-200 ${
+                        openDetails.has(shipment.id) ? "rotate-180" : ""
+                      }`}
+                    />
+                  </button>
+                  <span className="flex-1 h-px bg-slate-100" />
+                </div>
+              )}
+
+              {openDetails.has(shipment.id) && (
+                <div className="space-y-3 animate-in fade-in slide-in-from-top-1 duration-200">
+                  {/* Vessel — only shown once the shipment's ocean booking has vessel data */}
+                  {shipment.vessel && <VesselInfoCard vessel={shipment.vessel} />}
+
               {/* Ocean Container Tracking — only shown when at least one container is on file */}
               {shipment.containers && shipment.containers.length > 0 && (
-                <div className="border-t border-slate-100 pt-3 space-y-2">
+                <div className={`space-y-2 ${shipment.vessel ? "border-t border-slate-100 pt-3" : ""}`}>
                   {shipment.containers.map((containerNumber) => {
                     const isOpen = expandedContainer === containerNumber;
                     return (
@@ -530,6 +586,8 @@ function ShipmentsContent() {
                       </div>
                     );
                   })}
+                </div>
+              )}
                 </div>
               )}
             </div>
