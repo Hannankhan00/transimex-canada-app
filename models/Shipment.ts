@@ -41,6 +41,7 @@ export interface IShipmentCarrierBooking {
     portName?: string;
     facility?: string;
     vesselName?: string;
+    imoNumber?: string;
     voyageNumber?: string;
   }[];
   events: {
@@ -230,6 +231,7 @@ const ShipmentSchema = new Schema<IShipment>(
               portName: String,
               facility: String,
               vesselName: String,
+              imoNumber: String,
               voyageNumber: String,
             },
           ],

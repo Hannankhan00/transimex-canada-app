@@ -325,6 +325,7 @@ function normalize(raw: CmaCgmRawPayload, requestedReference?: string): AdapterF
       role: "ORIGIN",
       ...originPort,
       vesselName: polCall?.vessel?.vesselName,
+      imoNumber: polCall?.vessel?.vesselIMONumber,
       voyageNumber: voyageOf(polCall),
     });
   }
@@ -335,6 +336,7 @@ function normalize(raw: CmaCgmRawPayload, requestedReference?: string): AdapterF
       role: "TRANSSHIPMENT",
       ...locationFor(code),
       vesselName: tc?.vessel?.vesselName,
+      imoNumber: tc?.vessel?.vesselIMONumber,
       voyageNumber: voyageOf(tc),
     });
   }
@@ -344,6 +346,7 @@ function normalize(raw: CmaCgmRawPayload, requestedReference?: string): AdapterF
       role: "DESTINATION",
       ...destinationPort,
       vesselName: podCall?.vessel?.vesselName,
+      imoNumber: podCall?.vessel?.vesselIMONumber,
       voyageNumber: voyageOf(podCall),
     });
   }

@@ -89,7 +89,7 @@ export default function DashboardPage() {
         title: `Shipment #${s.id}`,
         detail: `${s.origin} → ${s.destination}`,
         time: s.date,
-        badge: s.statusLabel,
+        badge: language === "fr" && s.statusLabelFr ? s.statusLabelFr : s.statusLabel,
         badgeClass:
           s.status === "delivered"
             ? "bg-emerald-100 text-emerald-800"

@@ -38,6 +38,10 @@ interface ShipmentListItem {
   plateNumber?: string;
   status: string;
   statusLabel: string;
+  statusLabelFr?: string;
+  /** Vessel IMO / voyage when the right-hand line shows the ship rather than a driver. */
+  driverDetail?: string;
+  isVessel?: boolean;
   date: string;
   eta: string;
   progress: number;
@@ -402,6 +406,8 @@ function ShipmentsContent() {
                           ? "bg-blue-100 text-blue-800"
                           : shipment.status === "customs"
                           ? "bg-amber-100 text-amber-800"
+                          : shipment.status === "pending"
+                          ? "bg-slate-100 text-slate-700"
                           : "bg-emerald-100 text-emerald-800"
                       }`}
                     >
@@ -409,6 +415,8 @@ function ShipmentsContent() {
                         ? language === "fr"
                           ? "Retenue Douanière — Paiement Requis"
                           : "Customs Hold — Duties Required"
+                        : language === "fr" && shipment.statusLabelFr
+                        ? shipment.statusLabelFr
                         : shipment.statusLabel}
                     </span>
                   </div>
@@ -421,7 +429,11 @@ function ShipmentsContent() {
                       <span className="text-slate-900">{shipment.destination}</span>
                     </div>
                     <div className="text-slate-500 flex items-center gap-1">
-                      <Truck className="w-3.5 h-3.5 text-slate-400" />
+                      {shipment.vessel ? (
+                        <Ship className="w-3.5 h-3.5 text-slate-400" />
+                      ) : (
+                        <Truck className="w-3.5 h-3.5 text-slate-400" />
+                      )}
                       <span>{shipment.equipment}</span>
                     </div>
                   </div>
@@ -452,7 +464,18 @@ function ShipmentsContent() {
                 {/* Right: Driver Info */}
                 <div className="flex items-center justify-between lg:justify-end gap-3 pt-3 lg:pt-0 border-t lg:border-t-0 border-slate-100">
                   <div className="text-left sm:text-right text-xs">
-                    <div className="font-semibold text-slate-900">{shipment.driver}</div>
+                    {shipment.isVessel && (
+                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider sm:justify-end flex items-center gap-1">
+                        <Ship className="w-3 h-3" />
+                        {language === "fr" ? "Navire" : "Vessel"}
+                      </div>
+                    )}
+                    <div className="font-semibold text-slate-900">
+                      {shipment.driver === "Dispatch pending" && language === "fr" ? "Répartition en attente" : shipment.driver}
+                    </div>
+                    {shipment.driverDetail && (
+                      <div className="text-[11px] text-slate-500 font-mono">{shipment.driverDetail}</div>
+                    )}
                     {(shipment.vehicleType || shipment.plateNumber) && (
                       <div className="text-[11px] text-slate-500">
                         {[shipment.vehicleType, shipment.plateNumber].filter(Boolean).join(" • ")}

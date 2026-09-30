@@ -74,6 +74,8 @@ export interface PortCall {
   portName: string;
   facility?: string;
   vesselName?: string;
+  /** IMO number of the vessel on this leg — ships change at transshipment ports. */
+  imoNumber?: string;
   voyageNumber?: string;
 }
 

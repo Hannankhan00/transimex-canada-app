@@ -29,7 +29,14 @@ export interface ClientVesselView {
   originPort?: TrackingLocation;
   destinationPort?: TrackingLocation;
   /** Each port on the route with the vessel that carries the cargo from it. */
-  legs: { role: PortCall["role"]; portName?: string; unLocationCode?: string; vesselName?: string; voyageNumber?: string }[];
+  legs: {
+    role: PortCall["role"];
+    portName?: string;
+    unLocationCode?: string;
+    vesselName?: string;
+    imoNumber?: string;
+    voyageNumber?: string;
+  }[];
   events: TrackingEvent[];
   status: ContainerTracking["status"];
   /** Arrival at the destination port: estimated until the carrier reports it as actual. */
@@ -72,6 +79,7 @@ function cleanRotation(rotation: any[] = []): PortCall[] {
     portName: p.portName || "",
     facility: p.facility || undefined,
     vesselName: p.vesselName || undefined,
+    imoNumber: p.imoNumber || undefined,
     voyageNumber: p.voyageNumber || undefined,
   }));
 }
@@ -114,11 +122,13 @@ export function toClientVesselView(booking: any): ClientVesselView | null {
     voyageNumber: booking.voyageNumber || undefined,
     originPort: cleanLocation(booking.originPort),
     destinationPort: destination,
-    legs: cleanRotation(booking.portRotation).map(({ role, portName, unLocationCode, vesselName, voyageNumber }) => ({
+    legs: cleanRotation(booking.portRotation).map(({ role, portName, unLocationCode, vesselName, imoNumber, voyageNumber }) => ({
       role,
       portName,
       unLocationCode,
       vesselName,
+      // Bookings synced before per-leg IMOs were stored only have the main vessel's.
+      imoNumber: imoNumber || (vesselName && vesselName === booking.vesselName ? booking.imoNumber : undefined),
       voyageNumber,
     })),
     events,

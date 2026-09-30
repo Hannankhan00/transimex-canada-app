@@ -39,6 +39,7 @@ export interface IPortCall {
   portName: string;
   facility?: string;
   vesselName?: string;
+  imoNumber?: string;
   voyageNumber?: string;
 }
 
@@ -111,6 +112,7 @@ const TrackedContainerSchema = new Schema<ITrackedContainer>(
         portName: { type: String, default: "" },
         facility: { type: String, default: "" },
         vesselName: { type: String, default: "" },
+        imoNumber: { type: String, default: "" },
         voyageNumber: { type: String, default: "" },
       },
     ],
