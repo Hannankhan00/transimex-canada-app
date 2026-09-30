@@ -55,7 +55,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     }))
   );
 
-  return NextResponse.json({ success: true, containers });
+  return NextResponse.json({ success: true, containers, booking: shipment.carrierBooking || null });
 }
 
 /** POST — adds a container number to the shipment (the primary tracking entry point) and runs its first sync immediately. */

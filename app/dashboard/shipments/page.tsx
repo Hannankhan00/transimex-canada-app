@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { serializeToCsv } from "@/lib/csvExport";
+import VesselInfoCard, { VesselView } from "@/components/portal/VesselInfoCard";
 import ContainerMilestoneTimeline, {
   ContainerTrackingView,
 } from "@/components/portal/ContainerMilestoneTimeline";
@@ -44,6 +45,7 @@ interface ShipmentListItem {
   portOfEntry?: string;
   cbsaPars?: string;
   containers?: string[];
+  vessel?: VesselView | null;
   duties?: {
     amountCad?: string;
     taxGstHst?: string;
@@ -460,6 +462,13 @@ function ShipmentsContent() {
                   </div>
                 </div>
               </div>
+
+              {/* Vessel — only shown once the shipment's ocean booking has vessel data */}
+              {shipment.vessel && (
+                <div className="border-t border-slate-100 pt-3">
+                  <VesselInfoCard vessel={shipment.vessel} />
+                </div>
+              )}
 
               {/* Ocean Container Tracking — only shown when at least one container is on file */}
               {shipment.containers && shipment.containers.length > 0 && (

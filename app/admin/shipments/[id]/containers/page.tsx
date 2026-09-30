@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import PermissionGuard from "@/components/admin/PermissionGuard";
+import CarrierBookingPanel, { CarrierBookingView } from "@/components/admin/shipments/CarrierBookingPanel";
 import ContainerMilestoneTimeline, {
   ContainerTrackingView,
 } from "@/components/portal/ContainerMilestoneTimeline";
@@ -38,6 +39,8 @@ function ShipmentContainersPageInner() {
   const shipmentId = params?.id as string;
 
   const [containers, setContainers] = useState<ContainerRow[]>([]);
+  const [booking, setBooking] = useState<CarrierBookingView | null>(null);
+  const [loadedOnce, setLoadedOnce] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -57,6 +60,8 @@ function ShipmentContainersPageInner() {
       const data = await res.json();
       if (res.ok && data.success) {
         setContainers(data.containers || []);
+        setBooking(data.booking || null);
+        setLoadedOnce(true);
       } else {
         setError(data.error || "Failed to load containers");
       }
@@ -145,8 +150,8 @@ function ShipmentContainersPageInner() {
           </h1>
           <p className="text-slate-500 text-xs sm:text-sm mt-0.5">
             {language === "fr"
-              ? "Ajoutez les numéros de conteneur reçus des transporteurs — Maersk, CMA CGM, MSC — pour activer leur suivi automatique."
-              : "Add container numbers as they come in from the carriers — Maersk, CMA CGM, MSC — to switch on automatic tracking."}
+              ? "Suivez une réservation CMA CGM par sa référence, ou ajoutez les numéros de conteneur reçus des transporteurs — Maersk, CMA CGM, MSC."
+              : "Track a CMA CGM booking by its reference, or add container numbers as they come in from the carriers — Maersk, CMA CGM, MSC."}
           </p>
         </div>
         <button
@@ -158,6 +163,9 @@ function ShipmentContainersPageInner() {
           <RefreshCw className="w-4 h-4" />
         </button>
       </div>
+
+      {/* Carrier booking / B/L reference */}
+      {loadedOnce && <CarrierBookingPanel shipmentId={shipmentId} booking={booking} onChanged={load} />}
 
       {/* Add container form */}
       <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-3">

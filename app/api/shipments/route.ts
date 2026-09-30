@@ -3,6 +3,7 @@ import connectDB from "@/lib/mongoose";
 import Shipment from "@/models/Shipment";
 import { getCurrentUser } from "@/lib/session";
 import { formatDateLabel } from "@/lib/formatDate";
+import { toClientVesselView } from "@/lib/tracking/clientView";
 
 const STATUS_KEY: Record<string, string> = {
   "Pending Dispatch": "pending",
@@ -45,6 +46,8 @@ function mapShipment(s: any) {
     portOfEntry: s.portOfEntry || "",
     cbsaPars: s.cbsaPars || "",
     containers: (s.containers || []).map((c: any) => c.containerNumber),
+    // Vessel, route and arrival from the tracked booking — never the carrier or its reference.
+    vessel: toClientVesselView(s.carrierBooking),
     duties: s.duties
       ? {
           amountCad: s.duties.amountCad || "",

@@ -3,6 +3,7 @@ import connectDB from "@/lib/mongoose";
 import Shipment from "@/models/Shipment";
 import { getCurrentUser } from "@/lib/session";
 import { getContainerTracking } from "@/lib/tracking/sync";
+import { toClientContainerView } from "@/lib/tracking/clientView";
 
 /**
  * Client-facing milestone timeline read. Reads the cache only (requirement
@@ -37,7 +38,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ containe
     return NextResponse.json({
       success: true,
       shipment: { trackingNumber: shipment.trackingNumber },
-      tracking,
+      // Client-safe view: no carrier, booking/B/L reference or raw carrier data.
+      tracking: toClientContainerView(tracking),
     });
   } catch (error: any) {
     console.error("Error fetching container tracking:", error);

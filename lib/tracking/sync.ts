@@ -1,7 +1,14 @@
 import connectDB from "@/lib/mongoose";
 import TrackedContainer from "@/models/TrackedContainer";
-import { CarrierCode, ContainerTracking } from "./schema";
-import { syncContainerTracking, applyWebhookPayload, getCachedTracking, TrackingStore } from "./pipeline";
+import Shipment from "@/models/Shipment";
+import { BookingTracking, CarrierCode, ContainerTracking } from "./schema";
+import {
+  syncContainerTracking,
+  syncReferenceTracking,
+  applyWebhookPayload,
+  getCachedTracking,
+  TrackingStore,
+} from "./pipeline";
 
 function docToTracking(doc: any): ContainerTracking {
   return {
@@ -79,6 +86,65 @@ export async function linkContainerToShipmentAndSync(
   return tracking;
 }
 
+/**
+ * Tracks a carrier booking or B/L reference for a shipment: one carrier call,
+ * then the booking (vessel, voyage, route, events) is saved on the shipment and
+ * every container the carrier has assigned is cached, linked to the shipment and
+ * added to its container list. On failure the reference is still saved, with
+ * the error, so it can be retried.
+ */
+export async function linkBookingToShipmentAndSync(
+  shipmentId: string,
+  carrier: CarrierCode,
+  reference: string
+): Promise<{ booking: BookingTracking; containersAdded: string[] }> {
+  await connectDB();
+  const ref = reference.trim().toUpperCase();
+
+  let result;
+  try {
+    result = await syncReferenceTracking(ref, carrier, { store: mongoTrackingStore });
+  } catch (err: any) {
+    const previous = (await Shipment.findById(shipmentId).lean<any>())?.carrierBooking;
+    const sameBooking = previous && previous.reference === ref && previous.carrier === carrier;
+    await Shipment.updateOne(
+      { _id: shipmentId },
+      {
+        $set: {
+          carrierBooking: {
+            ...(sameBooking ? previous : { portRotation: [], events: [], status: "PENDING", containerNumbers: [], lastSyncedAt: null }),
+            carrier,
+            reference: ref,
+            lastError: err.message || String(err),
+          },
+        },
+      }
+    );
+    throw err;
+  }
+
+  const { booking, containers } = result;
+  if (containers.length > 0) {
+    await TrackedContainer.updateMany(
+      { containerNumber: { $in: booking.containerNumbers } },
+      { $set: { shipmentId, bookingReference: ref } }
+    );
+  }
+
+  const shipment = await Shipment.findById(shipmentId);
+  if (!shipment) throw new Error("Shipment not found");
+  const onShipment = new Set((shipment.containers || []).map((c: any) => c.containerNumber));
+  const containersAdded = booking.containerNumbers.filter((c) => !onShipment.has(c));
+  shipment.containers = [
+    ...(shipment.containers || []),
+    ...containersAdded.map((containerNumber) => ({ containerNumber, carrier })),
+  ];
+  shipment.carrierBooking = booking as any;
+  await shipment.save();
+
+  return { booking, containersAdded };
+}
+
 /** Applies a carrier's pushed webhook payload straight to the cache — see the webhook receiver stub. */
 export async function applyWebhookUpdate(carrier: CarrierCode, payload: unknown): Promise<ContainerTracking> {
   return applyWebhookPayload(carrier, payload, { store: mongoTrackingStore });
@@ -89,6 +155,7 @@ export interface SyncAllResult {
   succeeded: number;
   skippedDelivered: number;
   failed: Array<{ containerNumber: string; error: string }>;
+  bookings: { attempted: number; succeeded: number; failed: Array<{ reference: string; error: string }> };
 }
 
 /**
@@ -98,14 +165,40 @@ export interface SyncAllResult {
  */
 export async function syncAllInTransit(): Promise<SyncAllResult> {
   await connectDB();
-  const [inTransit, skippedDelivered] = await Promise.all([
+  const [inTransit, skippedDelivered, bookedShipments] = await Promise.all([
     TrackedContainer.find({ status: { $ne: "DELIVERED" } }).lean<any[]>(),
     TrackedContainer.countDocuments({ status: "DELIVERED" }),
+    Shipment.find(
+      { "carrierBooking.reference": { $exists: true, $ne: "" }, "carrierBooking.status": { $ne: "DELIVERED" } },
+      { _id: 1, carrierBooking: 1 }
+    ).lean<any[]>(),
   ]);
 
-  const result: SyncAllResult = { attempted: 0, succeeded: 0, skippedDelivered, failed: [] };
+  const result: SyncAllResult = {
+    attempted: 0,
+    succeeded: 0,
+    skippedDelivered,
+    failed: [],
+    bookings: { attempted: 0, succeeded: 0, failed: [] },
+  };
+
+  // One call per booking refreshes every container on it, so those containers
+  // are skipped below — this keeps within tight quotas (CMA CGM: 20 calls/hour).
+  const refreshedByBooking = new Set<string>();
+  for (const s of bookedShipments) {
+    const { carrier, reference } = s.carrierBooking;
+    result.bookings.attempted += 1;
+    try {
+      const { booking } = await linkBookingToShipmentAndSync(String(s._id), carrier, reference);
+      booking.containerNumbers.forEach((c) => refreshedByBooking.add(c));
+      result.bookings.succeeded += 1;
+    } catch (err: any) {
+      result.bookings.failed.push({ reference, error: err.message || String(err) });
+    }
+  }
 
   for (const doc of inTransit) {
+    if (refreshedByBooking.has(doc.containerNumber)) continue;
     result.attempted += 1;
     try {
       await syncContainer(doc.containerNumber, doc.carrier as CarrierCode);

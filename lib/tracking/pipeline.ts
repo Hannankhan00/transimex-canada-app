@@ -1,4 +1,4 @@
-import { CarrierCode, ContainerTracking, deriveStatus } from "./schema";
+import { BookingTracking, CarrierCode, ContainerTracking, deriveStatus } from "./schema";
 import { detectCarrier as defaultDetectCarrier, CarrierDetectionResult } from "./carrierDetection";
 import { getAdapter as defaultGetAdapter, CarrierAdapter } from "./adapters";
 
@@ -130,4 +130,71 @@ export async function getCachedTracking(
   deps: Pick<PipelineDeps, "store">
 ): Promise<ContainerTracking | null> {
   return deps.store.get(containerNumber);
+}
+
+export class ReferenceLookupNotSupportedError extends Error {
+  constructor(carrier: CarrierCode) {
+    super(`${carrier} tracking by booking or B/L reference isn't available yet. Add its container numbers instead.`);
+    this.name = "ReferenceLookupNotSupportedError";
+  }
+}
+
+export interface ReferenceSyncResult {
+  booking: BookingTracking;
+  containers: ContainerTracking[];
+}
+
+/**
+ * Tracks a booking or B/L reference: one carrier call, then every container the
+ * carrier has assigned to it is cached exactly as a container sync would cache it.
+ */
+export async function syncReferenceTracking(
+  reference: string,
+  carrier: CarrierCode,
+  deps: PipelineDeps
+): Promise<ReferenceSyncResult> {
+  const getAdapter = deps.getAdapter ?? defaultGetAdapter;
+  const maxRawHistory = deps.maxRawHistory ?? 5;
+
+  const adapter = getAdapter(carrier);
+  if (!adapter.fetchByReference) {
+    throw new ReferenceLookupNotSupportedError(carrier);
+  }
+  const result = await adapter.fetchByReference(reference);
+  const now = new Date().toISOString();
+
+  const containers: ContainerTracking[] = [];
+  for (const c of result.containers) {
+    const containerNumber = c.tracking.containerNumber;
+    const existing = await deps.store.get(containerNumber);
+    const tracking: ContainerTracking = {
+      ...c.tracking,
+      carrierDetectionSource: "explicit",
+      status: deriveStatus(c.tracking.events),
+      lastSyncedAt: now,
+      raw: [{ carrier, fetchedAt: now, payload: c.rawPayload }, ...(existing?.raw ?? [])].slice(0, maxRawHistory),
+    };
+    await deps.store.set(containerNumber, tracking);
+    containers.push(tracking);
+  }
+
+  const b = result.booking;
+  return {
+    booking: {
+      carrier,
+      reference,
+      vesselName: b.vesselName,
+      imoNumber: b.imoNumber,
+      voyageNumber: b.voyageNumber,
+      originPort: b.originPort,
+      destinationPort: b.destinationPort,
+      portRotation: b.portRotation,
+      events: b.events,
+      status: deriveStatus(b.events),
+      containerNumbers: containers.map((c) => c.containerNumber),
+      lastSyncedAt: now,
+      lastError: "",
+    },
+    containers,
+  };
 }

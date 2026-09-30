@@ -1,4 +1,4 @@
-import { AdapterFetchResult, CarrierCode } from "../schema";
+import { AdapterFetchResult, CarrierCode, ReferenceFetchResult } from "../schema";
 
 /**
  * One adapter per carrier. Every adapter implements this same interface and
@@ -11,6 +11,11 @@ export interface CarrierAdapter {
   fetchTracking(containerNumber: string): Promise<AdapterFetchResult>;
   /** Normalizes an already-received webhook payload (Maersk/MSC push updates) using the same mapping as fetchTracking. */
   parseWebhookPayload(payload: unknown): AdapterFetchResult;
+  /**
+   * Looks up a booking or B/L reference instead of a container number, in one
+   * call. Only carriers whose API supports it implement this.
+   */
+  fetchByReference?(reference: string): Promise<ReferenceFetchResult>;
 }
 
 export class AdapterNotConfiguredError extends Error {

@@ -2,6 +2,7 @@ import {
   AdapterFetchResult,
   EventClassifier,
   PortCall,
+  ReferenceFetchResult,
   TRACKING_EVENT_ORDER,
   TrackingEvent,
   TrackingEventType,
@@ -426,50 +427,84 @@ export const cmaCgmAdapter: CarrierAdapter = {
   },
 
   async fetchTracking(containerNumber: string): Promise<AdapterFetchResult> {
-    const config = getCarrierConfig("CMA_CGM");
-
-    if (!config.baseUrl || !config.apiKey) {
-      throw new AdapterNotConfiguredError("CMA_CGM");
-    }
-
-    const { behalfOf } = getCmaCgmAuthConfig();
-    const url = eventsUrl(config.baseUrl, containerNumber);
-    url.searchParams.set("limit", String(PAGE_LIMIT));
-    if (behalfOf) url.searchParams.set("behalfOf", behalfOf);
-
-    // GET /events/{trackingReference} — cursor-paginated via the Next-Page header.
-    const raw: CmaCgmRawPayload = [];
-    let nextUrl: URL | null = url;
-    for (let page = 0; nextUrl && page < MAX_PAGES; page++) {
-      await acquireRateLimit("CMA_CGM");
-      const res: Response = await fetch(nextUrl, {
-        headers: { ...(await authHeaders(config)), Accept: "application/json" },
-      });
-
-      if (res.status === 401 && config.apiSecret) cachedToken = null;
-      if (!res.ok) {
-        const detail = await res.text().catch(() => "");
-        throw new Error(
-          `CMA CGM Track & Trace request failed: ${res.status} ${res.statusText}${detail ? ` — ${detail.slice(0, 300)}` : ""}`
-        );
-      }
-      if (res.status === 204) break;
-
-      const body = (await res.json()) as unknown;
-      if (!Array.isArray(body)) throw new InvalidPayloadError("CMA_CGM", "events");
-      raw.push(...(body as CmaCgmRawPayload));
-
-      const next = res.headers.get("Next-Page");
-      const current = res.headers.get("Current-Page");
-      if (!next || next === current || body.length === 0) break;
-      if (/^https?:\/\//i.test(next)) {
-        nextUrl = new URL(next);
-      } else {
-        nextUrl = new URL(url);
-        nextUrl.searchParams.set("cursor", next);
-      }
-    }
-
+    const raw = await fetchEvents(containerNumber);
     return { tracking: normalize(raw, containerNumber), rawPayload: raw };
   },
+
+  // The same endpoint accepts a booking or B/L reference. One call returns the
+  // vessel moves for the whole booking plus the events of every container on it.
+  async fetchByReference(reference: string): Promise<ReferenceFetchResult> {
+    const raw = await fetchEvents(reference);
+    if (raw.length === 0) {
+      throw new Error(`CMA CGM returned no events for "${reference}". Check the booking or B/L reference.`);
+    }
+    return splitByContainer(raw, reference);
+  },
 };
+
+/** Booking-level summary over every event, then one normalized result per container on the booking. */
+export function splitByContainer(raw: CmaCgmRawPayload, reference: string): ReferenceFetchResult {
+  const booking = { ...normalize(raw, reference), containerNumber: reference };
+  booking.containerSizeType = undefined;
+
+  const containerNumbers = [
+    ...new Set(raw.map((e) => e.equipmentReference?.trim().toUpperCase()).filter((c): c is string => !!c)),
+  ];
+  const containers = containerNumbers.map((containerNumber) => {
+    // Vessel moves carry no equipment reference and apply to every container on the booking.
+    const own = raw.filter(
+      (e) => !e.equipmentReference || e.equipmentReference.trim().toUpperCase() === containerNumber
+    );
+    return { tracking: normalize(own, containerNumber), rawPayload: own };
+  });
+
+  return { booking, containers, rawPayload: raw };
+}
+
+/** GET /events/{trackingReference} — cursor-paginated via the Next-Page header. */
+async function fetchEvents(trackingReference: string): Promise<CmaCgmRawPayload> {
+  const config = getCarrierConfig("CMA_CGM");
+
+  if (!config.baseUrl || !config.apiKey) {
+    throw new AdapterNotConfiguredError("CMA_CGM");
+  }
+
+  const { behalfOf } = getCmaCgmAuthConfig();
+  const url = eventsUrl(config.baseUrl, trackingReference);
+  url.searchParams.set("limit", String(PAGE_LIMIT));
+  if (behalfOf) url.searchParams.set("behalfOf", behalfOf);
+
+  const raw: CmaCgmRawPayload = [];
+  let nextUrl: URL | null = url;
+  for (let page = 0; nextUrl && page < MAX_PAGES; page++) {
+    await acquireRateLimit("CMA_CGM");
+    const res: Response = await fetch(nextUrl, {
+      headers: { ...(await authHeaders(config)), Accept: "application/json" },
+    });
+
+    if (res.status === 401 && config.apiSecret) cachedToken = null;
+    if (!res.ok) {
+      const detail = await res.text().catch(() => "");
+      throw new Error(
+        `CMA CGM Track & Trace request failed: ${res.status} ${res.statusText}${detail ? ` — ${detail.slice(0, 300)}` : ""}`
+      );
+    }
+    if (res.status === 204) break;
+
+    const body = (await res.json()) as unknown;
+    if (!Array.isArray(body)) throw new InvalidPayloadError("CMA_CGM", "events");
+    raw.push(...(body as CmaCgmRawPayload));
+
+    const next = res.headers.get("Next-Page");
+    const current = res.headers.get("Current-Page");
+    if (!next || next === current || body.length === 0) break;
+    if (/^https?:\/\//i.test(next)) {
+      nextUrl = new URL(next);
+    } else {
+      nextUrl = new URL(url);
+      nextUrl.searchParams.set("cursor", next);
+    }
+  }
+
+  return raw;
+}

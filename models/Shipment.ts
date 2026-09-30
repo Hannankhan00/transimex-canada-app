@@ -22,6 +22,44 @@ export interface IShipmentContainer {
   carrier?: "MAERSK" | "CMA_CGM" | "MSC";
 }
 
+/**
+ * A carrier booking or B/L reference tracked against this shipment, plus what
+ * the carrier's API last reported for it — including the vessel.
+ */
+export interface IShipmentCarrierBooking {
+  carrier: "MAERSK" | "CMA_CGM" | "MSC";
+  reference: string;
+  vesselName?: string;
+  imoNumber?: string;
+  voyageNumber?: string;
+  originPort?: { unLocationCode?: string; portName?: string; facility?: string };
+  destinationPort?: { unLocationCode?: string; portName?: string; facility?: string };
+  portRotation: {
+    sequence: number;
+    role: "ORIGIN" | "TRANSSHIPMENT" | "DESTINATION";
+    unLocationCode?: string;
+    portName?: string;
+    facility?: string;
+    vesselName?: string;
+    voyageNumber?: string;
+  }[];
+  events: {
+    eventType: string;
+    eventClassifierCode: string;
+    eventDateTime: string;
+    estimatedDateTime?: string;
+    actualDateTime?: string;
+    location?: { unLocationCode?: string; portName?: string; facility?: string };
+    vesselName?: string;
+    voyageNumber?: string;
+    description?: string;
+  }[];
+  status: "PENDING" | "IN_TRANSIT" | "DELIVERED";
+  containerNumbers: string[];
+  lastSyncedAt: string | null;
+  lastError?: string;
+}
+
 export interface IShipment extends Document {
   trackingNumber: string; // e.g. "TMX-2026-00847"
   quoteId?: string; // Linked quote reference, e.g. "QT-2026-00124"
@@ -73,6 +111,7 @@ export interface IShipment extends Document {
   timeline: IShipmentTimelineEvent[];
   /** Ocean containers entered against this shipment — each is synced from its carrier's Track & Trace API into a linked TrackedContainer record. */
   containers: IShipmentContainer[];
+  carrierBooking?: IShipmentCarrierBooking;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -172,6 +211,51 @@ const ShipmentSchema = new Schema<IShipment>(
         carrier: { type: String, enum: ["MAERSK", "CMA_CGM", "MSC"] },
       },
     ],
+    carrierBooking: {
+      type: new Schema(
+        {
+          carrier: { type: String, enum: ["MAERSK", "CMA_CGM", "MSC"], required: true },
+          reference: { type: String, required: true, trim: true, uppercase: true },
+          vesselName: { type: String, default: "" },
+          imoNumber: { type: String, default: "" },
+          voyageNumber: { type: String, default: "" },
+          originPort: { unLocationCode: String, portName: String, facility: String },
+          destinationPort: { unLocationCode: String, portName: String, facility: String },
+          portRotation: [
+            {
+              _id: false,
+              sequence: Number,
+              role: { type: String, enum: ["ORIGIN", "TRANSSHIPMENT", "DESTINATION"] },
+              unLocationCode: String,
+              portName: String,
+              facility: String,
+              vesselName: String,
+              voyageNumber: String,
+            },
+          ],
+          events: [
+            {
+              _id: false,
+              eventType: String,
+              eventClassifierCode: String,
+              eventDateTime: String,
+              estimatedDateTime: String,
+              actualDateTime: String,
+              location: { unLocationCode: String, portName: String, facility: String },
+              vesselName: String,
+              voyageNumber: String,
+              description: String,
+            },
+          ],
+          status: { type: String, enum: ["PENDING", "IN_TRANSIT", "DELIVERED"], default: "PENDING" },
+          containerNumbers: [{ type: String }],
+          lastSyncedAt: { type: String, default: null },
+          lastError: { type: String, default: "" },
+        },
+        { _id: false }
+      ),
+      default: undefined,
+    },
   },
   {
     timestamps: true,

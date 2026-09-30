@@ -114,6 +114,34 @@ export interface AdapterFetchResult {
   rawPayload: unknown;
 }
 
+/**
+ * What a booking / B/L lookup hands back: the booking-level route, vessels and
+ * events (its `containerNumber` holds the reference itself), plus one result
+ * per container the carrier has assigned to that booking so far.
+ */
+export interface ReferenceFetchResult {
+  booking: AdapterFetchResult["tracking"];
+  containers: AdapterFetchResult[];
+  rawPayload: unknown;
+}
+
+/** The booking-level record kept on a shipment once a carrier reference is tracked. */
+export interface BookingTracking {
+  carrier: CarrierCode;
+  reference: string;
+  vesselName?: string;
+  imoNumber?: string;
+  voyageNumber?: string;
+  originPort?: TrackingLocation;
+  destinationPort?: TrackingLocation;
+  portRotation: PortCall[];
+  events: TrackingEvent[];
+  status: ContainerTrackingStatus;
+  containerNumbers: string[];
+  lastSyncedAt: string | null;
+  lastError?: string;
+}
+
 /** Derives status from the normalized events — the single source of truth used by sync + UI. */
 export function deriveStatus(events: TrackingEvent[]): ContainerTrackingStatus {
   if (events.some((e) => e.eventType === "DELIVERED" && e.eventClassifierCode === "ACT")) {

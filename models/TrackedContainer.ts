@@ -74,6 +74,8 @@ export interface ITrackedContainer extends Document {
   raw: IRawCarrierResponse[];
   /** Optional link back to the Transimex shipment this container was entered against. */
   shipmentId?: string;
+  /** Set when this container was found through a tracked booking — the booking's sync refreshes it. */
+  bookingReference?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -135,6 +137,7 @@ const TrackedContainerSchema = new Schema<ITrackedContainer>(
       },
     ],
     shipmentId: { type: String, default: "", index: true },
+    bookingReference: { type: String, default: "", index: true },
   },
   { timestamps: true }
 );

@@ -36,8 +36,9 @@ export interface ContainerTrackingView {
   containerSizeLabel?: string;
   blNumber?: string;
   bookingNumber?: string;
-  carrier: string;
-  carrierDetectionSource: "explicit" | "prefix";
+  /** Admin views only — the client API never sends the carrier, so no carrier badge is shown to clients. */
+  carrier?: string;
+  carrierDetectionSource?: "explicit" | "prefix";
   vesselName?: string;
   voyageNumber?: string;
   originPort?: { unLocationCode: string; portName: string };
@@ -129,9 +130,11 @@ export default function ContainerMilestoneTimeline({ tracking, loading, error }:
         <div>
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-mono font-bold text-[#0B2545] text-sm">{tracking.containerNumber}</span>
-            <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[10px] font-bold">
-              {CARRIER_LABEL[tracking.carrier] || tracking.carrier}
-            </span>
+            {tracking.carrier && (
+              <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[10px] font-bold">
+                {CARRIER_LABEL[tracking.carrier] || tracking.carrier}
+              </span>
+            )}
             {statusBadge && (
               <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${statusBadge.className}`}>
                 {language === "fr" ? statusBadge.fr : statusBadge.en}
