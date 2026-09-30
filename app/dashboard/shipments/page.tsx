@@ -446,28 +446,6 @@ function ShipmentsContent() {
                       <span>{shipment.equipment}</span>
                     </div>
                   </div>
-
-                  {/* Progress Bar */}
-                  <div className="w-full max-w-md pt-1">
-                    <div className="flex items-center justify-between text-[10px] text-slate-400 mb-1">
-                      <span>
-                        {language === "fr" ? "Progression du Transit" : "Transit Progress"} ({shipment.progress}%)
-                      </span>
-                      <span>ETA: {shipment.eta}</span>
-                    </div>
-                    <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full ${
-                          hasDutiesNotice
-                            ? "bg-[#d21f27]"
-                            : shipment.status === "delivered"
-                            ? "bg-emerald-500"
-                            : "bg-[#0B2545]"
-                        }`}
-                        style={{ width: `${shipment.progress}%` }}
-                      />
-                    </div>
-                  </div>
                 </div>
 
                 {/* Right: Driver Info */}
@@ -495,8 +473,39 @@ function ShipmentsContent() {
                 </div>
               </div>
 
-              {openDetails.has(shipment.id) && (
-                <div className="-mt-1 space-y-4 animate-in fade-in slide-in-from-top-1 duration-200">
+              {/* Progress Bar — full card width */}
+              <div className="w-full -mt-1">
+                <div className="flex items-center justify-between text-[10px] text-slate-400 mb-1">
+                  <span>
+                    {language === "fr" ? "Progression du Transit" : "Transit Progress"} ({shipment.progress}%)
+                  </span>
+                  <span>ETA: {shipment.eta}</span>
+                </div>
+                <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-[width] duration-500 ${
+                      hasDutiesNotice
+                        ? "bg-[#d21f27]"
+                        : shipment.status === "delivered"
+                        ? "bg-emerald-500"
+                        : "bg-[#0B2545]"
+                    }`}
+                    style={{ width: `${shipment.progress}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Voyage details — always rendered, animated open/closed by growing its grid row from 0fr to 1fr */}
+              {(shipment.vessel || (shipment.containers && shipment.containers.length > 0)) && (
+                <div
+                  className={`grid transition-all duration-300 ease-in-out motion-reduce:transition-none ${
+                    openDetails.has(shipment.id) ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0 -mt-4"
+                  }`}
+                  aria-hidden={!openDetails.has(shipment.id)}
+                  inert={!openDetails.has(shipment.id)}
+                >
+                <div className="min-h-0 overflow-hidden">
+                <div className="space-y-4">
                   {/* Vessel — only shown once the shipment's ocean booking has vessel data */}
                   {shipment.vessel && <VesselInfoCard vessel={shipment.vessel} embedded />}
 
@@ -539,6 +548,8 @@ function ShipmentsContent() {
                   })}
                 </div>
               )}
+                </div>
+                </div>
                 </div>
               )}
 
