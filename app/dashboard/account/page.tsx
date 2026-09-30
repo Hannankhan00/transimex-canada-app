@@ -13,7 +13,7 @@ import {
 } from "@/lib/validations/profile";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { api } from "@/lib/api";
-import { EmailPreferences } from "@/lib/mockData";
+import { EmailPreferences } from "@/lib/portalTypes";
 
 const DEFAULT_PREFERENCES: EmailPreferences = {
   emailShipmentUpdates: true,

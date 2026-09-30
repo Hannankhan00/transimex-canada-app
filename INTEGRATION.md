@@ -1,24 +1,16 @@
 # Container Tracking — Going Live Per Carrier
 
-The tracking system (`lib/tracking/`) runs entirely on mock fixture data by
-default. Nothing about its structure changes when real credentials arrive —
-each carrier is switched independently by filling in its env vars and
-flipping its `USE_MOCK_DATA` flag. No code changes are required. Background
-and context: `DOCs/container tracking.docx`.
+The tracking system (`lib/tracking/`) always calls each carrier's live API —
+there is no mock or sample-data mode. A carrier goes live as soon as its env
+vars are filled in; no code changes are required. Background and context:
+`DOCs/container tracking.docx`.
 
-## How the switch works
+## How it works
 
-- `TRACKING_USE_MOCK_DATA` (global) — default `true`. Every carrier falls
-  back to this unless it has its own override.
-- `<CARRIER>_USE_MOCK_DATA` (per-carrier) — set to `false` to take that one
-  carrier live while the others stay on mock data. Useful for testing one
-  integration at a time.
-- See `.env.example` for the full list of variables with their defaults.
-
-Once a carrier's `USE_MOCK_DATA` is `false`, its adapter
-(`lib/tracking/adapters/<carrier>.ts`) requires `<CARRIER>_API_BASE_URL` and
-`<CARRIER>_API_KEY` to be set, or it throws `AdapterNotConfiguredError` with
-a clear message instead of silently falling back to mock data.
+Each adapter (`lib/tracking/adapters/<carrier>.ts`) requires
+`<CARRIER>_API_BASE_URL` and `<CARRIER>_API_KEY` to be set, or it throws
+`AdapterNotConfiguredError` with a clear message. See `.env.example` for the
+full list of variables with their defaults.
 
 **Important caveat:** the exact endpoint paths and auth header names used in
 each adapter's live branch are representative, written from the API
@@ -35,7 +27,7 @@ field names differ from the fixture).
   key, test in sandbox, then go live (no mandatory sales approval for
   Track & Trace).
 - Env vars: `MAERSK_API_BASE_URL`, `MAERSK_API_KEY`, `MAERSK_API_SECRET`
-  (if issued), `MAERSK_USE_MOCK_DATA=false`.
+  (if issued).
 - Auth header used in the adapter: `Consumer-Key: <MAERSK_API_KEY>` — confirm
   against the Track & Trace Plus reference once registered.
 - Data source: Track & Trace Plus / MEC Tracking, already DCSA Track & Trace
@@ -62,7 +54,7 @@ field names differ from the fixture).
   (GTOT/GTIN/LOAD/DISC/STRP/DROP) events. CMA CGM doesn't send SHIPMENT events yet.
 - Env vars: `CMACGM_API_BASE_URL` (API gateway, default
   `https://apis.cma-cgm.net`, **not** the api-portal host), `CMACGM_API_KEY`,
-  `CMACGM_API_SECRET`, `CMACGM_USE_MOCK_DATA=false`. Optional:
+  `CMACGM_API_SECRET`. Optional:
   `CMACGM_BEHALF_OF` (partner ID, required only when calling as a third
   party), `CMACGM_TOKEN_URL`, `CMACGM_OAUTH_SCOPE`.
 - Auth (both from the spec):
@@ -95,8 +87,7 @@ field names differ from the fixture).
   (Track & Trace + Schedules only, which covers our use case — no need for
   Booking/VGM/BL tiers), signing a Data Sharing Agreement, and completing
   UAT with MSC's technical team before go-live.
-- Env vars: `MSC_API_BASE_URL`, `MSC_API_KEY`, `MSC_API_SECRET` (if issued),
-  `MSC_USE_MOCK_DATA=false`.
+- Env vars: `MSC_API_BASE_URL`, `MSC_API_KEY`, `MSC_API_SECRET` (if issued).
 - Auth header used in the adapter: `x-api-key: <MSC_API_KEY>` — confirm
   against MSC's Basic-package reference during UAT.
 - **Rate limit is fixed and not negotiable: 100,000 calls/day, 4 calls/
@@ -120,7 +111,7 @@ publicly.
 
 ## Testing before go-live
 
-Run `npm test` — the mock-adapter pipeline tests
+Run `npm test` — the tracking tests, which feed sample payloads through the real adapters
 (`lib/tracking/__tests__/`) cover carrier detection, each adapter's
 normalization, the rate limiter, and the full detect → fetch → normalize →
 cache → display flow. Before switching a carrier live, additionally

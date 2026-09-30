@@ -1,11 +1,13 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { maerskAdapter, cmaCgmAdapter, mscAdapter } from "../adapters";
 import { deriveStatus } from "../schema";
-import { buildCmaCgmFixture } from "../adapters/fixtures/cmacgm.fixture";
+import { buildCmaCgmFixture } from "./fixtures/cmacgm.fixture";
+import { buildMaerskFixture } from "./fixtures/maersk.fixture";
+import { buildMscFixture } from "./fixtures/msc.fixture";
 
-describe("maerskAdapter (mock mode)", () => {
-  it("normalizes the DCSA-style fixture into the internal schema", async () => {
-    const { tracking, rawPayload } = await maerskAdapter.fetchTracking("MAEU7654321");
+describe("maerskAdapter (normalization)", () => {
+  it("normalizes the DCSA-style fixture into the internal schema", () => {
+    const { tracking, rawPayload } = maerskAdapter.parseWebhookPayload(buildMaerskFixture("MAEU7654321"));
 
     expect(tracking.containerNumber).toBe("MAEU7654321");
     expect(tracking.carrier).toBe("MAERSK");
@@ -20,9 +22,9 @@ describe("maerskAdapter (mock mode)", () => {
   });
 });
 
-describe("cmaCgmAdapter (mock mode)", () => {
+describe("cmaCgmAdapter (normalization)", () => {
   it("normalizes CMA CGM's DCSA 2.2 events into the internal schema", async () => {
-    const { tracking } = await cmaCgmAdapter.fetchTracking("CMAU2233445");
+    const { tracking } = cmaCgmAdapter.parseWebhookPayload(buildCmaCgmFixture("CMAU2233445"));
 
     expect(tracking.containerNumber).toBe("CMAU2233445");
     expect(tracking.carrier).toBe("CMA_CGM");
@@ -34,7 +36,7 @@ describe("cmaCgmAdapter (mock mode)", () => {
   });
 
   it("places DCSA codes on the journey and collapses duplicates per milestone", async () => {
-    const { tracking } = await cmaCgmAdapter.fetchTracking("CMAU2233445");
+    const { tracking } = cmaCgmAdapter.parseWebhookPayload(buildCmaCgmFixture("CMAU2233445"));
 
     expect(tracking.portRotation.map((p) => [p.role, p.unLocationCode])).toEqual([
       ["ORIGIN", "CAMTR"],
@@ -107,7 +109,6 @@ describe("cmaCgmAdapter (live mode)", () => {
   });
 
   it("calls GET /operation/trackandtrace/v1/events/{ref} with the keyId header and follows Next-Page", async () => {
-    process.env.CMACGM_USE_MOCK_DATA = "false";
     process.env.CMACGM_API_BASE_URL = "https://apis.example.test/";
     process.env.CMACGM_API_KEY = "public-key";
     process.env.CMACGM_API_SECRET = "";
@@ -134,7 +135,6 @@ describe("cmaCgmAdapter (live mode)", () => {
   });
 
   it("uses an OAuth2 client-credentials token when a secret is configured", async () => {
-    process.env.CMACGM_USE_MOCK_DATA = "false";
     process.env.CMACGM_API_BASE_URL = "https://apis.example.test";
     process.env.CMACGM_API_KEY = "client-id-oauth-test";
     process.env.CMACGM_API_SECRET = "client-secret";
@@ -154,9 +154,9 @@ describe("cmaCgmAdapter (live mode)", () => {
   });
 });
 
-describe("mscAdapter (mock mode)", () => {
+describe("mscAdapter (normalization)", () => {
   it("normalizes MSC's milestone codes and resolves port codes by name", async () => {
-    const { tracking } = await mscAdapter.fetchTracking("MSCU9988776");
+    const { tracking } = mscAdapter.parseWebhookPayload(buildMscFixture("MSCU9988776"));
 
     expect(tracking.containerNumber).toBe("MSCU9988776");
     expect(tracking.carrier).toBe("MSC");

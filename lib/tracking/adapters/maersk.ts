@@ -1,7 +1,7 @@
 import { AdapterFetchResult, EventClassifier, TrackingEvent, TrackingEventType } from "../schema";
 import { getCarrierConfig } from "../config";
 import { acquireRateLimit } from "../rateLimiter";
-import { buildMaerskFixture, MaerskRawPayload } from "./fixtures/maersk.fixture";
+import { MaerskRawPayload } from "./payloads";
 import { AdapterNotConfiguredError, CarrierAdapter, InvalidPayloadError } from "./types";
 
 // DCSA equipment/transport/shipment event type codes -> our internal milestone.
@@ -99,11 +99,6 @@ export const maerskAdapter: CarrierAdapter = {
 
   async fetchTracking(containerNumber: string): Promise<AdapterFetchResult> {
     const config = getCarrierConfig("MAERSK");
-
-    if (config.useMock) {
-      const raw = buildMaerskFixture(containerNumber);
-      return { tracking: normalize(raw), rawPayload: raw };
-    }
 
     if (!config.baseUrl || !config.apiKey) {
       throw new AdapterNotConfiguredError("MAERSK");

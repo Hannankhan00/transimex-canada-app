@@ -9,9 +9,8 @@ export class RateLimitExceededError extends Error {
 }
 
 /**
- * In-memory per-carrier limiter (day cap + sliding 1s window). Only the live
- * adapter path consumes it — mock mode bypasses it entirely, since fixture
- * data isn't a real network call. Built now, ahead of credentials, per
+ * In-memory per-carrier limiter (day cap + sliding 1s window). Every adapter
+ * call to a carrier's API consumes it. Limits follow
  * DOCs/container tracking.docx §5.4 (MSC's 100k/day + 4/s cap is fixed).
  *
  * Caveat: in-memory state doesn't share across serverless instances. Fine for

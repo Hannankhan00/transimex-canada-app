@@ -6,7 +6,9 @@
  * representative, not a verified copy of Maersk's live schema; confirm exact
  * shapes against the sandbox once registered (see INTEGRATION.md).
  */
-export function buildMaerskFixture(containerNumber: string) {
+import type { MaerskRawPayload } from "../../adapters/payloads";
+
+export function buildMaerskFixture(containerNumber: string): MaerskRawPayload {
   return {
     container: {
       equipmentReference: containerNumber,
@@ -127,4 +129,3 @@ export function buildMaerskFixture(containerNumber: string) {
   };
 }
 
-export type MaerskRawPayload = ReturnType<typeof buildMaerskFixture>;

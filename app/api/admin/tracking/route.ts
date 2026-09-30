@@ -9,7 +9,7 @@ import { getAllRateLimitUsage } from "@/lib/tracking/rateLimiter";
 import { getCarrierConfig } from "@/lib/tracking/config";
 import { CARRIER_CODES } from "@/lib/tracking/schema";
 
-/** GET — admin overview: every tracked container (cache only) plus each carrier's mock/live mode and rate-limiter usage. */
+/** GET — admin overview: every tracked container (cache only) plus whether each carrier has API credentials, and rate-limiter usage. */
 export async function GET() {
   const cookieStore = await cookies();
   const token = cookieStore.get("token")?.value;
@@ -34,7 +34,7 @@ export async function GET() {
 
   const carriers = CARRIER_CODES.map((carrier) => ({
     carrier,
-    mockMode: getCarrierConfig(carrier).useMock,
+    configured: Boolean(getCarrierConfig(carrier).apiKey),
     rateLimit: getAllRateLimitUsage().find((u) => u.carrier === carrier),
   }));
 

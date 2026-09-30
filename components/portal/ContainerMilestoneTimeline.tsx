@@ -18,8 +18,7 @@ import {
 
 /**
  * Reads only the internal DCSA-modeled schema (lib/tracking/schema.ts) — it
- * has no idea whether the data came from a mock fixture or a live carrier
- * call, which is the point: it renders identically either way.
+ * never sees a carrier's raw response, so it renders every carrier the same way.
  */
 export interface TimelineEvent {
   eventType: string;

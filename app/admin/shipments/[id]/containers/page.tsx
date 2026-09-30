@@ -17,7 +17,6 @@ import {
   AlertTriangle,
   ChevronDown,
   ChevronUp,
-  FlaskConical,
 } from "lucide-react";
 
 interface ContainerRow {
@@ -315,15 +314,6 @@ function ShipmentContainersPageInner() {
           })}
         </div>
       )}
-
-      <div className="flex items-start gap-2 text-[10px] text-slate-400 p-3 bg-slate-50 rounded-xl border border-slate-200">
-        <FlaskConical className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
-        <span>
-          {language === "fr"
-            ? "Chaque transporteur bascule entre données simulées et données réelles via une variable d'environnement — aucune modification de code n'est nécessaire lors de la réception des identifiants."
-            : "Each carrier switches between mock and live data via an environment variable — no code changes are needed once credentials arrive. See INTEGRATION.md."}
-        </span>
-      </div>
     </div>
   );
 }

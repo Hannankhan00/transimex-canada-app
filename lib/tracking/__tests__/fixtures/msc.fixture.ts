@@ -6,7 +6,9 @@
  * Data Sharing Agreement is signed (see INTEGRATION.md). Modeled on the
  * Montreal -> Matadi river-port lane called out in the doc as an edge case.
  */
-export function buildMscFixture(containerNumber: string) {
+import type { MscRawPayload } from "../../adapters/payloads";
+
+export function buildMscFixture(containerNumber: string): MscRawPayload {
   return {
     equipmentNumber: containerNumber,
     equipmentIsoCode: "22G1",
@@ -84,4 +86,3 @@ export function buildMscFixture(containerNumber: string) {
   };
 }
 
-export type MscRawPayload = ReturnType<typeof buildMscFixture>;

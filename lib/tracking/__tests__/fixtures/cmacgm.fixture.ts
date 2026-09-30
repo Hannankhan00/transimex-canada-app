@@ -9,90 +9,14 @@
  * spec; values are representative of a Montreal -> Algeciras -> Dakar routing.
  */
 
-// ---- Types mirroring the spec's components/schemas (only what we read) ----
-
-export interface CmaCgmLocation {
-  locationName?: string;
-  latitude?: string;
-  longitude?: string;
-  UNLocationCode?: string;
-  address?: { city?: string; country?: string };
-}
-
-export interface CmaCgmVessel {
-  vesselIMONumber: string;
-  vesselName?: string;
-  vesselFlag?: string;
-  vesselCallSignNumber?: string;
-  vesselOperatorCarrierCode?: string;
-}
-
-export interface CmaCgmTransportCall {
-  transportCallID: string;
-  carrierServiceCode?: string;
-  /** Deprecated in the spec in favour of export/importVoyageNumber. */
-  carrierVoyageNumber?: string;
-  exportVoyageNumber?: string;
-  importVoyageNumber?: string;
-  transportCallSequenceNumber?: number;
-  UNLocationCode?: string;
-  facilityCode?: string;
-  facilityCodeListProvider?: "BIC" | "SMDG";
-  facilityTypeCode?: string;
-  otherFacility?: string;
-  modeOfTransport: "VESSEL" | "RAIL" | "TRUCK" | "BARGE";
-  location?: CmaCgmLocation;
-  vessel?: CmaCgmVessel;
-}
-
-export interface CmaCgmCarrierSpecificData {
-  internalEventCode?: string;
-  internalEventLabel?: string;
-  internalLocationCode?: string;
-  internalFacilityCode?: string;
-  bookingExportVoyageReference?: string;
-  /** "Export" | "Transshipment" | "Import" */
-  transportationPhase?: string;
-  /** DEPOT | COL | ABP_EXP | POL | PTS | POD | ABP_IMP | DEL */
-  shipmentLocationType?: string;
-  transportCallSequenceTotal?: number;
-  numberOfUnits?: number;
-}
-
-export interface CmaCgmDocumentReference {
-  /** Spec enum is literally "BKG (Booking)" / "TRD (Transport Document)"; live data may send the bare code. */
-  documentReferenceType?: string;
-  documentReferenceValue?: string;
-}
-
-export interface CmaCgmEvent {
-  eventID?: string;
-  eventCreatedDateTime: string;
-  eventType: "TRANSPORT" | "EQUIPMENT" | "SHIPMENT";
-  eventClassifierCode: "ACT" | "PLN" | "EST";
-  eventDateTime?: string;
-  carrierSpecificData?: CmaCgmCarrierSpecificData;
-  // TRANSPORT
-  transportEventTypeCode?: "ARRI" | "DEPA";
-  delayReasonCode?: string;
-  changeRemark?: string;
-  transportCall?: CmaCgmTransportCall;
-  // EQUIPMENT
-  equipmentEventTypeCode?: string;
-  equipmentReference?: string;
-  ISOEquipmentCode?: string;
-  emptyIndicatorCode?: "EMPTY" | "LADEN";
-  eventLocation?: CmaCgmLocation;
-  // SHIPMENT (not emitted by CMA CGM yet, but part of the DCSA union)
-  shipmentEventTypeCode?: string;
-  documentTypeCode?: string;
-  documentID?: string;
-  // Shared
-  documentReferences?: CmaCgmDocumentReference[];
-  references?: { referenceType: string; referenceValue: string }[];
-}
-
-export type CmaCgmRawPayload = CmaCgmEvent[];
+import type {
+  CmaCgmLocation,
+  CmaCgmVessel,
+  CmaCgmTransportCall,
+  CmaCgmEvent,
+  CmaCgmRawPayload,
+  CmaCgmDocumentReference,
+} from "../../adapters/payloads";
 
 // ---- Fixture ----
 

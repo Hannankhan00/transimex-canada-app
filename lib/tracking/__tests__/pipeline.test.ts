@@ -6,15 +6,33 @@ import {
   InMemoryTrackingStore,
   UnknownCarrierError,
 } from "../pipeline";
-import { buildMscFixture } from "../adapters/fixtures/msc.fixture";
+import { getAdapter, CarrierAdapter } from "../adapters";
+import { CarrierCode } from "../schema";
+import { buildMaerskFixture } from "./fixtures/maersk.fixture";
+import { buildCmaCgmFixture } from "./fixtures/cmacgm.fixture";
+import { buildMscFixture } from "./fixtures/msc.fixture";
+
+const FIXTURES: Record<CarrierCode, (containerNumber: string) => unknown> = {
+  MAERSK: buildMaerskFixture,
+  CMA_CGM: buildCmaCgmFixture,
+  MSC: buildMscFixture,
+};
+
+/** The real adapter for each carrier, fed a fixture payload instead of a network response. */
+function fixtureAdapter(carrier: CarrierCode): CarrierAdapter {
+  const real = getAdapter(carrier);
+  return {
+    ...real,
+    fetchTracking: async (containerNumber) => real.parseWebhookPayload(FIXTURES[carrier](containerNumber)),
+  };
+}
 
 /**
- * End-to-end pipeline coverage: detect carrier -> fetch (mock adapter) ->
+ * End-to-end pipeline coverage: detect carrier -> fetch (real adapter fed a fixture) ->
  * normalize -> cache -> display (read back through the same cache the UI
- * reads). This is the "whole pipeline" check that has to pass before any
- * real carrier credentials exist.
+ * reads). Runs without any carrier credentials or network access.
  */
-describe("tracking pipeline (mock adapters, in-memory cache)", () => {
+describe("tracking pipeline (fixture payloads, in-memory cache)", () => {
   let store: InMemoryTrackingStore;
 
   beforeEach(() => {
@@ -22,7 +40,7 @@ describe("tracking pipeline (mock adapters, in-memory cache)", () => {
   });
 
   it("detects the carrier from the container prefix, fetches, normalizes, and caches", async () => {
-    const tracking = await syncContainerTracking("MAEU1234567", undefined, { store });
+    const tracking = await syncContainerTracking("MAEU1234567", undefined, { store, getAdapter: fixtureAdapter });
 
     expect(tracking.carrier).toBe("MAERSK");
     expect(tracking.carrierDetectionSource).toBe("prefix");
@@ -39,18 +57,18 @@ describe("tracking pipeline (mock adapters, in-memory cache)", () => {
 
   it("prefers an explicit carrier over the prefix guess", async () => {
     // MSCU prefix would normally resolve to MSC — force CMA_CGM explicitly.
-    const tracking = await syncContainerTracking("MSCU1234567", "CMA_CGM", { store });
+    const tracking = await syncContainerTracking("MSCU1234567", "CMA_CGM", { store, getAdapter: fixtureAdapter });
     expect(tracking.carrier).toBe("CMA_CGM");
     expect(tracking.carrierDetectionSource).toBe("explicit");
   });
 
   it("throws UnknownCarrierError for an unrecognized prefix with no explicit carrier", async () => {
-    await expect(syncContainerTracking("ZZZZ1234567", undefined, { store })).rejects.toThrow(UnknownCarrierError);
+    await expect(syncContainerTracking("ZZZZ1234567", undefined, { store, getAdapter: fixtureAdapter })).rejects.toThrow(UnknownCarrierError);
   });
 
   it("keeps a bounded history of raw payloads across repeated syncs", async () => {
     for (let i = 0; i < 3; i++) {
-      await syncContainerTracking("MAEU1234567", undefined, { store, maxRawHistory: 2 });
+      await syncContainerTracking("MAEU1234567", undefined, { store, getAdapter: fixtureAdapter, maxRawHistory: 2 });
     }
     const tracking = await getCachedTracking("MAEU1234567", { store });
     expect(tracking?.raw).toHaveLength(2);
@@ -68,9 +86,9 @@ describe("tracking pipeline (mock adapters, in-memory cache)", () => {
   });
 
   it("end-to-end across all three carriers via their owner prefixes", async () => {
-    const maersk = await syncContainerTracking("MAEU1111111", undefined, { store });
-    const cmaCgm = await syncContainerTracking("CMAU2222222", undefined, { store });
-    const msc = await syncContainerTracking("MSCU3333333", undefined, { store });
+    const maersk = await syncContainerTracking("MAEU1111111", undefined, { store, getAdapter: fixtureAdapter });
+    const cmaCgm = await syncContainerTracking("CMAU2222222", undefined, { store, getAdapter: fixtureAdapter });
+    const msc = await syncContainerTracking("MSCU3333333", undefined, { store, getAdapter: fixtureAdapter });
 
     expect([maersk.carrier, cmaCgm.carrier, msc.carrier]).toEqual(["MAERSK", "CMA_CGM", "MSC"]);
     for (const containerNumber of ["MAEU1111111", "CMAU2222222", "MSCU3333333"]) {

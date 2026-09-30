@@ -2,8 +2,7 @@ import { AdapterFetchResult, CarrierCode } from "../schema";
 
 /**
  * One adapter per carrier. Every adapter implements this same interface and
- * is solely responsible for (a) calling its carrier's endpoint (or returning
- * fixture data in mock mode) and (b) mapping that carrier's own field names
+ * is solely responsible for (a) calling its carrier's live endpoint and (b) mapping that carrier's own field names
  * and event labels into the shared internal schema. Nothing outside the
  * adapter ever sees a carrier's raw response shape.
  */
@@ -17,8 +16,8 @@ export interface CarrierAdapter {
 export class AdapterNotConfiguredError extends Error {
   constructor(carrier: CarrierCode) {
     super(
-      `${carrier} adapter is set to live mode but is missing its API base URL / key. ` +
-        `Set the required env vars (see INTEGRATION.md) or flip its USE_MOCK_DATA flag back to true.`
+      `${carrier} tracking is not configured: its API base URL / key is missing. ` +
+        `Set the required env vars (see INTEGRATION.md).`
     );
     this.name = "AdapterNotConfiguredError";
   }

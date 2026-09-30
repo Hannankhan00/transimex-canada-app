@@ -7,7 +7,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { quoteRequestSchema, QuoteRequestFormData } from "@/lib/validations/quote";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { api } from "@/lib/api";
-import { getStoredAddresses } from "@/lib/mockData";
 import { SavedAddress } from "@/lib/validations/address";
 import { TRANSPORT_CATEGORIES } from "@/lib/transportModes";
 import TransimexLogo from "@/components/TransimexLogo";
@@ -104,13 +103,21 @@ export default function PublicQuotePage() {
         if (me.user.companyName) setValue("companyName", me.user.companyName);
         if (me.user.phone) setValue("contactPhone", me.user.phone);
 
-        const addrs = getStoredAddresses();
-        setSavedAddresses(addrs);
-        const defaultAddr = addrs.find((a) => a.isDefault);
-        if (defaultAddr) {
-          setValue("originCity", defaultAddr.city);
-          setValue("originProvince", defaultAddr.province);
-          setValue("originPostal", defaultAddr.postalCode);
+        try {
+          const addrRes = await fetch("/api/addresses");
+          if (addrRes.ok) {
+            const addrData = await addrRes.json();
+            const addrs: SavedAddress[] = addrData.addresses || [];
+            setSavedAddresses(addrs);
+            const defaultAddr = addrs.find((a) => a.isDefault && a.addressType !== "Delivery");
+            if (defaultAddr) {
+              setValue("originCity", defaultAddr.city);
+              setValue("originProvince", defaultAddr.province);
+              setValue("originPostal", defaultAddr.postalCode);
+            }
+          }
+        } catch {
+          // No saved addresses — the origin fields stay empty for manual entry.
         }
       } else {
         setAuthState("guest");

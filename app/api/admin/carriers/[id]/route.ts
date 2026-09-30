@@ -85,6 +85,16 @@ export async function PUT(
     }
 
     if (body.name) dbCarrier.name = body.name;
+    if (typeof body.code === "string" && body.code.trim()) {
+      const newCode = body.code.trim().toUpperCase();
+      if (newCode !== dbCarrier.code) {
+        const taken = await Carrier.exists({ code: newCode, _id: { $ne: dbCarrier._id } });
+        if (taken) {
+          return NextResponse.json({ error: `A carrier with code ${newCode} already exists` }, { status: 409 });
+        }
+        dbCarrier.code = newCode;
+      }
+    }
     if (body.primaryMode && body.primaryMode !== dbCarrier.primaryMode) {
       dbCarrier.primaryMode = body.primaryMode;
       dbCarrier.supportedModes = [body.primaryMode];

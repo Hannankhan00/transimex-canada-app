@@ -1,6 +1,6 @@
 /**
  * Transimex Canada Client Portal API Layer
- * Connects frontend flows with Next.js API routes with robust mock fallbacks.
+ * Connects frontend flows with Next.js API routes.
  */
 
 import { RegisterFormData, LoginFormData, ForgotPasswordFormData, ResetPasswordFormData } from "./validations/auth";

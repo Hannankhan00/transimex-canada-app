@@ -9,12 +9,7 @@ import {
 } from "../schema";
 import { getCarrierConfig, getCmaCgmAuthConfig, CarrierConfig } from "../config";
 import { acquireRateLimit } from "../rateLimiter";
-import {
-  buildCmaCgmFixture,
-  CmaCgmEvent,
-  CmaCgmRawPayload,
-  CmaCgmTransportCall,
-} from "./fixtures/cmacgm.fixture";
+import { CmaCgmEvent, CmaCgmRawPayload, CmaCgmTransportCall } from "./payloads";
 import { AdapterNotConfiguredError, CarrierAdapter, InvalidPayloadError } from "./types";
 
 // CMA CGM Track & Trace speaks DCSA T&T 2.2.0 (OpenAPI "operation.trackandtrace.v1").
@@ -432,11 +427,6 @@ export const cmaCgmAdapter: CarrierAdapter = {
 
   async fetchTracking(containerNumber: string): Promise<AdapterFetchResult> {
     const config = getCarrierConfig("CMA_CGM");
-
-    if (config.useMock) {
-      const raw = buildCmaCgmFixture(containerNumber);
-      return { tracking: normalize(raw, containerNumber), rawPayload: raw };
-    }
 
     if (!config.baseUrl || !config.apiKey) {
       throw new AdapterNotConfiguredError("CMA_CGM");

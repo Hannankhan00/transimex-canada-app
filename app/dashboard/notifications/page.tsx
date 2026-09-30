@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
-import { PortalNotification, NotificationCategory } from "@/lib/mockData";
+import { PortalNotification, NotificationCategory } from "@/lib/portalTypes";
 import {
   Bell,
   CheckCircle2,

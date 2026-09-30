@@ -1,7 +1,7 @@
 import { AdapterFetchResult, EventClassifier, TrackingEvent, TrackingEventType } from "../schema";
 import { getCarrierConfig } from "../config";
 import { acquireRateLimit } from "../rateLimiter";
-import { buildMscFixture, MscRawPayload } from "./fixtures/msc.fixture";
+import { MscRawPayload } from "./payloads";
 import { AdapterNotConfiguredError, CarrierAdapter, InvalidPayloadError } from "./types";
 
 // MSC's own milestone codes -> our internal milestone. Confirm against the
@@ -92,11 +92,6 @@ export const mscAdapter: CarrierAdapter = {
 
   async fetchTracking(containerNumber: string): Promise<AdapterFetchResult> {
     const config = getCarrierConfig("MSC");
-
-    if (config.useMock) {
-      const raw = buildMscFixture(containerNumber);
-      return { tracking: normalize(raw), rawPayload: raw };
-    }
 
     if (!config.baseUrl || !config.apiKey) {
       throw new AdapterNotConfiguredError("MSC");

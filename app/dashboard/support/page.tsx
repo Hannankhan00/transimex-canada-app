@@ -11,7 +11,7 @@ import {
   ticketPrioritiesEnum,
 } from "@/lib/validations/support";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
-import { SupportTicket } from "@/lib/mockData";
+import { SupportTicket } from "@/lib/portalTypes";
 import {
   MessageSquare,
   Plus,

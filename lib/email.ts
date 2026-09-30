@@ -68,22 +68,14 @@ async function sendViaResend(
 }
 
 /**
- * Sends a transactional email through Resend. Without RESEND_API_KEY it logs
- * a mock send in development and throws in production, so a missing key
- * can never silently swallow password resets or verification links.
+ * Sends a transactional email through Resend. Without RESEND_API_KEY it throws,
+ * so a missing key can never silently swallow password resets or verification links.
  */
 export async function sendEmail(params: SendEmailParams): Promise<{ success: boolean; messageId?: string }> {
   const resendKey = process.env.RESEND_API_KEY;
 
   if (!resendKey) {
-    if (process.env.NODE_ENV === "production") {
-      throw new Error("[Email] RESEND_API_KEY is not configured");
-    }
-    console.warn("\n================ [MOCK EMAIL SERVICE] ================");
-    console.warn(`[Email Warning] RESEND_API_KEY is not set in .env.local — email not sent.`);
-    console.warn(`To: ${params.to}`);
-    console.warn(`Subject: ${params.subject}\n`);
-    return { success: true, messageId: "simulated-dev-id" };
+    throw new Error("[Email] RESEND_API_KEY is not configured");
   }
 
   try {

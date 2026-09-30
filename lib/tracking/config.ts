@@ -1,10 +1,5 @@
 import { CarrierCode } from "./schema";
 
-function boolEnv(value: string | undefined, fallback: boolean): boolean {
-  if (value === undefined || value === "") return fallback;
-  return value === "true" || value === "1";
-}
-
 function numEnv(value: string | undefined, fallback: number): number {
   const n = Number(value);
   return value !== undefined && Number.isFinite(n) && n > 0 ? n : fallback;
@@ -19,8 +14,6 @@ export interface CarrierRateLimitConfig {
 
 export interface CarrierConfig {
   carrier: CarrierCode;
-  /** When true, the adapter returns fixture data instead of calling the live endpoint. */
-  useMock: boolean;
   baseUrl: string;
   apiKey: string;
   apiSecret: string;
@@ -28,24 +21,15 @@ export interface CarrierConfig {
 }
 
 /**
- * Global default for USE_MOCK_DATA. Every carrier falls back to this unless it
- * has its own `<CARRIER>_USE_MOCK_DATA` override. Defaults to `true` so the
- * system runs fully on fixtures until real credentials are supplied.
- */
-const GLOBAL_USE_MOCK_DATA = boolEnv(process.env.TRACKING_USE_MOCK_DATA, true);
-
-/**
- * Per-carrier config, entirely env-driven. To go live for a carrier: fill in
- * its base URL + key(s) in `.env` and flip its `<CARRIER>_USE_MOCK_DATA` flag
- * to `false` (or flip `TRACKING_USE_MOCK_DATA` globally) — no code changes.
- * See INTEGRATION.md for exactly what each carrier requires.
+ * Per-carrier config, entirely env-driven. Every carrier always calls its live
+ * API; one without credentials fails with AdapterNotConfiguredError rather than
+ * returning sample data. See INTEGRATION.md for what each carrier requires.
  */
 export function getCarrierConfig(carrier: CarrierCode): CarrierConfig {
   switch (carrier) {
     case "MAERSK":
       return {
         carrier,
-        useMock: boolEnv(process.env.MAERSK_USE_MOCK_DATA, GLOBAL_USE_MOCK_DATA),
         baseUrl: process.env.MAERSK_API_BASE_URL || "https://api.maersk.com",
         apiKey: process.env.MAERSK_API_KEY || "",
         apiSecret: process.env.MAERSK_API_SECRET || "",
@@ -57,7 +41,6 @@ export function getCarrierConfig(carrier: CarrierCode): CarrierConfig {
     case "CMA_CGM":
       return {
         carrier,
-        useMock: boolEnv(process.env.CMACGM_USE_MOCK_DATA, GLOBAL_USE_MOCK_DATA),
         // API gateway host (api-portal.cma-cgm.com is only the developer portal).
         // The spec's server path `/operation/trackandtrace/v1` is appended by the adapter.
         baseUrl: process.env.CMACGM_API_BASE_URL || "https://apis.cma-cgm.net",
@@ -71,7 +54,6 @@ export function getCarrierConfig(carrier: CarrierCode): CarrierConfig {
     case "MSC":
       return {
         carrier,
-        useMock: boolEnv(process.env.MSC_USE_MOCK_DATA, GLOBAL_USE_MOCK_DATA),
         baseUrl: process.env.MSC_API_BASE_URL || "https://api.developerportal.msc.com",
         apiKey: process.env.MSC_API_KEY || "",
         apiSecret: process.env.MSC_API_SECRET || "",
