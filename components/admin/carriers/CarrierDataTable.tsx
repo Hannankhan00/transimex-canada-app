@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
-import { CarrierVendor, TransportModeType } from "@/lib/carrierTypes";
+import { CarrierVendor, TransportModeType, carriesOwnInsurance } from "@/lib/carrierTypes";
 import {
   Truck,
   Ship,
@@ -161,7 +161,8 @@ export default function CarrierDataTable({
               </tr>
             ) : (
               filteredCarriers.map((carrier) => {
-                const expiringSoon = isInsuranceExpiringSoon(carrier.insurance.expiryDate);
+                const hasInsurance = carriesOwnInsurance(carrier.primaryMode);
+                const expiringSoon = hasInsurance && isInsuranceExpiringSoon(carrier.insurance.expiryDate);
                 const isNewPartner = carrier.totalShipmentsCompleted === 0 && !carrier.rating;
 
                 return (
@@ -175,7 +176,7 @@ export default function CarrierDataTable({
                         <div>
                           <span className="font-bold text-[#0B2545] block">{carrier.name}</span>
                           <span className="font-mono text-[10px] text-slate-500 block">
-                            SCAC: {carrier.code} &bull; HQ: {carrier.headquarters}
+                            {carrier.primaryMode === "Air" ? "IATA" : "SCAC"}: {carrier.code} &bull; HQ: {carrier.headquarters}
                           </span>
                           {carrier.units.length > 0 && (
                             <span className="font-mono text-[10px] text-slate-400 block">
@@ -250,7 +251,25 @@ export default function CarrierDataTable({
                     {/* Insurance & Compliance */}
                     <td className="py-3.5 px-4 whitespace-nowrap">
                       <div>
-                        {expiringSoon ? (
+                        {!hasInsurance ? (
+                          <>
+                            <span className="text-[11px] text-slate-500 block">
+                              {carrier.primaryMode === "Air"
+                                ? language === "fr" ? "Responsabilité selon la LTA" : "Liability per AWB terms"
+                                : language === "fr" ? "Responsabilité selon le connaissement" : "Liability per B/L terms"}
+                            </span>
+                            {carrier.accountNumber && (
+                              <span className="text-[10px] font-mono text-slate-400 block mt-0.5">
+                                {language === "fr" ? "Compte :" : "Acct:"} {carrier.accountNumber}
+                              </span>
+                            )}
+                            {carrier.awbPrefix && (
+                              <span className="text-[10px] font-mono text-slate-400 block">
+                                {language === "fr" ? "Préfixe LTA :" : "AWB prefix:"} {carrier.awbPrefix}
+                              </span>
+                            )}
+                          </>
+                        ) : expiringSoon ? (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-300 font-bold text-[10px]">
                             <AlertTriangle className="w-3 h-3 text-amber-600" />
                             <span>{language === "fr" ? "Expire Bientôt" : "Expiring Soon"} ({carrier.insurance.expiryDate})</span>
@@ -261,9 +280,11 @@ export default function CarrierDataTable({
                             <span>{language === "fr" ? "Conforme" : "Compliant"} ({carrier.insurance.coverageAmount})</span>
                           </span>
                         )}
-                        <span className="text-[10px] font-mono text-slate-400 block mt-0.5">
-                          {language === "fr" ? "Police :" : "Pol:"} {carrier.insurance.policyNumber}
-                        </span>
+                        {hasInsurance && (
+                          <span className="text-[10px] font-mono text-slate-400 block mt-0.5">
+                            {language === "fr" ? "Police :" : "Pol:"} {carrier.insurance.policyNumber}
+                          </span>
+                        )}
                       </div>
                     </td>
 
@@ -304,7 +325,8 @@ export default function CarrierDataTable({
           </div>
         ) : (
           filteredCarriers.map((carrier) => {
-            const expiringSoon = isInsuranceExpiringSoon(carrier.insurance.expiryDate);
+            const hasInsurance = carriesOwnInsurance(carrier.primaryMode);
+            const expiringSoon = hasInsurance && isInsuranceExpiringSoon(carrier.insurance.expiryDate);
             const isNewPartner = carrier.totalShipmentsCompleted === 0 && !carrier.rating;
 
             return (
@@ -317,7 +339,7 @@ export default function CarrierDataTable({
                     <div>
                       <span className="font-bold text-[#0B2545] text-xs block">{carrier.name}</span>
                       <span className="font-mono text-[10px] text-slate-500">
-                        SCAC: {carrier.code} &bull; {carrier.headquarters}
+                        {carrier.primaryMode === "Air" ? "IATA" : "SCAC"}: {carrier.code} &bull; {carrier.headquarters}
                       </span>
                       {carrier.units.length > 0 && (
                         <span className="font-mono text-[10px] text-slate-400 block">
@@ -346,7 +368,13 @@ export default function CarrierDataTable({
                     </div>
                   )}
 
-                  {expiringSoon ? (
+                  {!hasInsurance ? (
+                    carrier.accountNumber ? (
+                      <span className="text-[10px] font-mono text-slate-500">
+                        {language === "fr" ? "Compte :" : "Acct:"} {carrier.accountNumber}
+                      </span>
+                    ) : null
+                  ) : expiringSoon ? (
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-300 font-bold text-[10px]">
                       <AlertTriangle className="w-3 h-3 text-amber-600" />
                       <span>{language === "fr" ? "Expire Bientôt" : "Expiring Soon"}</span>

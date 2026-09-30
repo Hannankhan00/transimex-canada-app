@@ -6,6 +6,7 @@ import User from "@/models/User";
 import { verifyToken } from "@/lib/auth";
 import { hasModulePermission } from "@/lib/rbac";
 import { mapCarrier } from "@/lib/carrierSerialize";
+import { carriesOwnInsurance } from "@/lib/carrierTypes";
 
 async function requireCarrierAccess() {
   const cookieStore = await cookies();
@@ -108,8 +109,12 @@ export async function POST(req: Request) {
       units,
       rating,
       insurance,
+      accountNumber,
+      awbPrefix,
       notes,
     } = body;
+
+    const needsInsurance = carriesOwnInsurance(primaryMode);
 
     if (
       !name ||
@@ -118,12 +123,13 @@ export async function POST(req: Request) {
       !dispatchContact?.phone ||
       !dispatchContact?.email ||
       !headquarters ||
-      !insurance?.expiryDate
+      (needsInsurance && !insurance?.expiryDate)
     ) {
       return NextResponse.json(
         {
-          error:
-            "Carrier name, code, transport mode, headquarters, dispatch contact, and insurance expiry are required",
+          error: needsInsurance
+            ? "Carrier name, code, transport mode, headquarters, dispatch contact, and insurance expiry are required"
+            : "Carrier name, code, transport mode, headquarters, and booking contact are required",
         },
         { status: 400 }
       );
@@ -153,7 +159,7 @@ export async function POST(req: Request) {
       headquarters,
       operatingLanes: operatingLanes || [],
       fleetSize: fleetSize || "",
-      units: Array.isArray(units)
+      units: needsInsurance && Array.isArray(units)
         ? units
             .filter((u: any) => u.driverName && u.vehicleType && u.plateNumber)
             .map((u: any) => ({
@@ -169,12 +175,16 @@ export async function POST(req: Request) {
       rating: rating ? parseFloat(rating) : 0,
       totalShipmentsCompleted: 0,
       onTimeDeliveryRate: "0.0%",
-      insurance: {
-        policyNumber: insurance?.policyNumber || `POL-${code.toUpperCase()}-${new Date().getFullYear()}`,
-        coverageAmount: insurance?.coverageAmount || "",
-        expiryDate: insurance.expiryDate,
-        isCompliant: new Date(insurance.expiryDate).getTime() > Date.now(),
-      },
+      insurance: needsInsurance
+        ? {
+            policyNumber: insurance?.policyNumber || `POL-${code.toUpperCase()}-${new Date().getFullYear()}`,
+            coverageAmount: insurance?.coverageAmount || "",
+            expiryDate: insurance.expiryDate,
+            isCompliant: new Date(insurance.expiryDate).getTime() > Date.now(),
+          }
+        : { policyNumber: "", coverageAmount: "", expiryDate: "", isCompliant: true },
+      accountNumber: needsInsurance ? "" : accountNumber || "",
+      awbPrefix: primaryMode === "Air" ? awbPrefix || "" : "",
       status: "Active",
       notes: notes || "",
     });

@@ -2,13 +2,82 @@
 
 import React, { useState, useEffect } from "react";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
-import { CarrierVendor, FleetUnit, TransportModeType, VendorStatusType } from "@/lib/carrierTypes";
-import { X, Truck, Save, AlertTriangle, Plus, Trash2 } from "lucide-react";
+import { CarrierVendor, FleetUnit, TransportModeType, VendorStatusType, carriesOwnInsurance } from "@/lib/carrierTypes";
+import { X, Truck, Ship, Plane, Train, Save, AlertTriangle, Plus, Trash2 } from "lucide-react";
 
 let tempUnitCounter = 0;
 function makeTempUnit(): FleetUnit {
   tempUnitCounter += 1;
   return { id: `temp-${tempUnitCounter}`, driverName: "", vehicleType: "", plateNumber: "", active: true };
+}
+
+const MODE_OPTIONS: { value: TransportModeType; en: string; fr: string; Icon: typeof Truck }[] = [
+  { value: "Road", en: "Road", fr: "Routier", Icon: Truck },
+  { value: "Sea", en: "Sea", fr: "Maritime", Icon: Ship },
+  { value: "Air", en: "Air", fr: "Aérien", Icon: Plane },
+  { value: "Rail", en: "Rail", fr: "Ferroviaire", Icon: Train },
+];
+
+/** Field labels and examples that change with the carrier's mode. */
+function modeCopy(mode: TransportModeType, fr: boolean) {
+  switch (mode) {
+    case "Sea":
+      return {
+        namePlaceholder: "e.g. CMA CGM",
+        codeLabel: fr ? "Code SCAC" : "SCAC Code",
+        codePlaceholder: "e.g. CMDU",
+        contactTitle: fr ? "Contact Réservations et Service Client" : "Booking & Customer Service Contact",
+        contactNameLabel: fr ? "Représentant du Compte" : "Account Representative",
+        phoneLabel: fr ? "Téléphone des Réservations" : "Booking Desk Phone",
+        emailLabel: fr ? "Courriel Réservations / Service Client" : "Booking / Customer Service Email",
+        emailPlaceholder: "bookings@carrier.com",
+        hqPlaceholder: "e.g. Marseille, France",
+        fleetLabel: fr ? "Flotte" : "Fleet",
+        fleetPlaceholder: "e.g. 650+ container vessels",
+        lanesLabel: fr ? "Routes Portuaires (séparées par des virgules)" : "Port-to-Port Routes (Comma-separated)",
+        lanesPlaceholder: "e.g. Montreal <-> Douala, Montreal <-> Tanger Med",
+        accountLabel: fr ? "Numéro de Compte / Contrat" : "Account / Contract Number",
+        accountPlaceholder: fr ? "Votre numéro de client chez le transporteur" : "Your customer number with this line",
+      };
+    case "Air":
+      return {
+        namePlaceholder: "e.g. Air Canada Cargo",
+        codeLabel: fr ? "Code IATA de la Compagnie" : "IATA Airline Code",
+        codePlaceholder: "e.g. AC",
+        contactTitle: fr ? "Contact Réservations Fret" : "Cargo Booking Contact",
+        contactNameLabel: fr ? "Représentant du Compte" : "Account Representative",
+        phoneLabel: fr ? "Téléphone des Réservations Fret" : "Cargo Booking Phone",
+        emailLabel: fr ? "Courriel Réservations Fret" : "Cargo Booking Email",
+        emailPlaceholder: "cargo@airline.com",
+        hqPlaceholder: "e.g. Montreal, QC",
+        fleetLabel: fr ? "Flotte" : "Fleet",
+        fleetPlaceholder: "e.g. Boeing 777F & 767F freighters",
+        lanesLabel: fr ? "Routes Aéroportuaires (séparées par des virgules)" : "Airport-to-Airport Routes (Comma-separated)",
+        lanesPlaceholder: "e.g. YUL <-> CDG, YYZ <-> LOS",
+        accountLabel: fr ? "Numéro de Compte / Contrat" : "Account / Contract Number",
+        accountPlaceholder: fr ? "Votre numéro de client chez la compagnie" : "Your customer number with this airline",
+      };
+    default:
+      return {
+        namePlaceholder: "e.g. Bison Transport Expedited",
+        codeLabel: fr ? "Code SCAC / DOT" : "SCAC / DOT Code",
+        codePlaceholder: "e.g. BISO",
+        contactTitle: fr ? "Contact de Répartition Principal" : "Primary Dispatch Contact",
+        contactNameLabel: fr ? "Nom du Répartiteur" : "Dispatcher Name",
+        phoneLabel: fr ? "Téléphone de Répartition" : "Dispatch Hotline Phone",
+        emailLabel: fr ? "Courriel de Notification" : "Dispatch Notification Email",
+        emailPlaceholder: "dispatch@carrier.ca",
+        hqPlaceholder: "e.g. Winnipeg, MB",
+        fleetLabel: fr ? "Description de la Flotte" : "Fleet Description",
+        fleetPlaceholder: mode === "Rail" ? "e.g. 1,200 intermodal well cars" : "e.g. 450+ Dry Van & Reefer Tandems",
+        lanesLabel: fr
+          ? "Corridors d'Exploitation Standards (séparés par des virgules)"
+          : "Standard Operating Lanes (Comma-separated)",
+        lanesPlaceholder: "e.g. Montreal <-> Detroit, Toronto <-> Chicago, Calgary <-> Vancouver",
+        accountLabel: "",
+        accountPlaceholder: "",
+      };
+  }
 }
 
 interface CarrierModalProps {
@@ -42,6 +111,8 @@ export default function CarrierModal({
   const [policyNumber, setPolicyNumber] = useState("");
   const [coverageAmount, setCoverageAmount] = useState("");
   const [expiryDate, setExpiryDate] = useState("");
+  const [accountNumber, setAccountNumber] = useState("");
+  const [awbPrefix, setAwbPrefix] = useState("");
   const [status, setStatus] = useState<VendorStatusType>("Active");
   const [notes, setNotes] = useState("");
 
@@ -65,6 +136,8 @@ export default function CarrierModal({
       setPolicyNumber(carrierToEdit.insurance.policyNumber);
       setCoverageAmount(carrierToEdit.insurance.coverageAmount);
       setExpiryDate(carrierToEdit.insurance.expiryDate);
+      setAccountNumber(carrierToEdit.accountNumber || "");
+      setAwbPrefix(carrierToEdit.awbPrefix || "");
       setStatus(carrierToEdit.status);
       setNotes(carrierToEdit.notes || "");
     } else {
@@ -86,6 +159,8 @@ export default function CarrierModal({
       setPolicyNumber("");
       setCoverageAmount("");
       setExpiryDate("");
+      setAccountNumber("");
+      setAwbPrefix("");
       setStatus("Active");
       setNotes("");
     }
@@ -93,6 +168,14 @@ export default function CarrierModal({
   }, [carrierToEdit, isOpen]);
 
   if (!isOpen) return null;
+
+  const fr = language === "fr";
+  const copy = modeCopy(primaryMode, fr);
+  const ownFleet = carriesOwnInsurance(primaryMode);
+  // Units are hidden for Sea/Air, except when editing a carrier that already has
+  // some on file — they stay visible so they aren't kept or dropped out of sight.
+  const showUnits = ownFleet || units.length > 0;
+  const HeaderIcon = MODE_OPTIONS.find((m) => m.value === primaryMode)?.Icon || Truck;
 
   const handleAddUnit = () => setUnits((prev) => [...prev, makeTempUnit()]);
   const handleRemoveUnit = (id: string) => setUnits((prev) => prev.filter((u) => u.id !== id));
@@ -104,12 +187,28 @@ export default function CarrierModal({
     e.preventDefault();
     setError(null);
 
-    if (!name.trim() || !code.trim() || !phone.trim() || !email.trim() || !expiryDate) {
+    if (
+      !name.trim() ||
+      !code.trim() ||
+      !phone.trim() ||
+      !email.trim() ||
+      !headquarters.trim() ||
+      (ownFleet && !expiryDate)
+    ) {
       setError(
-        language === "fr"
-          ? "Le nom du transporteur, le code SCAC, le téléphone de répartition, le courriel et la date d'expiration de l'assurance sont requis."
-          : "Carrier Name, SCAC/Code, Dispatch Phone, Email, and Insurance Expiry are required."
+        ownFleet
+          ? fr
+            ? "Le nom, le code SCAC, le siège social, le téléphone de répartition, le courriel et la date d'expiration de l'assurance sont requis."
+            : "Company Name, SCAC/Code, Headquarters, Dispatch Phone, Email, and Insurance Expiry are required."
+          : fr
+          ? "Le nom, le code, le siège social, le téléphone et le courriel des réservations sont requis."
+          : "Company Name, Code, Headquarters, Booking Phone, and Email are required."
       );
+      return;
+    }
+
+    if (primaryMode === "Air" && awbPrefix && !/^\d{3}$/.test(awbPrefix)) {
+      setError(fr ? "Le préfixe LTA doit comporter 3 chiffres (ex. 014)." : "The AWB prefix must be 3 digits (e.g. 014).");
       return;
     }
 
@@ -150,12 +249,16 @@ export default function CarrierModal({
         active: u.active,
       })),
       rating: rating ? parseFloat(rating) : 0,
-      insurance: {
-        policyNumber,
-        coverageAmount,
-        expiryDate,
-        isCompliant: new Date(expiryDate).getTime() > Date.now(),
-      },
+      insurance: ownFleet
+        ? {
+            policyNumber,
+            coverageAmount,
+            expiryDate,
+            isCompliant: new Date(expiryDate).getTime() > Date.now(),
+          }
+        : { policyNumber: "", coverageAmount: "", expiryDate: "", isCompliant: true },
+      accountNumber: ownFleet ? "" : accountNumber.trim(),
+      awbPrefix: primaryMode === "Air" ? awbPrefix.trim() : "",
       status,
       notes,
     };
@@ -194,7 +297,7 @@ export default function CarrierModal({
         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-[#0B2545] text-white flex items-center justify-center flex-shrink-0">
-              <Truck className="w-5 h-5 text-[#d21f27]" />
+              <HeaderIcon className="w-5 h-5 text-[#d21f27]" />
             </div>
             <div>
               <h3 className="font-bold text-[#0B2545] text-base leading-tight">
@@ -205,9 +308,13 @@ export default function CarrierModal({
                   : "Add New Logistics Carrier Partner"}
               </h3>
               <p className="text-[11px] text-slate-500">
-                {language === "fr"
-                  ? "Enregistrez les identifiants du transporteur, l'assurance de conformité et les corridors d'exploitation standards."
-                  : "Register authorized carrier credentials, compliance insurance, and standard operating corridors."}
+                {ownFleet
+                  ? fr
+                    ? "Enregistrez les identifiants du transporteur, l'assurance de conformité et les corridors d'exploitation standards."
+                    : "Register authorized carrier credentials, compliance insurance, and standard operating corridors."
+                  : fr
+                  ? "Enregistrez les codes du transporteur, votre compte et vos contacts de réservation."
+                  : "Register the carrier's codes, your account with them, and booking contacts."}
               </p>
             </div>
           </div>
@@ -228,6 +335,32 @@ export default function CarrierModal({
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+          {/* Mode comes first, since it decides which fields below apply */}
+          <div>
+            <span className="font-bold text-slate-700 block mb-1">{fr ? "Mode de Transport" : "Transport Mode"}</span>
+            <div className="grid grid-cols-4 gap-2">
+              {MODE_OPTIONS.map(({ value, en, fr: frLabel, Icon }) => {
+                const selected = primaryMode === value;
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setPrimaryMode(value)}
+                    aria-pressed={selected}
+                    className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 rounded-xl border px-2 py-2 font-bold transition cursor-pointer ${
+                      selected
+                        ? "bg-[#0B2545] border-[#0B2545] text-white"
+                        : "bg-slate-50 border-slate-200 text-slate-600 hover:border-[#0B2545]"
+                    }`}
+                  >
+                    <Icon className={`w-4 h-4 flex-shrink-0 ${selected ? "text-[#d21f27]" : "text-slate-400"}`} />
+                    <span>{fr ? frLabel : en}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           {/* Section 1: Carrier Entity Info */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="sm:col-span-2">
@@ -236,7 +369,7 @@ export default function CarrierModal({
               </label>
               <input
                 type="text"
-                placeholder="e.g. Bison Transport Expedited"
+                placeholder={copy.namePlaceholder}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
@@ -246,11 +379,11 @@ export default function CarrierModal({
 
             <div>
               <label className="font-bold text-slate-700 block mb-1">
-                {language === "fr" ? "Code SCAC / DOT" : "SCAC / DOT Code"}
+                {copy.codeLabel}
               </label>
               <input
                 type="text"
-                placeholder="e.g. BISO"
+                placeholder={copy.codePlaceholder}
                 value={code}
                 onChange={(e) => setCode(e.target.value.toUpperCase())}
                 required
@@ -260,23 +393,7 @@ export default function CarrierModal({
           </div>
 
           {/* Section 2: Mode & Status */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div>
-              <label className="font-bold text-slate-700 block mb-1">
-                {language === "fr" ? "Mode Principal" : "Primary Mode"}
-              </label>
-              <select
-                value={primaryMode}
-                onChange={(e) => setPrimaryMode(e.target.value as TransportModeType)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none"
-              >
-                <option value="Road">{language === "fr" ? "Routier (Autoroute)" : "Road (Highway)"}</option>
-                <option value="Sea">{language === "fr" ? "Maritime" : "Sea (Maritime)"}</option>
-                <option value="Air">{language === "fr" ? "Aérien (Express)" : "Air (Express)"}</option>
-                <option value="Rail">{language === "fr" ? "Ferroviaire (Intermodal)" : "Rail (Intermodal)"}</option>
-              </select>
-            </div>
-
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="font-bold text-slate-700 block mb-1">
                 {language === "fr" ? "Statut du Transporteur" : "Carrier Status"}
@@ -312,12 +429,12 @@ export default function CarrierModal({
           {/* Section 3: Dispatch Contacts */}
           <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-200 space-y-3">
             <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
-              {language === "fr" ? "Contact de Répartition Principal" : "Primary Dispatch Contact"}
+              {copy.contactTitle}
             </span>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="font-semibold text-slate-700 block mb-1">
-                  {language === "fr" ? "Nom du Répartiteur" : "Dispatcher Name"}
+                  {copy.contactNameLabel}
                 </label>
                 <input
                   type="text"
@@ -330,7 +447,7 @@ export default function CarrierModal({
 
               <div>
                 <label className="font-semibold text-slate-700 block mb-1">
-                  {language === "fr" ? "Téléphone de Répartition" : "Dispatch Hotline Phone"}
+                  {copy.phoneLabel}
                 </label>
                 <input
                   type="text"
@@ -344,11 +461,11 @@ export default function CarrierModal({
 
               <div>
                 <label className="font-semibold text-slate-700 block mb-1">
-                  {language === "fr" ? "Courriel de Notification" : "Dispatch Notification Email"}
+                  {copy.emailLabel}
                 </label>
                 <input
                   type="email"
-                  placeholder="dispatch@carrier.ca"
+                  placeholder={copy.emailPlaceholder}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -375,37 +492,72 @@ export default function CarrierModal({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="font-bold text-slate-700 block mb-1">
-                {language === "fr" ? "Terminal du Siège Social" : "Headquarters Terminal"}
+                {ownFleet
+                  ? fr
+                    ? "Terminal du Siège Social"
+                    : "Headquarters Terminal"
+                  : fr
+                  ? "Siège Social"
+                  : "Headquarters"}
               </label>
               <input
                 type="text"
-                placeholder="e.g. Winnipeg, MB"
+                placeholder={copy.hqPlaceholder}
                 value={headquarters}
                 onChange={(e) => setHeadquarters(e.target.value)}
+                required
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 outline-none"
               />
             </div>
 
             <div>
               <label className="font-bold text-slate-700 block mb-1">
-                {language === "fr" ? "Description de la Flotte" : "Fleet Description"}
+                {copy.fleetLabel}
               </label>
               <input
                 type="text"
-                placeholder="e.g. 450+ Dry Van & Reefer Tandems"
+                placeholder={copy.fleetPlaceholder}
                 value={fleetSize}
                 onChange={(e) => setFleetSize(e.target.value)}
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 outline-none"
               />
             </div>
 
+            {!ownFleet && (
+              <div className={primaryMode === "Air" ? "" : "sm:col-span-2"}>
+                <label className="font-bold text-slate-700 block mb-1">{copy.accountLabel}</label>
+                <input
+                  type="text"
+                  placeholder={copy.accountPlaceholder}
+                  value={accountNumber}
+                  onChange={(e) => setAccountNumber(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono text-slate-800 outline-none"
+                />
+              </div>
+            )}
+
+            {primaryMode === "Air" && (
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">
+                  {fr ? "Préfixe LTA (3 chiffres)" : "AWB Prefix (3 digits)"}
+                </label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={3}
+                  placeholder="e.g. 014"
+                  value={awbPrefix}
+                  onChange={(e) => setAwbPrefix(e.target.value.replace(/\D/g, ""))}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono text-slate-800 outline-none"
+                />
+              </div>
+            )}
+
             <div className="sm:col-span-2">
-              <label className="font-bold text-slate-700 block mb-1">
-                {language === "fr" ? "Corridors d'Exploitation Standards (séparés par des virgules)" : "Standard Operating Lanes (Comma-separated)"}
-              </label>
+              <label className="font-bold text-slate-700 block mb-1">{copy.lanesLabel}</label>
               <input
                 type="text"
-                placeholder="e.g. Montreal <-> Detroit, Toronto <-> Chicago, Calgary <-> Vancouver"
+                placeholder={copy.lanesPlaceholder}
                 value={operatingLanesStr}
                 onChange={(e) => setOperatingLanesStr(e.target.value)}
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 outline-none"
@@ -413,8 +565,16 @@ export default function CarrierModal({
             </div>
           </div>
 
-          {/* Section 3b: Fleet Units (Driver + Vehicle combos, for One-Click Assignment) */}
+          {/* Section 3b: Fleet Units (Driver + Vehicle combos, for One-Click Assignment) — Road/Rail only */}
+          {showUnits && (
           <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-200 space-y-3">
+            {!ownFleet && (
+              <p className="text-[11px] text-amber-700">
+                {fr
+                  ? "Les transporteurs maritimes et aériens n'ont pas de véhicules. Supprimez ces lignes si elles ne s'appliquent plus."
+                  : "Sea and air carriers don't use fleet units. Remove these rows if they no longer apply."}
+              </p>
+            )}
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
                 {language === "fr"
@@ -487,8 +647,10 @@ export default function CarrierModal({
               </div>
             )}
           </div>
+          )}
 
-          {/* Section 5: Insurance & Compliance */}
+          {/* Section 5: Insurance & Compliance — Road/Rail only; ocean and air liability follows the B/L or AWB terms */}
+          {ownFleet && (
           <div className="p-3 bg-amber-50/50 rounded-xl border border-amber-200/80 space-y-3">
             <span className="text-[10px] font-bold text-amber-800 uppercase tracking-wider block">
               {language === "fr" ? "Assurance et Conformité Réglementaire" : "Insurance & Regulatory Compliance"}
@@ -534,6 +696,7 @@ export default function CarrierModal({
               </div>
             </div>
           </div>
+          )}
 
           {/* Section 6: Internal Notes */}
           <div>

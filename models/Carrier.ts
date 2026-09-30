@@ -13,7 +13,7 @@ export interface IFleetUnit {
 
 export interface ICarrier extends Document {
   name: string;
-  code: string; // SCAC, DOT, or NSC code (e.g. "SWFT", "CN-RAIL", "BISO")
+  code: string; // SCAC, DOT, or NSC code (e.g. "SWFT", "CN-RAIL", "BISO"); IATA airline code for Air (e.g. "AC")
   primaryMode: TransportMode;
   supportedModes: TransportMode[];
   dispatchContact: {
@@ -29,12 +29,17 @@ export interface ICarrier extends Document {
   rating: number; // e.g. 4.8
   totalShipmentsCompleted: number;
   onTimeDeliveryRate: string; // e.g. "98.4%"
+  /** Carrier-held cargo insurance — only required for Road/Rail. Ocean lines and airlines carry liability under their B/L or AWB terms instead. */
   insurance: {
     policyNumber: string;
     coverageAmount: string; // e.g. "$5,000,000 CAD"
     expiryDate: string; // e.g. "2027-04-15"
     isCompliant: boolean;
   };
+  /** Sea/Air only: our named account or contract number with the line/airline. */
+  accountNumber?: string;
+  /** Air only: the 3-digit IATA prefix that starts this airline's air waybill numbers (e.g. "014"). */
+  awbPrefix?: string;
   status: CarrierStatus;
   notes?: string;
   createdAt: Date;
@@ -73,11 +78,13 @@ const CarrierSchema = new Schema<ICarrier>(
     totalShipmentsCompleted: { type: Number, default: 0 },
     onTimeDeliveryRate: { type: String, default: "98.0%" },
     insurance: {
-      policyNumber: { type: String, required: true },
+      policyNumber: { type: String, default: "" },
       coverageAmount: { type: String, default: "$5,000,000 CAD" },
-      expiryDate: { type: String, required: true },
+      expiryDate: { type: String, default: "" },
       isCompliant: { type: Boolean, default: true },
     },
+    accountNumber: { type: String, default: "", trim: true },
+    awbPrefix: { type: String, default: "", trim: true },
     status: {
       type: String,
       enum: ["Active", "Under Review", "Suspended"],

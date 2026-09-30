@@ -36,6 +36,8 @@ export function mapCarrier(c: any): CarrierVendor {
       expiryDate: c.insurance?.expiryDate || "",
       isCompliant: c.insurance?.isCompliant !== false,
     },
+    accountNumber: c.accountNumber || "",
+    awbPrefix: c.awbPrefix || "",
     status: c.status || "Active",
     notes: c.notes || "",
   };

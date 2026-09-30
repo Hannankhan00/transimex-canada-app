@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
-import { CarrierVendor } from "@/lib/carrierTypes";
+import { CarrierVendor, carriesOwnInsurance } from "@/lib/carrierTypes";
 import CarrierDataTable from "@/components/admin/carriers/CarrierDataTable";
 import CarrierModal from "@/components/admin/carriers/CarrierModal";
 import PermissionGuard from "@/components/admin/PermissionGuard";
@@ -98,6 +98,7 @@ export default function AdminCarriersPage() {
   };
 
   const expiringCount = carriers.filter((c) => {
+    if (!carriesOwnInsurance(c.primaryMode)) return false;
     const expiry = new Date(c.insurance.expiryDate).getTime();
     const now = new Date().getTime();
     return expiry - now < 30 * 24 * 60 * 60 * 1000;

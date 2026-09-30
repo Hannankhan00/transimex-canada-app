@@ -85,7 +85,10 @@ export async function PUT(
     }
 
     if (body.name) dbCarrier.name = body.name;
-    if (body.primaryMode) dbCarrier.primaryMode = body.primaryMode;
+    if (body.primaryMode && body.primaryMode !== dbCarrier.primaryMode) {
+      dbCarrier.primaryMode = body.primaryMode;
+      dbCarrier.supportedModes = [body.primaryMode];
+    }
     if (body.headquarters) dbCarrier.headquarters = body.headquarters;
     if (body.fleetSize) dbCarrier.fleetSize = body.fleetSize;
     if (Array.isArray(body.units)) {
@@ -125,6 +128,8 @@ export async function PUT(
     if (body.rating !== undefined) dbCarrier.rating = body.rating;
     if (body.status) dbCarrier.status = body.status;
     if (body.notes !== undefined) dbCarrier.notes = body.notes;
+    if (body.accountNumber !== undefined) dbCarrier.accountNumber = body.accountNumber;
+    if (body.awbPrefix !== undefined) dbCarrier.awbPrefix = body.awbPrefix;
     if (body.operatingLanes) dbCarrier.operatingLanes = body.operatingLanes;
 
     if (body.dispatchContact) {
