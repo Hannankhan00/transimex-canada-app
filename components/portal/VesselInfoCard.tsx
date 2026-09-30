@@ -66,7 +66,11 @@ function VesselDetails({ leg, fr }: { leg: VoyageLeg; fr: boolean }) {
   );
 }
 
-export default function VesselInfoCard({ vessel }: { vessel: VesselView }) {
+/**
+ * `embedded` drops the outer box so the card reads as part of the surrounding
+ * shipment card (e.g. when it expands in place) rather than a nested panel.
+ */
+export default function VesselInfoCard({ vessel, embedded = false }: { vessel: VesselView; embedded?: boolean }) {
   const { language } = useLanguage();
   const fr = language === "fr";
 
@@ -117,9 +121,13 @@ export default function VesselInfoCard({ vessel }: { vessel: VesselView }) {
   const days = vessel.arrival && !vessel.arrival.actual ? daysUntil(vessel.arrival.dateTime) : null;
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
+    <div className={embedded ? "border-t border-slate-100 pt-4" : "rounded-xl border border-slate-200 bg-white overflow-hidden"}>
       {/* Summary */}
-      <div className="p-4 sm:p-5 grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 bg-slate-50/60 border-b border-slate-200">
+      <div
+        className={`grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 ${
+          embedded ? "pb-4" : "p-4 sm:p-5 bg-slate-50/60 border-b border-slate-200"
+        }`}
+      >
         <div className="min-w-0 space-y-2">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
@@ -156,7 +164,11 @@ export default function VesselInfoCard({ vessel }: { vessel: VesselView }) {
         </div>
 
         {/* Arrival */}
-        <div className="md:w-56 rounded-xl bg-white border border-slate-200 p-3.5 flex md:flex-col items-center md:items-start justify-between gap-2">
+        <div
+          className={`md:w-56 rounded-xl border border-slate-200 p-3.5 ${
+            embedded ? "bg-slate-50" : "bg-white"
+          } flex md:flex-col items-center md:items-start justify-between gap-2`}
+        >
           <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
             <CalendarClock className="w-3.5 h-3.5 text-[#d21f27]" />
             {vessel.arrival?.actual ? (fr ? "Arrivé à" : "Arrived at") : fr ? "Arrivée prévue à" : "Arriving at"}{" "}
@@ -181,7 +193,7 @@ export default function VesselInfoCard({ vessel }: { vessel: VesselView }) {
 
       {/* Route */}
       {ports.length > 0 && (
-        <ol className="p-4 sm:p-5">
+        <ol className={embedded ? "pt-2 pb-1" : "p-4 sm:p-5"}>
           {ports.map((port, i) => {
             const isLast = i === ports.length - 1;
             const done = i <= lastReached;
@@ -265,7 +277,11 @@ export default function VesselInfoCard({ vessel }: { vessel: VesselView }) {
       )}
 
       {vessel.lastSyncedAt && (
-        <div className="px-4 sm:px-5 py-2.5 border-t border-slate-100 text-[10px] text-slate-400 flex items-center gap-1">
+        <div
+          className={`${
+            embedded ? "pt-3" : "px-4 sm:px-5 py-2.5 border-t border-slate-100"
+          } text-[10px] text-slate-400 flex items-center gap-1`}
+        >
           <Clock className="w-3 h-3" />
           <span>
             {fr ? "Dernière mise à jour : " : "Last updated: "}
