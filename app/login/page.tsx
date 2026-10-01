@@ -2,6 +2,7 @@
 
 import React, { useState, Suspense, useEffect } from "react";
 import Image from "next/image";
+import TransimexLogo from "@/components/TransimexLogo";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
@@ -206,39 +207,8 @@ function AuthComponent() {
 
           <div className="relative z-20 flex flex-col justify-between h-full p-10 lg:p-14">
             {/* Logo and Brand */}
-            <div className="flex items-center gap-4">
-              <div className="h-12 w-12 bg-white rounded-xl p-1.5 flex items-center justify-center shadow-xs">
-                <svg
-                  viewBox="0 0 100 100"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="w-full h-full"
-                >
-                  <rect width="100" height="100" rx="12" fill="#FFFFFF" />
-                  <path d="M20 30H80V40H58V80H42V40H20V30Z" fill="#D21F27" />
-                  <path d="M50 15L56 26H44L50 15Z" fill="#D21F27" />
-                  <circle cx="50" cy="56" r="6" fill="#0B2545" />
-                  <path
-                    d="M32 78C37 81 43 83 50 83C57 83 63 81 68 78"
-                    stroke="#0B2545"
-                    strokeWidth="4"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              </div>
-              <div>
-                <h1
-                  className="text-2xl font-bold text-white leading-tight"
-                  style={{
-                    fontFamily: "var(--font-playfair), 'Playfair Display', serif",
-                  }}
-                >
-                  Transimex
-                </h1>
-                <p className="text-[10px] uppercase tracking-[0.25em] text-[#d21f27] font-semibold">
-                  Canada Logistics
-                </p>
-              </div>
+            <div>
+              <TransimexLogo variant="dark" size="lg" />
             </div>
 
             {/* Core Value Statement */}
@@ -274,17 +244,7 @@ function AuthComponent() {
             {/* Top Bar on Mobile & Language Switcher */}
             <div className="flex items-center justify-between mb-8">
               <div className="md:hidden">
-                <div className="flex items-center gap-2.5">
-                  <div className="h-9 w-9 bg-[#0B2545] rounded-lg p-1 flex items-center justify-center">
-                    <span className="text-white font-bold text-sm">T</span>
-                  </div>
-                  <span
-                    className="font-bold text-lg text-[#0B2545]"
-                    style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
-                  >
-                    Transimex
-                  </span>
-                </div>
+                <TransimexLogo size="sm" />
               </div>
               <button
                 type="button"
