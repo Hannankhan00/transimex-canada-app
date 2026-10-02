@@ -23,27 +23,27 @@ interface PublicTrackingResult {
   resultType: "SHIPMENT" | "CONTAINER" | "BOOKING_REFERENCE";
   shipment?: {
     trackingNumber: string;
-    quoteId?: string;
     status: string;
     progress: number;
     transportMode: string;
-    equipment: string;
+    equipment?: string;
     commodity?: string;
-    origin: { city: string; detail: string };
-    destination: { city: string; detail: string };
+    origin: { city: string; detail?: string };
+    destination: { city: string; detail?: string };
     eta?: string;
     customsStatus?: string;
-    timeline: Array<{
+    timeline?: Array<{
       title: string;
       location: string;
-      timestamp: string;
+      timestamp: string | null;
       statusText: string;
       completed: boolean;
     }>;
     vessel?: any;
     containers?: any[];
-    lastUpdated?: string;
   };
+  matchedReference?: string;
+  lastUpdated?: string;
   container?: any;
   vessel?: any;
   containers?: any[];
@@ -181,8 +181,9 @@ export default function PublicTrackingSection() {
                     </span>
                   </div>
                   <p className="text-xs text-slate-500 mt-1">
-                    {result.shipment.transportMode} • {result.shipment.equipment}
-                    {result.shipment.commodity ? ` • ${result.shipment.commodity}` : ""}
+                    {[result.shipment.transportMode, result.shipment.equipment, result.shipment.commodity]
+                      .filter(Boolean)
+                      .join(" • ")}
                   </p>
                 </div>
 

@@ -14,12 +14,15 @@ The public tracking feature allows visitors to track shipments directly on the l
 - **Carrier Booking / B/L Reference**: (e.g., `CAN1028600`, `CMDUCAN1028600`)
 - **Future Vendor Tracking IDs**: Ready for integration with Maersk, MSC, and DHL tracking numbers.
 
+### Data Source & Freshness
+Lookups read the database first. If the cached carrier data was last synced more than **5 hours** ago, the endpoint calls the carrier live and saves the result; if that call fails, the cached data is returned. A reference that is not in the database at all gets a live carrier lookup, or a `404` if the carrier does not know it. The scheduled job (`/api/cron/sync-tracking`) and carrier webhooks also refresh the cache.
+
 ### Security & Privacy Safeguards
-Unlike authenticated portal endpoints, the public endpoint (`/api/track`) is strictly sanitized:
-- **No Client Identifiers**: Client names, phone numbers, and emails are never exposed.
-- **No Commercial Data**: Billing rates (`rateCad`), duty charges, margins, and broker invoices are excluded.
-- **No Internal Notes**: CBSA notes, internal dispatch details, and audit history are withheld.
-- **Rate Limiting**: Built-in sliding-window IP rate limiter protects carrier API quotas from abuse and scraping.
+- **Two tiers.** Anonymous callers get a minimal view. Server-to-server callers send `x-api-key: $TRACKING_PUBLIC_API_KEY` and additionally get `equipment`, `commodity`, origin/destination `detail`, `portOfEntry` and a scrubbed `timeline`. No key configured means nobody is trusted.
+- **Never returned to anyone**: client names/phones/emails, `quoteId` or quote references (quote numbers are not searchable), billing data, CBSA/internal notes, carrier name/SCAC.
+- **Input validation**: references must match `[A-Z0-9-_ ]`, 3-35 chars (regex-escaped before querying).
+- **Rate limiting** (in-memory, per instance): 30 req/min per IP anonymous, 600 req/min per API key. `429` includes a `Retry-After` header.
+- **Known limitation**: `TMX-2026-NNNNN` IDs have a 5-digit random suffix, so they are guessable at ~90k values; the anonymous response is minimal for that reason.
 
 ---
 
@@ -49,80 +52,55 @@ GET /api/track?q=CAN1028600
 
 ## 3. Data Schema & Response Samples
 
-### 3.1. Successful Transimex Shipment Response (`SHIPMENT`)
+Every successful response has these root fields: `success`, `resultType` (`SHIPMENT` | `CONTAINER` | `BOOKING_REFERENCE`), `matchedReference` (the normalized reference searched), `matchedOn` (`TRACKING_NUMBER` | `BOOKING_REFERENCE` | `CONTAINER_NUMBER` | `LINKED_RECORD` | `CONTAINER_CACHE` | `CARRIER_LOOKUP`) and `lastUpdated` (ISO time the data was last synced).
 
-Returned when the reference matches an internal shipment record:
+### Enums (exact casing)
+| Field | Values |
+| :--- | :--- |
+| `shipment.status` (Title Case) | `Pending Dispatch`, `In Transit`, `Customs Hold`, `Out for Delivery`, `Delivered`, `Cancelled` |
+| `shipment.customsStatus` | `Pending`, `In Review`, `Released`, `Held` |
+| `vessel.status`, `containers[].status` | `PENDING`, `IN_TRANSIT`, `DELIVERED` |
+| `events[].eventType` | `BOOKING`, `GATE_IN`, `LOADED`, `VESSEL_DEPARTURE`, `TRANSSHIPMENT`, `DISCHARGE`, `GATE_OUT`, `DELIVERED` |
+| `events[].eventClassifierCode` | `PLN` (planned), `EST` (estimated), `ACT` (actual) |
+| `vessel.legs[].role` | `ORIGIN`, `TRANSSHIPMENT`, `DESTINATION` |
+
+### Field semantics
+- **Authoritative status**: `shipment.status` is the admin-set status, but if it is still `Pending Dispatch` while the carrier reports movement it is returned as `In Transit`. `vessel.status` / `containers[].status` are derived from carrier events.
+- **`eta`**: the vessel's arrival at the destination port when known, otherwise the shipment ETA only if it is a real ISO date; omitted otherwise.
+- **`progress`**: 0-100. Admin status sets the floor; carrier voyage position raises it while the cargo is on the water (max 90 until delivered).
+- **De-duplication**: `vessel.events` is omitted when containers carry the events; `containers[].portRotation` is omitted when `vessel.legs` exists.
+- **Event `description`** is free English text; translate from `eventType` instead.
+- Carrier/SCAC is intentionally not exposed (Transimex is the carrier of record).
+
+### 3.1. Shipment Response (`SHIPMENT`), anonymous tier
 
 ```json
 {
   "success": true,
   "resultType": "SHIPMENT",
+  "matchedReference": "TMX-2026-00847",
+  "matchedOn": "TRACKING_NUMBER",
+  "lastUpdated": "2026-10-04T16:50:00.000Z",
   "shipment": {
     "trackingNumber": "TMX-2026-00847",
-    "quoteId": "QT-2026-00124",
     "status": "In Transit",
     "progress": 55,
     "transportMode": "Ocean Freight",
-    "equipment": "40ft High Cube Container",
-    "commodity": "Automotive Parts",
-    "origin": {
-      "city": "Montreal, QC",
-      "detail": "Port of Montreal Terminal 4"
-    },
-    "destination": {
-      "city": "Douala, Cameroon",
-      "detail": "Douala Autonomous Port"
-    },
+    "origin": { "city": "Montreal, QC" },
+    "destination": { "city": "Douala, Cameroon" },
     "eta": "2026-10-18T14:00:00.000Z",
     "customsStatus": "Released",
-    "timeline": [
-      {
-        "title": "Booking Confirmed",
-        "location": "Montreal, QC",
-        "timestamp": "2026-10-01T08:30:00.000Z",
-        "statusText": "Shipment booked and documentation accepted",
-        "completed": true
-      },
-      {
-        "title": "Gate In / Port Terminal",
-        "location": "Montreal Port Terminal",
-        "timestamp": "2026-10-03T11:15:00.000Z",
-        "statusText": "Container gated in",
-        "completed": true
-      },
-      {
-        "title": "Loaded on Vessel",
-        "location": "Port of Montreal",
-        "timestamp": "2026-10-04T16:45:00.000Z",
-        "statusText": "Vessel departed",
-        "completed": true
-      },
-      {
-        "title": "Port Discharge",
-        "location": "Douala, Cameroon",
-        "timestamp": "2026-10-18T14:00:00.000Z",
-        "statusText": "Awaiting arrival",
-        "completed": false
-      }
-    ],
     "vessel": {
       "vesselName": "CMA CGM DAKAR",
       "imoNumber": "9432158",
       "voyageNumber": "0ABC123",
       "legs": [
-        {
-          "role": "ORIGIN",
-          "portName": "Port of Montreal",
-          "unLocationCode": "CAMTR",
-          "vesselName": "CMA CGM DAKAR"
-        },
-        {
-          "role": "DESTINATION",
-          "portName": "Douala",
-          "unLocationCode": "CMDLA"
-        }
+        { "role": "ORIGIN", "portName": "Port of Montreal", "unLocationCode": "CAMTR", "vesselName": "CMA CGM DAKAR" },
+        { "role": "DESTINATION", "portName": "Douala", "unLocationCode": "CMDLA" }
       ],
-      "status": "IN_TRANSIT"
+      "status": "IN_TRANSIT",
+      "arrival": { "dateTime": "2026-10-18T14:00:00.000Z", "actual": false },
+      "lastSyncedAt": "2026-10-04T16:50:00.000Z"
     },
     "containers": [
       {
@@ -135,29 +113,28 @@ Returned when the reference matches an internal shipment record:
             "eventType": "GATE_IN",
             "eventClassifierCode": "ACT",
             "eventDateTime": "2026-10-03T11:15:00Z",
-            "location": {
-              "unLocationCode": "CAMTR",
-              "portName": "Montreal"
-            }
+            "location": { "unLocationCode": "CAMTR", "portName": "Montreal" }
           }
         ]
       }
-    ],
-    "lastUpdated": "2026-10-04T16:50:00.000Z"
+    ]
   }
 }
 ```
+
+With the API key, `shipment` additionally contains `equipment`, `commodity`, `origin.detail`, `destination.detail`, `portOfEntry` and `timeline[]` (`timestamp` is `null` when not a real date; quote references are removed from `statusText`).
 
 ---
 
 ### 3.2. Direct Container Query Response (`CONTAINER`)
 
-Returned when queried by container number directly (e.g. from carrier Track & Trace sync):
-
 ```json
 {
   "success": true,
   "resultType": "CONTAINER",
+  "matchedReference": "CMAU1234567",
+  "matchedOn": "CONTAINER_CACHE",
+  "lastUpdated": "2026-10-04T17:00:00.000Z",
   "container": {
     "containerNumber": "CMAU1234567",
     "containerSizeType": "42G1",
@@ -165,24 +142,16 @@ Returned when queried by container number directly (e.g. from carrier Track & Tr
     "vesselName": "CMA CGM DAKAR",
     "imoNumber": "9432158",
     "voyageNumber": "0ABC123",
-    "originPort": {
-      "unLocationCode": "CAMTR",
-      "portName": "Montreal"
-    },
-    "destinationPort": {
-      "unLocationCode": "CMDLA",
-      "portName": "Douala"
-    },
+    "originPort": { "unLocationCode": "CAMTR", "portName": "Montreal" },
+    "destinationPort": { "unLocationCode": "CMDLA", "portName": "Douala" },
+    "portRotation": [],
     "status": "IN_TRANSIT",
     "events": [
       {
         "eventType": "LOADED",
         "eventClassifierCode": "ACT",
         "eventDateTime": "2026-10-04T16:45:00Z",
-        "location": {
-          "unLocationCode": "CAMTR",
-          "portName": "Montreal"
-        }
+        "location": { "unLocationCode": "CAMTR", "portName": "Montreal" }
       }
     ],
     "lastSyncedAt": "2026-10-04T17:00:00.000Z"
@@ -190,9 +159,19 @@ Returned when queried by container number directly (e.g. from carrier Track & Tr
 }
 ```
 
+A `BOOKING_REFERENCE` response has `vessel` and `containers` at the root, alongside the same root fields.
+
 ---
 
-### 3.3. Error Response (`404 Not Found`)
+### 3.3. Error Responses
+| Status | When | Notes |
+| :--- | :--- | :--- |
+| `400` | Missing/invalid reference | `{ "error": "..." }` |
+| `404` | Not found anywhere | body below |
+| `429` | Rate limited | `Retry-After` header (seconds) and `retryAfterSeconds` in the body |
+| `500` | Unexpected failure | generic message only; details are logged server-side |
+
+`404` body:
 
 ```json
 {
