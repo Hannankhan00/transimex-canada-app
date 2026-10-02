@@ -39,6 +39,17 @@ describe("CMA CGM booking lookup", () => {
     expect(booking.vesselName).toBeTruthy();
   });
 
+  it("never treats a booking reference or non-ISO string in equipmentReference as a container", () => {
+    const rawWithBookingAsEquipment = buildCmaCgmFixture("CMAU1110003").map((e) => ({
+      ...e,
+      equipmentReference: "CAN1029559",
+    }));
+    const { booking, containers } = splitByContainer(rawWithBookingAsEquipment, "CAN1029559");
+
+    expect(containers).toHaveLength(0);
+    expect(booking.vesselName).toBeTruthy();
+  });
+
   it("caches every container and returns the booking with its vessel", async () => {
     const store = new InMemoryTrackingStore();
     const adapter: CarrierAdapter = {

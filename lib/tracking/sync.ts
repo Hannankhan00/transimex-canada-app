@@ -130,14 +130,28 @@ export async function linkBookingToShipmentAndSync(
       { $set: { shipmentId, bookingReference: ref } }
     );
   }
+  // Ensure the booking reference itself is never mistakenly retained in the container cache
+  await TrackedContainer.deleteMany({ containerNumber: ref });
+
+  const ISO_CONTAINER_RE = /^[A-Z]{4}\d{7}$/;
+  const isIso = (num: unknown) => typeof num === "string" && ISO_CONTAINER_RE.test(num.trim().toUpperCase());
 
   const shipment = await Shipment.findById(shipmentId);
   if (!shipment) throw new Error("Shipment not found");
-  const onShipment = new Set((shipment.containers || []).map((c: any) => c.containerNumber));
-  const containersAdded = booking.containerNumbers.filter((c) => !onShipment.has(c));
+
+  // Keep only genuine ISO containers on the shipment, dropping the booking reference if it was stored as a container
+  const validExisting = (shipment.containers || []).filter(
+    (c: any) => isIso(c?.containerNumber) && c.containerNumber.trim().toUpperCase() !== ref
+  );
+  const onShipment = new Set(validExisting.map((c: any) => c.containerNumber.trim().toUpperCase()));
+  const validBookingContainers = (booking.containerNumbers || []).filter(
+    (c: string) => isIso(c) && c.trim().toUpperCase() !== ref
+  );
+  const containersAdded = validBookingContainers.filter((c: string) => !onShipment.has(c));
+
   shipment.containers = [
-    ...(shipment.containers || []),
-    ...containersAdded.map((containerNumber) => ({ containerNumber, carrier })),
+    ...validExisting,
+    ...containersAdded.map((containerNumber: string) => ({ containerNumber, carrier })),
   ];
   shipment.carrierBooking = booking as any;
   await shipment.save();

@@ -47,8 +47,9 @@ describe("client-facing tracking views", () => {
     expectNoCarrierData(view);
   });
 
-  it("returns null when there is no booking or tracking yet", () => {
+  it("returns null when there is no booking or tracking yet or invalid container number", () => {
     expect(toClientVesselView(undefined)).toBeNull();
     expect(toClientContainerView(null)).toBeNull();
+    expect(toClientContainerView({ ...bookingAndContainer().container, containerNumber: "CAN1029559" })).toBeNull();
   });
 });

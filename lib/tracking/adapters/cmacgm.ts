@@ -445,13 +445,20 @@ export const cmaCgmAdapter: CarrierAdapter = {
   },
 };
 
+const ISO_CONTAINER_RE = /^[A-Z]{4}\d{7}$/;
+
 /** Booking-level summary over every event, then one normalized result per container on the booking. */
 export function splitByContainer(raw: CmaCgmRawPayload, reference: string): ReferenceFetchResult {
   const booking = { ...normalize(raw, reference), containerNumber: reference };
   booking.containerSizeType = undefined;
 
+  const refNorm = reference.trim().toUpperCase();
   const containerNumbers = [
-    ...new Set(raw.map((e) => e.equipmentReference?.trim().toUpperCase()).filter((c): c is string => !!c)),
+    ...new Set(
+      raw
+        .map((e) => e.equipmentReference?.trim().toUpperCase())
+        .filter((c): c is string => !!c && c !== refNorm && ISO_CONTAINER_RE.test(c))
+    ),
   ];
   const containers = containerNumbers.map((containerNumber) => {
     // Vessel moves carry no equipment reference and apply to every container on the booking.

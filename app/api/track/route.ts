@@ -177,18 +177,40 @@ function dedupeTracking(vessel: any, containers: any[]) {
   return { vessel: outVessel, containers: outContainers };
 }
 
+const ISO_CONTAINER_RE = /^[A-Z]{4}\d{7}$/;
+
+function isIsoContainerNumber(value: unknown): boolean {
+  if (typeof value !== "string") return false;
+  return ISO_CONTAINER_RE.test(value.trim().toUpperCase());
+}
+
 function matchedOn(shipment: any, query: string): string {
-  const eq = (v: unknown) => typeof v === "string" && v.toUpperCase() === query;
+  const normQuery = query.trim().toUpperCase();
+  const eq = (v: unknown) => typeof v === "string" && v.trim().toUpperCase() === normQuery;
+
   if (eq(shipment.trackingNumber)) return "TRACKING_NUMBER";
   if (eq(shipment.carrierBooking?.reference)) return "BOOKING_REFERENCE";
-  if ((shipment.containers || []).some((c: any) => eq(c.containerNumber))) return "CONTAINER_NUMBER";
-  return "LINKED_RECORD";
+
+  const hasMatchingContainer = (shipment.containers || []).some((c: any) => eq(c?.containerNumber));
+  if (hasMatchingContainer) {
+    return isIsoContainerNumber(normQuery) ? "CONTAINER_NUMBER" : "BOOKING_REFERENCE";
+  }
+
+  return isIsoContainerNumber(normQuery) ? "CONTAINER_NUMBER" : "BOOKING_REFERENCE";
 }
 
 async function buildShipmentResponse(shipment: any, query: string, trusted: boolean, matched?: string) {
   // Refresh the carrier booking if its cached data is older than 5 hours (also refreshes its containers)
   const booking = shipment.carrierBooking;
-  if (booking?.reference && booking.status !== "DELIVERED" && isStale(booking.lastSyncedAt)) {
+  if (!booking?.reference && !isIsoContainerNumber(query) && /^[A-Z0-9-]{6,35}$/.test(query)) {
+    try {
+      const carrier = detectCarrier(query).carrier || "CMA_CGM";
+      await linkBookingToShipmentAndSync(String(shipment._id), carrier, query);
+      shipment = (await Shipment.findById(shipment._id).lean<any>()) ?? shipment;
+    } catch {
+      // Carrier unavailable: proceed with what we have
+    }
+  } else if (booking?.reference && booking.status !== "DELIVERED" && isStale(booking.lastSyncedAt)) {
     try {
       await linkBookingToShipmentAndSync(String(shipment._id), booking.carrier, booking.reference);
       shipment = (await Shipment.findById(shipment._id).lean<any>()) ?? shipment;
@@ -197,8 +219,14 @@ async function buildShipmentResponse(shipment: any, query: string, trusted: bool
     }
   }
 
-  // Container views, refreshing any container whose cache is older than 5 hours
-  const containerNumbers: string[] = (shipment.containers || []).map((c: any) => c.containerNumber);
+  // Container views, refreshing any container whose cache is older than 5 hours.
+  // Never treat booking references or non-ISO numbers as containers.
+  const bookingRef = shipment.carrierBooking?.reference?.trim().toUpperCase();
+  const containerNumbers: string[] = (shipment.containers || [])
+    .map((c: any) => (typeof c === "string" ? c : c?.containerNumber))
+    .map((num: unknown) => (typeof num === "string" ? num.trim().toUpperCase() : ""))
+    .filter((num: string): num is string => Boolean(num && isIsoContainerNumber(num) && num !== bookingRef));
+
   const containerViews = (
     await Promise.all(
       containerNumbers.map(async (num: string) => {

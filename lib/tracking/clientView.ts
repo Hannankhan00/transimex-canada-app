@@ -84,10 +84,14 @@ function cleanRotation(rotation: any[] = []): PortCall[] {
   }));
 }
 
+const ISO_CONTAINER_RE = /^[A-Z]{4}\d{7}$/;
+
 export function toClientContainerView(t: ContainerTracking | null): ClientContainerView | null {
   if (!t) return null;
+  const num = t.containerNumber?.trim().toUpperCase();
+  if (!num || !ISO_CONTAINER_RE.test(num)) return null;
   return {
-    containerNumber: t.containerNumber,
+    containerNumber: num,
     containerSizeType: t.containerSizeType || undefined,
     containerSizeLabel: t.containerSizeLabel || undefined,
     vesselName: t.vesselName || undefined,
