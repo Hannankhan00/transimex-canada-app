@@ -3,7 +3,7 @@ import connectDB from "@/lib/mongoose";
 import Shipment from "@/models/Shipment";
 import TrackedContainer from "@/models/TrackedContainer";
 import { toClientContainerView, toClientVesselView } from "@/lib/tracking/clientView";
-import { getContainerTracking, syncContainer, mongoTrackingStore } from "@/lib/tracking/sync";
+import { getContainerTracking, syncContainer, linkBookingToShipmentAndSync } from "@/lib/tracking/sync";
 import { detectCarrier } from "@/lib/tracking/carrierDetection";
 import { computeVoyageProgress } from "@/lib/tracking/voyageProgress";
 import { getAdapter } from "@/lib/tracking/adapters";
@@ -26,6 +26,26 @@ function isRateLimited(ip: string): boolean {
   }
   record.count += 1;
   return false;
+}
+
+// Cached carrier data newer than this is served from the database; older data triggers a live carrier call.
+const CACHE_MAX_AGE_MS = 5 * 60 * 60 * 1000; // 5 hours
+
+function isStale(lastSyncedAt: unknown): boolean {
+  if (!lastSyncedAt) return true;
+  const t = new Date(lastSyncedAt as string).getTime();
+  return !Number.isFinite(t) || Date.now() - t > CACHE_MAX_AGE_MS;
+}
+
+/** Returns the cached container doc, refreshing it from the carrier first if it is stale. Falls back to the cache if the carrier call fails. */
+async function getFreshContainer(containerNumber: string, cached: any | null): Promise<any | null> {
+  if (cached && !isStale(cached.lastSyncedAt)) return cached;
+  if (cached?.status === "DELIVERED") return cached;
+  try {
+    return await syncContainer(containerNumber, cached?.carrier ?? null);
+  } catch {
+    return cached; // carrier unavailable, rate-limited or unknown: show what we have
+  }
 }
 
 // Progress calculation helper based on shipment status and timeline
@@ -69,21 +89,34 @@ async function handleTrackRequest(rawQuery: string, ip: string) {
   await connectDB();
 
   // 1. First, search for a matching Transimex shipment
-  const shipment = await Shipment.findOne({
+  const shipmentFilter = {
     $or: [
       { trackingNumber: new RegExp(`^${query}$`, "i") },
       { quoteId: new RegExp(`^${query}$`, "i") },
       { "carrierBooking.reference": new RegExp(`^${query}$`, "i") },
       { "containers.containerNumber": new RegExp(`^${query}$`, "i") },
     ],
-  }).lean<any>();
+  };
+  let shipment = await Shipment.findOne(shipmentFilter).lean<any>();
 
   if (shipment) {
-    // Collect container views
+    // Refresh the carrier booking if its cached data is older than 5 hours (also refreshes its containers)
+    const booking = shipment.carrierBooking;
+    if (booking?.reference && booking.status !== "DELIVERED" && isStale(booking.lastSyncedAt)) {
+      try {
+        await linkBookingToShipmentAndSync(String(shipment._id), booking.carrier, booking.reference);
+        shipment = (await Shipment.findById(shipment._id).lean<any>()) ?? shipment;
+      } catch {
+        // Carrier unavailable: keep serving the cached booking
+      }
+    }
+
+    // Collect container views, refreshing any container whose cache is older than 5 hours
     const containerNumbers: string[] = (shipment.containers || []).map((c: any) => c.containerNumber);
     const containerTrackingList = await Promise.all(
       containerNumbers.map(async (num: string) => {
-        const doc = await getContainerTracking(num);
+        const cached = await getContainerTracking(num);
+        const doc = await getFreshContainer(num, cached);
         return toClientContainerView(doc);
       })
     );
@@ -154,6 +187,7 @@ async function handleTrackRequest(rawQuery: string, ip: string) {
 
   // If container found standalone in cache
   if (containerDoc) {
+    containerDoc = await getFreshContainer(containerDoc.containerNumber, containerDoc);
     const clientContainer = toClientContainerView(containerDoc);
     return NextResponse.json({
       success: true,
