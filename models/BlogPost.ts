@@ -29,6 +29,8 @@ export interface IBlogPost extends Document {
   publishedAt?: Date;
   tags: string[];
   views: number;
+  allowComments: boolean;
+  commentsCount: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -68,6 +70,8 @@ const BlogPostSchema = new Schema<IBlogPost>(
     publishedAt: { type: Date },
     tags: [{ type: String }],
     views: { type: Number, default: 0 },
+    allowComments: { type: Boolean, default: true, index: true },
+    commentsCount: { type: Number, default: 0 },
   },
   {
     timestamps: true,

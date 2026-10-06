@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { BlogPostItem } from "@/lib/blogTypes";
 import {
@@ -10,6 +10,7 @@ import {
   Italic,
   Strikethrough,
   Highlighter,
+  Heading1,
   Heading2,
   Heading3,
   List,
@@ -24,7 +25,6 @@ import {
   Upload,
   Image as ImageIcon,
   Trash2,
-  Calendar,
   User,
   Tag,
   CheckCircle2,
@@ -33,9 +33,12 @@ import {
   Send,
   Sparkles,
   Search,
-  ExternalLink,
   RefreshCw,
   Globe,
+  MessageSquare,
+  StickyNote,
+  X,
+  ExternalLink,
 } from "lucide-react";
 
 interface BlogFullPageEditorProps {
@@ -102,6 +105,7 @@ export default function BlogFullPageEditor({
   });
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
+  const [allowComments, setAllowComments] = useState(true);
 
   // Featured Image
   const [featuredImage, setFeaturedImage] = useState("");
@@ -114,6 +118,16 @@ export default function BlogFullPageEditor({
   // Rich text editor state
   const [isHtmlMode, setIsHtmlMode] = useState(false);
   const editorRef = useRef<HTMLDivElement>(null);
+
+  // Custom Link Modal State (Replaces default Chrome prompt)
+  const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
+  const [linkUrl, setLinkUrl] = useState("https://");
+  const [linkText, setLinkText] = useState("");
+  const [linkNewTab, setLinkNewTab] = useState(true);
+  const [savedRange, setSavedRange] = useState<Range | null>(null);
+
+  // Auto-Translation state
+  const [isTranslating, setIsTranslating] = useState(false);
 
   // Form submission state
   const [saving, setSaving] = useState(false);
@@ -155,6 +169,7 @@ export default function BlogFullPageEditor({
       setFeaturedImage(postToEdit.featuredImage || "");
       setImageUrlInput(postToEdit.featuredImage || "");
       setTags(Array.isArray(postToEdit.tags) ? postToEdit.tags : []);
+      setAllowComments(postToEdit.allowComments !== false);
 
       if (postToEdit.publishedDate && postToEdit.publishedDate !== "Draft") {
         const parsed = new Date(postToEdit.publishedDate);
@@ -184,6 +199,7 @@ export default function BlogFullPageEditor({
       setFeaturedImage("");
       setImageUrlInput("");
       setTags(["Logistics", "Freight", "Canada"]);
+      setAllowComments(true);
     }
   }, [postToEdit]);
 
@@ -221,7 +237,7 @@ export default function BlogFullPageEditor({
     }
   };
 
-  // Execute formatting command without stealing focus
+  // Execute standard formatting command
   const executeCommand = (command: string, value: string | undefined = undefined) => {
     if (isHtmlMode) return;
     if (editorRef.current) {
@@ -231,36 +247,215 @@ export default function BlogFullPageEditor({
     handleEditorInput();
   };
 
-  // Highlight action (applies yellow highlight to selected text)
+  // Format block tag for H1, H2, H3, Blockquote, P
+  const formatBlockTag = (tag: "h1" | "h2" | "h3" | "blockquote" | "p") => {
+    if (isHtmlMode) return;
+    if (editorRef.current) {
+      editorRef.current.focus();
+    }
+    try {
+      const ok = document.execCommand("formatBlock", false, `<${tag}>`);
+      if (!ok) {
+        document.execCommand("formatBlock", false, tag);
+      }
+    } catch {
+      document.execCommand("formatBlock", false, tag);
+    }
+    handleEditorInput();
+  };
+
+  // Robust Text Highlighter (Yellow Marker)
   const handleHighlight = () => {
     if (isHtmlMode) return;
     if (editorRef.current) {
       editorRef.current.focus();
     }
-    // Try backColor with #fef08a (light warm yellow marker)
-    try {
-      document.execCommand("hiliteColor", false, "#fef08a");
-    } catch {
-      document.execCommand("backColor", false, "#fef08a");
+
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0 || sel.isCollapsed) {
+      try {
+        document.execCommand("hiliteColor", false, "#fef08a");
+      } catch {
+        document.execCommand("backColor", false, "#fef08a");
+      }
+      handleEditorInput();
+      return;
+    }
+
+    const range = sel.getRangeAt(0);
+    let container: Node | null = range.commonAncestorContainer;
+    if (container.nodeType === Node.TEXT_NODE) {
+      container = container.parentNode;
+    }
+
+    const existingMark = (container as HTMLElement)?.closest?.("mark, .highlight-mark");
+    if (existingMark) {
+      // Toggle off: unwrap the mark
+      const parent = existingMark.parentNode;
+      while (existingMark.firstChild) {
+        parent?.insertBefore(existingMark.firstChild, existingMark);
+      }
+      parent?.removeChild(existingMark);
+    } else {
+      // Wrap selected text in styled mark tag
+      try {
+        const mark = document.createElement("mark");
+        mark.className = "highlight-mark";
+        mark.appendChild(range.extractContents());
+        range.insertNode(mark);
+        sel.removeAllRanges();
+        const newRange = document.createRange();
+        newRange.selectNodeContents(mark);
+        sel.addRange(newRange);
+      } catch {
+        try {
+          document.execCommand("hiliteColor", false, "#fef08a");
+        } catch {
+          document.execCommand("backColor", false, "#fef08a");
+        }
+      }
     }
     handleEditorInput();
   };
 
-  // Insert Link
-  const handleInsertLink = () => {
+  // Insert Editorial Annotation Callout
+  const handleInsertAnnotation = () => {
     if (isHtmlMode) return;
-    const url = prompt(
-      language === "fr" ? "Entrez l'URL du lien :" : "Enter the URL link:",
-      "https://"
-    );
-    if (url) {
-      executeCommand("createLink", url);
+    if (editorRef.current) {
+      editorRef.current.focus();
     }
+    const sel = window.getSelection();
+    let selectedText = "";
+    if (sel && sel.rangeCount > 0) {
+      selectedText = sel.toString();
+    }
+
+    const label =
+      langTab === "fr"
+        ? "📌 Note de la rédaction / Conseil clé :"
+        : "📌 Key Takeaway / Editorial Note:";
+    const placeholder =
+      langTab === "fr"
+        ? "Insérez ici une précision réglementaire, un conseil de transit ou un point d'attention."
+        : "Insert key regulatory insight, carrier advisory, or critical freight instruction here.";
+
+    const annotationHtml = `
+      <div class="blog-annotation">
+        <strong style="color: #0B2545; display: block; margin-bottom: 0.25rem;">${label}</strong>
+        <p style="margin: 0; color: #334155;">${selectedText || placeholder}</p>
+      </div>
+      <p><br></p>
+    `;
+
+    document.execCommand("insertHTML", false, annotationHtml);
+    handleEditorInput();
+  };
+
+  // Open Custom Link Modal (No Chrome prompt!)
+  const handleOpenLinkModal = () => {
+    if (isHtmlMode) return;
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount > 0) {
+      const range = sel.getRangeAt(0);
+      setSavedRange(range);
+      setLinkText(sel.toString());
+    } else {
+      setSavedRange(null);
+      setLinkText("");
+    }
+    setLinkUrl("https://");
+    setLinkNewTab(true);
+    setIsLinkModalOpen(true);
+  };
+
+  // Apply Link from Custom Modal
+  const handleApplyLink = () => {
+    if (!linkUrl.trim() || linkUrl.trim() === "https://") {
+      setIsLinkModalOpen(false);
+      return;
+    }
+
+    if (editorRef.current) {
+      editorRef.current.focus();
+    }
+
+    if (savedRange) {
+      const sel = window.getSelection();
+      if (sel) {
+        sel.removeAllRanges();
+        sel.addRange(savedRange);
+      }
+    }
+
+    const finalUrl = linkUrl.trim();
+    const displayText = linkText.trim() || finalUrl;
+
+    if (savedRange && savedRange.toString().length > 0 && !linkText.trim()) {
+      document.execCommand("createLink", false, finalUrl);
+    } else {
+      const targetAttr = linkNewTab ? 'target="_blank" rel="noopener noreferrer"' : "";
+      const linkHtml = `<a href="${finalUrl}" ${targetAttr}>${displayText}</a>`;
+      document.execCommand("insertHTML", false, linkHtml);
+    }
+
+    setIsLinkModalOpen(false);
+    handleEditorInput();
   };
 
   // Insert Divider
   const handleInsertDivider = () => {
     executeCommand("insertHorizontalRule");
+  };
+
+  // Auto-Translate to French API Call
+  const handleAutoTranslateToFrench = async () => {
+    if (!titleEn.trim() && !contentEn.trim() && !excerptEn.trim()) {
+      alert(
+        language === "fr"
+          ? "Veuillez d'abord rédiger le contenu en anglais pour générer la traduction."
+          : "Please write English content first before translating."
+      );
+      setLangTab("en");
+      return;
+    }
+
+    try {
+      setIsTranslating(true);
+      const res = await fetch("/api/admin/blog/translate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: titleEn,
+          excerpt: excerptEn,
+          content: contentEn,
+          metaTitle: metaTitleEn,
+          metaDescription: metaDescEn,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Translation failed");
+
+      if (data.translations) {
+        if (data.translations.title) setTitleFr(data.translations.title);
+        if (data.translations.excerpt) setExcerptFr(data.translations.excerpt);
+        if (data.translations.content) setContentFr(data.translations.content);
+        if (data.translations.metaTitle) setMetaTitleFr(data.translations.metaTitle);
+        if (data.translations.metaDescription) setMetaDescFr(data.translations.metaDescription);
+      }
+
+      setLangTab("fr");
+      setSuccessToast(
+        language === "fr"
+          ? "✨ Article traduit en français avec succès !"
+          : "✨ Article auto-translated to French! Reviewing French tab."
+      );
+      setTimeout(() => setSuccessToast(null), 3500);
+    } catch (err: any) {
+      alert(err.message || "Translation error");
+    } finally {
+      setIsTranslating(false);
+    }
   };
 
   // Tag management
@@ -396,6 +591,7 @@ export default function BlogFullPageEditor({
       publishedDate: publishDate,
       featuredImage: featuredImage.trim(),
       tags,
+      allowComments,
     };
 
     try {
@@ -479,8 +675,26 @@ export default function BlogFullPageEditor({
           </div>
         </div>
 
-        {/* Action Buttons: Save Draft & Publish Post */}
-        <div className="flex items-center gap-2.5 self-end sm:self-auto">
+        {/* Action Buttons: Auto-Translate, Save Draft, Publish */}
+        <div className="flex flex-wrap items-center gap-2 self-end sm:self-auto">
+          {/* Auto-Translate Button */}
+          <button
+            type="button"
+            disabled={isTranslating}
+            onClick={handleAutoTranslateToFrench}
+            className="px-3.5 py-2 bg-gradient-to-r from-blue-700 to-indigo-700 hover:from-blue-800 hover:to-indigo-800 text-white rounded-xl text-xs font-bold shadow-xs transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+            title="Auto-translate English article content to French"
+          >
+            {isTranslating ? (
+              <RefreshCw className="w-3.5 h-3.5 animate-spin text-white" />
+            ) : (
+              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+            )}
+            <span>
+              {language === "fr" ? "Traduire en Français (IA)" : "Auto-Translate to French"}
+            </span>
+          </button>
+
           <button
             type="button"
             disabled={saving}
@@ -536,7 +750,7 @@ export default function BlogFullPageEditor({
 
       {/* 2. DUAL-LANGUAGE TOGGLE BAR */}
       <div className="bg-white border border-slate-200 rounded-2xl p-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-2xs">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
             onClick={() => setLangTab("en")}
@@ -566,6 +780,23 @@ export default function BlogFullPageEditor({
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
             )}
           </button>
+
+          {/* Helper button when in French mode */}
+          {langTab === "fr" && titleEn.trim() && !titleFr.trim() && (
+            <button
+              type="button"
+              disabled={isTranslating}
+              onClick={handleAutoTranslateToFrench}
+              className="px-3 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer border border-blue-200"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+              <span>
+                {language === "fr"
+                  ? "Remplir avec la traduction IA"
+                  : "Populate with AI translation"}
+              </span>
+            </button>
+          )}
         </div>
 
         <div className="text-[11px] text-slate-500 flex items-center gap-2 px-2">
@@ -616,7 +847,7 @@ export default function BlogFullPageEditor({
             </label>
             <div className="flex items-center">
               <span className="px-3.5 py-2.5 bg-slate-100 border border-r-0 border-slate-200 rounded-l-xl text-xs font-mono text-slate-500 select-none">
-                transimex.ca/blog/
+                transimex-canada.com/blog/
               </span>
               <input
                 type="text"
@@ -722,23 +953,36 @@ export default function BlogFullPageEditor({
                     e.preventDefault();
                     handleHighlight();
                   }}
-                  className="p-1.5 rounded-lg hover:bg-amber-100 text-amber-700 transition cursor-pointer flex items-center gap-0.5 bg-amber-50/60"
-                  title="Highlight Text (Marker)"
+                  className="p-1.5 rounded-lg hover:bg-amber-100 text-amber-700 transition cursor-pointer flex items-center gap-0.5 bg-amber-50/80 border border-amber-200"
+                  title="Highlighter (Surlignage jaune)"
                 >
                   <Highlighter className="w-4 h-4 text-amber-600" />
                 </button>
 
                 <div className="w-[1px] h-5 bg-slate-200 mx-1" />
 
+                {/* Heading 1 */}
+                <button
+                  type="button"
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    formatBlockTag("h1");
+                  }}
+                  className="p-1.5 rounded-lg hover:bg-slate-100 hover:text-[#0B2545] transition cursor-pointer font-bold text-xs"
+                  title="Heading 1 (Titre 1)"
+                >
+                  <Heading1 className="w-4 h-4" />
+                </button>
+
                 {/* Heading 2 */}
                 <button
                   type="button"
                   onMouseDown={(e) => {
                     e.preventDefault();
-                    executeCommand("formatBlock", "<h2>");
+                    formatBlockTag("h2");
                   }}
-                  className="p-1.5 rounded-lg hover:bg-slate-100 hover:text-slate-900 transition cursor-pointer font-bold text-xs"
-                  title="Heading 2"
+                  className="p-1.5 rounded-lg hover:bg-slate-100 hover:text-[#0B2545] transition cursor-pointer font-bold text-xs"
+                  title="Heading 2 (Titre 2)"
                 >
                   <Heading2 className="w-4 h-4" />
                 </button>
@@ -748,10 +992,10 @@ export default function BlogFullPageEditor({
                   type="button"
                   onMouseDown={(e) => {
                     e.preventDefault();
-                    executeCommand("formatBlock", "<h3>");
+                    formatBlockTag("h3");
                   }}
-                  className="p-1.5 rounded-lg hover:bg-slate-100 hover:text-slate-900 transition cursor-pointer font-bold text-xs"
-                  title="Heading 3"
+                  className="p-1.5 rounded-lg hover:bg-slate-100 hover:text-[#0B2545] transition cursor-pointer font-bold text-xs"
+                  title="Heading 3 (Titre 3)"
                 >
                   <Heading3 className="w-4 h-4" />
                 </button>
@@ -766,7 +1010,7 @@ export default function BlogFullPageEditor({
                     executeCommand("insertUnorderedList");
                   }}
                   className="p-1.5 rounded-lg hover:bg-slate-100 hover:text-slate-900 transition cursor-pointer"
-                  title="Bulleted List"
+                  title="Bulleted List (Liste à puces)"
                 >
                   <List className="w-4 h-4" />
                 </button>
@@ -779,7 +1023,7 @@ export default function BlogFullPageEditor({
                     executeCommand("insertOrderedList");
                   }}
                   className="p-1.5 rounded-lg hover:bg-slate-100 hover:text-slate-900 transition cursor-pointer"
-                  title="Numbered List"
+                  title="Numbered List (Liste numérotée)"
                 >
                   <ListOrdered className="w-4 h-4" />
                 </button>
@@ -789,23 +1033,36 @@ export default function BlogFullPageEditor({
                   type="button"
                   onMouseDown={(e) => {
                     e.preventDefault();
-                    executeCommand("formatBlock", "<blockquote>");
+                    formatBlockTag("blockquote");
                   }}
                   className="p-1.5 rounded-lg hover:bg-slate-100 hover:text-slate-900 transition cursor-pointer"
-                  title="Blockquote"
+                  title="Blockquote (Citation)"
                 >
                   <Quote className="w-4 h-4" />
                 </button>
 
-                {/* Link */}
+                {/* Editorial Annotation Callout */}
                 <button
                   type="button"
                   onMouseDown={(e) => {
                     e.preventDefault();
-                    handleInsertLink();
+                    handleInsertAnnotation();
+                  }}
+                  className="p-1.5 rounded-lg hover:bg-blue-100 text-blue-700 transition cursor-pointer flex items-center gap-1 bg-blue-50/70 border border-blue-200"
+                  title="Editorial Annotation / Note d'expert"
+                >
+                  <StickyNote className="w-4 h-4 text-blue-600" />
+                </button>
+
+                {/* Custom Link (Opens Modal) */}
+                <button
+                  type="button"
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    handleOpenLinkModal();
                   }}
                   className="p-1.5 rounded-lg hover:bg-slate-100 hover:text-slate-900 transition cursor-pointer"
-                  title="Insert Link"
+                  title="Insert Link (Insérer un lien)"
                 >
                   <LinkIcon className="w-4 h-4" />
                 </button>
@@ -862,14 +1119,14 @@ export default function BlogFullPageEditor({
                 }
                 rows={16}
                 placeholder="<p>Write raw HTML content here...</p>"
-                className="w-full p-4 font-mono text-xs text-slate-800 bg-slate-900 text-slate-100 outline-none resize-y min-h-[360px]"
+                className="w-full p-4 font-mono text-xs text-slate-100 bg-slate-900 outline-none resize-y min-h-[380px]"
               />
             ) : (
               <div
                 ref={editorRef}
                 contentEditable
                 onInput={handleEditorInput}
-                className="p-5 min-h-[380px] max-h-[650px] overflow-y-auto text-sm text-slate-800 leading-relaxed outline-none focus:outline-none prose prose-slate max-w-none prose-headings:text-[#0B2545] prose-headings:font-bold prose-h2:text-lg prose-h2:mt-4 prose-h2:mb-2 prose-h3:text-base prose-h3:mt-3 prose-h3:mb-1.5 prose-p:my-2 prose-ul:my-2 prose-ol:my-2 prose-li:my-0.5 prose-blockquote:border-l-4 prose-blockquote:border-[#d21f27] prose-blockquote:bg-slate-50 prose-blockquote:py-1 prose-blockquote:px-3 prose-blockquote:italic prose-a:text-[#d21f27] prose-a:underline"
+                className="blog-rich-editor p-5 min-h-[380px] max-h-[650px] overflow-y-auto text-sm text-slate-800 leading-relaxed outline-none focus:outline-none bg-white"
                 style={{
                   minHeight: "360px",
                 }}
@@ -1015,7 +1272,7 @@ export default function BlogFullPageEditor({
                   T
                 </span>
                 <span className="truncate text-slate-700">
-                  transimex.ca › blog › {slug || "article-slug"}
+                  transimex-canada.com › blog › {slug || "article-slug"}
                 </span>
               </div>
               <h4 className="text-sm font-semibold text-blue-700 hover:underline cursor-pointer truncate">
@@ -1164,6 +1421,45 @@ export default function BlogFullPageEditor({
                   ? "Appuyez sur Entrée ou virgule pour ajouter"
                   : "Press Enter or comma to add tag"}
               </p>
+            </div>
+
+            {/* Comments Toggle */}
+            <div className="pt-3 border-t border-slate-100 space-y-2">
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <MessageSquare className="w-3.5 h-3.5 text-slate-500" />
+                    <label className="text-xs font-semibold text-slate-700 block">
+                      {language === "fr" ? "Commentaires Lecteurs" : "Reader Comments"}
+                    </label>
+                  </div>
+                  <p className="text-[11px] text-slate-400 mt-0.5">
+                    {allowComments
+                      ? language === "fr"
+                        ? "Activés pour cet article"
+                        : "Enabled on this article"
+                      : language === "fr"
+                        ? "Désactivés pour cet article"
+                        : "Disabled on this article"}
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setAllowComments(!allowComments)}
+                  className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors cursor-pointer ${
+                    allowComments ? "bg-emerald-600" : "bg-slate-300"
+                  }`}
+                  role="switch"
+                  aria-checked={allowComments}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-xs transition-transform ${
+                      allowComments ? "translate-x-6" : "translate-x-1"
+                    }`}
+                  />
+                </button>
+              </div>
             </div>
           </div>
 
@@ -1321,6 +1617,96 @@ export default function BlogFullPageEditor({
           </div>
         </div>
       </div>
+
+      {/* CUSTOM INSERT LINK MODAL (NO CHROME PROMPT!) */}
+      {isLinkModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4 animate-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-red-50 text-[#d21f27] flex items-center justify-center font-bold">
+                  <LinkIcon className="w-4 h-4" />
+                </div>
+                <h3 className="font-bold text-[#0B2545] text-sm">
+                  {language === "fr" ? "Insérer un Lien Hypertexte" : "Insert Web Link"}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsLinkModalOpen(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="font-semibold text-slate-700 block mb-1">
+                  {language === "fr" ? "Texte à afficher (optionnel)" : "Link Text (optional)"}
+                </label>
+                <input
+                  type="text"
+                  value={linkText}
+                  onChange={(e) => setLinkText(e.target.value)}
+                  placeholder={
+                    language === "fr" ? "Texte cliquable..." : "Clickable text..."
+                  }
+                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 focus:border-[#0B2545] focus:bg-white rounded-xl outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="font-semibold text-slate-700 block mb-1">
+                  {language === "fr" ? "Adresse Web (URL)" : "Link URL"} *
+                </label>
+                <input
+                  type="url"
+                  autoFocus
+                  required
+                  value={linkUrl}
+                  onChange={(e) => setLinkUrl(e.target.value)}
+                  placeholder="https://transimex-canada.com/quote"
+                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 focus:border-[#0B2545] focus:bg-white rounded-xl outline-none font-mono text-xs"
+                />
+              </div>
+
+              <div className="flex items-center gap-2 pt-1">
+                <input
+                  type="checkbox"
+                  id="linkNewTab"
+                  checked={linkNewTab}
+                  onChange={(e) => setLinkNewTab(e.target.checked)}
+                  className="rounded text-[#0B2545] focus:ring-0 cursor-pointer"
+                />
+                <label htmlFor="linkNewTab" className="text-slate-600 cursor-pointer text-xs">
+                  {language === "fr"
+                    ? "Ouvrir dans un nouvel onglet"
+                    : "Open link in a new browser tab"}
+                </label>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setIsLinkModalOpen(false)}
+                className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 text-xs font-semibold hover:bg-slate-50 cursor-pointer transition"
+              >
+                {language === "fr" ? "Annuler" : "Cancel"}
+              </button>
+              <button
+                type="button"
+                onClick={handleApplyLink}
+                className="px-4 py-2 rounded-xl bg-[#0B2545] hover:bg-slate-800 text-white text-xs font-bold shadow-xs cursor-pointer transition flex items-center gap-1.5"
+              >
+                <LinkIcon className="w-3.5 h-3.5 text-[#d21f27]" />
+                <span>{language === "fr" ? "Appliquer le Lien" : "Insert Link"}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

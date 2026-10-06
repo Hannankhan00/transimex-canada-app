@@ -28,4 +28,28 @@ export interface BlogPostItem {
   views: number;
   featuredImage: string;
   tags: string[];
+  allowComments?: boolean;
+  commentsCount?: number;
+}
+
+export interface BlogCommentAdminReply {
+  content: string;
+  repliedBy: string;
+  repliedAt: string;
+}
+
+export interface BlogCommentItem {
+  id: string;
+  postId: string;
+  postSlug: string;
+  postTitle?: {
+    en: string;
+    fr: string;
+  };
+  authorName: string;
+  authorEmail?: string;
+  content: string;
+  status: "Approved" | "Pending" | "Hidden";
+  adminReply?: BlogCommentAdminReply;
+  createdAt: string;
 }

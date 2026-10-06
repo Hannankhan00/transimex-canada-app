@@ -32,6 +32,8 @@ export async function GET(req: Request) {
       views: dp.views || 0,
       featuredImage: dp.featuredImage || "",
       tags: dp.tags || [],
+      allowComments: dp.allowComments !== false,
+      commentsCount: dp.commentsCount || 0,
     }));
 
     const allPosts = posts;
@@ -89,6 +91,7 @@ export async function POST(req: Request) {
       status,
       tags,
       publishedDate,
+      allowComments,
     } = body;
 
     if (!title?.en || !title?.fr) {
@@ -136,6 +139,8 @@ export async function POST(req: Request) {
       views: 0,
       featuredImage: featuredImage || "",
       tags: tags || [],
+      allowComments: allowComments !== false,
+      commentsCount: 0,
     });
 
     return NextResponse.json({
@@ -162,6 +167,8 @@ export async function POST(req: Request) {
         views: newPost.views || 0,
         featuredImage: newPost.featuredImage || "",
         tags: newPost.tags || [],
+        allowComments: newPost.allowComments,
+        commentsCount: newPost.commentsCount,
       },
     });
   } catch (error: any) {

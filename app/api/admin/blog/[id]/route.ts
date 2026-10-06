@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongoose";
 import BlogPost from "@/models/BlogPost";
+import BlogComment from "@/models/BlogComment";
 
 export async function PUT(
   req: Request,
@@ -29,6 +30,7 @@ export async function PUT(
     if (body.featuredImage !== undefined) dbPost.featuredImage = body.featuredImage;
     if (body.slug) dbPost.slug = body.slug;
     if (body.tags) dbPost.tags = body.tags;
+    if (body.allowComments !== undefined) dbPost.allowComments = Boolean(body.allowComments);
 
     if (body.status) {
       dbPost.status = body.status;
@@ -67,6 +69,8 @@ export async function PUT(
         views: dbPost.views || 0,
         featuredImage: dbPost.featuredImage || "",
         tags: dbPost.tags || [],
+        allowComments: dbPost.allowComments,
+        commentsCount: dbPost.commentsCount || 0,
       },
     });
   } catch (error: any) {
@@ -94,9 +98,14 @@ export async function DELETE(
       return NextResponse.json({ error: "Post not found" }, { status: 404 });
     }
 
+    // Also remove associated comments
+    await BlogComment.deleteMany({
+      $or: [{ postId: deleted._id }, { postSlug: deleted.slug }],
+    });
+
     return NextResponse.json({
       success: true,
-      message: "Post deleted successfully",
+      message: "Post and associated comments deleted successfully",
     });
   } catch (error: any) {
     console.error("Error deleting blog post:", error);
