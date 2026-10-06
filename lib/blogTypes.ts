@@ -13,6 +13,14 @@ export interface BlogPostItem {
     en: string;
     fr: string;
   };
+  metaTitle?: {
+    en: string;
+    fr: string;
+  };
+  metaDescription?: {
+    en: string;
+    fr: string;
+  };
   author: string;
   category: string;
   status: "Draft" | "Published";

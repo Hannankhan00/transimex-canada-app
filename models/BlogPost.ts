@@ -14,6 +14,14 @@ export interface IBlogPost extends Document {
     en: string;
     fr: string;
   };
+  metaTitle?: {
+    en: string;
+    fr: string;
+  };
+  metaDescription?: {
+    en: string;
+    fr: string;
+  };
   author: string;
   category: string;
   featuredImage: string;
@@ -33,12 +41,20 @@ const BlogPostSchema = new Schema<IBlogPost>(
     },
     slug: { type: String, required: true, unique: true, index: true },
     excerpt: {
-      en: { type: String, required: true },
-      fr: { type: String, required: true },
+      en: { type: String, default: "" },
+      fr: { type: String, default: "" },
     },
     content: {
-      en: { type: String, required: true },
-      fr: { type: String, required: true },
+      en: { type: String, default: "" },
+      fr: { type: String, default: "" },
+    },
+    metaTitle: {
+      en: { type: String, default: "" },
+      fr: { type: String, default: "" },
+    },
+    metaDescription: {
+      en: { type: String, default: "" },
+      fr: { type: String, default: "" },
     },
     author: { type: String, default: "Transimex Logistics Editorial" },
     category: { type: String, default: "Industry Insights" },

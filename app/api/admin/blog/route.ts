@@ -15,10 +15,12 @@ export async function GET(req: Request) {
       id: dp._id.toString(),
       slug: dp.slug,
       title: dp.title,
-      excerpt: dp.excerpt,
-      content: dp.content,
-      author: dp.author,
-      category: dp.category,
+      excerpt: dp.excerpt || { en: "", fr: "" },
+      content: dp.content || { en: "", fr: "" },
+      metaTitle: dp.metaTitle || { en: "", fr: "" },
+      metaDescription: dp.metaDescription || { en: "", fr: "" },
+      author: dp.author || "Transimex Logistics Editorial",
+      category: dp.category || "Industry Insights",
       status: dp.status,
       publishedDate: dp.publishedAt
         ? new Date(dp.publishedAt).toLocaleDateString("en-US", {
@@ -43,10 +45,11 @@ export async function GET(req: Request) {
     if (search) {
       posts = posts.filter(
         (p) =>
-          p.title.en.toLowerCase().includes(search) ||
-          p.title.fr.toLowerCase().includes(search) ||
-          p.category.toLowerCase().includes(search) ||
-          p.author.toLowerCase().includes(search)
+          (p.title?.en && p.title.en.toLowerCase().includes(search)) ||
+          (p.title?.fr && p.title.fr.toLowerCase().includes(search)) ||
+          (p.category && p.category.toLowerCase().includes(search)) ||
+          (p.author && p.author.toLowerCase().includes(search)) ||
+          (p.slug && p.slug.toLowerCase().includes(search))
       );
     }
 
@@ -73,7 +76,20 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { title, excerpt, content, slug, author, category, featuredImage, status, tags } = body;
+    const {
+      title,
+      excerpt,
+      content,
+      metaTitle,
+      metaDescription,
+      slug,
+      author,
+      category,
+      featuredImage,
+      status,
+      tags,
+      publishedDate,
+    } = body;
 
     if (!title?.en || !title?.fr) {
       return NextResponse.json(
@@ -99,15 +115,24 @@ export async function POST(req: Request) {
       );
     }
 
+    let publishedAt: Date | undefined = undefined;
+    if (status === "Published") {
+      publishedAt = publishedDate ? new Date(publishedDate) : new Date();
+    } else if (publishedDate) {
+      publishedAt = new Date(publishedDate);
+    }
+
     const newPost = await BlogPost.create({
       slug: generatedSlug,
       title: { en: title.en, fr: title.fr },
       excerpt: { en: excerpt?.en || "", fr: excerpt?.fr || "" },
       content: { en: content?.en || "", fr: content?.fr || "" },
+      metaTitle: { en: metaTitle?.en || "", fr: metaTitle?.fr || "" },
+      metaDescription: { en: metaDescription?.en || "", fr: metaDescription?.fr || "" },
       author: author || "Transimex Logistics Editorial",
-      category: category || "Logistics Operations",
+      category: category || "Industry Insights",
       status: status || "Draft",
-      publishedAt: status === "Published" ? new Date() : undefined,
+      publishedAt,
       views: 0,
       featuredImage: featuredImage || "",
       tags: tags || [],
@@ -116,7 +141,28 @@ export async function POST(req: Request) {
     return NextResponse.json({
       success: true,
       message: `Article "${title.en}" created successfully`,
-      post: newPost,
+      post: {
+        id: newPost._id.toString(),
+        slug: newPost.slug,
+        title: newPost.title,
+        excerpt: newPost.excerpt,
+        content: newPost.content,
+        metaTitle: newPost.metaTitle,
+        metaDescription: newPost.metaDescription,
+        author: newPost.author,
+        category: newPost.category,
+        status: newPost.status,
+        publishedDate: newPost.publishedAt
+          ? new Date(newPost.publishedAt).toLocaleDateString("en-US", {
+              month: "short",
+              day: "2-digit",
+              year: "numeric",
+            })
+          : "Draft",
+        views: newPost.views || 0,
+        featuredImage: newPost.featuredImage || "",
+        tags: newPost.tags || [],
+      },
     });
   } catch (error: any) {
     console.error("Error creating blog post:", error);
