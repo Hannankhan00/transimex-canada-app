@@ -110,9 +110,10 @@ The admin panel's **Preview** button (list and editor, EN/FR, image/text fallbac
 
 Uploads in the admin are converted to **WebP** automatically:
 
-- **Lossless (default):** pixel-identical to the original.
-- **Near-lossless (optional):** visually identical, smaller files for photos.
-- Images already in WebP are stored untouched. Metadata is stripped; images wider/taller than 2400px are downscaled to 2400px on the long edge. Images are served with `Cache-Control: public, max-age=31536000, immutable` (a replaced image gets a new URL).
+- **Optimized WebP (default):** Lossy WebP with quality ~80 and smart subsampling. Images wider/taller than 1200px are downscaled to max 1200px on the longest edge. This produces vivid visuals typically sized between 80–200 KB (well under the 200–300 KB budget) for fast popup rendering.
+- **Near-lossless (optional):** Visually identical at quality 80.
+- **Lossless (optional):** Pixel-identical to the original.
+- **Edge / CDN Caching:** Served with `Cache-Control: public, max-age=31536000, s-maxage=31536000, immutable` alongside `CDN-Cache-Control` and `Vercel-CDN-Cache-Control`. The first request seeds the CDN cache, and subsequent requests return `X-Vercel-Cache: HIT` directly from the edge in milliseconds. Unique immutable filenames ensure cache invalidation happens automatically on image change.
 
 ---
 

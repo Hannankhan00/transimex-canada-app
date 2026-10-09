@@ -79,6 +79,7 @@ export interface UploadR2Params {
   buffer: Buffer | Uint8Array;
   mimeType?: string;
   metadata?: Record<string, string>;
+  cacheControl?: string;
 }
 
 export interface UploadR2Result {
@@ -96,6 +97,7 @@ export async function uploadToR2({
   buffer,
   mimeType = "application/octet-stream",
   metadata = {},
+  cacheControl = "public, max-age=31536000, immutable",
 }: UploadR2Params): Promise<UploadR2Result> {
   const client = getR2Client();
   const { bucketName, publicUrl } = getR2Env();
@@ -111,6 +113,7 @@ export async function uploadToR2({
     Key: key,
     Body: buffer,
     ContentType: mimeType,
+    CacheControl: cacheControl,
     Metadata: metadata,
   });
 

@@ -1,12 +1,12 @@
-import sharp, { type Metadata } from "sharp";
+import sharp, { type Metadata, type WebpOptions } from "sharp";
 
-/** Longest edge kept. A popup renders at ~600-1200 CSS px, so 2400 covers 2x retina with headroom. */
-export const MAX_EDGE_PX = 2400;
+/** Longest edge kept. A popup renders at ~600-800 CSS px, so max 1200 covers 2x retina and keeps file size under 200-300 KB. */
+export const MAX_EDGE_PX = 1200;
 export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 
 const ACCEPTED_FORMATS = new Set(["jpeg", "png", "webp", "gif", "avif", "tiff"]);
 
-export type ImageMode = "lossless" | "near-lossless";
+export type ImageMode = "lossy" | "near-lossless" | "lossless";
 
 export interface ProcessedImage {
   buffer: Buffer;
@@ -15,20 +15,21 @@ export interface ProcessedImage {
   originalBytes: number;
   bytes: number;
   sourceFormat: string;
-  /** passthrough = input was already a WebP that needed no changes, so it is stored byte-for-byte. */
-  method: "lossless" | "near-lossless" | "passthrough";
+  /** method used to process the image */
+  method: "lossy" | "near-lossless" | "lossless" | "passthrough";
   resized: boolean;
 }
 
 export class ImageProcessingError extends Error {}
 
 /**
- * Converts an uploaded image to WebP without visible quality loss.
- *  - lossless (default): pixel-exact WebP.
- *  - near-lossless: libwebp near-lossless at 90, visually identical and noticeably smaller on photos.
- * Metadata is stripped, EXIF orientation is applied, and only images larger than MAX_EDGE_PX are downscaled.
+ * Converts an uploaded image to WebP optimized for fast CDN delivery and popup display.
+ *  - lossy (default): WebP at quality ~80, smart subsampling, effort 6. Target under 200–300 KB.
+ *  - near-lossless: libwebp near-lossless at quality 80, effort 6.
+ *  - lossless: pixel-exact WebP.
+ * Images larger than MAX_EDGE_PX (1200px) are downscaled with Lanczos3.
  */
-export async function processPromotionImage(input: Buffer, mode: ImageMode = "lossless"): Promise<ProcessedImage> {
+export async function processPromotionImage(input: Buffer, mode: ImageMode = "lossy"): Promise<ProcessedImage> {
   let meta: Metadata;
   try {
     meta = await sharp(input, { limitInputPixels: 100_000_000 }).metadata();
@@ -49,8 +50,8 @@ export async function processPromotionImage(input: Buffer, mode: ImageMode = "lo
 
   const needsResize = Math.max(srcW, srcH) > MAX_EDGE_PX;
 
-  // Re-encoding a lossy WebP as lossless would only inflate it; keep the original bytes.
-  if (format === "webp" && !needsResize && !rotates && (meta.pages ?? 1) <= 1) {
+  // Only passthrough if already WebP, within dimension limit (<= 1200), not rotated, and already under 250 KB
+  if (format === "webp" && !needsResize && !rotates && (meta.pages ?? 1) <= 1 && input.length <= 250 * 1024) {
     return {
       buffer: input,
       width: srcW,
@@ -63,20 +64,44 @@ export async function processPromotionImage(input: Buffer, mode: ImageMode = "lo
     };
   }
 
-  let pipeline = sharp(input, { limitInputPixels: 100_000_000 }).rotate();
-  if (needsResize) {
-    pipeline = pipeline.resize({
-      width: MAX_EDGE_PX,
-      height: MAX_EDGE_PX,
-      fit: "inside",
-      withoutEnlargement: true,
-      kernel: "lanczos3",
-    });
+  const createPipeline = () => {
+    let pipeline = sharp(input, { limitInputPixels: 100_000_000 }).rotate();
+    if (needsResize) {
+      pipeline = pipeline.resize({
+        width: MAX_EDGE_PX,
+        height: MAX_EDGE_PX,
+        fit: "inside",
+        withoutEnlargement: true,
+        kernel: "lanczos3",
+      });
+    }
+    return pipeline;
+  };
+
+  let webpOptions: WebpOptions;
+  if (mode === "lossless") {
+    webpOptions = { lossless: true, effort: 6 };
+  } else if (mode === "near-lossless") {
+    webpOptions = { nearLossless: true, quality: 80, effort: 6 };
+  } else {
+    // Default lossy mode: quality 80, effort 6, smartSubsample for crisp rendering
+    webpOptions = { quality: 80, effort: 6, smartSubsample: true };
   }
 
-  const { data, info } = await pipeline
-    .webp(mode === "near-lossless" ? { nearLossless: true, quality: 90, effort: 6 } : { lossless: true, effort: 6 })
+  let { data, info } = await createPipeline()
+    .webp(webpOptions)
     .toBuffer({ resolveWithObject: true });
+
+  // If in lossy mode and still exceeds 300 KB, fine-tune with quality 75 to guarantee < 300 KB budget
+  if (mode === "lossy" && data.length > 300 * 1024) {
+    const tuned = await createPipeline()
+      .webp({ quality: 75, effort: 6, smartSubsample: true })
+      .toBuffer({ resolveWithObject: true });
+    if (tuned.data.length < data.length) {
+      data = tuned.data;
+      info = tuned.info;
+    }
+  }
 
   return {
     buffer: data,

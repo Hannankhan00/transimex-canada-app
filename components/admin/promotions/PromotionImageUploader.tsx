@@ -12,7 +12,7 @@ interface PromotionImageUploaderProps {
 
 interface ConversionInfo {
   sourceFormat: string;
-  method: "lossless" | "near-lossless" | "passthrough";
+  method: "lossy" | "near-lossless" | "lossless" | "passthrough";
   resized: boolean;
 }
 
@@ -30,7 +30,7 @@ export default function PromotionImageUploader({ value, onChange }: PromotionIma
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
-  const [mode, setMode] = useState<"lossless" | "near-lossless">("lossless");
+  const [mode, setMode] = useState<"lossy" | "near-lossless" | "lossless">("lossy");
   const [conversion, setConversion] = useState<ConversionInfo | null>(null);
 
   const upload = async (file: File | undefined) => {
@@ -93,10 +93,12 @@ export default function PromotionImageUploader({ value, onChange }: PromotionIma
               <p className="text-slate-500">
                 {conversion.method === "passthrough"
                   ? tr("Already WebP: kept untouched.", "Déjà en WebP : conservé tel quel.")
-                  : conversion.method === "lossless"
-                    ? tr("Lossless: pixel-identical to the original.", "Sans perte : identique pixel pour pixel.")
-                    : tr("Near-lossless: visually identical.", "Quasi sans perte : visuellement identique.")}
-                {conversion.resized && ` ${tr("Downscaled to 2400px max.", "Réduite à 2400 px max.")}`}
+                  : conversion.method === "lossy"
+                    ? tr("Optimized WebP: high performance, instant loading.", "WebP optimisé : haute performance, chargement instantané.")
+                    : conversion.method === "near-lossless"
+                      ? tr("Near-lossless: visually identical.", "Quasi sans perte : visuellement identique.")
+                      : tr("Lossless: pixel-identical to the original.", "Sans perte : identique pixel pour pixel.")}
+                {conversion.resized && ` ${tr("Downscaled to 1200px max.", "Réduite à 1200 px max.")}`}
               </p>
             )}
           </div>
@@ -143,7 +145,7 @@ export default function PromotionImageUploader({ value, onChange }: PromotionIma
               : tr("Upload image (JPG, PNG, WebP, GIF, AVIF)", "Téléverser une image (JPG, PNG, WebP, GIF, AVIF)")}
         </button>
         <p className="mt-1 text-[10px] text-slate-400">
-          {tr("Drag & drop or click · max 10 MB · converted to WebP automatically", "Glisser-déposer ou cliquer · 10 Mo max · convertie automatiquement en WebP")}
+          {tr("Drag & drop or click · max 10 MB · auto-compressed & converted to WebP", "Glisser-déposer ou cliquer · 10 Mo max · compressée & convertie automatiquement en WebP")}
         </p>
         <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={(e) => upload(e.target.files?.[0])} />
       </div>
@@ -152,11 +154,12 @@ export default function PromotionImageUploader({ value, onChange }: PromotionIma
         <span className="font-bold">{tr("Compression", "Compression")}</span>
         <select
           value={mode}
-          onChange={(e) => setMode(e.target.value as "lossless" | "near-lossless")}
+          onChange={(e) => setMode(e.target.value as "lossy" | "near-lossless" | "lossless")}
           className="bg-white border border-slate-200 rounded-lg px-2 py-1 text-[11px] font-semibold outline-none"
         >
-          <option value="lossless">{tr("Lossless (exact, recommended)", "Sans perte (exacte, recommandé)")}</option>
-          <option value="near-lossless">{tr("Near-lossless (smaller, looks identical)", "Quasi sans perte (plus léger, identique à l'œil)")}</option>
+          <option value="lossy">{tr("Optimized WebP (quality ~80, max 1200px, recommended)", "WebP optimisé (qualité ~80, max 1200 px, recommandé)")}</option>
+          <option value="near-lossless">{tr("Near-lossless (visual identical)", "Quasi sans perte (visuellement identique)")}</option>
+          <option value="lossless">{tr("Lossless (pixel-identical, larger file)", "Sans perte (identique au pixel, plus volumineux)")}</option>
         </select>
       </label>
 

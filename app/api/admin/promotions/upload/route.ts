@@ -38,7 +38,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Image size must not exceed 10MB" }, { status: 413 });
     }
 
-    const mode: ImageMode = form.get("mode") === "near-lossless" ? "near-lossless" : "lossless";
+    const modeRaw = form.get("mode");
+    const mode: ImageMode =
+      modeRaw === "near-lossless"
+        ? "near-lossless"
+        : modeRaw === "lossless"
+          ? "lossless"
+          : "lossy";
 
     let processed;
     try {
@@ -60,6 +66,7 @@ export async function POST(req: Request) {
           key: `${PROMOTION_MEDIA_PREFIX}${mediaId}`,
           buffer: processed.buffer,
           mimeType: "image/webp",
+          cacheControl: "public, max-age=31536000, immutable",
           metadata: {
             originalName: encodeURIComponent(file.name.slice(0, 120)),
             uploadedAt: new Date().toISOString(),
