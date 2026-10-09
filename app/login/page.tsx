@@ -193,17 +193,18 @@ function AuthComponent() {
         <div className="hidden md:flex md:w-1/2 relative bg-[#0B2545] overflow-hidden flex-col justify-between">
           <div className="absolute inset-0 z-0">
             <Image
-              src="/freight-hero.png"
-              alt="Transimex Freight and Logistics Cargo Ship"
+              src="/assets/login-hero.webp"
+              alt="Transimex Canada Ocean Freight and Port Terminal Logistics"
               fill
               priority
               sizes="50vw"
-              className="object-cover opacity-35 filter grayscale-[20%]"
+              className="object-cover object-center"
             />
           </div>
 
-          {/* Heavy Navy Overlay */}
-          <div className="absolute inset-0 bg-[#0B2545]/85 z-10" />
+          {/* Elegant Blue Fade & Ambient Vignette */}
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0B2545] via-[#0B2545]/75 to-[#0B2545]/40 z-10" />
+          <div className="absolute inset-0 bg-[#0B2545]/20 mix-blend-multiply z-10" />
 
           <div className="relative z-20 flex flex-col justify-between h-full p-10 lg:p-14">
             {/* Logo and Brand */}
