@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { CheckCircle2, Clock, Code2, Copy, Eye, ImageOff, Megaphone, Pencil, Plus, Trash2 } from "lucide-react";
+import { CheckCircle2, Clock, Eye, ImageOff, Megaphone, Pencil, Plus, Trash2 } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import PermissionGuard from "@/components/admin/PermissionGuard";
 import PromotionEditorModal from "@/components/admin/promotions/PromotionEditorModal";
@@ -42,7 +42,6 @@ export default function AdminPromotionsPage() {
   const [editorOpen, setEditorOpen] = useState(false);
   const [editing, setEditing] = useState<PromotionDTO | null>(null);
   const [previewing, setPreviewing] = useState<PromotionDTO | null>(null);
-  const [copied, setCopied] = useState(false);
 
   const flash = useCallback((text: string, error = false) => {
     setToast({ text, error });
@@ -110,17 +109,6 @@ export default function AdminPromotionsPage() {
       flash(tr("Promotion deleted.", "Promotion supprimée."));
     } catch (err: any) {
       flash(err.message || tr("Delete failed", "Échec de la suppression"), true);
-    }
-  };
-
-  const endpoint = typeof window !== "undefined" ? `${window.location.origin}/api/public/promotions?lang=en` : "/api/public/promotions?lang=en";
-  const copyEndpoint = async () => {
-    try {
-      await navigator.clipboard.writeText(endpoint);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1800);
-    } catch {
-      /* clipboard unavailable: the URL stays visible to copy by hand */
     }
   };
 
@@ -324,30 +312,6 @@ export default function AdminPromotionsPage() {
           )}
         </div>
 
-        {/* Developer integration */}
-        <div className="bg-white rounded-2xl border border-slate-200/90 p-4 sm:p-5 space-y-2.5">
-          <h3 className="font-bold text-[#0B2545] text-sm flex items-center gap-2">
-            <Code2 className="w-4 h-4" />
-            {tr("Website integration endpoint", "Point d'accès pour le site web")}
-          </h3>
-          <div className="flex items-center gap-2">
-            <code className="flex-1 min-w-0 truncate rounded-lg bg-slate-50 border border-slate-200 px-3 py-2 text-[11px] font-mono text-slate-700">GET {endpoint}</code>
-            <button
-              type="button"
-              onClick={copyEndpoint}
-              className="px-3 py-2 rounded-lg border border-slate-200 text-xs font-bold text-[#0B2545] hover:bg-slate-50 flex items-center gap-1.5 transition cursor-pointer flex-shrink-0"
-            >
-              <Copy className="w-3.5 h-3.5" />
-              {copied ? tr("Copied", "Copié") : tr("Copy", "Copier")}
-            </button>
-          </div>
-          <p className="text-[11px] text-slate-500 leading-relaxed">
-            {tr(
-              "Call it from the website's server with the x-api-key header (never from browser code). Use lang=en or lang=fr. Returns only promotions that are active right now. Full details are in PROMOTIONS_API_DOCUMENTATION.md.",
-              "Appelez-le depuis le serveur du site avec l'en-tête x-api-key (jamais depuis le navigateur). Utilisez lang=en ou lang=fr. Ne retourne que les promotions actives en ce moment. Détails complets dans PROMOTIONS_API_DOCUMENTATION.md."
-            )}
-          </p>
-        </div>
       </div>
 
       <PromotionEditorModal
