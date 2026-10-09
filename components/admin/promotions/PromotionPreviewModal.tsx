@@ -147,7 +147,7 @@ export default function PromotionPreviewModal({ promotion, onClose, onEdit }: Pr
             /* Desktop Browser Frame */
             <div
               className="w-full rounded-2xl bg-slate-900 border border-slate-700/80 shadow-2xl overflow-hidden transition-[max-width] duration-300"
-              style={{ maxWidth: mode === "image" && hasImage ? 720 : 580 }}
+              style={{ maxWidth: mode === "image" ? 720 : 520 }}
             >
               {/* Browser Header Bar */}
               <div className="bg-slate-800/95 px-4 py-2.5 flex items-center gap-3 border-b border-slate-700/60 select-none">
