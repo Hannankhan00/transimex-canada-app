@@ -84,6 +84,7 @@ Field notes:
 - **`image`** is `null` when no image was uploaded **for that language**. It is always WebP.
 - **Flags** are only present (`flagUrl` non-null) when `showFlags` is `true` and the country is set. They are small local SVGs served with a 30-day cache. Treat them as optional: hide the `<img>` on error.
 - **Chips:** the destination followed by `ports` make the "DOUALA | MATADI | TEMA …" row in the mockup. Render the destination (if `city` is non-empty) then each port.
+- **CTA link (`cta.url`):** Provided as a relative path (e.g. `"/quote"`) or an absolute URL. On the main website, the front-end developer prepends their site's base URL / locale route to link the button or clickable banner to their quote page.
 - `delaySeconds`, `startsAt`, `endsAt`, `priority` are configuration values; only `delaySeconds` matters to the front end.
 - Without `lang`, the response is bilingual: each promotion is `{ id, updatedAt, priority, delaySeconds, startsAt, endsAt, departureDate, showFlags, en: {…}, fr: {…} }` where `en`/`fr` have the exact shape above.
 

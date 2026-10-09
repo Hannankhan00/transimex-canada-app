@@ -280,7 +280,7 @@ export async function sendWelcomeEmail({
 }) {
   const appUrl = getAppUrl();
   const dashboardUrl = `${appUrl}/dashboard`;
-  const quoteUrl = `${appUrl}/quote`;
+  const quotesUrl = `${appUrl}/dashboard/quotes`;
 
   const content = `
     <h1 class="h1">Welcome to Transimex Canada</h1>
@@ -298,14 +298,14 @@ export async function sendWelcomeEmail({
       <a href="${dashboardUrl}" class="btn" target="_blank">Open My Dashboard</a>
     </div>
 
-    <p>Ready to move freight? <a href="${quoteUrl}" style="color: #d21f27; font-weight: 600;">Request your first quote</a> and our dispatch team will get back to you with a rate.</p>
+    <p>Ready to move freight? <a href="${quotesUrl}" style="color: #d21f27; font-weight: 600;">Request your first quote</a> and our dispatch team will get back to you with a rate.</p>
   `;
 
   return sendEmail({
     to,
     subject: "Welcome to Transimex Canada — your portal is ready",
     html: emailTemplateWrapper(content, "Your Transimex Canada client portal is ready"),
-    text: `Welcome to Transimex Canada, ${name}. Your client portal is active: ${dashboardUrl}\nRequest a quote: ${quoteUrl}`,
+    text: `Welcome to Transimex Canada, ${name}. Your client portal is active: ${dashboardUrl}\nRequest a quote: ${quotesUrl}`,
     category: "welcome",
   });
 }
@@ -909,7 +909,7 @@ export async function sendInquiryReplyEmail({
     <p style="margin-top: 20px;">If you have further questions or require freight scheduling assistance, you can reply directly to this email or visit our logistics portal.</p>
 
     <div style="text-align: center; margin-top: 24px;">
-      <a href="${appUrl}/quote" class="btn" target="_blank">Request Instant Freight Quote</a>
+      <a href="${appUrl}/dashboard/quotes" class="btn" target="_blank">Request Freight Quote</a>
     </div>
   `;
 
@@ -1452,7 +1452,7 @@ export async function sendInquiryReceivedEmail({
 
     <p>Need a freight rate? Existing clients can request a quote directly from the portal for the fastest turnaround.</p>
     <div style="text-align: center;">
-      <a href="${appUrl}/quote" class="btn" target="_blank">Request a Quote</a>
+      <a href="${appUrl}/dashboard/quotes" class="btn" target="_blank">Request a Quote</a>
     </div>
     <p style="font-size: 12px; color: #64748b;">If you didn't submit this inquiry, you can ignore this email.</p>
   `;

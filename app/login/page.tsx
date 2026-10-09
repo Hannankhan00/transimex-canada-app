@@ -102,7 +102,7 @@ function AuthComponent() {
             router.push("/admin");
           }
         } else {
-          if (fromParam && (fromParam.startsWith("/dashboard") || fromParam.startsWith("/quote"))) {
+          if (fromParam && fromParam.startsWith("/dashboard")) {
             router.push(fromParam);
           } else {
             router.push("/dashboard");

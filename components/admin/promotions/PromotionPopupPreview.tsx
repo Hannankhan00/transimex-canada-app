@@ -249,14 +249,18 @@ export default function PromotionPopupPreview({
 
           {/* Solid Red CTA Button */}
           <div className="pt-1">
-            <a
-              href={view.cta.url}
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              type="button"
+              onClick={(e) => e.preventDefault()}
+              title={
+                isFr
+                  ? `Sur le site principal, ce bouton ouvrira : ${view.cta.url || "/quote"}`
+                  : `On the main website, this button will open: ${view.cta.url || "/quote"}`
+              }
               className="inline-flex items-center justify-center px-10 py-2.5 rounded-lg bg-[#D21F27] hover:bg-[#B0141B] text-white text-xs font-black uppercase tracking-wider shadow-lg transition-transform hover:scale-[1.02] active:scale-95 cursor-pointer"
             >
               {ctaLabel} →
-            </a>
+            </button>
           </div>
 
           {/* Footer Text */}
@@ -336,14 +340,18 @@ export default function PromotionPopupPreview({
 
       {/* Solid Red CTA Button */}
       <div className="mt-5">
-        <a
-          href={view.cta.url}
-          target="_blank"
-          rel="noopener noreferrer"
+        <button
+          type="button"
+          onClick={(e) => e.preventDefault()}
+          title={
+            isFr
+              ? `Sur le site principal, ce bouton ouvrira : ${view.cta.url || "/quote"}`
+              : `On the main website, this button will open: ${view.cta.url || "/quote"}`
+          }
           className="inline-flex items-center justify-center px-10 py-3 rounded-lg bg-[#D21F27] hover:bg-[#B0141B] text-white text-xs font-black uppercase tracking-wider shadow-md transition-transform hover:scale-[1.02] active:scale-95 cursor-pointer"
         >
           {ctaLabel} →
-        </a>
+        </button>
       </div>
 
       {/* Footer Line */}

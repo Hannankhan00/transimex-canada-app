@@ -143,13 +143,16 @@ export default function PromotionEditorModal({
   const validate = (): string[] => {
     const out: string[] = [];
     if (!form.name.trim()) out.push(tr("Internal name is required.", "Le nom interne est requis."));
-    if (!isSafeLink(form.cta.url.trim()))
+    if (!form.cta.url.trim()) {
+      out.push(tr("Main website button link is required.", "Le lien du bouton sur le site principal est requis."));
+    } else if (!isSafeLink(form.cta.url.trim())) {
       out.push(
         tr(
-          "Button link must be a path like /quote or an http(s) URL.",
-          "Le lien du bouton doit être un chemin comme /quote ou une URL http(s)."
+          "Main website link must be a path (e.g. /quote) or an http(s) URL.",
+          "Le lien du site principal doit être un chemin (ex. /quote) ou une URL http(s)."
         )
       );
+    }
     (["en", "fr"] as const).forEach((l) => {
       if (!form.content[l].title.trim())
         out.push(tr(`Title (${l.toUpperCase()}) is required.`, `Le titre (${l.toUpperCase()}) est requis.`));
@@ -524,26 +527,6 @@ export default function PromotionEditorModal({
             </div>
           </Section>
 
-          {/* Button Link */}
-          <Section title={tr("Call to Action Link", "Lien d'Action (Bouton)")} icon={<Link2 className="w-4 h-4" />}>
-            <div>
-              <label className={labelCls}>{tr("Button destination URL / path", "URL ou chemin de destination")}</label>
-              <input
-                className={inputCls}
-                value={form.cta.url}
-                maxLength={2048}
-                placeholder="/quote  or  https://transimex.ca/quote"
-                onChange={(e) => patch({ cta: { url: e.target.value } })}
-              />
-              <p className="text-[10px] text-slate-400 mt-1">
-                {tr(
-                  "Users will be redirected to this link when clicking the button or image.",
-                  "Les visiteurs seront redirigés vers ce lien en cliquant sur le bouton ou l'image."
-                )}
-              </p>
-            </div>
-          </Section>
-
           {/* Bilingual Content */}
           <Section
             title={tr("Bilingual Popup Content", "Contenu Bilingue du Popup")}
@@ -748,6 +731,32 @@ export default function PromotionEditorModal({
                   />
                 </div>
               )}
+            </div>
+          </Section>
+
+          {/* Main Website Action Link */}
+          <Section
+            title={tr("Main Website Button Link", "Lien du Bouton sur le Site Principal")}
+            icon={<Link2 className="w-4 h-4" />}
+            hint={tr("Passed in API JSON for the public site", "Transmis dans le JSON de l'API pour le site public")}
+          >
+            <div>
+              <label className={labelCls}>
+                {tr("Destination Path or URL on Main Website", "Chemin ou URL de destination sur le site principal")} *
+              </label>
+              <input
+                className={inputCls}
+                value={form.cta.url}
+                maxLength={2048}
+                placeholder="/quote  or  https://transimex.ca/quote"
+                onChange={(e) => patch({ cta: { url: e.target.value } })}
+              />
+              <p className="text-[11px] text-slate-500 mt-1.5 leading-relaxed">
+                {tr(
+                  "Sent in the public API JSON as cta.url. The frontend developer on your main site will combine this path with their base URL (e.g. /quote or /demande-de-prix) so clicking the popup button opens that page.",
+                  "Transmis dans le JSON de l'API publique sous cta.url. Le développeur du site principal combinera ce chemin avec son URL de base (ex. /quote ou /demande-de-prix) pour diriger les visiteurs vers cette page."
+                )}
+              </p>
             </div>
           </Section>
         </div>
