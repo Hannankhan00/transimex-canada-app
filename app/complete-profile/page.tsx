@@ -278,9 +278,8 @@ function CompleteProfileContent() {
               </div>
             </div>
 
-            {/* Bottom Certifications */}
-            <div className="pt-6 border-t border-white/10 flex items-center justify-between text-xs text-slate-400">
-              <span>PIP &bull; C-TPAT &bull; CBSA Verified</span>
+            {/* Bottom Footer */}
+            <div className="pt-6 border-t border-white/10 text-xs text-slate-400">
               <span>&copy; {new Date().getFullYear()} Transimex Canada</span>
             </div>
           </div>
