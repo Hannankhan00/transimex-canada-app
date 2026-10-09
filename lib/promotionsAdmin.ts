@@ -102,7 +102,17 @@ export const PROMOTION_MEDIA_NAME = /^\d{10,}-[a-f0-9]{8}\.webp$/;
 /** Removes uploaded images that a promotion no longer references (replaced, removed or promotion deleted). */
 export async function releaseMedia(ids: string[]): Promise<void> {
   const names = ids.filter((id) => PROMOTION_MEDIA_NAME.test(id));
-  await Promise.all(names.map((name) => deleteFromR2(`${PROMOTION_MEDIA_PREFIX}${name}`)));
+  await Promise.allSettled([
+    ...names.map((name) => deleteFromR2(`${PROMOTION_MEDIA_PREFIX}${name}`)),
+    (async () => {
+      try {
+        const PromotionMedia = (await import("@/models/PromotionMedia")).default;
+        await PromotionMedia.deleteMany({ mediaId: { $in: names } });
+      } catch {
+        /* ignore */
+      }
+    })(),
+  ]);
 }
 
 /** Best-effort: drops uploads older than 24h that no promotion references (abandoned editor sessions). */

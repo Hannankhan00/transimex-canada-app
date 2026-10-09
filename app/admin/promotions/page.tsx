@@ -326,7 +326,14 @@ export default function AdminPromotionsPage() {
           void saved;
         }}
       />
-      <PromotionPreviewModal promotion={previewing} onClose={() => setPreviewing(null)} />
+      <PromotionPreviewModal
+        promotion={previewing}
+        onClose={() => setPreviewing(null)}
+        onEdit={(promo) => {
+          setEditing(promo);
+          setEditorOpen(true);
+        }}
+      />
     </PermissionGuard>
   );
 }

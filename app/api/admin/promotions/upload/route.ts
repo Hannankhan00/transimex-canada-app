@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { randomBytes } from "crypto";
+import connectDB from "@/lib/mongoose";
+import PromotionMedia from "@/models/PromotionMedia";
 import { isR2Configured, uploadToR2 } from "@/lib/r2";
 import {
   ImageMode,
@@ -16,17 +18,13 @@ const r2PublicUrl = () => (process.env.CLOUDFLARE_R2_PUBLIC_URL || process.env.R
 
 /**
  * POST multipart/form-data { file, mode?: "lossless" | "near-lossless" }
- * Converts the upload to WebP (no visible quality loss), stores it in Cloudflare R2 and returns the
- * image reference that the promotion form then saves. Images are never stored in the database.
+ * Converts the upload to WebP, stores it in Cloudflare R2 (or MongoDB database fallback if R2 is unavailable),
+ * and returns the image reference.
  */
 export async function POST(req: Request) {
   try {
     const access = await requirePromotionsAccess();
     if (access.error) return access.error;
-
-    if (!isR2Configured()) {
-      return NextResponse.json({ error: "Image storage (Cloudflare R2) is not configured on the server." }, { status: 503 });
-    }
 
     const form = await req.formData();
     const file = form.get("file");
@@ -54,22 +52,40 @@ export async function POST(req: Request) {
 
     // mediaId is the file name inside the promotions/ folder; it is also what the media route serves.
     const mediaId = `${Date.now()}-${randomBytes(4).toString("hex")}.webp`;
-    try {
-      await uploadToR2({
-        key: `${PROMOTION_MEDIA_PREFIX}${mediaId}`,
-        buffer: processed.buffer,
+    let storedInR2 = false;
+
+    if (isR2Configured()) {
+      try {
+        await uploadToR2({
+          key: `${PROMOTION_MEDIA_PREFIX}${mediaId}`,
+          buffer: processed.buffer,
+          mimeType: "image/webp",
+          metadata: {
+            originalName: encodeURIComponent(file.name.slice(0, 120)),
+            uploadedAt: new Date().toISOString(),
+          },
+        });
+        storedInR2 = true;
+      } catch (r2Err: any) {
+        console.warn("[Cloudflare R2] Promotion image upload failed, falling back to database storage:", r2Err.message);
+      }
+    }
+
+    // If R2 is not configured or failed, store in MongoDB database fallback
+    if (!storedInR2) {
+      await connectDB();
+      await PromotionMedia.create({
+        mediaId,
         mimeType: "image/webp",
-        metadata: { originalName: encodeURIComponent(file.name.slice(0, 120)), uploadedAt: new Date().toISOString() },
+        data: processed.buffer,
+        size: processed.bytes,
       });
-    } catch (r2Err: any) {
-      console.error("[Cloudflare R2] Promotion image upload failed:", r2Err.message);
-      return NextResponse.json({ error: "Could not store the image. Please try again." }, { status: 502 });
     }
 
     void purgeOrphanedMedia();
 
-    // With a public R2 domain configured the site loads straight from it; otherwise this app streams it from R2.
-    const base = r2PublicUrl().replace(/\/$/, "");
+    // With a public R2 domain configured the site loads straight from it; otherwise this app streams it from R2 / DB.
+    const base = storedInR2 ? r2PublicUrl().replace(/\/$/, "") : "";
     const url = base ? `${base}/${PROMOTION_MEDIA_PREFIX}${mediaId}` : `/api/public/promotions/media/${mediaId}`;
 
     return NextResponse.json({
