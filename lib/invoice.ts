@@ -84,10 +84,15 @@ function addDays(dateIso: string, days: number): string {
 /**
  * Creates (or returns the existing) invoice for a quote. Idempotent so a
  * double-accept race never produces two invoices for the same quote.
+ *
+ * Accepts a pre-reserved tracking number string instead of a full shipment
+ * document so the invoice can be created at quote-acceptance time, before the
+ * actual shipment record exists. The shipment is only created later, once the
+ * admin verifies the client's payment proof.
  */
 export async function createInvoiceForQuote(
   quote: IQuote,
-  shipment: IShipment
+  trackingNumber: string
 ): Promise<IInvoice> {
   await connectDB();
 
@@ -124,7 +129,7 @@ export async function createInvoiceForQuote(
     invoiceNumber: generateInvoiceNumber(),
     kind: "freight",
     quoteRefNumber: quote.refNumber,
-    shipmentTrackingNumber: shipment.trackingNumber,
+    shipmentTrackingNumber: trackingNumber,
     client: {
       name: quote.client.name,
       companyName: quote.client.companyName || "",

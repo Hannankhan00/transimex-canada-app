@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import connectDB from "@/lib/mongoose";
 import Quote from "@/models/Quote";
-import Shipment from "@/models/Shipment";
 import { verifyToken } from "@/lib/auth";
 import { logAudit } from "@/lib/audit";
 import { sendQuoteAcceptedEmail, sendInvoiceGeneratedEmail } from "@/lib/email";
@@ -42,7 +41,8 @@ export async function PATCH(
       );
     }
 
-    // Generate unique sequential Tracking ID e.g. TMX-2026-00847
+    // Reserve a tracking ID now — the actual shipment record is created only
+    // after the admin verifies the client's payment proof.
     const randomSuffix = Math.floor(10000 + Math.random() * 90000);
     const trackingId = `TMX-2026-${randomSuffix}`;
 
@@ -54,35 +54,8 @@ export async function PATCH(
     existingQuote.shipmentId = trackingId;
     await existingQuote.save();
 
-    const shipment = await Shipment.create({
-      trackingNumber: trackingId,
-      quoteId: existingQuote.refNumber,
-      client: existingQuote.client,
-      route: existingQuote.route,
-      cargo: existingQuote.cargo,
-      status: "Pending Dispatch",
-      rateCad: priceCad,
-      assignedCarrier: "Transimex Dedicated Freight Network",
-      eta: "3-5 Business Days",
-      timeline: [
-        {
-          title: "Shipment Created & Carrier Booked",
-          location: existingQuote.route?.origin || "Origin Terminal",
-          timestamp: new Date().toISOString(),
-          statusText: "Rate finalized. Dispatched from Quote " + existingQuote.refNumber,
-          completed: true,
-        },
-        {
-          title: "Customs Staging & Driver Dispatch",
-          location: "Transimex Logistics Hub",
-          timestamp: "Pending Dispatch",
-          statusText: "Trailer equipment staged for pickup window",
-          completed: false,
-        },
-      ],
-    });
-
-    const invoice = await createInvoiceForQuote(existingQuote, shipment);
+    // Create the invoice so the client can pay — no shipment yet.
+    const invoice = await createInvoiceForQuote(existingQuote, trackingId);
 
     try {
       await sendQuoteAcceptedEmail({
@@ -120,9 +93,9 @@ export async function PATCH(
       shipmentId: trackingId,
       title: `Quote Accepted — ${existingQuote.refNumber}`,
       titleFr: `Soumission Acceptée — ${existingQuote.refNumber}`,
-      desc: `Your quote ${existingQuote.refNumber} was accepted at ${priceCad} and is now shipment ${trackingId}.`,
-      descFr: `Votre soumission ${existingQuote.refNumber} a été acceptée à ${priceCad} et est maintenant l'expédition ${trackingId}.`,
-      link: `/dashboard/shipments?id=${trackingId}`,
+      desc: `Your quote ${existingQuote.refNumber} was accepted at ${priceCad}. Please pay invoice ${invoice.invoiceNumber} to activate your shipment.`,
+      descFr: `Votre soumission ${existingQuote.refNumber} a été acceptée à ${priceCad}. Veuillez payer la facture ${invoice.invoiceNumber} pour activer votre expédition.`,
+      link: `/dashboard/invoices/${invoice.invoiceNumber}`,
     });
 
     await notifyUser({
@@ -144,20 +117,20 @@ export async function PATCH(
         action: "QUOTE_ACCEPTED",
         resourceType: "Quote",
         resourceId: existingQuote.refNumber,
-        details: `Quote ${existingQuote.refNumber} accepted at ${priceCad} CAD, converted to shipment ${trackingId}.`,
+        details: `Quote ${existingQuote.refNumber} accepted at ${priceCad} CAD. Tracking ID reserved: ${trackingId}. Awaiting client payment.`,
       });
       await logAudit({
         actor,
         action: "INVOICE_GENERATED",
         resourceType: "Invoice",
         resourceId: invoice.invoiceNumber,
-        details: `Invoice ${invoice.invoiceNumber} (${invoice.amountDisplay}) generated for shipment ${trackingId}.`,
+        details: `Invoice ${invoice.invoiceNumber} (${invoice.amountDisplay}) generated for quote ${existingQuote.refNumber}.`,
       });
     }
 
     return NextResponse.json({
       success: true,
-      message: `Quote ${id} successfully accepted and converted to shipment ${trackingId}`,
+      message: `Quote ${id} accepted. Invoice ${invoice.invoiceNumber} sent to client. Shipment will be created after payment is verified.`,
       trackingId,
       invoiceNumber: invoice.invoiceNumber,
       quote: mapQuote(existingQuote.toObject()),

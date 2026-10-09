@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import connectDB from "@/lib/mongoose";
 import User from "@/models/User";
+import Quote from "@/models/Quote";
+import Shipment from "@/models/Shipment";
 import { verifyToken } from "@/lib/auth";
 import { hasModulePermission } from "@/lib/rbac";
 import { logAudit } from "@/lib/audit";
@@ -64,6 +66,69 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       invoice.verifiedBy = access.actor!.name || access.actor!.email;
       await invoice.save();
 
+      // ── Shipment Creation ──────────────────────────────────────────────────
+      // The shipment is deliberately not created until this point. The tracking
+      // ID was reserved on the quote when the client accepted the price offer,
+      // and the invoice carries that same ID as shipmentTrackingNumber. Now that
+      // payment is confirmed, we can safely create the actual shipment record.
+      let shipment: any = null;
+      try {
+        const trackingId = invoice.shipmentTrackingNumber;
+
+        // Avoid double-creation if this handler is retried
+        const existing = await Shipment.findOne({ trackingNumber: trackingId });
+        if (!existing) {
+          // Pull the full quote so we have the complete cargo/route data
+          const quote = await Quote.findOne({ refNumber: invoice.quoteRefNumber }).lean<any>();
+
+          shipment = await Shipment.create({
+            trackingNumber: trackingId,
+            quoteId: invoice.quoteRefNumber,
+            client: {
+              name: invoice.client.name,
+              companyName: invoice.client.companyName || "",
+              email: invoice.client.email,
+              phone: invoice.client.phone || "",
+              userId: invoice.client.userId || "",
+            },
+            route: {
+              origin: invoice.route?.origin || quote?.route?.origin || "",
+              originDetail: quote?.route?.originDetail || invoice.route?.origin || "",
+              destination: invoice.route?.destination || quote?.route?.destination || "",
+              destinationDetail: quote?.route?.destinationDetail || invoice.route?.destination || "",
+            },
+            cargo: quote?.cargo || {},
+            status: "Pending Dispatch",
+            rateCad: quote?.priceCad || "",
+            assignedCarrier: "Transimex Dedicated Freight Network",
+            eta: "3-5 Business Days",
+            timeline: [
+              {
+                title: "Payment Verified — Shipment Activated",
+                location: invoice.route?.origin || quote?.route?.origin || "Origin Terminal",
+                timestamp: new Date().toISOString(),
+                statusText: `Payment for invoice ${invoice.invoiceNumber} confirmed. Shipment activated from quote ${invoice.quoteRefNumber}.`,
+                completed: true,
+              },
+              {
+                title: "Customs Staging & Driver Dispatch",
+                location: "Transimex Logistics Hub",
+                timestamp: "Pending Dispatch",
+                statusText: "Trailer equipment staged for pickup window",
+                completed: false,
+              },
+            ],
+          });
+        } else {
+          shipment = existing;
+        }
+      } catch (shipErr) {
+        // Log but do not fail — the payment is verified; shipment creation
+        // failure should not roll back the invoice status.
+        console.error("[Shipment] Failed to create shipment after payment verification:", shipErr);
+      }
+      // ── End Shipment Creation ──────────────────────────────────────────────
+
       try {
         await sendPaymentVerifiedEmail({
           to: invoice.client.email,
@@ -81,9 +146,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
           category: "quote",
           title: `Payment Verified — ${invoice.invoiceNumber}`,
           titleFr: `Paiement Vérifié — ${invoice.invoiceNumber}`,
-          desc: `Your payment of ${invoice.amountDisplay} for invoice ${invoice.invoiceNumber} has been verified.`,
-          descFr: `Votre paiement de ${invoice.amountDisplay} pour la facture ${invoice.invoiceNumber} a été vérifié.`,
-          link: `/dashboard/invoices/${invoice.invoiceNumber}`,
+          desc: `Your payment of ${invoice.amountDisplay} for invoice ${invoice.invoiceNumber} has been verified. Your shipment ${invoice.shipmentTrackingNumber} is now active.`,
+          descFr: `Votre paiement de ${invoice.amountDisplay} pour la facture ${invoice.invoiceNumber} a été vérifié. Votre expédition ${invoice.shipmentTrackingNumber} est maintenant active.`,
+          link: `/dashboard/shipments?id=${invoice.shipmentTrackingNumber}`,
         });
       }
 
@@ -92,8 +157,18 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         action: "PAYMENT_VERIFIED",
         resourceType: "Invoice",
         resourceId: invoice.invoiceNumber,
-        details: `Payment of ${invoice.amountDisplay} for invoice ${invoice.invoiceNumber} verified.`,
+        details: `Payment of ${invoice.amountDisplay} for invoice ${invoice.invoiceNumber} verified. Shipment ${invoice.shipmentTrackingNumber} created.`,
       });
+
+      if (shipment) {
+        await logAudit({
+          actor: access.actor!,
+          action: "SHIPMENT_CREATED",
+          resourceType: "Shipment",
+          resourceId: invoice.shipmentTrackingNumber,
+          details: `Shipment ${invoice.shipmentTrackingNumber} created after payment verification for invoice ${invoice.invoiceNumber}.`,
+        });
+      }
     } else {
       invoice.status = "unpaid";
       invoice.paymentRejectionReason = reason || "";
@@ -136,7 +211,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
     return NextResponse.json({
       success: true,
-      message: action === "verify" ? "Payment verified" : "Payment proof rejected",
+      message: action === "verify" ? "Payment verified and shipment activated" : "Payment proof rejected",
       invoice: { ...invoiceObj, id: invoice._id.toString() },
     });
   } catch (error: any) {
