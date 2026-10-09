@@ -12,6 +12,10 @@ interface SendEmailParams {
 }
 
 const DEFAULT_FROM = "Transimex Canada <no-reply@transimex-canada.com>";
+const DEFAULT_ADMIN_EMAIL = "info@transimex-canada.com";
+
+export const getAdminNotificationEmail = (): string =>
+  process.env.ADMIN_EMAIL || process.env.EMAIL_REPLY_TO || DEFAULT_ADMIN_EMAIL;
 
 /**
  * Escapes user-supplied text before it is interpolated into email HTML.
@@ -704,7 +708,7 @@ export async function sendQuoteNegotiationStaffEmail({
   destination: string;
   offeredRate?: string;
 }) {
-  const to = staffEmail || process.env.ADMIN_EMAIL || "operations@transimex-canada.com";
+  const to = staffEmail || getAdminNotificationEmail();
   const appUrl = getAppUrl();
   const adminQuoteUrl = `${appUrl}/admin/quotes`;
 
@@ -1008,7 +1012,7 @@ export async function sendNewTicketAdminAlertEmail({
   message,
   shipmentId,
 }: {
-  to: string;
+  to?: string;
   ticketId: string;
   clientName: string;
   companyName: string;
@@ -1018,6 +1022,7 @@ export async function sendNewTicketAdminAlertEmail({
   message: string;
   shipmentId?: string;
 }) {
+  const targetEmail = to || getAdminNotificationEmail();
   const appUrl = getAppUrl();
   const adminUrl = `${appUrl}/admin/support`;
 
@@ -1038,7 +1043,7 @@ export async function sendNewTicketAdminAlertEmail({
     const bodyText = interpolateTemplate(dbTemplate.body, tokens);
 
     return sendEmail({
-      to,
+      to: targetEmail,
       subject: templatedSubject,
       html: emailTemplateWrapper(renderTemplateContent(heading, bodyText), templatedSubject),
       text: bodyText,
@@ -1072,7 +1077,7 @@ export async function sendNewTicketAdminAlertEmail({
   `;
 
   return sendEmail({
-    to,
+    to: targetEmail,
     subject: `[${ticketId}] New Support Ticket: ${subject}`,
     html: emailTemplateWrapper(content, `New support ticket ${ticketId}`),
     text: `New support ticket ${ticketId} from ${clientName} (${companyName}):\n\n${subject}\n${message}\n\nView at ${adminUrl}`,
@@ -1297,12 +1302,13 @@ export async function sendPaymentProofUploadedAdminAlert({
   companyName,
   amountDisplay,
 }: {
-  to: string;
+  to?: string;
   invoiceNumber: string;
   clientName: string;
   companyName?: string;
   amountDisplay: string;
 }) {
+  const targetEmail = to || getAdminNotificationEmail();
   const appUrl = getAppUrl();
   const adminUrl = `${appUrl}/admin/invoices`;
 
@@ -1322,7 +1328,7 @@ export async function sendPaymentProofUploadedAdminAlert({
   `;
 
   return sendEmail({
-    to,
+    to: targetEmail,
     subject: `Payment Proof Uploaded [${invoiceNumber}] — Verification Needed`,
     html: emailTemplateWrapper(content, `Invoice ${invoiceNumber} has a payment proof awaiting verification`),
     text: `${clientName} uploaded a payment proof for invoice ${invoiceNumber} (${amountDisplay}). Review at: ${adminUrl}`,
@@ -1481,8 +1487,7 @@ export async function sendNewInquiryAdminAlertEmail({
   category: string;
   message: string;
 }) {
-  const adminEmail = process.env.ADMIN_EMAIL;
-  if (!adminEmail) return { success: false };
+  const adminEmail = getAdminNotificationEmail();
 
   const appUrl = getAppUrl();
   const content = `

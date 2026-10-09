@@ -4,7 +4,7 @@ import User from "@/models/User";
 import { getCurrentUser } from "@/lib/session";
 import { logAudit } from "@/lib/audit";
 import { notifyUser } from "@/lib/notifications";
-import { sendPaymentProofUploadedAdminAlert } from "@/lib/email";
+import { sendPaymentProofUploadedAdminAlert, getAdminNotificationEmail } from "@/lib/email";
 import { hasModulePermission } from "@/lib/rbac";
 import { isR2Configured, uploadToR2, getFromR2 } from "@/lib/r2";
 import { findInvoiceByIdOrNumber, stripInvoiceBuffers } from "@/lib/invoice";
@@ -157,17 +157,13 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         .select("_id email")
         .lean<any[]>();
 
-      await Promise.all(
-        staffUsers.map((s) =>
-          sendPaymentProofUploadedAdminAlert({
-            to: s.email,
-            invoiceNumber: invoice.invoiceNumber,
-            clientName: invoice.client.name,
-            companyName: invoice.client.companyName,
-            amountDisplay: invoice.amountDisplay,
-          })
-        )
-      );
+      await sendPaymentProofUploadedAdminAlert({
+        to: getAdminNotificationEmail(),
+        invoiceNumber: invoice.invoiceNumber,
+        clientName: invoice.client.name,
+        companyName: invoice.client.companyName,
+        amountDisplay: invoice.amountDisplay,
+      });
 
       await Promise.all(
         staffUsers.map((s) =>
