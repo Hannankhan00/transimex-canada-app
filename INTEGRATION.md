@@ -23,22 +23,23 @@ field names differ from the fixture).
 
 ## Maersk
 
-- Portal: developer.maersk.com — self-service registration, generate an API
-  key, test in sandbox, then go live (no mandatory sales approval for
-  Track & Trace).
-- Env vars: `MAERSK_API_BASE_URL`, `MAERSK_API_KEY`, `MAERSK_API_SECRET`
-  (if issued).
-- Auth header used in the adapter: `Consumer-Key: <MAERSK_API_KEY>` — confirm
-  against the Track & Trace Plus reference once registered.
-- Data source: Track & Trace Plus / MEC Tracking, already DCSA Track & Trace
-  v2.2-standardized — this is why `lib/tracking/adapters/maersk.ts`'s event
-  code map (`BOOK`, `GTIN`, `LOAD`, `DEPA`, `ARRI`, `DISC`, `GTOT`, `DLVD`)
-  is a near 1:1 copy of the real DCSA codes.
-- Webhooks: supported. Point Maersk's webhook config at
-  `/api/webhooks/tracking/maersk` and set `MAERSK_WEBHOOK_SECRET` to
-  whatever shared-secret scheme Maersk's webhook docs specify (the receiver
-  stub currently checks a simple `x-webhook-secret` header — replace this
-  with Maersk's real signature scheme if it differs).
+- Portal: developer.maersk.com (Track & Trace Plus / Ocean Track & Trace, DCSA Interface Standard v2.2).
+- Env vars:
+  - `MAERSK_API_BASE_URL` (default `https://api.maersk.com`, or pre-prod `https://api-stage.maersk.com`).
+  - `MAERSK_API_KEY`: Consumer Key (Client ID) generated under your App in Maersk Developer Portal.
+  - `MAERSK_API_SECRET`: Client Secret generated under your App.
+  - Optional: `MAERSK_TOKEN_URL` (default `https://api.maersk.com/customer-identity/oauth/v2/access_token`).
+- Auth flow:
+  - **Public / Key-only connection**: Sends `Consumer-Key: <MAERSK_API_KEY>` header.
+  - **Private / Track & Trace Plus connection**: OAuth 2.0 client credentials flow. Automatically requests a Bearer token via `POST https://api.maersk.com/customer-identity/oauth/v2/access_token` with body `grant_type=client_credentials&client_id=<KEY>&client_secret=<SECRET>` and header `Consumer-Key: <KEY>`. The token is cached and refreshed automatically before expiration.
+- Endpoints:
+  - Private events: `GET /track-and-trace-private/events?equipmentReference={containerNumber}&limit=100` (or `carrierBookingReference={ref}` / `transportDocumentReference={ref}`).
+  - Public events fallback: `GET /track-and-trace/public-events`.
+  - Cursor pagination: Follows `Next-Page` header up to 10 pages.
+- Reference lookup:
+  - `maerskAdapter.fetchByReference(ref)` queries by booking reference or bill of lading (B/L) and splits multi-container bookings into individual container tracks via `splitByContainer()`, identical to CMA CGM.
+- Webhooks: supported. Point Maersk's webhook config at `/api/webhooks/tracking/maersk` and set `MAERSK_WEBHOOK_SECRET`.
+- Gateway error notice (`ERR_GW_001`): If Maersk returns `401 {"code":"ERR_GW_001","message":"API Key Validation Failed, please check the API key","reason":"Invalid or expired Key"}`, ensure in your developer.maersk.com dashboard that the App is approved and has the "Track and Trace Plus" product linked with your Maersk Customer Code (approval is manual by Maersk for the Plus tier).
 
 ## CMA CGM
 

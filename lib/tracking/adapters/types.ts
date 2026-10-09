@@ -16,6 +16,10 @@ export interface CarrierAdapter {
    * call. Only carriers whose API supports it implement this.
    */
   fetchByReference?(reference: string): Promise<ReferenceFetchResult>;
+  /**
+   * Splits a multi-container booking payload into individual container results.
+   */
+  splitByContainer?(raw: any, reference: string): ReferenceFetchResult;
 }
 
 export class AdapterNotConfiguredError extends Error {

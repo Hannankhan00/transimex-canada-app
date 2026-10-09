@@ -443,6 +443,10 @@ export const cmaCgmAdapter: CarrierAdapter = {
     }
     return splitByContainer(raw, reference);
   },
+
+  splitByContainer(raw: any, reference: string): ReferenceFetchResult {
+    return splitByContainer(raw, reference);
+  },
 };
 
 const ISO_CONTAINER_RE = /^[A-Z]{4}\d{7}$/;

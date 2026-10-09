@@ -89,8 +89,73 @@ export interface CmaCgmEvent {
 
 export type CmaCgmRawPayload = CmaCgmEvent[];
 
-// ---- Maersk: Track & Trace Plus (DCSA v2.2 event codes). Field paths are
-// representative — confirm against the sandbox once registered (see INTEGRATION.md). ----
+// ---- Maersk: Track & Trace Plus (DCSA v2.2 OpenAPI specification) ----
+
+export interface MaerskLocation {
+  locationName?: string;
+  latitude?: string;
+  longitude?: string;
+  UNLocationCode?: string;
+  facilityCode?: string;
+  facilityCodeListProvider?: "BIC" | "SMDG";
+  address?: { city?: string; country?: string };
+}
+
+export interface MaerskVessel {
+  vesselIMONumber?: number | string;
+  vesselName?: string;
+  vesselFlag?: string;
+  vesselCallSignNumber?: string;
+}
+
+export interface MaerskTransportCall {
+  transportCallID?: string;
+  carrierServiceCode?: string;
+  carrierVoyageNumber?: string;
+  exportVoyageNumber?: string;
+  importVoyageNumber?: string;
+  transportCallSequenceNumber?: number;
+  UNLocationCode?: string;
+  facilityCode?: string;
+  facilityTypeCode?: string;
+  otherFacility?: string;
+  modeOfTransport?: "VESSEL" | "RAIL" | "TRUCK" | "BARGE";
+  location?: MaerskLocation;
+  vessel?: MaerskVessel;
+}
+
+export interface MaerskDocumentReference {
+  documentReferenceType?: string;
+  documentReferenceValue?: string;
+}
+
+export interface MaerskDcsaEvent {
+  eventID?: string;
+  eventCreatedDateTime?: string;
+  eventType: "TRANSPORT" | "EQUIPMENT" | "SHIPMENT";
+  eventClassifierCode: "ACT" | "PLN" | "EST";
+  eventDateTime?: string;
+  // TRANSPORT
+  transportEventTypeCode?: "ARRI" | "DEPA";
+  delayReasonCode?: string;
+  changeRemark?: string;
+  transportCall?: MaerskTransportCall;
+  // EQUIPMENT
+  equipmentEventTypeCode?: string;
+  equipmentReference?: string;
+  ISOEquipmentCode?: string;
+  emptyIndicatorCode?: "EMPTY" | "LADEN";
+  eventLocation?: MaerskLocation;
+  // SHIPMENT
+  shipmentEventTypeCode?: string;
+  documentTypeCode?: string;
+  documentID?: string;
+  carrierBookingReference?: string;
+  // Shared
+  documentReferences?: MaerskDocumentReference[];
+  references?: { referenceType: string; referenceValue: string }[];
+  carrierSpecificData?: Record<string, any>;
+}
 
 export interface MaerskPortCall {
   sequenceNumber: number;
@@ -102,7 +167,7 @@ export interface MaerskPortCall {
   carrierVoyageNumber?: string;
 }
 
-export interface MaerskEvent {
+export interface MaerskLegacyEvent {
   eventType: string;
   shipmentEventTypeCode?: string;
   equipmentEventTypeCode?: string;
@@ -117,13 +182,20 @@ export interface MaerskEvent {
   isTransshipment?: boolean;
 }
 
-export interface MaerskRawPayload {
+export interface MaerskLegacyPayload {
   container: { equipmentReference: string; ISOEquipmentCode?: string; equipmentSizeLabel?: string };
   shipment: { billOfLadingNumber?: string; carrierBookingReference?: string };
   vessel: { vesselIMONumber?: string; vesselName?: string };
   transportPlan: MaerskPortCall[];
-  events: MaerskEvent[];
+  events: MaerskLegacyEvent[];
 }
+
+export type MaerskEvent = MaerskLegacyEvent;
+
+export type MaerskRawPayload =
+  | MaerskLegacyPayload
+  | MaerskDcsaEvent[]
+  | { events: (MaerskDcsaEvent | MaerskLegacyEvent)[] };
 
 // ---- MSC: Track & Trace ("Basic" package). Field names are representative —
 // confirm during MSC's UAT process (see INTEGRATION.md). ----

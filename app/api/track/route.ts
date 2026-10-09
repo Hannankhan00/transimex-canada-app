@@ -368,30 +368,38 @@ async function handleTrackRequest(rawQuery: string, trusted: boolean) {
     });
   }
 
-  // Booking / B/L reference lookup (CMA CGM).
+  // Booking / B/L reference lookup (Maersk & CMA CGM).
   if (/^[A-Z0-9-]{6,35}$/.test(query)) {
-    try {
-      const cmaAdapter = getAdapter("CMA_CGM");
-      if (cmaAdapter.fetchByReference) {
-        const refResult = await cmaAdapter.fetchByReference(query);
-        if (refResult?.booking) {
-          const { vessel, containers } = dedupeTracking(
-            toClientVesselView(refResult.booking),
-            (refResult.containers || []).map((c) => toClientContainerView(c.tracking as any)).filter(Boolean) as any[]
-          );
-          return NextResponse.json({
-            success: true,
-            resultType: "BOOKING_REFERENCE",
-            matchedReference: query,
-            matchedOn: "BOOKING_REFERENCE",
-            lastUpdated: new Date().toISOString(),
-            vessel: stripFacility(vessel),
-            containers: stripFacility(containers),
-          });
+    const isMaerskHint = query.startsWith("MAEU") || query.startsWith("MSKU") || query.startsWith("MRKU");
+    const candidateCarriers: ("MAERSK" | "CMA_CGM")[] = isMaerskHint
+      ? ["MAERSK", "CMA_CGM"]
+      : ["CMA_CGM", "MAERSK"];
+
+    for (const carrier of candidateCarriers) {
+      try {
+        const adapter = getAdapter(carrier);
+        if (adapter.fetchByReference) {
+          const refResult = await adapter.fetchByReference(query);
+          if (refResult?.booking) {
+            const { vessel, containers } = dedupeTracking(
+              toClientVesselView(refResult.booking),
+              (refResult.containers || []).map((c) => toClientContainerView(c.tracking as any)).filter(Boolean) as any[]
+            );
+            return NextResponse.json({
+              success: true,
+              resultType: "BOOKING_REFERENCE",
+              matchedReference: query,
+              matchedOn: "BOOKING_REFERENCE",
+              carrier,
+              lastUpdated: new Date().toISOString(),
+              vessel: stripFacility(vessel),
+              containers: stripFacility(containers),
+            });
+          }
         }
+      } catch {
+        // Not a valid reference for this carrier or API offline, try next
       }
-    } catch {
-      // Not a valid CMA CGM reference or carrier API offline
     }
   }
 

@@ -11,6 +11,12 @@ import { CarrierCode } from "./schema";
 const PREFIX_TO_CARRIER: Record<string, CarrierCode> = {
   MAEU: "MAERSK",
   MAEI: "MAERSK",
+  MSKU: "MAERSK",
+  MRKU: "MAERSK",
+  MRSU: "MAERSK",
+  PONU: "MAERSK",
+  SUDU: "MAERSK",
+  SEAU: "MAERSK",
   MSCU: "MSC",
   MEDU: "MSC",
   CMAU: "CMA_CGM",

@@ -20,6 +20,247 @@ describe("maerskAdapter (normalization)", () => {
     // In transit: some actual events, no actual DELIVERED.
     expect(deriveStatus(tracking.events)).toBe("IN_TRANSIT");
   });
+
+  it("normalizes a live DCSA 2.2 events array from Track & Trace Plus", () => {
+    const dcsaEvents = [
+      {
+        eventType: "SHIPMENT",
+        shipmentEventTypeCode: "BOOK",
+        eventClassifierCode: "ACT",
+        eventDateTime: "2026-08-01T10:00:00Z",
+        documentReferences: [
+          { documentReferenceType: "BKG", documentReferenceValue: "MAEU998877" },
+          { documentReferenceType: "TRD", documentReferenceValue: "BL998877" },
+        ],
+      },
+      {
+        eventType: "EQUIPMENT",
+        equipmentEventTypeCode: "GTIN",
+        eventClassifierCode: "ACT",
+        eventDateTime: "2026-08-02T12:00:00Z",
+        equipmentReference: "MSKU1234567",
+        ISOEquipmentCode: "42G1",
+        emptyIndicatorCode: "LADEN",
+        eventLocation: { UNLocationCode: "CAMTR", locationName: "Montreal" },
+      },
+      {
+        eventType: "EQUIPMENT",
+        equipmentEventTypeCode: "LOAD",
+        eventClassifierCode: "ACT",
+        eventDateTime: "2026-08-04T08:00:00Z",
+        equipmentReference: "MSKU1234567",
+        eventLocation: { UNLocationCode: "CAMTR", locationName: "Montreal" },
+        transportCall: {
+          modeOfTransport: "VESSEL",
+          UNLocationCode: "CAMTR",
+          exportVoyageNumber: "2601W",
+          vessel: { vesselIMONumber: 9123456, vesselName: "MAERSK MC-KINNEY MOLLER" },
+        },
+      },
+      {
+        eventType: "TRANSPORT",
+        transportEventTypeCode: "DEPA",
+        eventClassifierCode: "ACT",
+        eventDateTime: "2026-08-04T18:00:00Z",
+        transportCall: {
+          modeOfTransport: "VESSEL",
+          UNLocationCode: "CAMTR",
+          exportVoyageNumber: "2601W",
+          vessel: { vesselIMONumber: 9123456, vesselName: "MAERSK MC-KINNEY MOLLER" },
+        },
+      },
+      {
+        eventType: "EQUIPMENT",
+        equipmentEventTypeCode: "DISC",
+        eventClassifierCode: "EST",
+        eventDateTime: "2026-08-16T14:00:00Z",
+        equipmentReference: "MSKU1234567",
+        eventLocation: { UNLocationCode: "SNDKR", locationName: "Dakar" },
+        transportCall: {
+          modeOfTransport: "VESSEL",
+          UNLocationCode: "SNDKR",
+          vessel: { vesselIMONumber: 9123456, vesselName: "MAERSK MC-KINNEY MOLLER" },
+        },
+      },
+    ];
+
+    const { tracking } = maerskAdapter.parseWebhookPayload(dcsaEvents as any);
+
+    expect(tracking.carrier).toBe("MAERSK");
+    expect(tracking.containerNumber).toBe("MSKU1234567");
+    expect(tracking.bookingNumber).toBe("MAEU998877");
+    expect(tracking.blNumber).toBe("BL998877");
+    expect(tracking.vesselName).toBe("MAERSK MC-KINNEY MOLLER");
+    expect(tracking.imoNumber).toBe("9123456");
+    expect(tracking.originPort?.unLocationCode).toBe("CAMTR");
+    expect(tracking.destinationPort?.unLocationCode).toBe("SNDKR");
+    expect(tracking.events.map((e) => e.eventType)).toEqual([
+      "BOOKING",
+      "GATE_IN",
+      "LOADED",
+      "VESSEL_DEPARTURE",
+      "DISCHARGE",
+    ]);
+    expect(deriveStatus(tracking.events)).toBe("IN_TRANSIT");
+  });
+
+  it("splits a multi-container booking correctly", () => {
+    const bookingEvents = [
+      {
+        eventType: "SHIPMENT",
+        shipmentEventTypeCode: "BOOK",
+        eventClassifierCode: "ACT",
+        eventDateTime: "2026-08-01T10:00:00Z",
+        carrierBookingReference: "MAEU554433",
+      },
+      {
+        eventType: "EQUIPMENT",
+        equipmentEventTypeCode: "GTIN",
+        eventClassifierCode: "ACT",
+        eventDateTime: "2026-08-02T10:00:00Z",
+        equipmentReference: "MSKU1111111",
+        eventLocation: { UNLocationCode: "CAMTR", locationName: "Montreal" },
+      },
+      {
+        eventType: "EQUIPMENT",
+        equipmentEventTypeCode: "GTIN",
+        eventClassifierCode: "ACT",
+        eventDateTime: "2026-08-02T11:00:00Z",
+        equipmentReference: "MSKU2222222",
+        eventLocation: { UNLocationCode: "CAMTR", locationName: "Montreal" },
+      },
+    ];
+
+    const result = maerskAdapter.splitByContainer
+      ? maerskAdapter.splitByContainer(bookingEvents as any, "MAEU554433")
+      : null;
+
+    expect(result).toBeTruthy();
+    expect(result?.containers.length).toBe(2);
+    expect(result?.containers.map((c) => c.tracking.containerNumber).sort()).toEqual([
+      "MSKU1111111",
+      "MSKU2222222",
+    ]);
+  });
+});
+
+describe("maerskAdapter (live mode)", () => {
+  const env = { ...process.env };
+  afterEach(() => {
+    process.env = { ...env };
+    vi.unstubAllGlobals();
+  });
+
+  it("calls GET /track-and-trace-private/events with Consumer-Key header and follows Next-Page", async () => {
+    process.env.MAERSK_API_BASE_URL = "https://api.maersk.test";
+    process.env.MAERSK_API_KEY = "maersk-consumer-key";
+    process.env.MAERSK_API_SECRET = "";
+
+    const event1 = {
+      eventType: "EQUIPMENT",
+      equipmentEventTypeCode: "GTIN",
+      eventClassifierCode: "ACT",
+      eventDateTime: "2026-08-01T10:00:00Z",
+      equipmentReference: "MAEU1112223",
+      eventLocation: { UNLocationCode: "CAMTR", locationName: "Montreal" },
+    };
+    const event2 = {
+      eventType: "TRANSPORT",
+      transportEventTypeCode: "DEPA",
+      eventClassifierCode: "ACT",
+      eventDateTime: "2026-08-02T10:00:00Z",
+      transportCall: { UNLocationCode: "CAMTR" },
+    };
+
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify([event1]), { status: 200, headers: { "Next-Page": "CURSOR_PAGE_2" } })
+      )
+      .mockResolvedValueOnce(new Response(JSON.stringify([event2]), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { tracking } = await maerskAdapter.fetchTracking("MAEU1112223");
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    const [firstUrl, firstInit] = fetchMock.mock.calls[0];
+    expect(String(firstUrl)).toBe(
+      "https://api.maersk.test/track-and-trace-private/events?equipmentReference=MAEU1112223&limit=100"
+    );
+    expect(firstInit.headers["Consumer-Key"]).toBe("maersk-consumer-key");
+    expect(String(fetchMock.mock.calls[1][0])).toContain("cursor=CURSOR_PAGE_2");
+    expect(tracking.containerNumber).toBe("MAEU1112223");
+  });
+
+  it("uses OAuth2 client-credentials token when MAERSK_API_SECRET is configured", async () => {
+    process.env.MAERSK_API_BASE_URL = "https://api.maersk.test";
+    process.env.MAERSK_API_KEY = "maersk-oauth-client";
+    process.env.MAERSK_API_SECRET = "maersk-oauth-secret";
+
+    const event = {
+      eventType: "EQUIPMENT",
+      equipmentEventTypeCode: "GTIN",
+      eventClassifierCode: "ACT",
+      eventDateTime: "2026-08-01T10:00:00Z",
+      equipmentReference: "MAEU9998887",
+      eventLocation: { UNLocationCode: "CAMTR", locationName: "Montreal" },
+    };
+
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ access_token: "maersk-jwt-token", expires_in: 3600 })))
+      .mockResolvedValueOnce(new Response(JSON.stringify([event])));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { tracking } = await maerskAdapter.fetchTracking("MAEU9998887");
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    const [tokenUrl, tokenInit] = fetchMock.mock.calls[0];
+    expect(tokenUrl).toBe("https://api.maersk.com/customer-identity/oauth/v2/access_token");
+    expect(String(tokenInit.body)).toContain("grant_type=client_credentials");
+    expect(String(tokenInit.body)).toContain("client_id=maersk-oauth-client");
+    expect(tokenInit.headers["Consumer-Key"]).toBe("maersk-oauth-client");
+
+    const [, apiInit] = fetchMock.mock.calls[1];
+    expect(apiInit.headers.Authorization).toBe("Bearer maersk-jwt-token");
+    expect(apiInit.headers["Consumer-Key"]).toBe("maersk-oauth-client");
+    expect(tracking.containerNumber).toBe("MAEU9998887");
+  });
+
+  it("fetches by booking reference via fetchByReference", async () => {
+    process.env.MAERSK_API_BASE_URL = "https://api.maersk.test";
+    process.env.MAERSK_API_KEY = "maersk-key";
+    process.env.MAERSK_API_SECRET = "";
+
+    const bookingEvents = [
+      {
+        eventType: "SHIPMENT",
+        shipmentEventTypeCode: "BOOK",
+        eventClassifierCode: "ACT",
+        eventDateTime: "2026-08-01T10:00:00Z",
+        carrierBookingReference: "BK-MAEU-777",
+      },
+      {
+        eventType: "EQUIPMENT",
+        equipmentEventTypeCode: "GTIN",
+        eventClassifierCode: "ACT",
+        eventDateTime: "2026-08-02T10:00:00Z",
+        equipmentReference: "MSKU7771111",
+        eventLocation: { UNLocationCode: "CAMTR", locationName: "Montreal" },
+      },
+    ];
+
+    const fetchMock = vi.fn().mockResolvedValueOnce(new Response(JSON.stringify(bookingEvents)));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await maerskAdapter.fetchByReference!("BK-MAEU-777");
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(String(fetchMock.mock.calls[0][0])).toContain("carrierBookingReference=BK-MAEU-777");
+    expect(result.booking.containerNumber).toBe("BK-MAEU-777");
+    expect(result.containers.length).toBe(1);
+    expect(result.containers[0].tracking.containerNumber).toBe("MSKU7771111");
+  });
 });
 
 describe("cmaCgmAdapter (normalization)", () => {

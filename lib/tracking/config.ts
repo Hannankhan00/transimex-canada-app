@@ -82,6 +82,20 @@ export function getCmaCgmAuthConfig() {
   };
 }
 
+/**
+ * Maersk Track & Trace Plus auth options:
+ * - Consumer-Key header: always passed as Consumer-Key.
+ * - OAuth 2.0 Bearer token: requested via client_credentials when MAERSK_API_SECRET is set.
+ */
+export function getMaerskAuthConfig() {
+  return {
+    tokenUrl:
+      process.env.MAERSK_TOKEN_URL ||
+      "https://api.maersk.com/customer-identity/oauth/v2/access_token",
+    scope: process.env.MAERSK_OAUTH_SCOPE || "",
+  };
+}
+
 /** Shared secret the cron trigger must present — set CRON_SECRET before exposing the route publicly. */
 export const CRON_SECRET = process.env.TRACKING_CRON_SECRET || "";
 
