@@ -31,7 +31,10 @@ export type AuditActionType =
   | "PAYMENT_REJECTED"
   | "BANK_ACCOUNT_CREATED"
   | "BANK_ACCOUNT_UPDATED"
-  | "BANK_ACCOUNT_DELETED";
+  | "BANK_ACCOUNT_DELETED"
+  | "PROMOTION_CREATED"
+  | "PROMOTION_UPDATED"
+  | "PROMOTION_DELETED";
 
 export type AuditResourceType =
   | "Shipment"
@@ -42,7 +45,8 @@ export type AuditResourceType =
   | "Customs"
   | "EmailTemplate"
   | "Invoice"
-  | "BankAccount";
+  | "BankAccount"
+  | "Promotion";
 
 export interface IAuditLog extends Document {
   actorId?: string;

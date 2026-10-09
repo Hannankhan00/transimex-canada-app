@@ -4,6 +4,7 @@ import {
   GetObjectCommand,
   DeleteObjectCommand,
   HeadObjectCommand,
+  ListObjectsV2Command,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
@@ -217,5 +218,29 @@ export async function deleteFromR2(key: string): Promise<boolean> {
   } catch (err: any) {
     console.error(`[Cloudflare R2] Failed to delete object ${key}:`, err.message);
     return false;
+  }
+}
+
+/**
+ * Lists objects under a prefix (up to `max`), with their last-modified time.
+ */
+export async function listR2Objects(
+  prefix: string,
+  max = 1000
+): Promise<{ key: string; lastModified?: Date }[]> {
+  const client = getR2Client();
+  const { bucketName } = getR2Env();
+  if (!client) return [];
+
+  try {
+    const response = await client.send(
+      new ListObjectsV2Command({ Bucket: bucketName, Prefix: prefix, MaxKeys: max })
+    );
+    return (response.Contents || [])
+      .filter((o) => !!o.Key)
+      .map((o) => ({ key: o.Key as string, lastModified: o.LastModified }));
+  } catch (err: any) {
+    console.error(`[Cloudflare R2] Failed to list objects under ${prefix}:`, err.message);
+    return [];
   }
 }

@@ -13,6 +13,7 @@ export type PermissionModule =
   | "analytics"
   | "blog"
   | "resources"
+  | "promotions"
   | "staff"
   | "settings";
 
@@ -107,6 +108,14 @@ export const PERMISSION_MODULES: PermissionModuleDef[] = [
     icon: "BookOpen",
   },
   {
+    id: "promotions",
+    labelEn: "Promotions & Popups",
+    labelFr: "Promotions & Fenêtres Contextuelles",
+    descriptionEn: "Create, preview and schedule the promotional popups shown on the public website.",
+    descriptionFr: "Créer, prévisualiser et planifier les fenêtres promotionnelles affichées sur le site public.",
+    icon: "Megaphone",
+  },
+  {
     id: "staff",
     labelEn: "Staff & RBAC",
     labelFr: "Gestion du Personnel & RBAC",
@@ -148,7 +157,7 @@ export const ROLE_PRESETS: RolePreset[] = [
     titleFr: "Super Administrateur",
     descriptionEn: "Unrestricted master access to all operations, financial data, and staff governance.",
     badgeClass: "bg-slate-900 text-amber-400 border border-amber-400/30",
-    defaultPermissions: ["quotes", "invoices", "shipments", "clients", "carriers", "messages", "support", "analytics", "blog", "resources", "staff", "settings"],
+    defaultPermissions: ["quotes", "invoices", "shipments", "clients", "carriers", "messages", "support", "analytics", "blog", "resources", "promotions", "staff", "settings"],
   },
   {
     id: "admin",

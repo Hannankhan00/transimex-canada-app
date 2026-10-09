@@ -25,6 +25,7 @@ import {
   Newspaper,
   BookOpen,
   Receipt,
+  Megaphone,
 } from "lucide-react";
 
 interface AdminSidebarProps {
@@ -154,6 +155,13 @@ export default function AdminSidebar({
       href: "/admin/resources",
       icon: BookOpen,
       module: "resources",
+      section: "insights",
+    },
+    {
+      name: language === "fr" ? "Promotions & Popups" : "Promotions & Popups",
+      href: "/admin/promotions",
+      icon: Megaphone,
+      module: "promotions",
       section: "insights",
     },
     {
