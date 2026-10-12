@@ -6,6 +6,7 @@ import { useLanguage } from "@/lib/i18n/LanguageContext";
 import CustomsStatusBadge from "@/components/admin/customs/CustomsStatusBadge";
 import PermissionGuard from "@/components/admin/PermissionGuard";
 import CarrierAssignModal from "@/components/admin/shipments/CarrierAssignModal";
+import BulkReferenceModal from "@/components/admin/shipments/BulkReferenceModal";
 import { CarrierVendor, FleetUnit } from "@/lib/carrierTypes";
 import {
   Search,
@@ -15,6 +16,7 @@ import {
   AlertTriangle,
   Truck,
   Ship,
+  X,
 } from "lucide-react";
 
 interface AdminShipmentItem {
@@ -32,6 +34,7 @@ interface AdminShipmentItem {
   customsPars?: string;
   broker?: string;
   eta: string;
+  booking: { carrier: string; reference: string; vesselName?: string } | null;
   date: string;
 }
 
@@ -58,6 +61,8 @@ export default function AdminShipmentsDirectoryPage() {
   const [loading, setLoading] = useState(true);
   const tableRef = useRef<HTMLDivElement>(null);
   const [assignTargetId, setAssignTargetId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkOpen, setBulkOpen] = useState(false);
 
   const loadShipments = useCallback(async () => {
     setLoading(true);
@@ -81,6 +86,7 @@ export default function AdminShipmentsDirectoryPage() {
             customsPars: s.customsPars,
             broker: s.broker,
             eta: s.eta,
+            booking: s.booking || null,
             date: s.date,
           }))
         );
@@ -133,6 +139,29 @@ export default function AdminShipmentsDirectoryPage() {
       return true;
     });
   }, [shipments, filter, search]);
+
+  const selectedShipments = useMemo(
+    () => shipments.filter((s) => selectedIds.has(s.id)),
+    [shipments, selectedIds]
+  );
+  const allFilteredSelected =
+    filteredShipments.length > 0 && filteredShipments.every((s) => selectedIds.has(s.id));
+
+  const toggleSelected = (id: string) =>
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+
+  const toggleAllFiltered = () =>
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allFilteredSelected) filteredShipments.forEach((s) => next.delete(s.id));
+      else filteredShipments.forEach((s) => next.add(s.id));
+      return next;
+    });
 
   const handleReviewUrgentHold = () => {
     setFilter("customs");
@@ -319,12 +348,47 @@ export default function AdminShipmentsDirectoryPage() {
             </div>
           </div>
 
+          {selectedIds.size > 0 && (
+            <div className="px-4 sm:px-5 py-3 border-b border-slate-200 bg-[#0B2545] text-white flex flex-wrap items-center justify-between gap-3">
+              <span className="text-xs font-bold">
+                {language === "fr" ? `${selectedIds.size} sélectionnée(s)` : `${selectedIds.size} selected`}
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setBulkOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white text-[#0B2545] hover:bg-slate-100 rounded-xl text-xs font-bold transition cursor-pointer"
+                >
+                  <Ship className="w-3.5 h-3.5" />
+                  <span>{language === "fr" ? "Assigner une référence" : "Assign carrier reference"}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedIds(new Set())}
+                  className="p-2 rounded-lg hover:bg-white/10 transition cursor-pointer"
+                  title={language === "fr" ? "Effacer la sélection" : "Clear selection"}
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* SHIPMENTS TABLE */}
           {/* Desktop Table */}
           <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="border-b border-slate-200 bg-slate-50/70 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                  <th className="py-3.5 pl-4 pr-0 w-8">
+                    <input
+                      type="checkbox"
+                      checked={allFilteredSelected}
+                      onChange={toggleAllFiltered}
+                      aria-label={language === "fr" ? "Tout sélectionner" : "Select all"}
+                      className="cursor-pointer"
+                    />
+                  </th>
                   <th className="py-3.5 px-4">{language === "fr" ? "N° de Suivi" : "Tracking ID"}</th>
                   <th className="py-3.5 px-4">{language === "fr" ? "Corridor d'Itinéraire" : "Route Corridor"}</th>
                   <th className="py-3.5 px-4">{language === "fr" ? "Équipement et Transporteur" : "Equipment & Carrier"}</th>
@@ -338,19 +402,31 @@ export default function AdminShipmentsDirectoryPage() {
               <tbody className="divide-y divide-slate-100 text-slate-700">
                 {loading ? (
                   <tr>
-                    <td colSpan={7} className="py-10 text-center text-slate-400 text-xs">
+                    <td colSpan={8} className="py-10 text-center text-slate-400 text-xs">
                       {language === "fr" ? "Chargement des expéditions..." : "Loading shipments..."}
                     </td>
                   </tr>
                 ) : filteredShipments.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-10 text-center text-slate-400 text-xs">
+                    <td colSpan={8} className="py-10 text-center text-slate-400 text-xs">
                       {language === "fr" ? "Aucune expédition ne correspond à ce filtre." : "No shipments match this filter."}
                     </td>
                   </tr>
                 ) : (
                   filteredShipments.map((shipment) => (
-                    <tr key={shipment.id} className="hover:bg-slate-50/80 transition">
+                    <tr
+                      key={shipment.id}
+                      className={`hover:bg-slate-50/80 transition ${selectedIds.has(shipment.id) ? "bg-blue-50/50" : ""}`}
+                    >
+                      <td className="py-3.5 pl-4 pr-0 w-8">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.has(shipment.id)}
+                          onChange={() => toggleSelected(shipment.id)}
+                          aria-label={shipment.id}
+                          className="cursor-pointer"
+                        />
+                      </td>
                       {/* Tracking ID */}
                       <td className="py-3.5 px-4 font-mono font-bold text-slate-900 whitespace-nowrap">
                         <span className="text-[#0B2545] font-bold">{shipment.id}</span>
@@ -452,7 +528,15 @@ export default function AdminShipmentsDirectoryPage() {
               filteredShipments.map((shipment) => (
                 <div key={shipment.id} className="p-4 space-y-3">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="font-mono font-bold text-[#0B2545] text-sm">{shipment.id}</span>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.has(shipment.id)}
+                        onChange={() => toggleSelected(shipment.id)}
+                        className="cursor-pointer"
+                      />
+                      <span className="font-mono font-bold text-[#0B2545] text-sm">{shipment.id}</span>
+                    </label>
                     <CustomsStatusBadge status={shipment.customsStatus} size="sm" />
                   </div>
 
@@ -513,6 +597,16 @@ export default function AdminShipmentsDirectoryPage() {
             )}
           </div>
         </div>
+
+        <BulkReferenceModal
+          isOpen={bulkOpen}
+          shipments={selectedShipments}
+          onClose={() => setBulkOpen(false)}
+          onDone={() => {
+            setSelectedIds(new Set());
+            loadShipments();
+          }}
+        />
 
         <CarrierAssignModal
           isOpen={!!assignTargetId}

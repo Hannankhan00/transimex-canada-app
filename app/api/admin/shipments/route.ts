@@ -53,6 +53,14 @@ export async function GET(req: Request) {
       customsPars: s.cbsaPars || "",
       broker: s.customsBroker || "",
       eta: s.eta || "",
+      booking: s.carrierBooking?.reference
+        ? {
+            carrier: s.carrierBooking.carrier,
+            reference: s.carrierBooking.reference,
+            vesselName: s.carrierBooking.vesselName || "",
+          }
+        : null,
+      containerCount: (s.containers || []).length,
       date: formatDate(s.createdAt),
       createdAt: s.createdAt,
       updatedAt: s.updatedAt,

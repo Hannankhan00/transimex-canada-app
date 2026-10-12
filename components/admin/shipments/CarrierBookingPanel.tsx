@@ -34,7 +34,10 @@ export interface CarrierBookingView {
 }
 
 // Only carriers whose adapter implements a booking/B/L lookup are offered.
-const BOOKING_CARRIERS = [{ value: "CMA_CGM", label: "CMA CGM" }];
+const BOOKING_CARRIERS = [
+  { value: "CMA_CGM", label: "CMA CGM" },
+  { value: "MAERSK", label: "Maersk" },
+];
 
 const ROLE_LABEL: Record<string, { en: string; fr: string }> = {
   ORIGIN: { en: "Loading port", fr: "Port de chargement" },
@@ -223,8 +226,8 @@ export default function CarrierBookingPanel({ shipmentId, booking, onChanged }: 
           </form>
           <p className="text-[10px] text-slate-400">
             {fr
-              ? "Numéro de réservation ou de connaissement tel qu'indiqué par le transporteur. Le navire et les conteneurs assignés sont récupérés automatiquement. Maersk et MSC : ajoutez les numéros de conteneur ci-dessous."
-              : "The booking or B/L number exactly as the carrier shows it. The vessel and any assigned containers are picked up automatically. For Maersk and MSC, add container numbers below instead."}
+              ? "Numéro de réservation ou de connaissement tel qu'indiqué par le transporteur. Le navire et les conteneurs assignés sont récupérés automatiquement. MSC : ajoutez les numéros de conteneur ci-dessous."
+              : "The booking or B/L number exactly as the carrier shows it. The vessel and any assigned containers are picked up automatically. For MSC, add container numbers below instead."}
           </p>
         </>
       ) : (
