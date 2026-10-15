@@ -86,6 +86,7 @@ export async function priceRequest(params: {
       declaredValueCents: request.declaredValueCents,
       isCustomsDeclarable: request.isCustomsDeclarable,
       plannedShipDate: request.plannedShipDate,
+      pickupRequested: request.pickupRequested,
     });
   } catch (error) {
     if (error instanceof QuoteError) throw error;
@@ -112,7 +113,8 @@ export async function priceRequest(params: {
       publicList: option.publicList,
       dhlContractDiscountPct: params.settings.dhlContractDiscountPct,
       clientDiscountPct: params.clientDiscountPct,
-      pickupFeeCents: request.pickupRequested ? params.settings.pickupFeeCents : 0,
+      // The pickup fee comes from DHL; the Settings value is only a fallback if DHL did not supply one.
+      pickupFeeCents: request.pickupRequested ? (option.pickupFeeCents ?? params.settings.pickupFeeCents) : 0,
       markup: params.markup,
     });
     return { option, breakdown, request };

@@ -77,6 +77,8 @@ export interface RateRequest {
   isCustomsDeclarable: boolean;
   /** YYYY-MM-DD. */
   plannedShipDate: string;
+  /** True when the client wants DHL to collect the parcel, so the carrier can quote its pickup fee. */
+  pickupRequested?: boolean;
 }
 
 export interface RateOption {
@@ -91,6 +93,11 @@ export interface RateOption {
    * carrier APIs return only the account rate; confirm in the sandbox.
    */
   publicList?: RatePrice;
+  /**
+   * The carrier's pickup fee for this shipment, when pickup was requested and
+   * the carrier supplies it. Passed through to the client, never discounted.
+   */
+  pickupFeeCents?: Cents;
   /** ISO timestamp. */
   estimatedDelivery?: string;
 }

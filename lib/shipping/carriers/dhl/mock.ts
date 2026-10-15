@@ -53,6 +53,8 @@ const NOT_SERVICED = new Set(["SS", "SO", "LY", "SD"]);
 const ACCOUNT_RATE_SHARE = 0.4;
 const FUEL_SURCHARGE_RATE = 0.22;
 const REMOTE_AREA_FEE_CENTS = 2800;
+/** Illustrative DHL pickup fee. The real amount comes from DHL. */
+const MOCK_PICKUP_FEE_CENTS = 1500;
 const VOLUMETRIC_DIVISOR = 5000;
 
 /** Mock rule: a postal code ending in "99" is a remote area. */
@@ -162,6 +164,7 @@ export class MockDhlAdapter implements CarrierAdapter {
         currency: "CAD",
         account: priceForZone(zone, weightKg, remote, ACCOUNT_RATE_SHARE),
         publicList: this.omitPublicList ? undefined : priceForZone(zone, weightKg, remote, 1),
+        pickupFeeCents: request.pickupRequested ? MOCK_PICKUP_FEE_CENTS : undefined,
         estimatedDelivery: estimated.toISOString(),
       },
     ];

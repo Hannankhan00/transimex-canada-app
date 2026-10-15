@@ -260,6 +260,9 @@ export class DhlApiAdapter implements CarrierAdapter {
         account,
         // The API returns our account rate only. VERIFY whether a list price is available.
         publicList: undefined,
+        // VERIFY: whether DHL returns a pickup fee in the rate response. Until confirmed it is left
+        // undefined and Transimex falls back to the pickup fee set in Express settings.
+        pickupFeeCents: undefined,
         estimatedDelivery: product.deliveryCapabilities?.estimatedDeliveryDateAndTime,
       });
     }

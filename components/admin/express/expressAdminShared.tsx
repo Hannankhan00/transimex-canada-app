@@ -45,7 +45,8 @@ export function ExpressAdminTabs() {
   const pathname = usePathname();
   const { tr } = useTr();
   const tabs = [
-    { href: "/admin/express", label: tr("Applications", "Demandes"), active: pathname === "/admin/express" || /^\/admin\/express\/(?!settings|terms|simulator)/.test(pathname) },
+    { href: "/admin/express", label: tr("Applications", "Demandes"), active: pathname === "/admin/express" || /^\/admin\/express\/(?!settings|terms|simulator|shipments)/.test(pathname) },
+    { href: "/admin/express/shipments", label: tr("Shipments", "Envois"), active: pathname.startsWith("/admin/express/shipments") },
     { href: "/admin/express/terms", label: tr("Terms", "Conditions"), active: pathname === "/admin/express/terms" },
     { href: "/admin/express/simulator", label: tr("Quote simulator", "Simulateur de soumission"), active: pathname === "/admin/express/simulator" },
     { href: "/admin/express/settings", label: tr("Settings", "Paramètres"), active: pathname === "/admin/express/settings" },
@@ -78,4 +79,22 @@ export function dollarsToCents(value: string): number | null {
 export function formatDate(iso: string | null, lang: "en" | "fr") {
   if (!iso) return "";
   return new Intl.DateTimeFormat(lang === "fr" ? "fr-CA" : "en-CA", { dateStyle: "medium", timeStyle: "short" }).format(new Date(iso));
+}
+
+export const SHIPMENT_STATUS_STYLES: Record<string, string> = {
+  awaiting_payment: "bg-amber-50 text-amber-700 border-amber-200",
+  paid: "bg-blue-50 text-blue-700 border-blue-200",
+  label_ready: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  cancelled: "bg-slate-100 text-slate-600 border-slate-300",
+};
+
+export function ShipmentStatusBadge({ status }: { status: string }) {
+  const { tr } = useTr();
+  const labels: Record<string, string> = {
+    awaiting_payment: tr("Awaiting payment", "En attente de paiement"),
+    paid: tr("Paid", "Payé"),
+    label_ready: tr("Label ready", "Étiquette prête"),
+    cancelled: tr("Cancelled", "Annulé"),
+  };
+  return <span className={`px-2 py-0.5 rounded-full border text-[10px] font-bold ${SHIPMENT_STATUS_STYLES[status] || ""}`}>{labels[status] || status}</span>;
 }

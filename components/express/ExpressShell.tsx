@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { ArrowLeft, LayoutDashboard, LogOut } from "lucide-react";
+import { ArrowLeft, LayoutDashboard, LogOut, Package, Plane } from "lucide-react";
 import { api } from "@/lib/api";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import TransimexLogo from "@/components/TransimexLogo";
@@ -18,7 +18,11 @@ export default function ExpressShell({ children, userName }: ExpressShellProps) 
   const pathname = usePathname();
   const { t, language, setLanguage } = useLanguage();
 
-  const navItems = [{ href: "/express", label: t.express.navOverview, icon: LayoutDashboard, exact: true }];
+  const navItems = [
+    { href: "/express", label: t.express.navOverview, icon: LayoutDashboard, exact: true },
+    { href: "/express/book", label: t.express.navBook, icon: Plane, exact: false },
+    { href: "/express/shipments", label: t.express.navShipments, icon: Package, exact: false },
+  ];
 
   const handleLogout = async () => {
     await api.auth.logout();

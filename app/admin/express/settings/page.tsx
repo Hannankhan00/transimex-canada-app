@@ -145,11 +145,11 @@ export default function AdminExpressSettingsPage() {
               </div>
 
               <div className="space-y-2 pt-4 border-t border-slate-100">
-                <h2 className="font-bold text-[#0B2545] text-sm">{tr("DHL pickup fee", "Frais de ramassage DHL")}</h2>
+                <h2 className="font-bold text-[#0B2545] text-sm">{tr("Fallback pickup fee", "Frais de ramassage de secours")}</h2>
                 <p className="text-xs text-slate-500">
                   {tr(
-                    "Flat fee added to a quote when the client chooses DHL pickup. Never discounted. Set it from the DHL contract; 0 means no fee.",
-                    "Frais fixes ajoutés à une soumission lorsque le client choisit le ramassage DHL. Jamais rabaissés. À fixer selon le contrat DHL; 0 signifie aucuns frais."
+                    "The pickup fee comes from DHL with each rate. This amount is used only if DHL does not return one. It is added when the client chooses DHL pickup and is never discounted. 0 means no fee.",
+                    "Les frais de ramassage viennent de DHL avec chaque tarif. Ce montant n'est utilisé que si DHL n'en retourne pas. Il est ajouté lorsque le client choisit le ramassage DHL et n'est jamais rabaissé. 0 signifie aucuns frais."
                   )}
                 </p>
                 <label className="block space-y-1">
