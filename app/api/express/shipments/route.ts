@@ -9,7 +9,9 @@ import { requireExpressClient, validationError } from "@/lib/express/access";
 import { bookingSchema } from "@/lib/express/shipmentSchemas";
 import { checkBookingAgainstQuote, defaultContentDescription, generateReference } from "@/lib/express/bookingService";
 import { toClientQuoteDTO } from "@/lib/express/quoteDto";
-import { toClientShipmentDTO } from "@/lib/express/shipmentDto";
+import { toClientShipmentDTO, toCustomerShipmentDTO } from "@/lib/express/shipmentDto";
+import { resolvePricingContext } from "@/lib/express/partnerPricing";
+import { getPricingSettings } from "@/lib/express/settings";
 import { getCurrentTerms } from "@/lib/express/termsStore";
 import { canUseExpress } from "@/lib/express/transitions";
 
@@ -19,6 +21,13 @@ export async function GET() {
     if (access.error) return access.error;
 
     await connectDB();
+    const account = await ExpressAccount.findOne({ userId: access.actor.userId }).select("type partnerCustomerId").lean();
+    // A partner's customer sees the shipments their partner booked for them, with the price they were quoted.
+    if (account?.type === "customer") {
+      if (!account.partnerCustomerId) return NextResponse.json({ success: true, shipments: [] });
+      const docs = await ExpressShipment.find({ partnerCustomerId: account.partnerCustomerId, status: { $ne: "awaiting_payment" } }).sort({ createdAt: -1 }).limit(100).lean();
+      return NextResponse.json({ success: true, shipments: docs.map((d) => toCustomerShipmentDTO(d as any)) });
+    }
     const docs = await ExpressShipment.find({ userId: access.actor.userId }).sort({ createdAt: -1 }).limit(100).lean();
     return NextResponse.json({ success: true, shipments: docs.map((d) => toClientShipmentDTO(d as any)) });
   } catch (error) {
@@ -58,6 +67,14 @@ export async function POST(req: Request) {
     if (!canUseExpress(account)) {
       return NextResponse.json({ error: "Your Express account is not active.", code: `account_${account.status}` }, { status: 403 });
     }
+    // A partner's customer can look at prices and shipments but cannot book yet: who pays Transimex for
+    // a customer's own booking is still undecided, so booking stays with the partner.
+    if (account.type === "customer") {
+      return NextResponse.json(
+        { error: "Your shipping partner books shipments for you. Contact them to book.", code: "customer_booking_disabled" },
+        { status: 403 }
+      );
+    }
     // Card payment at booking is the only method until invoice billing is built.
     if (account.type === "b2b" && !account.billingModes.includes("pay_at_booking")) {
       return NextResponse.json(
@@ -90,6 +107,20 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "This quote has already been booked.", code: "quote_used" }, { status: 409 });
     }
 
+    // The partner's price for this customer is fixed by the quote, and the customer must still be theirs and active.
+    let partnerFields: Record<string, unknown> = {};
+    if (quote.partnerCustomerId) {
+      const settings = await getPricingSettings();
+      const context = await resolvePricingContext({ account, b2cDiscountPct: settings.b2cDiscountPct, requestedCustomerId: quote.partnerCustomerId });
+      if (!context.ok) return NextResponse.json({ error: context.error, code: context.code }, { status: context.status });
+      partnerFields = {
+        partnerCustomerId: quote.partnerCustomerId,
+        partnerCustomerName: quote.partnerCustomerName || context.partnerCustomerName,
+        markupCents: quote.pricing.markupCents,
+        customerTotalCents: quote.pricing.customerTotalCents,
+      };
+    }
+
     const issues = checkBookingAgainstQuote(input, quote);
     if (issues.length > 0) {
       return NextResponse.json({ error: "Validation failed", fields: issues }, { status: 422 });
@@ -100,6 +131,7 @@ export async function POST(req: Request) {
       userId,
       accountId: String(account._id),
       accountType: account.type,
+      ...partnerFields,
       quoteId: String(quote._id),
       idempotencyKey: input.idempotencyKey,
       status: "awaiting_payment" as const,

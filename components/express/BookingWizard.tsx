@@ -11,6 +11,7 @@ import { formatCad } from "@/lib/shipping/core/money";
 import type { TermsContent } from "@/lib/express/terms";
 import type { ClientQuoteDTO } from "@/lib/express/quoteDto";
 import type { ClientAccountDTO } from "@/lib/express/accountDto";
+import type { PartnerCustomerDTO } from "@/lib/express/partnerDto";
 
 const AFRICA = COUNTRIES.filter((c) => AFRICAN_COUNTRY_CODES.has(c.code));
 const EXPORT_REASONS = ["sale", "gift", "sample", "return", "repair", "personal_effects"] as const;
@@ -165,6 +166,9 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
   const [items, setItems] = useState<ItemForm[]>([emptyItem()]);
   const [pickup, setPickup] = useState(false);
   const [duties, setDuties] = useState<"recipient" | "sender">("recipient");
+  // Partners can book for one of their customers ("" = their own shipment).
+  const [customers, setCustomers] = useState<PartnerCustomerDTO[]>([]);
+  const [forCustomer, setForCustomer] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   const [quote, setQuote] = useState<ClientQuoteDTO | null>(null);
@@ -177,6 +181,25 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
   const [accepted, setAccepted] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [serverIssues, setServerIssues] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!account.partner) return;
+    let alive = true;
+    fetch("/api/express/partner/customers")
+      .then((r) => r.json())
+      .then((d) => {
+        if (!alive || !d.success) return;
+        const active = (d.customers as PartnerCustomerDTO[]).filter((c) => !c.archived);
+        setCustomers(active);
+        // The customers page links here with ?customer=ID.
+        const wanted = new URLSearchParams(window.location.search).get("customer");
+        if (wanted && active.some((c) => c.id === wanted)) setForCustomer(wanted);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [account.partner]);
 
   // Pre-fill the sender from the Express account and the CRM profile.
   useEffect(() => {
@@ -218,6 +241,7 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
     p: parcels,
     v: itemsTotalCents,
     u: pickup,
+    c: forCustomer,
   });
 
   const countryName = (code: string) => {
@@ -277,6 +301,7 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
           declaredValueCents: itemsTotalCents,
           isCustomsDeclarable: true,
           pickupRequested: pickup,
+          ...(forCustomer ? { partnerCustomerId: forCustomer } : {}),
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -293,7 +318,7 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
     } finally {
       setQuoteLoading(false);
     }
-  }, [shipper, recipient, parcels, itemsTotalCents, pickup, inputsKey, b]);
+  }, [shipper, recipient, parcels, itemsTotalCents, pickup, forCustomer, inputsKey, b]);
 
   const loadTerms = useCallback(async () => {
     try {
@@ -434,6 +459,21 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
 
       {step === 1 && (
         <div className="space-y-5">
+          {account.partner && customers.length > 0 && (
+            <section className="bg-white border border-slate-200 rounded-2xl p-5 sm:p-6 space-y-2">
+              <h2 className="font-bold text-[#0B2545]">{t.express.partner.bookingFor}</h2>
+              <select className={inputClass} value={forCustomer} onChange={(e) => setForCustomer(e.target.value)} aria-label={t.express.partner.bookingFor}>
+                <option value="">{t.express.partner.bookingForMe}</option>
+                {customers.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                    {c.company ? ` · ${c.company}` : ""} ({c.effectiveMarkupPct}%)
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-slate-500">{t.express.partner.bookingForHelp}</p>
+            </section>
+          )}
           <section className="bg-white border border-slate-200 rounded-2xl p-5 sm:p-6 space-y-4">
             <h2 className="font-bold text-[#0B2545]">{b.sender}</h2>
             <AddressFields value={shipper} onChange={setShipper} withCountry={false} emailRequired labels={addressLabels} countryLabel={countryLabel} />
@@ -674,6 +714,26 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
                     <span className="tabular-nums">{m(quote.price.totalCents)}</span>
                   </div>
                 </div>
+                {quote.partner && (
+                  <div className="divide-y divide-slate-100 rounded-xl border border-slate-200">
+                    <div className="flex justify-between px-4 py-2.5">
+                      <span className="text-slate-600">{t.express.partner.youPay}</span>
+                      <span className="font-semibold tabular-nums">{m(quote.price.totalCents)}</span>
+                    </div>
+                    <div className="flex justify-between px-4 py-2.5 text-emerald-700">
+                      <span>
+                        {t.express.partner.yourMarkup} ({quote.partner.markupPct}%)
+                      </span>
+                      <span className="font-semibold tabular-nums">+{m(quote.partner.markupCents)}</span>
+                    </div>
+                    <div className="flex justify-between px-4 py-3 bg-slate-50 font-extrabold text-[#0B2545]">
+                      <span>
+                        {t.express.partner.customerPrice} · {quote.partner.customerName}
+                      </span>
+                      <span className="tabular-nums">{m(quote.partner.customerTotalCents)}</span>
+                    </div>
+                  </div>
+                )}
                 <p className="text-xs text-slate-500">{b.surchargesNote}</p>
                 <p className="text-xs text-slate-500">
                   {b.validUntil}: {new Intl.DateTimeFormat(language === "fr" ? "fr-CA" : "en-CA", { timeStyle: "short" }).format(new Date(quote.expiresAt!))}

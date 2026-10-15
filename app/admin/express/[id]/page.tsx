@@ -27,6 +27,62 @@ interface HistoryRow {
   createdAt: string;
 }
 
+/** Switches an approved business into a partner (resells to its own customers) and sets its default markup. */
+function PartnerCard({
+  initial,
+  busy,
+  onSave,
+}: {
+  initial: { enabled: boolean; defaultMarkupPct: number };
+  busy: boolean;
+  onSave: (value: { enabled: boolean; defaultMarkupPct: number }) => void;
+}) {
+  const { tr } = useTr();
+  const [enabled, setEnabled] = useState(initial.enabled);
+  const [markup, setMarkup] = useState(String(initial.defaultMarkupPct));
+  const [error, setError] = useState<string | null>(null);
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const pct = Number(markup);
+    if (markup.trim() === "" || !Number.isFinite(pct) || pct < 0 || pct > 99.99 || Math.round(pct * 100) / 100 !== pct) {
+      return setError(tr("Enter a markup between 0 and 99.99 (two decimals at most).", "Entrez une majoration entre 0 et 99,99 (deux décimales au plus)."));
+    }
+    setError(null);
+    onSave({ enabled, defaultMarkupPct: pct });
+  };
+
+  return (
+    <section className="bg-white rounded-2xl border border-slate-200 p-5 space-y-3">
+      <h2 className="font-bold text-[#0B2545] text-sm">{tr("Partner", "Partenaire")}</h2>
+      <p className="text-xs text-slate-600">
+        {tr(
+          "A partner resells Express to its own customers: it books for them, adds a markup on your price and can give a customer a login. The partner always pays Transimex its own discounted price.",
+          "Un partenaire revend Express à ses propres clients : il réserve pour eux, ajoute une majoration à votre prix et peut donner un accès à un client. Le partenaire paie toujours à Transimex son propre prix rabaissé."
+        )}
+      </p>
+      <form onSubmit={submit} className="space-y-3" noValidate>
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} className="accent-[#0B2545]" />
+          {tr("This business is a partner", "Cette entreprise est un partenaire")}
+        </label>
+        <label className="block space-y-1">
+          <span className="text-xs font-bold text-slate-700">{tr("Default markup on its customers (%)", "Majoration par défaut sur ses clients (%)")}</span>
+          <input className={adminInput} value={markup} onChange={(e) => setMarkup(e.target.value)} inputMode="decimal" disabled={!enabled} />
+          <span className="block text-[11px] text-slate-500">
+            {tr("The partner can still set a different markup per customer.", "Le partenaire peut tout de même fixer une autre majoration par client.")}
+          </span>
+        </label>
+        {error && <p className="text-xs font-semibold text-red-600">{error}</p>}
+        <button type="submit" disabled={busy} className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#0B2545] hover:bg-slate-800 disabled:opacity-60 text-white text-xs font-bold cursor-pointer">
+          {busy && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+          {tr("Save partner settings", "Enregistrer les paramètres partenaire")}
+        </button>
+      </form>
+    </section>
+  );
+}
+
 export default function AdminExpressAccountPage() {
   const { id } = useParams<{ id: string }>();
   const { language, tr } = useTr();
@@ -271,6 +327,15 @@ export default function AdminExpressAccountPage() {
                 "Les comptes B2C utilisent le rabais B2C unique de l'onglet Paramètres."
               )}
             </section>
+          )}
+
+          {isB2b && canEdit && (
+            <PartnerCard
+              key={`${account.partnerSettings.enabled}-${account.partnerSettings.defaultMarkupPct}`}
+              initial={account.partnerSettings}
+              busy={busy}
+              onSave={(value) => act({ action: "partner", partner: value }, tr("Partner settings saved", "Paramètres partenaire enregistrés"))}
+            />
           )}
 
           {(canReject || canSuspend || canReactivate) && (

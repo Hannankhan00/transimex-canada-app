@@ -64,6 +64,10 @@ export function toClientShipmentDTO(doc: ShipmentDoc) {
     paidAt: iso(doc.payment?.paidAt),
     refundedCents: doc.payment?.refundedCents ?? 0,
     labelReady: doc.status === "label_ready" && Boolean(doc.label?.key),
+    // Only when a partner booked this for one of their customers.
+    partner: doc.partnerCustomerId
+      ? { customerId: doc.partnerCustomerId, customerName: doc.partnerCustomerName || "", markupCents: doc.markupCents ?? 0, customerTotalCents: doc.customerTotalCents ?? doc.totalCents ?? 0 }
+      : null,
     // Where the parcel is with DHL. Null until the first DHL scan.
     tracking: doc.tracking?.events?.length
       ? {
@@ -78,6 +82,29 @@ export function toClientShipmentDTO(doc: ShipmentDoc) {
 }
 
 export type ClientShipmentDTO = ReturnType<typeof toClientShipmentDTO>;
+
+/**
+ * What a partner's CUSTOMER sees of a shipment the partner booked for them:
+ * progress, tracking and the price they were quoted. Never the partner's own
+ * price, the markup, payment or refund details, or the label.
+ */
+export function toCustomerShipmentDTO(doc: ShipmentDoc) {
+  const full = toClientShipmentDTO(doc);
+  return {
+    ...full,
+    totalCents: doc.customerTotalCents ?? full.totalCents,
+    partner: null,
+    quoteId: "",
+    termsVersion: "",
+    canPay: false,
+    paidAt: null,
+    refundedCents: 0,
+    labelReady: false,
+    cancelledAt: full.cancelledAt,
+    // The booking's payment steps are between the partner and Transimex.
+    statusHistory: [],
+  };
+}
 
 export type AttentionReason = "label_failed" | "outcome_unknown" | "label_overdue" | "amount_mismatch" | "refund_failed" | "delivery_exception" | "tracking_failing" | "no_scan";
 

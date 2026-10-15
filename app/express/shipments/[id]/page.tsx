@@ -9,6 +9,7 @@ import { formatCad } from "@/lib/shipping/core/money";
 import { COUNTRIES } from "@/lib/data/countries";
 import type { ClientShipmentDTO } from "@/lib/express/shipmentDto";
 import type { ClientQuoteDTO } from "@/lib/express/quoteDto";
+import { useExpressAccount } from "@/components/express/useExpressAccount";
 
 const STATUS_STYLE: Record<string, string> = {
   awaiting_payment: "bg-amber-50 text-amber-700 border-amber-200",
@@ -39,6 +40,9 @@ function Detail() {
   const { t, language } = useLanguage();
   const s = t.express.shipments;
   const book = t.express.book;
+  const pt = t.express.partner;
+  const { account } = useExpressAccount();
+  const isCustomer = account?.type === "customer";
   const [shipment, setShipment] = useState<ClientShipmentDTO | null>(null);
   const [quote, setQuote] = useState<ClientQuoteDTO | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "missing" | "error">("loading");
@@ -179,9 +183,31 @@ function Detail() {
             {t.express.trackingStatus[shipment.tracking.status as keyof typeof t.express.trackingStatus]}
           </span>
         ) : (
-          <span className={`px-2.5 py-0.5 rounded-full border text-xs font-bold ${STATUS_STYLE[shipment.status]}`}>{t.express.shipmentStatus[shipment.status]}</span>
+          <span className={`px-2.5 py-0.5 rounded-full border text-xs font-bold ${STATUS_STYLE[shipment.status]}`}>{isCustomer && shipment.status === "paid" ? pt.customerStatusPaid : t.express.shipmentStatus[shipment.status]}</span>
         )}
       </div>
+
+      {isCustomer && <p className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">{pt.customerNote}</p>}
+
+      {shipment.partner && (
+        <section className="bg-white border border-slate-200 rounded-2xl p-5 space-y-2">
+          <h2 className="font-bold text-[#0B2545] text-sm">{shipment.partner.customerName}</h2>
+          <div className="divide-y divide-slate-100 rounded-xl border border-slate-200 text-sm">
+            <div className="flex justify-between px-4 py-2.5">
+              <span className="text-slate-600">{pt.youPay}</span>
+              <span className="font-semibold tabular-nums">{m(shipment.totalCents)}</span>
+            </div>
+            <div className="flex justify-between px-4 py-2.5 text-emerald-700">
+              <span>{pt.yourMarkup}</span>
+              <span className="font-semibold tabular-nums">+{m(shipment.partner.markupCents)}</span>
+            </div>
+            <div className="flex justify-between px-4 py-3 bg-slate-50 font-extrabold text-[#0B2545]">
+              <span>{pt.customerPrice}</span>
+              <span className="tabular-nums">{m(shipment.partner.customerTotalCents)}</span>
+            </div>
+          </div>
+        </section>
+      )}
 
       {shipment.tracking?.status === "exception" && (
         <p role="status" className="flex items-center gap-2 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-900">
@@ -191,19 +217,19 @@ function Detail() {
       )}
 
       {/* Payment state */}
-      {pendingCheck && (
+      {pendingCheck && !isCustomer && (
         <p role="status" className="flex items-center gap-2 rounded-xl bg-blue-50 border border-blue-200 px-4 py-3 text-sm text-blue-900">
           <Loader2 className="w-4 h-4 animate-spin" />
           {s.paymentPendingNote}
         </p>
       )}
-      {shipment.status === "paid" && (
+      {shipment.status === "paid" && !isCustomer && (
         <p role="status" className="flex items-center gap-2 rounded-xl bg-blue-50 border border-blue-200 px-4 py-3 text-sm text-blue-900">
           {returnedPaid && polls < POLL_MAX && <Loader2 className="w-4 h-4 animate-spin" />}
           {returnedPaid && polls < POLL_MAX ? s.paidProcessing : s.paidWaiting}
         </p>
       )}
-      {shipment.status === "awaiting_payment" && !pendingCheck && (
+      {shipment.status === "awaiting_payment" && !pendingCheck && !isCustomer && (
         <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-900 space-y-3">
           <p>{returnedCancelled ? s.paymentNotCompleted : s.awaitingNote}</p>
           <div className="flex flex-wrap items-center gap-3">
@@ -320,7 +346,7 @@ function Detail() {
 
       <section className="bg-white border border-slate-200 rounded-2xl p-5 space-y-3">
         <h2 className="font-bold text-[#0B2545] text-sm">{s.priceTitle}</h2>
-        {quote ? (
+        {quote && !isCustomer ? (
           <div className="divide-y divide-slate-100 rounded-xl border border-slate-200 text-sm">
             <div className="flex justify-between px-4 py-2.5">
               <span className="text-slate-600">{book.publicPrice}</span>

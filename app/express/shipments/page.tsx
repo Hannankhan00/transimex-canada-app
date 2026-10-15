@@ -21,7 +21,9 @@ export default function ExpressShipmentsPage() {
   const { t, language } = useLanguage();
   const s = t.express.shipments;
   const { account } = useExpressAccount();
-  const canBook = account?.status === "active";
+  const isCustomer = account?.type === "customer";
+  // A partner's customer cannot book: their partner does that.
+  const canBook = account?.status === "active" && !isCustomer;
   const [shipments, setShipments] = useState<ClientShipmentDTO[] | null>(null);
   const [error, setError] = useState(false);
 
@@ -89,14 +91,16 @@ export default function ExpressShipmentsPage() {
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-bold text-sm text-[#0B2545] font-mono">{sh.reference}</span>
-                    <span className={`px-2 py-0.5 rounded-full border text-[10px] font-bold ${STATUS_STYLE[sh.status]}`}>{sh.status === "label_ready" && sh.tracking ? t.express.trackingStatus[sh.tracking.status as keyof typeof t.express.trackingStatus] : t.express.shipmentStatus[sh.status]}</span>
+                    <span className={`px-2 py-0.5 rounded-full border text-[10px] font-bold ${STATUS_STYLE[sh.status]}`}>{sh.status === "label_ready" && sh.tracking ? t.express.trackingStatus[sh.tracking.status as keyof typeof t.express.trackingStatus] : isCustomer && sh.status === "paid" ? t.express.partner.customerStatusPaid : t.express.shipmentStatus[sh.status]}</span>
+                    {sh.partner && <span className="px-2 py-0.5 rounded-full border border-slate-200 bg-slate-50 text-[10px] font-bold text-slate-600">{sh.partner.customerName}</span>}
                   </div>
                   <div className="text-xs text-slate-500 mt-0.5 truncate">
                     {s.recipient}: {sh.recipient.name}, {sh.recipient.city}, {country(sh.recipient.countryCode)}
                   </div>
                 </div>
                 <div className="text-xs text-slate-500 sm:text-right whitespace-nowrap">
-                  <div className="font-bold text-slate-800 text-sm">{formatCad(sh.totalCents, language)}</div>
+                  <div className="font-bold text-slate-800 text-sm">{formatCad(sh.partner ? sh.partner.customerTotalCents : sh.totalCents, language)}</div>
+                  {sh.partner && <div className="text-[11px] text-slate-500">{t.express.partner.youPay}: {formatCad(sh.totalCents, language)}</div>}
                   {sh.createdAt && new Intl.DateTimeFormat(language === "fr" ? "fr-CA" : "en-CA", { dateStyle: "medium" }).format(new Date(sh.createdAt))}
                 </div>
               </Link>

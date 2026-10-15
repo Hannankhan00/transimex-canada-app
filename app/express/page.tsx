@@ -92,6 +92,7 @@ export default function ExpressOverviewPage() {
   }
 
   // ---- Has an account ----
+  const isCustomer = account.type === "customer";
   const firstName = (account.contactName || "").trim().split(/\s+/)[0];
   const country = findCountry(account.country);
   const countryLabel = country ? (language === "fr" ? country.nameFr : country.name) : account.country;
@@ -134,17 +135,19 @@ export default function ExpressOverviewPage() {
         {active && (
           <Link href="/express/book" className="inline-flex items-center gap-2 rounded-xl bg-[#0B2545] px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-[#12315c]">
             <PackagePlus className="h-4 w-4" />
-            {t.express.navBook}
+            {isCustomer ? t.express.partner.customerQuoteTitle : t.express.navBook}
           </Link>
         )}
       </div>
+
+      {isCustomer && <p className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">{t.express.partner.customerNote}</p>}
 
       <ExpressStatusBanner account={account} />
 
       {active && (
         <div className={`grid gap-4 sm:grid-cols-2 ${account.discountPct != null ? "xl:grid-cols-4" : "xl:grid-cols-3"}`}>
           <Stat icon={Package} label={o.statTotal} value={shipments ? String(shipments.length) : "–"} tone="bg-[#0B2545]/10 text-[#0B2545]" />
-          <Stat icon={CreditCard} label={o.statAwaiting} value={shipments ? String(count("awaiting_payment")) : "–"} tone="bg-amber-50 text-amber-600" />
+          {!isCustomer && <Stat icon={CreditCard} label={o.statAwaiting} value={shipments ? String(count("awaiting_payment")) : "–"} tone="bg-amber-50 text-amber-600" />}
           <Stat icon={CheckCircle2} label={o.statReady} value={shipments ? String(count("label_ready")) : "–"} tone="bg-emerald-50 text-emerald-600" />
           {account.discountPct != null && <Stat icon={Percent} label={o.statDiscount} value={`${account.discountPct}%`} tone="bg-red-50 text-[#D21F27]" />}
         </div>
@@ -168,9 +171,11 @@ export default function ExpressOverviewPage() {
               <div className="px-6 py-12 text-center">
                 <Package className="mx-auto h-8 w-8 text-slate-300" />
                 <p className="mx-auto mt-3 max-w-xs text-sm text-slate-500">{o.noShipments}</p>
-                <Link href="/express/book" className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#D21F27] px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-[#B91A21]">
-                  {t.express.shipments.bookFirst}
-                </Link>
+                {!isCustomer && (
+                  <Link href="/express/book" className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#D21F27] px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-[#B91A21]">
+                    {t.express.shipments.bookFirst}
+                  </Link>
+                )}
               </div>
             ) : (
               <ul className="divide-y divide-slate-100">
@@ -180,13 +185,13 @@ export default function ExpressOverviewPage() {
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="font-mono text-sm font-bold text-[#0B2545]">{s.reference}</span>
-                          <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${STATUS_STYLE[s.status]}`}>{s.status === "label_ready" && s.tracking ? t.express.trackingStatus[s.tracking.status as keyof typeof t.express.trackingStatus] : t.express.shipmentStatus[s.status]}</span>
+                          <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${STATUS_STYLE[s.status]}`}>{s.status === "label_ready" && s.tracking ? t.express.trackingStatus[s.tracking.status as keyof typeof t.express.trackingStatus] : isCustomer && s.status === "paid" ? t.express.partner.customerStatusPaid : t.express.shipmentStatus[s.status]}</span>
                         </div>
                         <p className="mt-0.5 truncate text-xs text-slate-500">
                           {s.recipient.name} · {s.recipient.city}
                         </p>
                       </div>
-                      <span className="text-sm font-bold tabular-nums text-slate-800">{formatCad(s.totalCents, language)}</span>
+                      <span className="text-sm font-bold tabular-nums text-slate-800">{formatCad(s.partner ? s.partner.customerTotalCents : s.totalCents, language)}</span>
                     </Link>
                   </li>
                 ))}

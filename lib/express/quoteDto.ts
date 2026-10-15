@@ -43,8 +43,44 @@ export function toClientQuoteDTO(doc: QuoteDoc, now: Date = new Date()) {
       surcharges: surcharges(p.client.surcharges),
       totalCents: p.client.totalCents,
     },
+    // Only when a partner priced this for one of their customers: what the partner adds and what the customer is shown.
+    partner: doc.partnerCustomerId
+      ? {
+          customerId: doc.partnerCustomerId,
+          customerName: doc.partnerCustomerName || "",
+          markupPct: doc.partnerMarkupPct ?? 0,
+          markupCents: p.markupCents,
+          customerTotalCents: p.customerTotalCents,
+        }
+      : null,
   };
 }
+
+/**
+ * What a partner's CUSTOMER may see: the service, delivery date and one final
+ * price. No Transimex price, no discount, no markup, no breakdown: the partner
+ * decides how much of that the customer sees.
+ */
+export function toCustomerQuoteDTO(doc: QuoteDoc, now: Date = new Date()) {
+  const expiresAt = iso(doc.expiresAt);
+  return {
+    id: String(doc._id),
+    createdAt: iso(doc.createdAt),
+    expiresAt,
+    expired: expiresAt ? new Date(expiresAt).getTime() <= now.getTime() : true,
+    currency: "CAD" as const,
+    service: { name: doc.serviceName || "", estimatedDelivery: iso(doc.estimatedDelivery) },
+    destination: {
+      countryCode: doc.request?.destination.countryCode || "",
+      city: doc.request?.destination.city || "",
+      postalCode: doc.request?.destination.postalCode || "",
+    },
+    pickupRequested: Boolean(doc.request?.pickupRequested),
+    totalCents: doc.pricing.customerTotalCents,
+  };
+}
+
+export type CustomerQuoteDTO = ReturnType<typeof toCustomerQuoteDTO>;
 
 export type ClientQuoteDTO = ReturnType<typeof toClientQuoteDTO>;
 

@@ -1,6 +1,6 @@
 import type { ExpressAccountStatus, ExpressAccountType } from "@/models/ExpressAccount";
 
-export type ExpressAction = "approve" | "reject" | "suspend" | "reactivate" | "update";
+export type ExpressAction = "approve" | "reject" | "suspend" | "reactivate" | "update" | "partner";
 
 /** Which statuses each staff action may start from, per account type. */
 const ALLOWED: Record<ExpressAction, { from: ExpressAccountStatus[]; types: ExpressAccountType[]; to?: ExpressAccountStatus }> = {
@@ -10,6 +10,8 @@ const ALLOWED: Record<ExpressAction, { from: ExpressAccountStatus[]; types: Expr
   suspend: { from: ["active"], types: ["b2b", "b2c"], to: "suspended" },
   reactivate: { from: ["suspended"], types: ["b2b", "b2c"], to: "active" },
   update: { from: ["active", "suspended"], types: ["b2b"] },
+  // Only an approved business can become a partner (and a suspended one keeps its setting).
+  partner: { from: ["active", "suspended"], types: ["b2b"] },
 };
 
 export function checkTransition(

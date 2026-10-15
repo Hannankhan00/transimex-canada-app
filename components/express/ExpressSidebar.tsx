@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ArrowLeft, LayoutDashboard, Lock, LogOut, Package, PackagePlus, X } from "lucide-react";
+import { ArrowLeft, LayoutDashboard, Lock, LogOut, Package, PackagePlus, Users, X } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import TransimexLogo from "@/components/TransimexLogo";
 
@@ -21,6 +21,10 @@ interface Props {
   onLogout: () => void;
   /** The client's Express account status; anything but "active" locks booking. null = unknown or none. */
   accountStatus?: string | null;
+  /** An approved reseller: shows the partner area. */
+  isPartner?: boolean;
+  /** A login a partner gave to their customer: can check prices and follow shipments, not book. */
+  isCustomer?: boolean;
 }
 
 interface NavItem {
@@ -33,7 +37,7 @@ interface NavItem {
   lockedHint?: string;
 }
 
-export default function ExpressSidebar({ mobileOpen, onClose, user, fallbackName, onLogout, accountStatus = null }: Props) {
+export default function ExpressSidebar({ mobileOpen, onClose, user, fallbackName, onLogout, accountStatus = null, isPartner = false, isCustomer = false }: Props) {
   const pathname = usePathname();
   const { t } = useLanguage();
   const e = t.express;
@@ -45,7 +49,7 @@ export default function ExpressSidebar({ mobileOpen, onClose, user, fallbackName
     match: (p) => p === "/express" || p === "/express/apply",
   };
   const shipping: NavItem[] = [
-    { href: "/express/book", label: e.navBook, icon: PackagePlus, match: (p) => p.startsWith("/express/book"), lockedHint: accountStatus && accountStatus !== "active" ? e.lockedHint : undefined },
+    { href: "/express/book", label: isCustomer ? e.partner.customerQuoteTitle : e.navBook, icon: PackagePlus, match: (p) => p.startsWith("/express/book"), lockedHint: accountStatus && accountStatus !== "active" ? e.lockedHint : undefined },
     { href: "/express/shipments", label: e.navShipments, icon: Package, match: (p) => p.startsWith("/express/shipments") },
   ];
 
@@ -114,6 +118,15 @@ export default function ExpressSidebar({ mobileOpen, onClose, user, fallbackName
 
         {sectionLabel(e.navShipping)}
         <div className="space-y-0.5">{shipping.map(renderItem)}</div>
+
+        {isPartner && (
+          <>
+            {sectionLabel(e.partner.navSection)}
+            <div className="space-y-0.5">
+              {renderItem({ href: "/express/partner", label: e.partner.navCustomers, icon: Users, match: (p) => p.startsWith("/express/partner") })}
+            </div>
+          </>
+        )}
 
         {sectionLabel(e.navAccount)}
         <div className="space-y-0.5">

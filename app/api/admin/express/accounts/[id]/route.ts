@@ -84,6 +84,37 @@ export async function PATCH(req: Request, { params }: Ctx) {
     const transition = checkTransition(account, input.action);
     if (!transition.ok) return NextResponse.json({ error: transition.error }, { status: 409 });
 
+    // Switching partner mode is not a review decision: it must not overwrite who reviewed the account.
+    if (input.action === "partner") {
+      const was = account.partner;
+      const updatedPartner = await ExpressAccount.findOneAndUpdate(
+        { _id: id, status: account.status },
+        {
+          $set: {
+            partner: {
+              enabled: input.partner.enabled,
+              defaultMarkupPct: input.partner.defaultMarkupPct,
+              enabledAt: input.partner.enabled && !was?.enabled ? new Date() : was?.enabledAt,
+              enabledBy: input.partner.enabled && !was?.enabled ? actor.userId : was?.enabledBy,
+            },
+          },
+        },
+        { returnDocument: "after", runValidators: true }
+      ).lean<IExpressAccount>();
+      if (!updatedPartner) {
+        return NextResponse.json({ error: "This account was just changed by someone else. Reload and try again." }, { status: 409 });
+      }
+      await logAudit({
+        actor,
+        action: "EXPRESS_PARTNER_CHANGED",
+        resourceType: "ExpressAccount",
+        resourceId: id,
+        details: `${account.company?.name || account.contactName}: partner ${was?.enabled ? "on" : "off"} (${was?.defaultMarkupPct ?? 0}%) -> ${input.partner.enabled ? "on" : "off"} (${input.partner.defaultMarkupPct}%)`,
+      });
+      const owner = isValidObjectId(account.userId) ? await User.findById(account.userId).select("name email companyName").lean<any>() : null;
+      return NextResponse.json({ success: true, account: toAdminAccountDTO(updatedPartner, owner) });
+    }
+
     const set: Record<string, unknown> = {
       status: transition.to,
       reviewedBy: actor.userId,

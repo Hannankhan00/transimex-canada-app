@@ -5,7 +5,8 @@ import ExpressQuote from "@/models/ExpressQuote";
 import { requireExpressClient, validationError } from "@/lib/express/access";
 import { quoteRequestSchema } from "@/lib/express/quoteSchemas";
 import { QUOTE_TTL_MINUTES, QuoteError, priceRequest } from "@/lib/express/quoteService";
-import { toClientQuoteDTO } from "@/lib/express/quoteDto";
+import { toClientQuoteDTO, toCustomerQuoteDTO } from "@/lib/express/quoteDto";
+import { resolvePricingContext } from "@/lib/express/partnerPricing";
 import { getPricingSettings } from "@/lib/express/settings";
 import { canUseExpress } from "@/lib/express/transitions";
 import { getCarrierAdapter } from "@/lib/shipping/registry";
@@ -20,7 +21,10 @@ export async function GET() {
 
     await connectDB();
     const docs = await ExpressQuote.find({ userId: access.actor.userId }).sort({ createdAt: -1 }).limit(20).lean();
-    return NextResponse.json({ success: true, quotes: docs.map((d) => toClientQuoteDTO(d as any)) });
+    const account = await ExpressAccount.findOne({ userId: access.actor.userId }).select("type").lean();
+    // A partner's customer never receives Transimex's price lines.
+    const dto = account?.type === "customer" ? toCustomerQuoteDTO : toClientQuoteDTO;
+    return NextResponse.json({ success: true, quotes: docs.map((d) => dto(d as any)) });
   } catch (error) {
     console.error("Express quotes list error:", error);
     return NextResponse.json({ error: "Failed to load quotes" }, { status: 500 });
@@ -54,18 +58,20 @@ export async function POST(req: Request) {
     }
 
     const settings = await getPricingSettings();
-    // B2C: the single global discount. B2B: the account's own, set by staff at approval.
-    const clientDiscountPct = account.type === "b2c" ? settings.b2cDiscountPct : account.discountPct;
-    if (clientDiscountPct == null) {
-      console.error("[Express] Active B2B account has no discount set:", String(account._id));
-      return NextResponse.json({ error: "Your account is not fully set up yet. Please contact us.", code: "account_incomplete" }, { status: 409 });
-    }
+    // B2C: the global discount. B2B: its own. A partner's customer: the partner's discount plus that customer's markup.
+    const context = await resolvePricingContext({
+      account,
+      b2cDiscountPct: settings.b2cDiscountPct,
+      requestedCustomerId: parsed.data.partnerCustomerId,
+    });
+    if (!context.ok) return NextResponse.json({ error: context.error, code: context.code }, { status: context.status });
 
     const priced = await priceRequest({
       input: parsed.data,
       adapter: getCarrierAdapter("dhl"),
-      clientDiscountPct,
+      clientDiscountPct: context.clientDiscountPct,
       settings,
+      markup: context.markupPct != null ? { kind: "percent", pct: context.markupPct } : null,
     });
 
     // Never sell below what DHL charges us (for example a mistyped discount).
@@ -81,6 +87,7 @@ export async function POST(req: Request) {
       userId,
       accountId: String(account._id),
       accountType: account.type,
+      ...(context.partnerCustomerId ? { partnerCustomerId: context.partnerCustomerId, partnerCustomerName: context.partnerCustomerName ?? undefined, partnerMarkupPct: context.markupPct ?? 0 } : {}),
       carrier: "dhl",
       serviceCode: priced.option.serviceCode,
       serviceName: priced.option.serviceName,
@@ -90,7 +97,8 @@ export async function POST(req: Request) {
       expiresAt: new Date(Date.now() + QUOTE_TTL_MINUTES * 60_000),
     });
 
-    return NextResponse.json({ success: true, quote: toClientQuoteDTO(saved.toObject() as any) }, { status: 201 });
+    const quoteDto = account.type === "customer" ? toCustomerQuoteDTO(saved.toObject() as any) : toClientQuoteDTO(saved.toObject() as any);
+    return NextResponse.json({ success: true, quote: quoteDto }, { status: 201 });
   } catch (error) {
     if (error instanceof QuoteError) {
       return NextResponse.json({ error: error.message, code: error.code }, { status: error.status });

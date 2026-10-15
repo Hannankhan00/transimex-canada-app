@@ -9,6 +9,7 @@ import {
   VALUE_VALUES,
   WEIGHT_VALUES,
 } from "./shippingProfile";
+import { partnerSettingsSchema } from "./partner";
 
 const COUNTRY_CODES = new Set(COUNTRIES.map((c) => c.code));
 
@@ -180,6 +181,7 @@ export const accountActionSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("suspend"), reason: reasonSchema.shape.reason }),
   z.object({ action: z.literal("reactivate") }),
   z.object({ action: z.literal("update"), terms: b2bTermsSchema }),
+  z.object({ action: z.literal("partner"), partner: partnerSettingsSchema }),
 ]);
 
 export type AccountAction = z.infer<typeof accountActionSchema>;

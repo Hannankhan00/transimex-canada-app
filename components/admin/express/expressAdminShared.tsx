@@ -32,7 +32,7 @@ export function StatusBadge({ status }: { status: AdminStatus }) {
   );
 }
 
-export function TypeBadge({ type }: { type: "b2c" | "b2b" }) {
+export function TypeBadge({ type }: { type: "b2c" | "b2b" | "customer" }) {
   return (
     <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[10px] font-bold uppercase tracking-wide">
       {type}

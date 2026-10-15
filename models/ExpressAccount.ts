@@ -10,7 +10,8 @@ import {
   type ShippingProfile,
 } from "@/lib/express/shippingProfile";
 
-export type ExpressAccountType = "b2c" | "b2b";
+/** "customer" is a login a partner created for one of their customers. It is never applied for or approved by staff. */
+export type ExpressAccountType = "b2c" | "b2b" | "customer";
 export type ExpressAccountStatus = "pending" | "active" | "rejected" | "suspended";
 export type ExpressBillingMode = "pay_at_booking" | "invoice";
 export type ExpressLanguage = "en" | "fr";
@@ -49,7 +50,14 @@ export interface IExpressAccount extends Document {
   /** B2B invoice only. Days after an invoice is issued by which it must be paid. */
   paymentTermsDays: number | null;
 
-  terms: { version: string; acceptedAt: Date };
+  /** B2B only. Set by staff: this business resells to its own customers and adds a markup. */
+  partner?: { enabled: boolean; defaultMarkupPct: number; enabledAt?: Date; enabledBy?: string };
+  /** Customer logins only: the partner's account and the customer record this login belongs to. */
+  partnerId?: string;
+  partnerCustomerId?: string;
+
+  /** Absent on customer logins, who never accepted the Express terms themselves. */
+  terms?: { version: string; acceptedAt: Date };
 
   rejectionReason?: string;
   suspensionReason?: string;
@@ -63,7 +71,7 @@ export interface IExpressAccount extends Document {
 const ExpressAccountSchema = new Schema<IExpressAccount>(
   {
     userId: { type: String, required: true, unique: true, index: true },
-    type: { type: String, enum: ["b2c", "b2b"], required: true },
+    type: { type: String, enum: ["b2c", "b2b", "customer"], required: true },
     status: { type: String, enum: ["pending", "active", "rejected", "suspended"], required: true },
     language: { type: String, enum: ["en", "fr"], default: "en" },
 
@@ -116,9 +124,35 @@ const ExpressAccountSchema = new Schema<IExpressAccount>(
     creditLimitCents: { type: Number, default: null, min: 0 },
     paymentTermsDays: { type: Number, default: null, min: 1, max: 365 },
 
+    partner: {
+      type: new Schema(
+        {
+          enabled: { type: Boolean, default: false },
+          // Strictly below 100: pricing refuses a markup of 100% or more.
+          defaultMarkupPct: { type: Number, default: 0, min: 0, max: 99.99 },
+          enabledAt: { type: Date },
+          enabledBy: { type: String },
+        },
+        { _id: false }
+      ),
+      default: undefined,
+    },
+    partnerId: { type: String, index: true },
+    partnerCustomerId: { type: String, index: true },
+
     terms: {
-      version: { type: String, required: true },
-      acceptedAt: { type: Date, required: true },
+      version: {
+        type: String,
+        required: function (this: IExpressAccount) {
+          return this.type !== "customer";
+        },
+      },
+      acceptedAt: {
+        type: Date,
+        required: function (this: IExpressAccount) {
+          return this.type !== "customer";
+        },
+      },
     },
 
     rejectionReason: { type: String, maxlength: 1000 },

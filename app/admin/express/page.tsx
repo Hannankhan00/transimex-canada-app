@@ -130,6 +130,7 @@ export default function AdminExpressApplicationsPage() {
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="font-bold text-sm text-[#0B2545] truncate">{a.company?.name || a.contactName}</span>
                         <TypeBadge type={a.type} />
+                        {a.partnerSettings.enabled && <span className="px-2 py-0.5 rounded-md bg-[#0B2545] text-white text-[10px] font-bold uppercase tracking-wide">{tr("Partner", "Partenaire")}</span>}
                         <StatusBadge status={a.status} />
                         {a.shippingProfile && a.shippingProfile.shipsFor !== "own" && (
                           <span className="px-2 py-0.5 rounded-full border border-blue-200 bg-blue-50 text-blue-700 text-[10px] font-bold">{tr("Ships for clients", "Expédie pour des clients")}</span>

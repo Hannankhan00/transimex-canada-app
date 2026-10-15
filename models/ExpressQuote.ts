@@ -21,7 +21,12 @@ export interface IExpressQuoteRequest {
 export interface IExpressQuote extends Document {
   userId: string;
   accountId: string;
-  accountType: "b2c" | "b2b";
+  accountType: "b2c" | "b2b" | "customer";
+  /** Set when a partner priced this for one of their customers. */
+  partnerCustomerId?: string;
+  partnerCustomerName?: string;
+  /** The markup percent applied on top of the partner's price. */
+  partnerMarkupPct?: number;
   carrier: "dhl";
   serviceCode: string;
   serviceName: string;
@@ -37,7 +42,10 @@ const ExpressQuoteSchema = new Schema<IExpressQuote>(
   {
     userId: { type: String, required: true, index: true },
     accountId: { type: String, required: true, index: true },
-    accountType: { type: String, enum: ["b2c", "b2b"], required: true },
+    accountType: { type: String, enum: ["b2c", "b2b", "customer"], required: true },
+    partnerCustomerId: { type: String, index: true },
+    partnerCustomerName: { type: String },
+    partnerMarkupPct: { type: Number },
     carrier: { type: String, enum: ["dhl"], required: true },
     serviceCode: { type: String, required: true },
     serviceName: { type: String, required: true },

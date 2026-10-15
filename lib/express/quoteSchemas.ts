@@ -30,6 +30,8 @@ export const quoteRequestSchema = z.object({
   }),
   parcels: z.array(parcel).min(1, "Add at least one parcel").max(10, "At most 10 parcels per quote"),
   declaredValueCents: z.number().int("Whole cents only").min(0).max(100_000_000),
+  /** Partners only: price this for one of their customers. The server checks the customer is theirs. */
+  partnerCustomerId: z.string().trim().regex(/^[a-f\d]{24}$/i, "Invalid customer").optional(),
   isCustomsDeclarable: z.boolean().default(true),
   pickupRequested: z.boolean().default(false),
   plannedShipDate: z

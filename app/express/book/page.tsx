@@ -8,6 +8,7 @@ import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { useExpressAccount } from "@/components/express/useExpressAccount";
 import ExpressStatusBanner from "@/components/express/ExpressStatusBanner";
 import BookingWizard from "@/components/express/BookingWizard";
+import CustomerQuote from "@/components/express/CustomerQuote";
 
 /**
  * Booking area. Only an active account can book. A business account still waiting for
@@ -51,6 +52,9 @@ export default function ExpressBookPage() {
       </div>
     );
   }
+
+  // A partner's customer checks prices here; their partner does the booking.
+  if (account.type === "customer") return <CustomerQuote />;
 
   return <BookingWizard account={account} />;
 }

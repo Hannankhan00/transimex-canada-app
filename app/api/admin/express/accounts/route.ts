@@ -19,14 +19,15 @@ export async function GET(req: Request) {
     const type = searchParams.get("type");
     const q = (searchParams.get("q") || "").trim().toLowerCase();
 
-    const filter: Record<string, unknown> = {};
+    // Customer logins created by partners are not applications; staff reach them through their partner.
+    const filter: Record<string, unknown> = { type: { $ne: "customer" } };
     if (status && (STATUSES as readonly string[]).includes(status)) filter.status = status;
     if (type && (TYPES as readonly string[]).includes(type)) filter.type = type;
 
     await connectDB();
     const [docs, grouped] = await Promise.all([
       ExpressAccount.find(filter).sort({ createdAt: -1 }).limit(500).lean(),
-      ExpressAccount.aggregate([{ $group: { _id: "$status", count: { $sum: 1 } } }]),
+      ExpressAccount.aggregate([{ $match: { type: { $ne: "customer" } } }, { $group: { _id: "$status", count: { $sum: 1 } } }]),
     ]);
 
     const userIds = docs.map((d) => d.userId).filter((id) => isValidObjectId(id));

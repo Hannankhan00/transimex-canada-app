@@ -89,7 +89,13 @@ export interface IExpressShipment extends Document {
   reference: string;
   userId: string;
   accountId: string;
-  accountType: "b2c" | "b2b";
+  accountType: "b2c" | "b2b" | "customer";
+  /** Set when a partner booked this for one of their customers. */
+  partnerCustomerId?: string;
+  partnerCustomerName?: string;
+  /** What the partner adds on top of totalCents, and the price their customer is shown (totalCents + markupCents). */
+  markupCents?: number;
+  customerTotalCents?: number;
   /** The saved, immutable quote this booking was priced from. One shipment per quote. */
   quoteId: string;
   /** Client-generated key so a double click cannot create two bookings. */
@@ -268,7 +274,11 @@ const ExpressShipmentSchema = new Schema<IExpressShipment>(
     reference: { type: String, required: true, unique: true },
     userId: { type: String, required: true, index: true },
     accountId: { type: String, required: true, index: true },
-    accountType: { type: String, enum: ["b2c", "b2b"], required: true },
+    accountType: { type: String, enum: ["b2c", "b2b", "customer"], required: true },
+    partnerCustomerId: { type: String, index: true },
+    partnerCustomerName: { type: String },
+    markupCents: { type: Number, min: 0 },
+    customerTotalCents: { type: Number, min: 0 },
     // One booking per quote: a second booking from the same quote is impossible.
     quoteId: { type: String, required: true, unique: true },
     idempotencyKey: { type: String, required: true },

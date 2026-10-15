@@ -30,6 +30,8 @@ export function toClientAccountDTO(doc: Doc) {
         }
       : null,
     discountPct: doc.type === "b2b" && doc.status !== "pending" ? (doc.discountPct ?? null) : null,
+    // Only a switched-on partner sees the partner area; customers never see markup settings.
+    partner: doc.type === "b2b" && doc.partner?.enabled ? { enabled: true, defaultMarkupPct: doc.partner.defaultMarkupPct ?? 0 } : null,
     billingModes: doc.status === "pending" ? [] : (doc.billingModes ?? []),
     creditLimitCents: doc.status === "pending" ? null : (doc.creditLimitCents ?? null),
     paymentTermsDays: doc.status === "pending" ? null : (doc.paymentTermsDays ?? null),
@@ -61,6 +63,7 @@ export function toAdminAccountDTO(doc: Doc, user?: AccountUserInfo | null) {
     rejectionReason: doc.rejectionReason || "",
     suspensionReason: doc.suspensionReason || "",
     language: doc.language || "en",
+    partnerSettings: { enabled: Boolean(doc.partner?.enabled), defaultMarkupPct: doc.partner?.defaultMarkupPct ?? 0, enabledAt: iso(doc.partner?.enabledAt) },
     // What the business said it ships and for whom. Staff only: the client does not need it back.
     shippingProfile: doc.shippingProfile
       ? {

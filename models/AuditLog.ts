@@ -46,7 +46,8 @@ export type AuditActionType =
   | "EXPRESS_SHIPMENT_CANCELLED"
   | "EXPRESS_REFUND_ISSUED"
   | "EXPRESS_LABEL_UPLOADED"
-  | "EXPRESS_TERMS_PUBLISHED";
+  | "EXPRESS_TERMS_PUBLISHED"
+  | "EXPRESS_PARTNER_CHANGED";
 
 export type AuditResourceType =
   | "Shipment"
