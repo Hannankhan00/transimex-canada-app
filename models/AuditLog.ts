@@ -45,7 +45,8 @@ export type AuditActionType =
   | "EXPRESS_SETTINGS_CHANGED"
   | "EXPRESS_SHIPMENT_CANCELLED"
   | "EXPRESS_REFUND_ISSUED"
-  | "EXPRESS_LABEL_UPLOADED";
+  | "EXPRESS_LABEL_UPLOADED"
+  | "EXPRESS_TERMS_PUBLISHED";
 
 export type AuditResourceType =
   | "Shipment"
@@ -60,7 +61,8 @@ export type AuditResourceType =
   | "Promotion"
   | "ExpressAccount"
   | "ExpressSettings"
-  | "ExpressShipment";
+  | "ExpressShipment"
+  | "ExpressTerms";
 
 export interface IAuditLog extends Document {
   actorId?: string;

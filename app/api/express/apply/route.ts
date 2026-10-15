@@ -3,7 +3,7 @@ import connectDB from "@/lib/mongoose";
 import ExpressAccount from "@/models/ExpressAccount";
 import { requireExpressClient, validationError } from "@/lib/express/access";
 import { applySchema } from "@/lib/express/validation";
-import { TERMS_VERSION } from "@/lib/express/terms";
+import { getCurrentTerms } from "@/lib/express/termsStore";
 import { toClientAccountDTO } from "@/lib/express/accountDto";
 import { sendExpressApplicationAdminAlert } from "@/lib/expressEmail";
 
@@ -24,6 +24,15 @@ export async function POST(req: Request) {
 
     await connectDB();
 
+    // The client must have accepted the terms that are in force right now.
+    const currentTerms = await getCurrentTerms();
+    if (input.termsVersion !== currentTerms.version) {
+      return NextResponse.json(
+        { error: "The terms of service were updated. Please review them and try again.", code: "terms_changed" },
+        { status: 409 }
+      );
+    }
+
     const existing = await ExpressAccount.exists({ userId: access.actor.userId });
     if (existing) {
       return NextResponse.json({ error: "You already have an Express application." }, { status: 409 });
@@ -40,7 +49,7 @@ export async function POST(req: Request) {
         phone: input.phone,
         country: input.country,
         company: input.type === "b2b" ? input.company : undefined,
-        terms: { version: TERMS_VERSION, acceptedAt: new Date() },
+        terms: { version: currentTerms.version, acceptedAt: new Date() },
       });
     } catch (error: any) {
       // Two simultaneous submits: the unique userId index lets only one through.

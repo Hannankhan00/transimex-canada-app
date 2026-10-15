@@ -3,7 +3,7 @@ import { accountActionSchema, applySchema, b2bTermsSchema, discountPctSchema, se
 import { canUseExpress, checkTransition } from "../transitions";
 import { toAdminAccountDTO, toClientAccountDTO } from "../accountDto";
 
-const b2c = { type: "b2c", contactName: "Amina", phone: "+1 514 555 0100", country: "ca", acceptTerms: true };
+const b2c = { type: "b2c", contactName: "Amina", phone: "+1 514 555 0100", country: "ca", acceptTerms: true, termsVersion: "v1" };
 const company = {
   name: "Acme Imports",
   address: "1 Main St, Montreal",

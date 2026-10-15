@@ -67,6 +67,14 @@ describe("MockDhlAdapter rates", () => {
   });
 });
 
+describe("MockDhlAdapter without a public price", () => {
+  it("omits the public list price when asked, like an account-rate-only API", async () => {
+    const [rate] = await new MockDhlAdapter({ omitPublicList: true }).getRates(baseRate);
+    expect(rate.publicList).toBeUndefined();
+    expect(rate.account.totalCents).toBeGreaterThan(0);
+  });
+});
+
 describe("MockDhlAdapter shipments", () => {
   it("returns the same tracking number for the same reference", async () => {
     const dhl = new MockDhlAdapter();
@@ -91,7 +99,7 @@ describe("MockDhlAdapter shipments", () => {
 
   it("advances tracking events over time, newest first", async () => {
     let now = 1_000_000_000_000;
-    const dhl = new MockDhlAdapter(() => now);
+    const dhl = new MockDhlAdapter({ now: () => now });
     const { trackingNumber } = await dhl.createShipment(shipment);
 
     expect((await dhl.track(trackingNumber)).status).toBe("pre_transit");

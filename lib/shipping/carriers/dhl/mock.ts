@@ -71,9 +71,12 @@ function chargeableWeightKg(request: RateRequest): number {
 
 function priceForZone(zone: Zone, weightKg: number, remote: boolean, share: number) {
   const extraKg = Math.max(0, weightKg - 0.5);
-  const base = Math.round((zone.baseCents + zone.perKgCents * extraKg) * share);
+  const listBase = zone.baseCents + zone.perKgCents * extraKg;
+  const base = Math.round(listBase * share);
+  // Surcharges are the same on the public price and on our account rate (DHL
+  // discounts base freight only), and are computed from the list base freight.
   const surcharges: Surcharge[] = [
-    { code: "FF", name: "Fuel surcharge", amountCents: Math.round(base * FUEL_SURCHARGE_RATE) },
+    { code: "FF", name: "Fuel surcharge", amountCents: Math.round(listBase * FUEL_SURCHARGE_RATE) },
   ];
   if (remote) {
     surcharges.push({ code: "OO", name: "Remote area delivery", amountCents: REMOTE_AREA_FEE_CENTS });
@@ -123,7 +126,17 @@ export class MockDhlAdapter implements CarrierAdapter {
   /** Shipment creation time by tracking number, so tracking can advance. */
   private readonly created = new Map<string, number>();
 
-  constructor(private readonly now: () => number = Date.now) {}
+  private readonly now: () => number;
+  private readonly omitPublicList: boolean;
+
+  /**
+   * omitPublicList mimics a DHL API that returns only our account rate, so the
+   * "rebuild the public price from the contract discount" path can be tested.
+   */
+  constructor(options: { now?: () => number; omitPublicList?: boolean } = {}) {
+    this.now = options.now ?? Date.now;
+    this.omitPublicList = options.omitPublicList ?? false;
+  }
 
   async getRates(request: RateRequest): Promise<RateOption[]> {
     const country = request.destination.countryCode.toUpperCase();
@@ -148,7 +161,7 @@ export class MockDhlAdapter implements CarrierAdapter {
         serviceName: "EXPRESS WORLDWIDE",
         currency: "CAD",
         account: priceForZone(zone, weightKg, remote, ACCOUNT_RATE_SHARE),
-        publicList: priceForZone(zone, weightKg, remote, 1),
+        publicList: this.omitPublicList ? undefined : priceForZone(zone, weightKg, remote, 1),
         estimatedDelivery: estimated.toISOString(),
       },
     ];

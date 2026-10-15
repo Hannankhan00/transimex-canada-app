@@ -21,6 +21,9 @@ const language = z.enum(["en", "fr"]).default("en");
 
 const acceptTerms = z.literal(true, { errorMap: () => ({ message: "You must accept the terms" }) });
 
+/** The terms version the client was shown; the server rejects it if it is no longer current. */
+const termsVersion = z.string().trim().min(1, "Terms version is required").max(40);
+
 /**
  * What a client may send when applying. Unknown keys are stripped, so a
  * `status`, `discountPct` or `billingModes` in the request body is silently
@@ -34,6 +37,7 @@ export const applySchema = z.discriminatedUnion("type", [
     country,
     language,
     acceptTerms,
+    termsVersion,
   }),
   z.object({
     type: z.literal("b2b"),
@@ -42,6 +46,7 @@ export const applySchema = z.discriminatedUnion("type", [
     country,
     language,
     acceptTerms,
+    termsVersion,
     company: z.object({
       name: text("Company name", 160),
       address: text("Address", 300),
@@ -102,8 +107,14 @@ export const reasonSchema = z.object({
   reason: z.string().trim().min(3, "Please give a reason").max(1000),
 });
 
+/** DHL's discount to us. Strictly below 100: the public price is rebuilt by dividing by (1 - discount). */
+export const contractDiscountSchema = discountPctSchema.refine((v) => v < 100, "Must be below 100");
+
+/** Omitted fields are left unchanged. dhlContractDiscountPct: null clears it. */
 export const settingsSchema = z.object({
   b2cDiscountPct: discountPctSchema,
+  dhlContractDiscountPct: contractDiscountSchema.nullable().optional(),
+  pickupFeeCents: z.number().int("Whole cents only").min(0).max(100000, "At most $1,000").optional(),
 });
 
 /** Staff actions on an account, discriminated by `action`. */
@@ -116,3 +127,17 @@ export const accountActionSchema = z.discriminatedUnion("action", [
 ]);
 
 export type AccountAction = z.infer<typeof accountActionSchema>;
+
+const termsText = (label: string, max: number) => z.string().trim().min(1, `${label} is required`).max(max);
+
+const termsLanguage = z.object({
+  heading: termsText("Heading", 200),
+  intro: termsText("Introduction", 2000),
+  sections: z
+    .array(z.object({ title: termsText("Section title", 200), body: termsText("Section text", 4000) }))
+    .min(1, "Add at least one section")
+    .max(30, "At most 30 sections"),
+});
+
+/** A full set of terms. Both languages are required so neither is ever blank. */
+export const termsContentSchema = z.object({ en: termsLanguage, fr: termsLanguage });

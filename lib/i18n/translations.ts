@@ -144,6 +144,8 @@ export const translations = {
         alreadyApplied: "You already have an Express application.",
         genericError: "We could not submit your application. Please check the form and try again.",
         mustAcceptTerms: "You must accept the terms to continue.",
+        termsUnavailable: "The terms of service could not be loaded.",
+        termsChanged: "The terms of service were just updated. Please review them and accept again.",
       },
       book: {
         title: "Book a shipment",
@@ -301,6 +303,8 @@ export const translations = {
         alreadyApplied: "Vous avez déjà une demande Express.",
         genericError: "Impossible d'envoyer votre demande. Veuillez vérifier le formulaire et réessayer.",
         mustAcceptTerms: "Vous devez accepter les conditions pour continuer.",
+        termsUnavailable: "Impossible de charger les conditions d'utilisation.",
+        termsChanged: "Les conditions d'utilisation viennent d'être mises à jour. Veuillez les relire et les accepter de nouveau.",
       },
       book: {
         title: "Réserver un envoi",

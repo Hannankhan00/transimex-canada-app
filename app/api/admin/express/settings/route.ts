@@ -4,16 +4,18 @@ import ExpressSettings, { EXPRESS_SETTINGS_KEY } from "@/models/ExpressSettings"
 import ExpressDiscountHistory from "@/models/ExpressDiscountHistory";
 import { logAudit } from "@/lib/audit";
 import { requireExpressStaff, validationError } from "@/lib/express/access";
-import { getExpressSettings } from "@/lib/express/settings";
+import { getExpressSettings, getPricingSettings } from "@/lib/express/settings";
 import { settingsSchema } from "@/lib/express/validation";
+import { formatCad } from "@/lib/shipping/core/money";
 
 async function loadView() {
-  const [settings, history] = await Promise.all([
+  const [settings, pricing, history] = await Promise.all([
     getExpressSettings(),
+    getPricingSettings(),
     ExpressDiscountHistory.find({ scope: "b2c_global" }).sort({ createdAt: -1 }).limit(50).lean(),
   ]);
   return {
-    b2cDiscountPct: settings?.b2cDiscountPct ?? 0,
+    ...pricing,
     updatedAt: settings?.updatedAt ? new Date(settings.updatedAt).toISOString() : null,
     history: history.map((h) => ({
       id: String(h._id),
@@ -47,30 +49,46 @@ export async function PUT(req: Request) {
     if (!parsed.success) return validationError(parsed.error);
 
     await connectDB();
-    const current = await getExpressSettings();
-    const oldPct = current?.b2cDiscountPct ?? 0;
-    const newPct = parsed.data.b2cDiscountPct;
+    const before = await getPricingSettings();
+    const input = parsed.data;
 
-    if (oldPct !== newPct) {
+    const next = {
+      b2cDiscountPct: input.b2cDiscountPct,
+      dhlContractDiscountPct: input.dhlContractDiscountPct === undefined ? before.dhlContractDiscountPct : input.dhlContractDiscountPct,
+      pickupFeeCents: input.pickupFeeCents ?? before.pickupFeeCents,
+    };
+
+    const changes: string[] = [];
+    if (next.b2cDiscountPct !== before.b2cDiscountPct) changes.push(`B2C discount ${before.b2cDiscountPct}% -> ${next.b2cDiscountPct}%`);
+    if (next.dhlContractDiscountPct !== before.dhlContractDiscountPct) {
+      changes.push(`DHL contract discount ${before.dhlContractDiscountPct ?? "unset"}% -> ${next.dhlContractDiscountPct ?? "unset"}%`);
+    }
+    if (next.pickupFeeCents !== before.pickupFeeCents) {
+      changes.push(`pickup fee ${formatCad(before.pickupFeeCents)} -> ${formatCad(next.pickupFeeCents)}`);
+    }
+
+    if (changes.length > 0) {
       await ExpressSettings.updateOne(
         { key: EXPRESS_SETTINGS_KEY },
-        { $set: { b2cDiscountPct: newPct, updatedBy: access.actor.userId } },
+        { $set: { ...next, updatedBy: access.actor.userId } },
         { runValidators: true }
       );
-      await ExpressDiscountHistory.create({
-        scope: "b2c_global",
-        accountId: "",
-        oldPct,
-        newPct,
-        changedBy: access.actor.userId,
-        changedByName: access.actor.name,
-      });
+      if (next.b2cDiscountPct !== before.b2cDiscountPct) {
+        await ExpressDiscountHistory.create({
+          scope: "b2c_global",
+          accountId: "",
+          oldPct: before.b2cDiscountPct,
+          newPct: next.b2cDiscountPct,
+          changedBy: access.actor.userId,
+          changedByName: access.actor.name,
+        });
+      }
       await logAudit({
         actor: access.actor,
         action: "EXPRESS_SETTINGS_CHANGED",
         resourceType: "ExpressSettings",
         resourceId: EXPRESS_SETTINGS_KEY,
-        details: `B2C discount ${oldPct}% -> ${newPct}%`,
+        details: changes.join("; "),
       });
     }
 

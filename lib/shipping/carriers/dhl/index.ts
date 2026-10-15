@@ -9,5 +9,5 @@ import { MockDhlAdapter } from "./mock";
  * is only an environment change.
  */
 export function createDhlAdapter(config: DhlConfig = getDhlConfig()): CarrierAdapter {
-  return config.mode === "mock" ? new MockDhlAdapter() : new DhlApiAdapter(config);
+  return config.mode === "mock" ? new MockDhlAdapter({ omitPublicList: process.env.DHL_MOCK_OMIT_PUBLIC_PRICE === "true" }) : new DhlApiAdapter(config);
 }

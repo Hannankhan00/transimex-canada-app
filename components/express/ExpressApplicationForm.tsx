@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Building2, Loader2, User } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { COUNTRIES } from "@/lib/data/countries";
-import { TERMS } from "@/lib/express/terms";
+import type { TermsContent } from "@/lib/express/terms";
 
 type AccountType = "b2c" | "b2b";
 
@@ -26,7 +26,26 @@ export default function ExpressApplicationForm() {
   const router = useRouter();
   const { t, language } = useLanguage();
   const a = t.express.apply;
-  const terms = TERMS[language];
+
+  const [termsData, setTermsData] = useState<{ version: string; content: TermsContent } | null>(null);
+  const [termsError, setTermsError] = useState(false);
+  const terms = termsData?.content[language];
+
+  const loadTerms = useCallback(async () => {
+    setTermsError(false);
+    try {
+      const res = await fetch("/api/express/terms");
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.success) throw new Error("terms");
+      setTermsData({ version: data.version, content: data.content });
+    } catch {
+      setTermsError(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadTerms();
+  }, [loadTerms]);
 
   const [type, setType] = useState<AccountType>("b2c");
   const [form, setForm] = useState({
@@ -51,6 +70,10 @@ export default function ExpressApplicationForm() {
     setMessage(null);
     setFieldErrors({});
 
+    if (!termsData) {
+      setMessage(a.termsUnavailable);
+      return;
+    }
     if (!accepted) {
       setMessage(a.mustAcceptTerms);
       return;
@@ -58,7 +81,7 @@ export default function ExpressApplicationForm() {
 
     const payload =
       type === "b2c"
-        ? { type, contactName: form.contactName, phone: form.phone, country: form.country, language, acceptTerms: accepted }
+        ? { type, contactName: form.contactName, phone: form.phone, country: form.country, language, acceptTerms: accepted, termsVersion: termsData.version }
         : {
             type,
             contactName: form.contactName,
@@ -66,6 +89,7 @@ export default function ExpressApplicationForm() {
             country: form.country,
             language,
             acceptTerms: accepted,
+            termsVersion: termsData.version,
             company: {
               name: form.companyName,
               address: form.address,
@@ -84,6 +108,13 @@ export default function ExpressApplicationForm() {
       });
       const data = await res.json().catch(() => ({}));
 
+      if (res.status === 409 && data.code === "terms_changed") {
+        // The terms were updated while the form was open: show the new ones and ask again.
+        setAccepted(false);
+        await loadTerms();
+        setMessage(a.termsChanged);
+        return;
+      }
       if (res.status === 409) {
         router.replace("/express");
         return;
@@ -202,14 +233,27 @@ export default function ExpressApplicationForm() {
       <section className="bg-white border border-slate-200 rounded-2xl p-5 sm:p-6 space-y-3">
         <h2 className="font-bold text-[#0B2545]">{a.termsHeading}</h2>
         <div className="max-h-64 overflow-y-auto rounded-xl bg-slate-50 border border-slate-200 p-4 space-y-3 text-sm text-slate-700 leading-relaxed">
-          <p className="font-semibold">{terms.heading}</p>
-          <p>{terms.intro}</p>
-          {terms.sections.map((s) => (
-            <div key={s.title}>
-              <p className="font-bold text-slate-800">{s.title}</p>
-              <p>{s.body}</p>
-            </div>
-          ))}
+          {terms ? (
+            <>
+              <p className="font-semibold">{terms.heading}</p>
+              <p className="whitespace-pre-line">{terms.intro}</p>
+              {terms.sections.map((s, i) => (
+                <div key={`${i}-${s.title}`}>
+                  <p className="font-bold text-slate-800">{s.title}</p>
+                  <p className="whitespace-pre-line">{s.body}</p>
+                </div>
+              ))}
+            </>
+          ) : termsError ? (
+            <p className="text-red-600 font-semibold">
+              {a.termsUnavailable}{" "}
+              <button type="button" onClick={loadTerms} className="underline cursor-pointer">
+                {t.express.retry}
+              </button>
+            </p>
+          ) : (
+            <p className="text-slate-500">{t.express.loading}</p>
+          )}
         </div>
         <label className="flex items-start gap-2.5 text-sm text-slate-800 cursor-pointer">
           <input
@@ -231,7 +275,7 @@ export default function ExpressApplicationForm() {
 
       <button
         type="submit"
-        disabled={submitting}
+        disabled={submitting || !termsData}
         className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#D21F27] hover:bg-[#b91a21] disabled:opacity-60 text-white text-sm font-bold transition cursor-pointer"
       >
         {submitting && <Loader2 className="w-4 h-4 animate-spin" />}

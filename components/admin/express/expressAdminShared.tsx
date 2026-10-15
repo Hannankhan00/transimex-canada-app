@@ -45,7 +45,9 @@ export function ExpressAdminTabs() {
   const pathname = usePathname();
   const { tr } = useTr();
   const tabs = [
-    { href: "/admin/express", label: tr("Applications", "Demandes"), active: pathname === "/admin/express" || /^\/admin\/express\/(?!settings)/.test(pathname) },
+    { href: "/admin/express", label: tr("Applications", "Demandes"), active: pathname === "/admin/express" || /^\/admin\/express\/(?!settings|terms|simulator)/.test(pathname) },
+    { href: "/admin/express/terms", label: tr("Terms", "Conditions"), active: pathname === "/admin/express/terms" },
+    { href: "/admin/express/simulator", label: tr("Quote simulator", "Simulateur de soumission"), active: pathname === "/admin/express/simulator" },
     { href: "/admin/express/settings", label: tr("Settings", "Paramètres"), active: pathname === "/admin/express/settings" },
   ];
   return (

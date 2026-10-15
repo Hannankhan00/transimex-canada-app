@@ -1,20 +1,29 @@
 /**
- * Express terms of service shown at application time.
+ * Built-in Express terms of service, used until staff publish their own in
+ * Admin > Transimex Express > Terms. Published versions live in the database
+ * (models/ExpressTerms.ts); this is only the starting point (version "v1").
  *
  * DRAFT wording: it repeats the DHL policies Transimex follows, in plain
  * language, so no charge comes as a surprise. It must be reviewed against the
- * signed DHL contract (and by whoever handles legal review) before launch.
- * Bump TERMS_VERSION whenever the text changes; the accepted version and date
- * are stored on every account.
+ * signed DHL contract before launch. The accepted version and date are stored
+ * on every account.
  */
-export const TERMS_VERSION = "2026-10-draft-1";
+export const DEFAULT_TERMS_VERSION = "v1";
 
 export interface TermsSection {
   title: string;
   body: string;
 }
 
-export const TERMS: Record<"en" | "fr", { heading: string; intro: string; sections: TermsSection[] }> = {
+export interface TermsLanguageContent {
+  heading: string;
+  intro: string;
+  sections: TermsSection[];
+}
+
+export type TermsContent = Record<"en" | "fr", TermsLanguageContent>;
+
+export const DEFAULT_TERMS: TermsContent = {
   en: {
     heading: "Transimex Express Terms of Service",
     intro:

@@ -2,6 +2,25 @@ import { emailTemplateWrapper, escapeHtml, getAdminNotificationEmail, sendEmail 
 
 type Lang = "en" | "fr";
 
+/**
+ * Express emails are OFF until EXPRESS_EMAILS_ENABLED=true, so nothing is sent
+ * to real people while the feature is being built and tested. In-app
+ * notifications are unaffected.
+ */
+export function expressEmailsEnabled(): boolean {
+  return process.env.EXPRESS_EMAILS_ENABLED === "true";
+}
+
+type SendParams = Parameters<typeof sendEmail>[0];
+
+async function sendExpressEmail(params: SendParams): Promise<{ success: boolean; skipped?: boolean; messageId?: string }> {
+  if (!expressEmailsEnabled()) {
+    console.info(`[Express] Email disabled (EXPRESS_EMAILS_ENABLED is not true); not sending "${params.subject}".`);
+    return { success: false, skipped: true };
+  }
+  return sendEmail(params);
+}
+
 const appUrl = () => process.env.APP_URL || process.env.NEXTAUTH_URL || "http://localhost:3000";
 
 /** Alerts staff that a B2B application is waiting for review. */
@@ -27,7 +46,7 @@ export async function sendExpressApplicationAdminAlert(params: {
     </div>
     <div style="text-align:center;"><a href="${url}" class="btn" target="_blank">Review application</a></div>
   `;
-  return sendEmail({
+  return sendExpressEmail({
     to: getAdminNotificationEmail(),
     subject: `New Express B2B application: ${params.companyName}`,
     html: emailTemplateWrapper(content, `${params.companyName} applied for a Transimex Express B2B account`),
@@ -118,7 +137,7 @@ export async function sendExpressDecisionEmail(params: {
     ${reasonHtml}
     <div style="text-align:center;"><a href="${url}" class="btn" target="_blank">${copy.cta}</a></div>
   `;
-  return sendEmail({
+  return sendExpressEmail({
     to: params.to,
     subject: copy.subject,
     html: emailTemplateWrapper(content, copy.heading),
