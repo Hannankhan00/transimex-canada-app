@@ -89,7 +89,7 @@ export default function ExpressShipmentsPage() {
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-bold text-sm text-[#0B2545] font-mono">{sh.reference}</span>
-                    <span className={`px-2 py-0.5 rounded-full border text-[10px] font-bold ${STATUS_STYLE[sh.status]}`}>{t.express.shipmentStatus[sh.status]}</span>
+                    <span className={`px-2 py-0.5 rounded-full border text-[10px] font-bold ${STATUS_STYLE[sh.status]}`}>{sh.status === "label_ready" && sh.tracking ? t.express.trackingStatus[sh.tracking.status as keyof typeof t.express.trackingStatus] : t.express.shipmentStatus[sh.status]}</span>
                   </div>
                   <div className="text-xs text-slate-500 mt-0.5 truncate">
                     {s.recipient}: {sh.recipient.name}, {sh.recipient.city}, {country(sh.recipient.countryCode)}

@@ -117,7 +117,15 @@ export default function AdminExpressShipmentPage() {
     label_overdue: tr("Paid, but still no label after 10 minutes.", "Payé, mais toujours pas d'étiquette après 10 minutes."),
     amount_mismatch: tr("The payment amount did not match the booking, so it was not accepted. Check it in the payment provider.", "Le montant du paiement ne correspond pas à la réservation; il n'a donc pas été accepté. Vérifiez-le chez le fournisseur de paiement."),
     refund_failed: tr("The refund failed. Retry it.", "Le remboursement a échoué. Réessayez-le."),
+    delivery_exception: tr("DHL reported a delivery exception (failed attempt, customs hold or similar). Check the tracking events below and follow up with DHL.", "DHL a signalé une exception de livraison (tentative échouée, retenue douanière ou autre). Consultez les événements de suivi ci-dessous et faites le suivi avec DHL."),
+    tracking_failing: tr("Checking DHL tracking keeps failing. See the error below.", "La vérification du suivi DHL échoue de façon répétée. Voir l'erreur ci-dessous."),
+    no_scan: tr("DHL has no scan for this parcel more than 10 days after the label was created. Check that it was handed over.", "DHL n'a aucun scan pour ce colis plus de 10 jours après la création de l'étiquette. Vérifiez qu'il a bien été remis."),
   };
+
+  const refreshTracking = () =>
+    run("track", () => fetch(`/api/admin/express/shipments/${id}/refresh-tracking`, { method: "POST" }), (d) =>
+      d.outcome === "not_scanned" ? tr("DHL has not scanned this parcel yet", "DHL n'a pas encore scanné ce colis") : d.outcome === "skipped" ? tr("Nothing to check for this booking", "Rien à vérifier pour cette réservation") : tr("Tracking refreshed", "Suivi actualisé")
+    );
 
   const addr = (a: Shipment["shipper"]) => (
     <div className="text-sm text-slate-700 leading-relaxed">
@@ -164,7 +172,9 @@ export default function AdminExpressShipmentPage() {
                 <li key={a}>{attentionText[a]}</li>
               ))}
             </ul>
-            {(ful.lastError || pay.refundError || pay.mismatchNote) && <p className="text-xs font-mono bg-white/60 rounded p-2 break-words">{ful.lastError || pay.refundError || pay.mismatchNote}</p>}
+            {(ful.lastError || pay.refundError || pay.mismatchNote || shipment.trackingCheck.lastError) && (
+              <p className="text-xs font-mono bg-white/60 rounded p-2 break-words">{ful.lastError || pay.refundError || pay.mismatchNote || shipment.trackingCheck.lastError}</p>
+            )}
           </div>
         )}
 
@@ -196,6 +206,41 @@ export default function AdminExpressShipmentPage() {
                 ))}
               </dl>
             </section>
+
+            {shipment.trackingNumber && shipment.status === "label_ready" && (
+              <section className="bg-white rounded-2xl border border-slate-200 p-5 space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h2 className="font-bold text-[#0B2545] text-sm">
+                    {tr("DHL tracking", "Suivi DHL")}
+                    {shipment.tracking && <span className="ml-2 text-xs font-semibold text-slate-500">{shipment.tracking.status.replace(/_/g, " ")}</span>}
+                  </h2>
+                  <button
+                    type="button"
+                    onClick={refreshTracking}
+                    disabled={busy !== ""}
+                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-slate-700 text-xs font-bold disabled:opacity-60 cursor-pointer"
+                  >
+                    {busy === "track" && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                    {tr("Refresh from DHL", "Actualiser depuis DHL")}
+                  </button>
+                </div>
+                {shipment.tracking ? (
+                  <ul className="text-sm divide-y divide-slate-100">
+                    {shipment.tracking.events.map((e, i) => (
+                      <li key={i} className="py-2 flex justify-between gap-3">
+                        <span className={i === 0 ? "font-bold text-slate-900" : "text-slate-700"}>
+                          {e.description}
+                          {e.location ? <span className="text-slate-500"> · {e.location}</span> : null}
+                        </span>
+                        <span className="text-slate-500 whitespace-nowrap">{formatDate(e.at, language)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-sm text-slate-500">{tr("DHL has not scanned this parcel yet.", "DHL n'a pas encore scanné ce colis.")}</p>
+                )}
+              </section>
+            )}
 
             <div className="grid md:grid-cols-2 gap-5">
               <section className="bg-white rounded-2xl border border-slate-200 p-5 space-y-2">

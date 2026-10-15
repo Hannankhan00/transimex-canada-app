@@ -155,7 +155,7 @@ export async function sendExpressDecisionEmail(params: {
   });
 }
 
-export type ExpressShipmentEmailKind = "payment_received" | "label_ready" | "cancelled" | "refunded";
+export type ExpressShipmentEmailKind = "payment_received" | "label_ready" | "cancelled" | "refunded" | "in_transit" | "out_for_delivery" | "delivered" | "delivery_exception" | "returned";
 
 const SHIPMENT_COPY: Record<Lang, Record<ExpressShipmentEmailKind, { subject: string; heading: string; body: string }>> = {
   en: {
@@ -179,6 +179,31 @@ const SHIPMENT_COPY: Record<Lang, Record<ExpressShipmentEmailKind, { subject: st
       heading: "Refund issued",
       body: "A refund for your Express booking was issued to your card. It can take a few business days to appear on your statement.",
     },
+    in_transit: {
+      subject: "Your Express shipment is on its way",
+      heading: "Your shipment is on its way",
+      body: "DHL has picked up your parcel and it is now in transit. You can follow every step on your shipment page.",
+    },
+    out_for_delivery: {
+      subject: "Your Express shipment is out for delivery",
+      heading: "Out for delivery",
+      body: "Your parcel is with the DHL courier and should be delivered soon.",
+    },
+    delivered: {
+      subject: "Your Express shipment was delivered",
+      heading: "Delivered",
+      body: "DHL reports that your parcel was delivered.",
+    },
+    delivery_exception: {
+      subject: "There is a delay with your Express shipment",
+      heading: "A delivery issue needs attention",
+      body: "DHL reported an issue with your parcel, such as a delivery attempt that failed or a customs hold. Open your shipment page for the latest update. Our team is following it with DHL.",
+    },
+    returned: {
+      subject: "Your Express shipment is being returned",
+      heading: "Shipment returned",
+      body: "DHL is returning your parcel to the sender. Please contact us if you need help.",
+    },
   },
   fr: {
     payment_received: {
@@ -200,6 +225,31 @@ const SHIPMENT_COPY: Record<Lang, Record<ExpressShipmentEmailKind, { subject: st
       subject: "Votre remboursement Express a été émis",
       heading: "Remboursement émis",
       body: "Un remboursement pour votre réservation Express a été émis sur votre carte. Il peut prendre quelques jours ouvrables pour apparaître sur votre relevé.",
+    },
+    in_transit: {
+      subject: "Votre envoi Express est en route",
+      heading: "Votre envoi est en route",
+      body: "DHL a pris en charge votre colis et il est maintenant en transit. Vous pouvez suivre chaque étape sur la page de votre envoi.",
+    },
+    out_for_delivery: {
+      subject: "Votre envoi Express est en cours de livraison",
+      heading: "En cours de livraison",
+      body: "Votre colis est avec le livreur DHL et devrait être livré bientôt.",
+    },
+    delivered: {
+      subject: "Votre envoi Express a été livré",
+      heading: "Livré",
+      body: "DHL indique que votre colis a été livré.",
+    },
+    delivery_exception: {
+      subject: "Un retard touche votre envoi Express",
+      heading: "Un problème de livraison demande votre attention",
+      body: "DHL a signalé un problème avec votre colis, par exemple une tentative de livraison échouée ou une retenue douanière. Ouvrez la page de votre envoi pour la dernière mise à jour. Notre équipe suit le dossier avec DHL.",
+    },
+    returned: {
+      subject: "Votre envoi Express est retourné",
+      heading: "Envoi retourné",
+      body: "DHL retourne votre colis à l'expéditeur. Contactez-nous si vous avez besoin d'aide.",
     },
   },
 };

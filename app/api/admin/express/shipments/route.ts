@@ -4,7 +4,7 @@ import connectDB from "@/lib/mongoose";
 import User from "@/models/User";
 import ExpressShipment from "@/models/ExpressShipment";
 import { requireExpressStaff } from "@/lib/express/access";
-import { LABEL_OVERDUE_MINUTES, toAdminShipmentDTO } from "@/lib/express/shipmentDto";
+import { LABEL_OVERDUE_MINUTES, NO_SCAN_ALERT_DAYS, TRACKING_FAILURE_ALERT, toAdminShipmentDTO } from "@/lib/express/shipmentDto";
 
 const STATUSES = ["awaiting_payment", "paid", "label_ready", "cancelled"] as const;
 
@@ -14,6 +14,13 @@ const attentionFilter = (): Record<string, any> => ({
     { "fulfilment.state": { $in: ["failed", "unknown"] } },
     { "payment.state": "mismatch" },
     { "payment.refundState": "failed" },
+    { status: "label_ready", "tracking.status": "exception" },
+    { status: "label_ready", "tracking.failures": { $gte: TRACKING_FAILURE_ALERT } },
+    {
+      status: "label_ready",
+      "tracking.events.0": { $exists: false },
+      statusHistory: { $elemMatch: { status: "label_ready", at: { $lt: new Date(Date.now() - NO_SCAN_ALERT_DAYS * 86_400_000) } } },
+    },
     { status: "paid", "fulfilment.state": { $in: ["none", null] }, "payment.paidAt": { $lt: new Date(Date.now() - LABEL_OVERDUE_MINUTES * 60_000) } },
   ],
 });

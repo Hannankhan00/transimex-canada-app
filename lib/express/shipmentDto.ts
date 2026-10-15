@@ -64,13 +64,27 @@ export function toClientShipmentDTO(doc: ShipmentDoc) {
     paidAt: iso(doc.payment?.paidAt),
     refundedCents: doc.payment?.refundedCents ?? 0,
     labelReady: doc.status === "label_ready" && Boolean(doc.label?.key),
+    // Where the parcel is with DHL. Null until the first DHL scan.
+    tracking: doc.tracking?.events?.length
+      ? {
+          status: doc.tracking.status,
+          events: doc.tracking.events.map((e) => ({ at: iso(e.at), status: e.status, description: e.description, location: e.location || "" })),
+          lastCheckedAt: iso(doc.tracking.lastCheckedAt),
+          deliveredAt: iso(doc.tracking.deliveredAt),
+        }
+      : null,
     cancelledAt: iso(doc.cancellation?.at),
   };
 }
 
 export type ClientShipmentDTO = ReturnType<typeof toClientShipmentDTO>;
 
-export type AttentionReason = "label_failed" | "outcome_unknown" | "label_overdue" | "amount_mismatch" | "refund_failed";
+export type AttentionReason = "label_failed" | "outcome_unknown" | "label_overdue" | "amount_mismatch" | "refund_failed" | "delivery_exception" | "tracking_failing" | "no_scan";
+
+/** Consecutive failed DHL tracking checks before staff are told. */
+export const TRACKING_FAILURE_ALERT = 5;
+/** A label that DHL still has no scan for after this many days is shown to staff. */
+export const NO_SCAN_ALERT_DAYS = 10;
 
 /** A paid booking still without a label after this long needs a human. */
 export const LABEL_OVERDUE_MINUTES = 10;
@@ -85,6 +99,12 @@ export function attentionReasons(doc: ShipmentDoc, now: Date = new Date()): Atte
   if (doc.status === "paid" && (f === "none" || f === undefined) && paidAt && now.getTime() - paidAt > LABEL_OVERDUE_MINUTES * 60_000) reasons.push("label_overdue");
   if (doc.payment?.state === "mismatch") reasons.push("amount_mismatch");
   if (doc.payment?.refundState === "failed") reasons.push("refund_failed");
+  if (doc.status === "label_ready") {
+    if (doc.tracking?.status === "exception") reasons.push("delivery_exception");
+    if ((doc.tracking?.failures ?? 0) >= TRACKING_FAILURE_ALERT) reasons.push("tracking_failing");
+    const labelAt = doc.statusHistory?.find((h) => h.status === "label_ready")?.at;
+    if (!doc.tracking?.events?.length && labelAt && now.getTime() - new Date(labelAt).getTime() > NO_SCAN_ALERT_DAYS * 86_400_000) reasons.push("no_scan");
+  }
   return reasons;
 }
 
@@ -120,6 +140,7 @@ export function toAdminShipmentDTO(doc: ShipmentDoc, user?: AccountUserInfo | nu
     },
     label: doc.label ? { source: doc.label.source, uploadedAt: iso(doc.label.uploadedAt), bytes: doc.label.bytes } : null,
     pickupConfirmation: doc.pickupConfirmation || "",
+    trackingCheck: { failures: doc.tracking?.failures ?? 0, lastError: doc.tracking?.lastError || "", lastChangedAt: iso(doc.tracking?.lastChangedAt) },
     cancellation: doc.cancellation ? { reason: doc.cancellation.reason, by: doc.cancellation.by, at: iso(doc.cancellation.at), refundCents: doc.cancellation.refundCents } : null,
     attention: attentionReasons(doc),
   };

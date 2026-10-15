@@ -180,7 +180,7 @@ export default function ExpressOverviewPage() {
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="font-mono text-sm font-bold text-[#0B2545]">{s.reference}</span>
-                          <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${STATUS_STYLE[s.status]}`}>{t.express.shipmentStatus[s.status]}</span>
+                          <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${STATUS_STYLE[s.status]}`}>{s.status === "label_ready" && s.tracking ? t.express.trackingStatus[s.tracking.status as keyof typeof t.express.trackingStatus] : t.express.shipmentStatus[s.status]}</span>
                         </div>
                         <p className="mt-0.5 truncate text-xs text-slate-500">
                           {s.recipient.name} · {s.recipient.city}

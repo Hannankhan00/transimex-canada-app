@@ -60,6 +60,30 @@ export interface IExpressShipmentLabel {
   bytes: number;
 }
 
+export type ExpressTrackingStatus = "unknown" | "pre_transit" | "in_transit" | "out_for_delivery" | "delivered" | "exception" | "returned";
+
+export interface IExpressTrackingEvent {
+  at: Date;
+  status: ExpressTrackingStatus;
+  description: string;
+  location?: string;
+}
+
+/** Where the parcel is with DHL. Separate from the booking status, which stops at label_ready. */
+export interface IExpressShipmentTracking {
+  status: ExpressTrackingStatus;
+  /** Newest first. */
+  events: IExpressTrackingEvent[];
+  lastCheckedAt?: Date;
+  lastChangedAt?: Date;
+  deliveredAt?: Date;
+  /** Consecutive failed checks. Reset by a good one. */
+  failures: number;
+  lastError?: string;
+  /** Notification kinds already sent, so a repeated check never tells the client twice. */
+  notified: string[];
+}
+
 export interface IExpressShipment extends Document {
   /** Human-readable reference shown to clients and staff, e.g. EX-261015-K7QZ4. */
   reference: string;
@@ -100,6 +124,7 @@ export interface IExpressShipment extends Document {
   trackingNumber?: string;
   trackingUrl?: string;
   pickupConfirmation?: string;
+  tracking?: IExpressShipmentTracking;
 
   cancellation?: { reason: string; by: string; at: Date; refundCents: number };
 
@@ -211,6 +236,33 @@ const LabelSchema = new Schema(
   { _id: false }
 );
 
+const TrackingSchema = new Schema(
+  {
+    status: { type: String, enum: ["unknown", "pre_transit", "in_transit", "out_for_delivery", "delivered", "exception", "returned"], default: "unknown" },
+    events: {
+      type: [
+        new Schema(
+          {
+            at: { type: Date, required: true },
+            status: { type: String, required: true },
+            description: { type: String, required: true, maxlength: 300 },
+            location: { type: String, maxlength: 120 },
+          },
+          { _id: false }
+        ),
+      ],
+      default: [],
+    },
+    lastCheckedAt: { type: Date },
+    lastChangedAt: { type: Date },
+    deliveredAt: { type: Date },
+    failures: { type: Number, default: 0, min: 0 },
+    lastError: { type: String },
+    notified: { type: [String], default: [] },
+  },
+  { _id: false }
+);
+
 const ExpressShipmentSchema = new Schema<IExpressShipment>(
   {
     reference: { type: String, required: true, unique: true },
@@ -250,6 +302,7 @@ const ExpressShipmentSchema = new Schema<IExpressShipment>(
     trackingNumber: { type: String },
     trackingUrl: { type: String },
     pickupConfirmation: { type: String },
+    tracking: { type: TrackingSchema },
 
     cancellation: {
       type: new Schema(
@@ -271,6 +324,8 @@ ExpressShipmentSchema.index({ userId: 1, idempotencyKey: 1 }, { unique: true });
 ExpressShipmentSchema.index({ userId: 1, createdAt: -1 });
 ExpressShipmentSchema.index({ status: 1, createdAt: -1 });
 ExpressShipmentSchema.index({ "payment.sessionId": 1 });
+// The tracking job scans label_ready parcels that are not yet delivered.
+ExpressShipmentSchema.index({ status: 1, "tracking.status": 1, "tracking.lastCheckedAt": 1 });
 
 const ExpressShipment: Model<IExpressShipment> =
   mongoose.models.ExpressShipment || mongoose.model<IExpressShipment>("ExpressShipment", ExpressShipmentSchema);

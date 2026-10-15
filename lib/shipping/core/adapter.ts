@@ -33,5 +33,10 @@ export interface CarrierAdapter {
 
   bookPickup(request: PickupRequest): Promise<PickupResult>;
 
-  track(trackingNumber: string): Promise<TrackingResult>;
+  /**
+   * Current status and events. `bookedAt` (ISO) lets the mock carrier age a
+   * parcel across server restarts; a real carrier ignores it. A parcel DHL has
+   * not scanned yet throws CarrierError "not_found".
+   */
+  track(trackingNumber: string, hints?: { bookedAt?: string }): Promise<TrackingResult>;
 }

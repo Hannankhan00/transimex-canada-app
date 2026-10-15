@@ -207,12 +207,15 @@ export class MockDhlAdapter implements CarrierAdapter {
     };
   }
 
-  async track(trackingNumber: string): Promise<TrackingResult> {
+  async track(trackingNumber: string, hints: { bookedAt?: string } = {}): Promise<TrackingResult> {
     if (!trackingNumber.startsWith("MOCK")) {
       throw new CarrierError("not_found", `Unknown tracking number ${trackingNumber}.`);
     }
-    const createdAt = this.created.get(trackingNumber) ?? this.now();
-    const elapsedHours = (this.now() - createdAt) / 3_600_000;
+    const hinted = hints.bookedAt ? new Date(hints.bookedAt).getTime() : NaN;
+    const createdAt = this.created.get(trackingNumber) ?? (Number.isFinite(hinted) ? hinted : this.now());
+    // Test hook: DHL_MOCK_TRACKING_SPEED=60 makes the mock parcel age 60x faster.
+    const speed = Number(process.env.DHL_MOCK_TRACKING_SPEED);
+    const elapsedHours = ((this.now() - createdAt) / 3_600_000) * (Number.isFinite(speed) && speed > 0 ? speed : 1);
 
     const events: TrackingEvent[] = TRACKING_STEPS.filter((s) => elapsedHours >= s.afterHours)
       .map((s) => ({

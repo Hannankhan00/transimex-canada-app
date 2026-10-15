@@ -23,6 +23,26 @@ const TEXT: Record<ExpressShipmentEmailKind, { en: [string, string]; fr: [string
     en: ["Refund issued", "A refund was issued to your card."],
     fr: ["Remboursement émis", "Un remboursement a été émis sur votre carte."],
   },
+  in_transit: {
+    en: ["On its way", "DHL picked up your parcel and it is in transit."],
+    fr: ["En route", "DHL a pris en charge votre colis et il est en transit."],
+  },
+  out_for_delivery: {
+    en: ["Out for delivery", "Your parcel is with the DHL courier."],
+    fr: ["En cours de livraison", "Votre colis est avec le livreur DHL."],
+  },
+  delivered: {
+    en: ["Delivered", "DHL reports that your parcel was delivered."],
+    fr: ["Livré", "DHL indique que votre colis a été livré."],
+  },
+  delivery_exception: {
+    en: ["Delivery issue", "DHL reported an issue with your parcel. Open the shipment for details."],
+    fr: ["Problème de livraison", "DHL a signalé un problème avec votre colis. Ouvrez l'envoi pour les détails."],
+  },
+  returned: {
+    en: ["Being returned", "DHL is returning your parcel to the sender."],
+    fr: ["Retourné", "DHL retourne votre colis à l'expéditeur."],
+  },
 };
 
 /**
