@@ -26,6 +26,7 @@ import {
   BookOpen,
   Receipt,
   Megaphone,
+  Plane,
 } from "lucide-react";
 
 interface AdminSidebarProps {
@@ -120,6 +121,13 @@ export default function AdminSidebar({
       href: "/admin/clients",
       icon: Users,
       module: "clients",
+      section: "clients",
+    },
+    {
+      name: "Transimex Express",
+      href: "/admin/express",
+      icon: Plane,
+      module: "express",
       section: "clients",
     },
     {

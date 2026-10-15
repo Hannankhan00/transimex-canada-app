@@ -1,0 +1,75 @@
+import type { IExpressAccount } from "@/models/ExpressAccount";
+
+const iso = (d: unknown): string | null => {
+  if (!d) return null;
+  const date = new Date(d as string);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+};
+
+type Doc = Omit<Partial<IExpressAccount>, "_id"> & { _id: unknown };
+
+/**
+ * What the account owner sees. No staff identifiers. The rejection or
+ * suspension reason is shown only while it applies.
+ */
+export function toClientAccountDTO(doc: Doc) {
+  return {
+    id: String(doc._id),
+    type: doc.type!,
+    status: doc.status!,
+    contactName: doc.contactName || "",
+    phone: doc.phone || "",
+    country: doc.country || "",
+    company: doc.company
+      ? {
+          name: doc.company.name,
+          address: doc.company.address,
+          contactPerson: doc.company.contactPerson,
+          businessType: doc.company.businessType,
+          expectedMonthlyVolume: doc.company.expectedMonthlyVolume,
+        }
+      : null,
+    discountPct: doc.type === "b2b" && doc.status !== "pending" ? (doc.discountPct ?? null) : null,
+    billingModes: doc.status === "pending" ? [] : (doc.billingModes ?? []),
+    creditLimitCents: doc.status === "pending" ? null : (doc.creditLimitCents ?? null),
+    paymentTermsDays: doc.status === "pending" ? null : (doc.paymentTermsDays ?? null),
+    rejectionReason: doc.status === "rejected" ? doc.rejectionReason || "" : "",
+    suspensionReason: doc.status === "suspended" ? doc.suspensionReason || "" : "",
+    termsVersion: doc.terms?.version || "",
+    termsAcceptedAt: iso(doc.terms?.acceptedAt),
+    createdAt: iso(doc.createdAt),
+  };
+}
+
+export type ClientAccountDTO = ReturnType<typeof toClientAccountDTO>;
+
+export interface AccountUserInfo {
+  name?: string;
+  email?: string;
+  companyName?: string;
+}
+
+/** Full view for staff, with the CRM user's identity attached. */
+export function toAdminAccountDTO(doc: Doc, user?: AccountUserInfo | null) {
+  return {
+    ...toClientAccountDTO(doc),
+    // Staff always see the stored reason and terms regardless of status.
+    discountPct: doc.discountPct ?? null,
+    billingModes: doc.billingModes ?? [],
+    creditLimitCents: doc.creditLimitCents ?? null,
+    paymentTermsDays: doc.paymentTermsDays ?? null,
+    rejectionReason: doc.rejectionReason || "",
+    suspensionReason: doc.suspensionReason || "",
+    language: doc.language || "en",
+    userId: doc.userId || "",
+    reviewedBy: doc.reviewedBy || "",
+    reviewedAt: iso(doc.reviewedAt),
+    user: {
+      name: user?.name || "",
+      email: user?.email || "",
+      companyName: user?.companyName || "",
+    },
+  };
+}
+
+export type AdminAccountDTO = ReturnType<typeof toAdminAccountDTO>;
