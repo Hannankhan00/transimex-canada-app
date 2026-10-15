@@ -16,6 +16,7 @@ export default function PortalShell({ children }: PortalShellProps) {
   const isDashboardHome = pathname === "/dashboard";
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [expressEnabled, setExpressEnabled] = useState(false);
   const [user, setUser] = useState<{
     name?: string;
     email?: string;
@@ -33,6 +34,13 @@ export default function PortalShell({ children }: PortalShellProps) {
         if (isMounted && data.success) {
           setUnreadCount(data.notifications.filter((n: any) => n.unread).length);
         }
+      })
+      .catch(() => {});
+
+    fetch("/api/express/status")
+      .then((res) => res.json())
+      .then((data) => {
+        if (isMounted && data.success) setExpressEnabled(Boolean(data.enabled));
       })
       .catch(() => {});
 
@@ -75,6 +83,7 @@ export default function PortalShell({ children }: PortalShellProps) {
         mobileOpen={mobileMenuOpen}
         onCloseMobile={() => setMobileMenuOpen(false)}
         unreadCount={unreadCount}
+        expressEnabled={expressEnabled}
         userRole={user?.role || "client"}
         user={user}
       />

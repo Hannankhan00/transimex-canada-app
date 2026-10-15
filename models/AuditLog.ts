@@ -35,7 +35,17 @@ export type AuditActionType =
   | "BANK_ACCOUNT_DELETED"
   | "PROMOTION_CREATED"
   | "PROMOTION_UPDATED"
-  | "PROMOTION_DELETED";
+  | "PROMOTION_DELETED"
+  | "EXPRESS_ACCOUNT_APPROVED"
+  | "EXPRESS_ACCOUNT_REJECTED"
+  | "EXPRESS_ACCOUNT_SUSPENDED"
+  | "EXPRESS_ACCOUNT_REACTIVATED"
+  | "EXPRESS_DISCOUNT_CHANGED"
+  | "EXPRESS_BILLING_MODE_CHANGED"
+  | "EXPRESS_SETTINGS_CHANGED"
+  | "EXPRESS_SHIPMENT_CANCELLED"
+  | "EXPRESS_REFUND_ISSUED"
+  | "EXPRESS_LABEL_UPLOADED";
 
 export type AuditResourceType =
   | "Shipment"
@@ -47,7 +57,10 @@ export type AuditResourceType =
   | "EmailTemplate"
   | "Invoice"
   | "BankAccount"
-  | "Promotion";
+  | "Promotion"
+  | "ExpressAccount"
+  | "ExpressSettings"
+  | "ExpressShipment";
 
 export interface IAuditLog extends Document {
   actorId?: string;

@@ -21,12 +21,14 @@ import {
   ChevronUp,
   Download,
   LogOut,
+  Plane,
 } from "lucide-react";
 
 interface PortalSidebarProps {
   mobileOpen?: boolean;
   onCloseMobile?: () => void;
   unreadCount?: number;
+  expressEnabled?: boolean;
   userRole?: string;
   user?: {
     name?: string;
@@ -39,6 +41,7 @@ export default function PortalSidebar({
   mobileOpen = false,
   onCloseMobile,
   unreadCount = 3,
+  expressEnabled = false,
   userRole = "client",
   user = null,
 }: PortalSidebarProps) {
@@ -107,6 +110,16 @@ export default function PortalSidebar({
       exact: true,
       section: null as "freight" | "account" | null,
     },
+    ...(expressEnabled
+      ? [
+          {
+            name: t.nav.express,
+            href: "/express",
+            icon: Plane,
+            section: "freight" as const,
+          },
+        ]
+      : []),
     {
       name: t.nav.shipments,
       href: "/dashboard/shipments",

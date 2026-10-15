@@ -14,6 +14,7 @@ export const translations = {
       account: "Account Settings",
       support: "Support Tickets",
       adminPanel: "Staff Admin Panel",
+      express: "Transimex Express",
     },
     topBar: {
       searchPlaceholder: "Search shipments, tracking #, BOL, container...",
@@ -69,6 +70,18 @@ export const translations = {
       passwordUpdatedTitle: "Password Successfully Reset",
       passwordUpdatedDesc: "Your password has been updated. You can now log in to the Transimex client portal.",
     },
+    express: {
+      brand: "Transimex Express",
+      tagline: "International express shipping from Canada to Africa, powered by DHL Express.",
+      backToPortal: "Back to client portal",
+      navOverview: "Overview",
+      overviewTitle: "Welcome to Transimex Express",
+      overviewIntro: "Ship parcels from Canada to Africa with DHL Express, booked and paid for in one place.",
+      comingTitle: "Your Express account is being set up",
+      comingBody: "Account registration, instant quotes and booking will appear here as they are released.",
+      signedInAs: "Signed in as",
+      logout: "Log Out",
+    },
     common: {
       loading: "Loading...",
       error: "Error",
@@ -89,6 +102,7 @@ export const translations = {
       account: "Paramètres du Compte",
       support: "Billets de Support",
       adminPanel: "Panneau d'Administration",
+      express: "Transimex Express",
     },
     topBar: {
       searchPlaceholder: "Rechercher expéditions, no de suivi, connaissement...",
@@ -143,6 +157,18 @@ export const translations = {
       updatePasswordButton: "Mettre à jour le mot de passe",
       passwordUpdatedTitle: "Mot de passe réinitialisé avec succès",
       passwordUpdatedDesc: "Votre mot de passe a été mis à jour. Vous pouvez maintenant vous connecter au portail client.",
+    },
+    express: {
+      brand: "Transimex Express",
+      tagline: "Expédition internationale express du Canada vers l'Afrique, propulsée par DHL Express.",
+      backToPortal: "Retour au portail client",
+      navOverview: "Aperçu",
+      overviewTitle: "Bienvenue à Transimex Express",
+      overviewIntro: "Expédiez vos colis du Canada vers l'Afrique avec DHL Express, réservés et payés au même endroit.",
+      comingTitle: "Votre compte Express est en cours de configuration",
+      comingBody: "L'inscription au compte, les soumissions instantanées et la réservation apparaîtront ici au fur et à mesure de leur lancement.",
+      signedInAs: "Connecté en tant que",
+      logout: "Se déconnecter",
     },
     common: {
       loading: "Chargement...",

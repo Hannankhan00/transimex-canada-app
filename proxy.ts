@@ -63,6 +63,7 @@ export function proxy(request: NextRequest) {
   const isCompleteProfileRoute = pathname === "/complete-profile";
   const isDashboardRoute = pathname === "/dashboard" || pathname.startsWith("/dashboard/");
   const isAdminRoute = pathname === "/admin" || pathname.startsWith("/admin/");
+  const isExpressRoute = pathname === "/express" || pathname.startsWith("/express/");
 
   // 1. Profile Completion Route (/complete-profile)
   if (isCompleteProfileRoute) {
@@ -110,6 +111,23 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // 3b. Transimex Express area (/express, /express/*): signed-in clients only.
+  // The feature flag is enforced by the layout; API routes check their own auth.
+  if (isExpressRoute) {
+    if (!isAuthenticated) {
+      const loginUrl = new URL("/login", request.url);
+      loginUrl.searchParams.set("from", pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+    if (!isProfileComplete) {
+      return NextResponse.redirect(new URL("/complete-profile", request.url));
+    }
+    if (isStaff) {
+      return NextResponse.redirect(new URL("/admin", request.url));
+    }
+    return NextResponse.next();
+  }
+
   // 4. Admin routes (/admin, /admin/*)
   if (isAdminRoute) {
     if (!isAuthenticated) {
@@ -136,6 +154,7 @@ export const config = {
   matcher: [
     "/dashboard/:path*",
     "/admin/:path*",
+    "/express/:path*",
     "/login",
     "/register",
     "/forgot-password",

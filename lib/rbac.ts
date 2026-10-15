@@ -14,6 +14,7 @@ export type PermissionModule =
   | "blog"
   | "resources"
   | "promotions"
+  | "express"
   | "staff"
   | "settings";
 
@@ -116,6 +117,14 @@ export const PERMISSION_MODULES: PermissionModuleDef[] = [
     icon: "Megaphone",
   },
   {
+    id: "express",
+    labelEn: "Transimex Express",
+    labelFr: "Transimex Express",
+    descriptionEn: "Review Express applications, set discounts, manage Express shipments, refunds and payments.",
+    descriptionFr: "Examiner les demandes Express, fixer les rabais, gérer les expéditions Express, remboursements et paiements.",
+    icon: "Plane",
+  },
+  {
     id: "staff",
     labelEn: "Staff & RBAC",
     labelFr: "Gestion du Personnel & RBAC",
@@ -157,7 +166,7 @@ export const ROLE_PRESETS: RolePreset[] = [
     titleFr: "Super Administrateur",
     descriptionEn: "Unrestricted master access to all operations, financial data, and staff governance.",
     badgeClass: "bg-slate-900 text-amber-400 border border-amber-400/30",
-    defaultPermissions: ["quotes", "invoices", "shipments", "clients", "carriers", "messages", "support", "analytics", "blog", "resources", "promotions", "staff", "settings"],
+    defaultPermissions: ["quotes", "invoices", "shipments", "clients", "carriers", "messages", "support", "analytics", "blog", "resources", "promotions", "express", "staff", "settings"],
   },
   {
     id: "admin",
@@ -165,7 +174,7 @@ export const ROLE_PRESETS: RolePreset[] = [
     titleFr: "Gestionnaire Opérations",
     descriptionEn: "Full access to freight quotes, shipments, carriers, and clients without staff account creation.",
     badgeClass: "bg-[#0B2545] text-white border border-white/20",
-    defaultPermissions: ["quotes", "invoices", "shipments", "clients", "carriers", "messages", "support", "analytics"],
+    defaultPermissions: ["quotes", "invoices", "shipments", "clients", "carriers", "messages", "support", "analytics", "express"],
   },
   {
     id: "dispatcher",

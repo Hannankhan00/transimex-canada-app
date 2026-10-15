@@ -37,6 +37,7 @@ import {
   BookOpen,
   Receipt,
   Megaphone,
+  Plane,
 } from "lucide-react";
 
 interface StaffItem {
@@ -64,6 +65,7 @@ const MODULE_ICONS: Record<string, React.ComponentType<{ className?: string }>> 
   blog: Newspaper,
   resources: BookOpen,
   promotions: Megaphone,
+  express: Plane,
   staff: Shield,
   settings: Settings,
 };
