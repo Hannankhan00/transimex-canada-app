@@ -1,10 +1,14 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
 import { useRouter, usePathname } from "next/navigation";
 import { api } from "@/lib/api";
 import PortalSidebar from "./PortalSidebar";
 import TopBar from "./TopBar";
+
+// Loaded only when the popup is opened: it carries the country list the portal pages do not need.
+const ExpressApplyModal = dynamic(() => import("@/components/express/ExpressApplyModal"), { ssr: false });
 
 interface PortalShellProps {
   children: React.ReactNode;
@@ -17,6 +21,9 @@ export default function PortalShell({ children }: PortalShellProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [expressEnabled, setExpressEnabled] = useState(false);
+  // undefined = not known yet, null = no Express account, object = has one
+  const [expressAccount, setExpressAccount] = useState<{ status: string; type: string } | null | undefined>(undefined);
+  const [applyOpen, setApplyOpen] = useState(false);
   const [user, setUser] = useState<{
     name?: string;
     email?: string;
@@ -40,7 +47,17 @@ export default function PortalShell({ children }: PortalShellProps) {
     fetch("/api/express/status")
       .then((res) => res.json())
       .then((data) => {
-        if (isMounted && data.success) setExpressEnabled(Boolean(data.enabled));
+        if (!isMounted || !data.success) return;
+        setExpressEnabled(Boolean(data.enabled));
+        setExpressAccount(data.enabled ? data.account ?? null : undefined);
+
+        // Express sends people with no account here (/dashboard?express=apply) to open the application popup.
+        const wantsApply = new URLSearchParams(window.location.search).get("express") === "apply";
+        if (wantsApply && data.enabled) {
+          window.history.replaceState(null, "", window.location.pathname);
+          if (data.account) router.replace("/express");
+          else setApplyOpen(true);
+        }
       })
       .catch(() => {});
 
@@ -84,6 +101,8 @@ export default function PortalShell({ children }: PortalShellProps) {
         onCloseMobile={() => setMobileMenuOpen(false)}
         unreadCount={unreadCount}
         expressEnabled={expressEnabled}
+        expressHasAccount={expressAccount === undefined ? undefined : expressAccount !== null}
+        onOpenExpressApply={() => setApplyOpen(true)}
         userRole={user?.role || "client"}
         user={user}
       />
@@ -104,6 +123,7 @@ export default function PortalShell({ children }: PortalShellProps) {
           </div>
         </main>
       </div>
+      {applyOpen && <ExpressApplyModal onClose={() => setApplyOpen(false)} />}
     </div>
   );
 }

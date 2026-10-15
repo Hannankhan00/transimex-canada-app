@@ -356,6 +356,20 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok && data.shipment) {
+        // Booking saved. Send the client to the secure payment page; if payment cannot start
+        // (not available yet, or a hiccup) the booking page offers "Pay now" to try again.
+        if (data.shipment.canPay) {
+          try {
+            const pay = await fetch(`/api/express/shipments/${data.shipment.id}/checkout`, { method: "POST" });
+            const payData = await pay.json().catch(() => ({}));
+            if (pay.ok && payData.url) {
+              window.location.href = payData.url;
+              return;
+            }
+          } catch {
+            /* fall through to the shipment page */
+          }
+        }
         router.replace(`/express/shipments/${data.shipment.id}?booked=1`);
         return;
       }

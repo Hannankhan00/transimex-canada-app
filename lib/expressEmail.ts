@@ -1,4 +1,5 @@
 import { emailTemplateWrapper, escapeHtml, getAdminNotificationEmail, sendEmail } from "@/lib/email";
+import { optionLabel, type Category, type PaymentPreference, type Restricted, type ShipsFor } from "@/lib/express/shippingProfile";
 
 type Lang = "en" | "fr";
 
@@ -32,6 +33,10 @@ export async function sendExpressApplicationAdminAlert(params: {
   businessType: string;
   expectedMonthlyVolume: string;
   accountId: string;
+  shipsFor?: ShipsFor;
+  categories?: Category[];
+  restrictedGoods?: Restricted[];
+  paymentPreference?: PaymentPreference;
 }) {
   const url = `${appUrl()}/admin/express/${params.accountId}`;
   const content = `
@@ -43,6 +48,10 @@ export async function sendExpressApplicationAdminAlert(params: {
       <div><strong>Country:</strong> ${escapeHtml(params.country)}</div>
       <div><strong>Business type:</strong> ${escapeHtml(params.businessType)}</div>
       <div><strong>Expected monthly volume:</strong> ${escapeHtml(params.expectedMonthlyVolume)}</div>
+      ${params.categories?.length ? `<div><strong>Ships:</strong> ${escapeHtml(params.categories.map((c) => optionLabel("categories", c, "en")).join(", "))}</div>` : ""}
+      ${params.shipsFor ? `<div><strong>Ships for:</strong> ${escapeHtml(optionLabel("shipsFor", params.shipsFor, "en"))}</div>` : ""}
+      ${params.restrictedGoods?.length ? `<div><strong>Restricted goods:</strong> ${escapeHtml(params.restrictedGoods.map((r) => optionLabel("restrictedGoods", r, "en")).join(", "))}</div>` : ""}
+      ${params.paymentPreference ? `<div><strong>Would like to pay:</strong> ${escapeHtml(optionLabel("paymentPreference", params.paymentPreference, "en"))}</div>` : ""}
     </div>
     <div style="text-align:center;"><a href="${url}" class="btn" target="_blank">Review application</a></div>
   `;
@@ -143,5 +152,86 @@ export async function sendExpressDecisionEmail(params: {
     html: emailTemplateWrapper(content, copy.heading),
     text: `${copy.heading}. ${copy.body}${params.reason ? ` ${REASON_LABEL[lang]}: ${params.reason}` : ""} ${url}`,
     category: `express-${params.decision}`,
+  });
+}
+
+export type ExpressShipmentEmailKind = "payment_received" | "label_ready" | "cancelled" | "refunded";
+
+const SHIPMENT_COPY: Record<Lang, Record<ExpressShipmentEmailKind, { subject: string; heading: string; body: string }>> = {
+  en: {
+    payment_received: {
+      subject: "Payment received for your Express shipment",
+      heading: "Payment received",
+      body: "We received your payment. We are now creating your DHL label and will email you as soon as it is ready.",
+    },
+    label_ready: {
+      subject: "Your Express shipping label is ready",
+      heading: "Your label is ready",
+      body: "Your DHL label and tracking number are ready. Download the label from your shipment page, attach it to the parcel, then use DHL pickup or drop it off at a DHL service point.",
+    },
+    cancelled: {
+      subject: "Your Express booking was cancelled",
+      heading: "Booking cancelled",
+      body: "Your Express booking was cancelled.",
+    },
+    refunded: {
+      subject: "Your Express refund was issued",
+      heading: "Refund issued",
+      body: "A refund for your Express booking was issued to your card. It can take a few business days to appear on your statement.",
+    },
+  },
+  fr: {
+    payment_received: {
+      subject: "Paiement reçu pour votre envoi Express",
+      heading: "Paiement reçu",
+      body: "Nous avons reçu votre paiement. Nous créons maintenant votre étiquette DHL et vous écrirons dès qu'elle sera prête.",
+    },
+    label_ready: {
+      subject: "Votre étiquette d'expédition Express est prête",
+      heading: "Votre étiquette est prête",
+      body: "Votre étiquette DHL et votre numéro de suivi sont prêts. Téléchargez l'étiquette depuis la page de votre envoi, collez-la sur le colis, puis demandez le ramassage DHL ou déposez-le dans un point de service DHL.",
+    },
+    cancelled: {
+      subject: "Votre réservation Express a été annulée",
+      heading: "Réservation annulée",
+      body: "Votre réservation Express a été annulée.",
+    },
+    refunded: {
+      subject: "Votre remboursement Express a été émis",
+      heading: "Remboursement émis",
+      body: "Un remboursement pour votre réservation Express a été émis sur votre carte. Il peut prendre quelques jours ouvrables pour apparaître sur votre relevé.",
+    },
+  },
+};
+
+/** Tells a client about a status change on one of their bookings, in their language. */
+export async function sendExpressShipmentEmail(params: {
+  to: string;
+  name: string;
+  language: Lang;
+  kind: ExpressShipmentEmailKind;
+  reference: string;
+  shipmentId: string;
+  detail?: string;
+}) {
+  const lang: Lang = params.language === "fr" ? "fr" : "en";
+  const copy = SHIPMENT_COPY[lang][params.kind];
+  const url = `${appUrl()}/express/shipments/${params.shipmentId}`;
+  const greeting = lang === "fr" ? "Bonjour" : "Hello";
+  const view = lang === "fr" ? "Voir l'envoi" : "View shipment";
+  const content = `
+    <h1 class="h1">${copy.heading}</h1>
+    <p>${greeting} <strong>${escapeHtml(params.name)}</strong>,</p>
+    <p>${copy.body}</p>
+    <div class="cred-box"><strong>${lang === "fr" ? "Référence" : "Reference"}:</strong> ${escapeHtml(params.reference)}</div>
+    ${params.detail ? `<div class="alert-box">${escapeHtml(params.detail)}</div>` : ""}
+    <div style="text-align:center;"><a href="${url}" class="btn" target="_blank">${view}</a></div>
+  `;
+  return sendExpressEmail({
+    to: params.to,
+    subject: `${copy.subject} (${params.reference})`,
+    html: emailTemplateWrapper(content, copy.heading),
+    text: `${copy.heading}. ${copy.body} ${params.reference} ${url}`,
+    category: `express-shipment-${params.kind}`,
   });
 }

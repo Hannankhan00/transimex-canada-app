@@ -1,9 +1,9 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
-import { ArrowLeft, CheckCircle2, ExternalLink, RefreshCw } from "lucide-react";
+import { AlertTriangle, ArrowLeft, CheckCircle2, Download, ExternalLink, Loader2, RefreshCw } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { formatCad } from "@/lib/shipping/core/money";
 import { COUNTRIES } from "@/lib/data/countries";
@@ -17,33 +17,89 @@ const STATUS_STYLE: Record<string, string> = {
   cancelled: "bg-slate-100 text-slate-600 border-slate-300",
 };
 
+/** After returning from the payment page, check for the confirmation this often, for at most this long. */
+const POLL_MS = 2000;
+const POLL_MAX = 30;
+
 function Detail() {
   const { id } = useParams<{ id: string }>();
-  const justBooked = useSearchParams().get("booked") === "1";
+  const params = useSearchParams();
+  const justBooked = params.get("booked") === "1";
+  const returnedPaid = params.get("paid") === "1";
+  const returnedCancelled = params.get("cancelled") === "1";
   const { t, language } = useLanguage();
   const s = t.express.shipments;
   const book = t.express.book;
   const [shipment, setShipment] = useState<ClientShipmentDTO | null>(null);
   const [quote, setQuote] = useState<ClientQuoteDTO | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "missing" | "error">("loading");
+  const [action, setAction] = useState<"" | "pay" | "cancel">("");
+  const [actionError, setActionError] = useState("");
+  const [polls, setPolls] = useState(0);
+
+  const load = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/express/shipments/${id}`);
+      const data = await res.json().catch(() => ({}));
+      if (res.status === 404) return setState("missing");
+      if (!res.ok || !data.success) return setState("error");
+      setShipment(data.shipment);
+      setQuote(data.quote);
+      setState("ready");
+    } catch {
+      setState("error");
+    }
+  }, [id]);
 
   useEffect(() => {
-    let alive = true;
-    fetch(`/api/express/shipments/${id}`)
-      .then(async (res) => {
-        const data = await res.json().catch(() => ({}));
-        if (!alive) return;
-        if (res.status === 404) return setState("missing");
-        if (!res.ok || !data.success) return setState("error");
-        setShipment(data.shipment);
-        setQuote(data.quote);
-        setState("ready");
-      })
-      .catch(() => alive && setState("error"));
-    return () => {
-      alive = false;
-    };
-  }, [id]);
+    load();
+  }, [load]);
+
+  // Coming back from the payment page: the webhook, not this redirect, confirms payment, so keep checking.
+  const status = shipment?.status;
+  const waiting = returnedPaid && (status === "awaiting_payment" || status === "paid");
+  useEffect(() => {
+    if (!waiting || polls >= POLL_MAX) return;
+    const timer = setTimeout(() => {
+      setPolls((n) => n + 1);
+      load();
+    }, POLL_MS);
+    return () => clearTimeout(timer);
+  }, [waiting, polls, load]);
+
+  const pay = async () => {
+    setAction("pay");
+    setActionError("");
+    try {
+      const res = await fetch(`/api/express/shipments/${id}/checkout`, { method: "POST" });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.url) {
+        window.location.href = data.url;
+        return;
+      }
+      setActionError(data.code === "payments_unavailable" ? s.payUnavailable : s.payError);
+    } catch {
+      setActionError(s.payError);
+    }
+    setAction("");
+  };
+
+  const cancel = async () => {
+    if (!window.confirm(s.cancelConfirm)) return;
+    setAction("cancel");
+    setActionError("");
+    try {
+      const res = await fetch(`/api/express/shipments/${id}/cancel`, { method: "POST" });
+      if (res.ok) {
+        await load();
+      } else {
+        setActionError(s.cancelError);
+      }
+    } catch {
+      setActionError(s.cancelError);
+    }
+    setAction("");
+  };
 
   const country = (code: string) => {
     const c = COUNTRIES.find((x) => x.code === code);
@@ -91,11 +147,13 @@ function Detail() {
     </div>
   );
 
+  const pendingCheck = returnedPaid && shipment.status === "awaiting_payment" && polls < POLL_MAX;
+
   return (
     <div className="space-y-5">
       {back}
 
-      {justBooked && (
+      {justBooked && shipment.status === "awaiting_payment" && (
         <div role="status" className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 flex gap-3 text-emerald-900">
           <CheckCircle2 className="w-5 h-5 flex-shrink-0 mt-0.5" />
           <div>
@@ -110,8 +168,73 @@ function Detail() {
         <span className={`px-2.5 py-0.5 rounded-full border text-xs font-bold ${STATUS_STYLE[shipment.status]}`}>{t.express.shipmentStatus[shipment.status]}</span>
       </div>
 
-      {shipment.status === "awaiting_payment" && (
-        <p className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-900">{s.awaitingNote}</p>
+      {/* Payment state */}
+      {pendingCheck && (
+        <p role="status" className="flex items-center gap-2 rounded-xl bg-blue-50 border border-blue-200 px-4 py-3 text-sm text-blue-900">
+          <Loader2 className="w-4 h-4 animate-spin" />
+          {s.paymentPendingNote}
+        </p>
+      )}
+      {shipment.status === "paid" && (
+        <p role="status" className="flex items-center gap-2 rounded-xl bg-blue-50 border border-blue-200 px-4 py-3 text-sm text-blue-900">
+          {returnedPaid && polls < POLL_MAX && <Loader2 className="w-4 h-4 animate-spin" />}
+          {returnedPaid && polls < POLL_MAX ? s.paidProcessing : s.paidWaiting}
+        </p>
+      )}
+      {shipment.status === "awaiting_payment" && !pendingCheck && (
+        <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-900 space-y-3">
+          <p>{returnedCancelled ? s.paymentNotCompleted : s.awaitingNote}</p>
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={pay}
+              disabled={action !== ""}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#D21F27] hover:bg-[#b91a21] disabled:opacity-60 text-white text-sm font-bold cursor-pointer"
+            >
+              {action === "pay" && <Loader2 className="w-4 h-4 animate-spin" />}
+              {action === "pay" ? s.paying : `${s.payNow} · ${m(shipment.totalCents)}`}
+            </button>
+            <button
+              type="button"
+              onClick={cancel}
+              disabled={action !== ""}
+              className="px-4 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-700 text-sm font-bold disabled:opacity-60 cursor-pointer"
+            >
+              {action === "cancel" ? s.cancelling : s.cancelBooking}
+            </button>
+          </div>
+        </div>
+      )}
+      {actionError && (
+        <p role="alert" className="flex items-center gap-2 rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm font-semibold text-red-700">
+          <AlertTriangle className="w-4 h-4" />
+          {actionError}
+        </p>
+      )}
+      {shipment.status === "cancelled" && (
+        <div className="rounded-xl bg-slate-100 border border-slate-300 px-4 py-3 text-sm text-slate-700 space-y-1">
+          <p className="font-semibold">{s.cancelledBanner}</p>
+          {shipment.refundedCents > 0 && (
+            <p>
+              {s.refundIssued}: <b>{m(shipment.refundedCents)}</b>. {s.refundNote}
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Label and tracking */}
+      {shipment.labelReady && (
+        <section className="bg-white border border-emerald-200 rounded-2xl p-5 space-y-3">
+          <h2 className="font-bold text-[#0B2545] text-sm">{s.labelTitle}</h2>
+          <p className="text-sm text-slate-600">{s.labelHelp}</p>
+          <a
+            href={`/api/express/shipments/${shipment.id}/label`}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#0B2545] hover:bg-slate-800 text-white text-sm font-bold"
+          >
+            <Download className="w-4 h-4" />
+            {s.downloadLabel}
+          </a>
+        </section>
       )}
 
       <div className="grid md:grid-cols-2 gap-5">
@@ -133,6 +256,7 @@ function Detail() {
             [book.dutiesLabel, shipment.dutiesPayer === "recipient" ? book.dutiesRecipientShort : book.dutiesSenderShort],
             [s.parcels, shipment.parcels.map((p) => `${p.weightKg} kg · ${p.lengthCm}×${p.widthCm}×${p.heightCm} cm`).join("  |  ")],
             [book.declaredTotal, m(shipment.declaredValueCents)],
+            ...(shipment.paidAt ? [[s.paidOn, date(shipment.paidAt)]] : []),
           ].map(([k, v]) => (
             <div key={k} className="py-2 grid sm:grid-cols-3 gap-1">
               <dt className="text-slate-500">{k}</dt>

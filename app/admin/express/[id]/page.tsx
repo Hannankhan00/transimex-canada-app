@@ -16,6 +16,7 @@ import {
 } from "@/components/admin/express/expressAdminShared";
 import { formatCad } from "@/lib/shipping/core/money";
 import { COUNTRIES } from "@/lib/data/countries";
+import { optionLabel } from "@/lib/express/shippingProfile";
 import type { AdminAccountDTO } from "@/lib/express/accountDto";
 
 interface HistoryRow {
@@ -121,6 +122,74 @@ export default function AdminExpressAccountPage() {
       paymentTermsDays: account.paymentTermsDays,
     };
 
+    // What the business told us about its shipping, with the points that matter for the decision.
+    const businessProfile = () => {
+      const sp = account.shippingProfile;
+      if (!sp) {
+        return (
+          <div className="px-5 py-4 text-sm text-slate-500">
+            <p className="mb-1 font-bold text-[#0B2545]">{tr("About their shipping", "À propos de leurs envois")}</p>
+            {tr("Not provided. This application was made before these questions existed.", "Non fourni. Cette demande a été faite avant l'ajout de ces questions.")}
+          </div>
+        );
+      }
+      const L = language;
+      const restricted = sp.restrictedGoods.filter((r) => r !== "none");
+      const notes: { tone: "info" | "warn"; text: string }[] = [];
+      if (sp.shipsFor !== "own") {
+        notes.push({ tone: "info", text: tr("Ships for other people: it may need partner features (customers and markup) later.", "Expédie pour d'autres personnes : il pourrait avoir besoin des fonctions partenaire (clients et majoration) plus tard.") });
+      }
+      if (restricted.length > 0) {
+        notes.push({ tone: "warn", text: tr(`Ships restricted goods (${restricted.map((r) => optionLabel("restrictedGoods", r, "en").toLowerCase()).join(", ")}). Check what DHL accepts before approving.`, `Expédie des marchandises restreintes (${restricted.map((r) => optionLabel("restrictedGoods", r, "fr").toLowerCase()).join(", ")}). Vérifiez ce que DHL accepte avant d'approuver.`) });
+      }
+      if (sp.paymentPreference === "weekly_invoice") {
+        notes.push({ tone: "info", text: tr("Asked for a weekly invoice: if you approve it, set a credit limit and payment terms.", "A demandé une facture hebdomadaire : si vous l'approuvez, fixez une limite de crédit et des conditions de paiement.") });
+      }
+      if (!sp.businessNumber) {
+        notes.push({ tone: "warn", text: tr("No business registration number was given.", "Aucun numéro d'enregistrement d'entreprise n'a été fourni.") });
+      }
+      const site = sp.website ? (/^https?:\/\//i.test(sp.website) ? sp.website : `https://${sp.website}`) : "";
+      const rows: [string, React.ReactNode][] = [
+        [tr("Ships", "Expédie"), sp.categories.map((c) => optionLabel("categories", c, L)).join(", ")],
+        [tr("Typical items", "Articles habituels"), sp.goodsDescription],
+        [tr("Ships for", "Expédie pour"), optionLabel("shipsFor", sp.shipsFor, L)],
+        ...(sp.clientCount ? ([[tr("Number of clients", "Nombre de clients"), optionLabel("clientCount", sp.clientCount, L)]] as [string, React.ReactNode][]) : []),
+        ...(sp.clientsDescription ? ([[tr("Their clients", "Leurs clients"), sp.clientsDescription]] as [string, React.ReactNode][]) : []),
+        [tr("Destinations", "Destinations"), sp.destinations],
+        [tr("Typical parcel", "Colis habituel"), optionLabel("typicalWeight", sp.typicalWeight, L)],
+        [tr("Typical value", "Valeur habituelle"), optionLabel("typicalValue", sp.typicalValue, L)],
+        [tr("Restricted goods", "Marchandises restreintes"), sp.restrictedGoods.map((r) => optionLabel("restrictedGoods", r, L)).join(", ")],
+        [tr("Would like to pay", "Souhaite payer"), optionLabel("paymentPreference", sp.paymentPreference, L)],
+        ...(sp.currentCarriers ? ([[tr("Carriers today", "Transporteurs actuels"), sp.currentCarriers]] as [string, React.ReactNode][]) : []),
+        ...(sp.businessNumber ? ([[tr("Business number", "Numéro d'entreprise"), sp.businessNumber]] as [string, React.ReactNode][]) : []),
+        ...(site ? ([[tr("Website", "Site Web"), <a key="w" href={site} target="_blank" rel="noopener noreferrer" className="text-[#0B2545] underline break-all">{sp.website}</a>]] as [string, React.ReactNode][]) : []),
+      ];
+      return (
+        <div>
+          <div className="px-5 pt-4 pb-2">
+            <h3 className="font-bold text-[#0B2545] text-sm">{tr("About their shipping", "À propos de leurs envois")}</h3>
+          </div>
+          {notes.length > 0 && (
+            <ul className="mx-5 mb-2 space-y-1.5" aria-label={tr("Review notes", "Notes d'examen")}>
+              {notes.map((n) => (
+                <li key={n.text} className={`rounded-lg border px-3 py-2 text-xs ${n.tone === "warn" ? "border-amber-200 bg-amber-50 text-amber-900" : "border-blue-200 bg-blue-50 text-blue-900"}`}>
+                  {n.text}
+                </li>
+              ))}
+            </ul>
+          )}
+          <dl className="divide-y divide-slate-100">
+            {rows.map(([label, value]) => (
+              <div key={label} className="px-5 py-2.5 grid sm:grid-cols-3 gap-1 text-sm">
+                <dt className="text-slate-500">{label}</dt>
+                <dd className="sm:col-span-2 font-semibold text-slate-800 break-words">{value}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      );
+    };
+
     const info: [string, React.ReactNode][] = [
       [tr("Contact", "Contact"), account.contactName],
       [tr("Email", "Courriel"), account.user.email],
@@ -154,6 +223,7 @@ export default function AdminExpressAccountPage() {
               <dd className="sm:col-span-2 font-semibold text-slate-800 break-words">{value}</dd>
             </div>
           ))}
+          {isB2b && businessProfile()}
           {account.rejectionReason && account.status === "rejected" && (
             <div className="px-5 py-3 text-sm bg-red-50 text-red-800">
               <b>{tr("Rejection reason", "Motif du rejet")}:</b> {account.rejectionReason}
@@ -176,6 +246,7 @@ export default function AdminExpressAccountPage() {
                 <B2bTermsForm
                   key={`${account.status}-${account.reviewedAt}`}
                   initial={terms}
+                  paymentPreference={account.shippingProfile?.paymentPreference}
                   busy={busy}
                   submitLabel={canApprove ? tr("Approve account", "Approuver le compte") : tr("Save changes", "Enregistrer")}
                   onSubmit={(t) =>

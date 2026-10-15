@@ -49,6 +49,7 @@ export async function POST(req: Request) {
         phone: input.phone,
         country: input.country,
         company: input.type === "b2b" ? input.company : undefined,
+        shippingProfile: input.type === "b2b" ? input.shippingProfile : undefined,
         terms: { version: currentTerms.version, acceptedAt: new Date() },
       });
     } catch (error: any) {
@@ -68,6 +69,10 @@ export async function POST(req: Request) {
         country: input.country,
         businessType: input.company.businessType,
         expectedMonthlyVolume: input.company.expectedMonthlyVolume,
+        shipsFor: input.shippingProfile.shipsFor,
+        categories: input.shippingProfile.categories,
+        restrictedGoods: input.shippingProfile.restrictedGoods,
+        paymentPreference: input.shippingProfile.paymentPreference,
         accountId: String(account._id),
       }).catch((err) => console.warn("[Express] Admin alert email failed:", err));
     }

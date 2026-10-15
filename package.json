@@ -25,6 +25,7 @@
     "react-dom": "19.2.8",
     "react-hook-form": "^7.87.0",
     "sharp": "^0.35.5",
+    "stripe": "^23.0.0",
     "world-countries": "^5.1.0",
     "zod": "^3.25.76"
   },

@@ -61,6 +61,24 @@ export function toAdminAccountDTO(doc: Doc, user?: AccountUserInfo | null) {
     rejectionReason: doc.rejectionReason || "",
     suspensionReason: doc.suspensionReason || "",
     language: doc.language || "en",
+    // What the business said it ships and for whom. Staff only: the client does not need it back.
+    shippingProfile: doc.shippingProfile
+      ? {
+          categories: doc.shippingProfile.categories ?? [],
+          goodsDescription: doc.shippingProfile.goodsDescription,
+          shipsFor: doc.shippingProfile.shipsFor,
+          clientCount: doc.shippingProfile.clientCount ?? null,
+          clientsDescription: doc.shippingProfile.clientsDescription ?? "",
+          destinations: doc.shippingProfile.destinations,
+          typicalWeight: doc.shippingProfile.typicalWeight,
+          typicalValue: doc.shippingProfile.typicalValue,
+          restrictedGoods: doc.shippingProfile.restrictedGoods ?? [],
+          currentCarriers: doc.shippingProfile.currentCarriers ?? "",
+          paymentPreference: doc.shippingProfile.paymentPreference,
+          businessNumber: doc.shippingProfile.businessNumber ?? "",
+          website: doc.shippingProfile.website ?? "",
+        }
+      : null,
     userId: doc.userId || "",
     reviewedBy: doc.reviewedBy || "",
     reviewedAt: iso(doc.reviewedAt),

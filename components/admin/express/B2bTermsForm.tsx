@@ -13,6 +13,8 @@ export interface B2bTerms {
 
 interface Props {
   initial: B2bTerms;
+  /** How the applicant said they would like to pay, shown as a hint beside the billing choices. */
+  paymentPreference?: "pay_at_booking" | "weekly_invoice";
   submitLabel: string;
   busy: boolean;
   onSubmit: (terms: {
@@ -24,7 +26,7 @@ interface Props {
 }
 
 /** Discount, billing mode, credit limit and payment terms for a B2B account. */
-export default function B2bTermsForm({ initial, submitLabel, busy, onSubmit }: Props) {
+export default function B2bTermsForm({ initial, paymentPreference, submitLabel, busy, onSubmit }: Props) {
   const { tr } = useTr();
   const [discount, setDiscount] = useState(initial.discountPct != null ? String(initial.discountPct) : "");
   const [payAtBooking, setPayAtBooking] = useState(
@@ -87,6 +89,14 @@ export default function B2bTermsForm({ initial, submitLabel, busy, onSubmit }: P
 
       <fieldset className="space-y-2">
         <legend className="text-xs font-bold text-slate-700">{tr("Billing mode", "Mode de facturation")}</legend>
+        {paymentPreference && (
+          <p className="rounded-lg bg-slate-50 border border-slate-200 px-3 py-2 text-[11px] text-slate-600">
+            {tr("The applicant asked for:", "Le demandeur a demandé :")}{" "}
+            <b className="text-slate-800">
+              {paymentPreference === "weekly_invoice" ? tr("Weekly invoice (credit)", "Facture hebdomadaire (crédit)") : tr("Pay by card when booking", "Paiement par carte à la réservation")}
+            </b>
+          </p>
+        )}
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" checked={payAtBooking} onChange={(e) => setPayAtBooking(e.target.checked)} className="accent-[#0B2545]" />
           {tr("Pay by card at booking", "Paiement par carte à la réservation")}

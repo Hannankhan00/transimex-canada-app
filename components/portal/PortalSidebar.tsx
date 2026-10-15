@@ -19,6 +19,7 @@ import {
   HelpCircle,
   X,
   ChevronUp,
+  ChevronRight,
   Download,
   LogOut,
   Plane,
@@ -29,6 +30,9 @@ interface PortalSidebarProps {
   onCloseMobile?: () => void;
   unreadCount?: number;
   expressEnabled?: boolean;
+  /** undefined while unknown. When false the button opens the application popup instead of the portal. */
+  expressHasAccount?: boolean;
+  onOpenExpressApply?: () => void;
   userRole?: string;
   user?: {
     name?: string;
@@ -42,6 +46,8 @@ export default function PortalSidebar({
   onCloseMobile,
   unreadCount = 3,
   expressEnabled = false,
+  expressHasAccount,
+  onOpenExpressApply,
   userRole = "client",
   user = null,
 }: PortalSidebarProps) {
@@ -110,16 +116,6 @@ export default function PortalSidebar({
       exact: true,
       section: null as "freight" | "account" | null,
     },
-    ...(expressEnabled
-      ? [
-          {
-            name: t.nav.express,
-            href: "/express",
-            icon: Plane,
-            section: "freight" as const,
-          },
-        ]
-      : []),
     {
       name: t.nav.shipments,
       href: "/dashboard/shipments",
@@ -175,6 +171,19 @@ export default function PortalSidebar({
     freight: language === "fr" ? "Fret" : "Freight",
     account: language === "fr" ? "Compte" : "Account",
   };
+
+  const expressButtonClass =
+    "group flex items-center gap-3 rounded-lg bg-[#D21F27] px-4 py-3 text-white transition-colors hover:bg-[#B91A21] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B2545]";
+  const expressButtonContent = (
+    <>
+      <Plane className="h-5 w-5 flex-shrink-0" />
+      <span className="min-w-0 flex-1 leading-tight">
+        <span className="block text-sm font-bold">{t.nav.express}</span>
+        <span className="block text-xs font-medium text-white/80">{language === "fr" ? "Propulsé par DHL" : "Powered by DHL"}</span>
+      </span>
+      <ChevronRight className="h-4 w-4 flex-shrink-0 opacity-80 transition-transform group-hover:translate-x-0.5" />
+    </>
+  );
 
   const sidebarContent = (
     <div className="h-full flex flex-col bg-[#0B2545] text-slate-200 select-none overflow-hidden">
@@ -244,6 +253,30 @@ export default function PortalSidebar({
             );
           })}
         </nav>
+
+        {/* Transimex Express: its own call to action below the menu */}
+        {expressEnabled && (
+          <div className="mt-2 border-t border-white/10 px-3 pb-4 pt-4">
+            {expressHasAccount === false ? (
+              // No Express account yet: the button opens the application popup.
+              <button
+                type="button"
+                aria-haspopup="dialog"
+                onClick={() => {
+                  onCloseMobile?.();
+                  onOpenExpressApply?.();
+                }}
+                className={`${expressButtonClass} w-full cursor-pointer text-left`}
+              >
+                {expressButtonContent}
+              </button>
+            ) : (
+              <Link href="/express" onClick={onCloseMobile} className={expressButtonClass}>
+                {expressButtonContent}
+              </Link>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Lower Sticky Nameplate & Account Menu */}

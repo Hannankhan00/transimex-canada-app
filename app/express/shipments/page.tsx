@@ -6,6 +6,8 @@ import { Package, RefreshCw } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { formatCad } from "@/lib/shipping/core/money";
 import { COUNTRIES } from "@/lib/data/countries";
+import { useExpressAccount } from "@/components/express/useExpressAccount";
+import ExpressStatusBanner from "@/components/express/ExpressStatusBanner";
 import type { ClientShipmentDTO } from "@/lib/express/shipmentDto";
 
 const STATUS_STYLE: Record<string, string> = {
@@ -18,6 +20,8 @@ const STATUS_STYLE: Record<string, string> = {
 export default function ExpressShipmentsPage() {
   const { t, language } = useLanguage();
   const s = t.express.shipments;
+  const { account } = useExpressAccount();
+  const canBook = account?.status === "active";
   const [shipments, setShipments] = useState<ClientShipmentDTO[] | null>(null);
   const [error, setError] = useState(false);
 
@@ -46,10 +50,14 @@ export default function ExpressShipmentsPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-extrabold text-[#0B2545]">{s.title}</h1>
-        <Link href="/express/book" className="px-4 py-2 rounded-xl bg-[#D21F27] hover:bg-[#b91a21] text-white text-sm font-bold transition">
-          {t.express.navBook}
-        </Link>
+        {canBook && (
+          <Link href="/express/book" className="px-4 py-2 rounded-xl bg-[#D21F27] hover:bg-[#b91a21] text-white text-sm font-bold transition">
+            {t.express.navBook}
+          </Link>
+        )}
       </div>
+
+      {account && !canBook && <ExpressStatusBanner account={account} />}
 
       {error ? (
         <div className="bg-white border border-slate-200 rounded-2xl p-8 text-center space-y-3">
@@ -67,9 +75,11 @@ export default function ExpressShipmentsPage() {
         <div className="bg-white border border-slate-200 rounded-2xl p-10 text-center shadow-xs">
           <Package className="w-8 h-8 text-slate-300 mx-auto" />
           <p className="mt-2 text-sm text-slate-600">{s.empty}</p>
-          <Link href="/express/book" className="inline-block mt-4 px-5 py-2.5 rounded-xl bg-[#0B2545] text-white text-sm font-bold">
-            {s.bookFirst}
-          </Link>
+          {canBook && (
+            <Link href="/express/book" className="inline-block mt-4 px-5 py-2.5 rounded-xl bg-[#0B2545] text-white text-sm font-bold">
+              {s.bookFirst}
+            </Link>
+          )}
         </div>
       ) : (
         <ul className="bg-white border border-slate-200 rounded-2xl divide-y divide-slate-100 overflow-hidden">

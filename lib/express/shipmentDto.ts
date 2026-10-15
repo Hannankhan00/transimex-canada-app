@@ -57,20 +57,70 @@ export function toClientShipmentDTO(doc: ShipmentDoc) {
     totalCents: doc.totalCents ?? 0,
     currency: "CAD" as const,
     trackingNumber: doc.trackingNumber || "",
-    trackingUrl: trackingUrl(doc.trackingNumber),
+    trackingUrl: doc.trackingUrl || trackingUrl(doc.trackingNumber),
     termsVersion: doc.termsAccepted?.version || "",
+    // Payment status only. Never the provider's session, intent or refund ids, and never an error detail.
+    canPay: doc.status === "awaiting_payment",
+    paidAt: iso(doc.payment?.paidAt),
+    refundedCents: doc.payment?.refundedCents ?? 0,
+    labelReady: doc.status === "label_ready" && Boolean(doc.label?.key),
+    cancelledAt: iso(doc.cancellation?.at),
   };
 }
 
 export type ClientShipmentDTO = ReturnType<typeof toClientShipmentDTO>;
 
-/** Staff view: the client view plus ownership and the quote reference. Pricing is attached by the route. */
+export type AttentionReason = "label_failed" | "outcome_unknown" | "label_overdue" | "amount_mismatch" | "refund_failed";
+
+/** A paid booking still without a label after this long needs a human. */
+export const LABEL_OVERDUE_MINUTES = 10;
+
+/** Why staff should look at this booking. Empty means everything is on track. */
+export function attentionReasons(doc: ShipmentDoc, now: Date = new Date()): AttentionReason[] {
+  const reasons: AttentionReason[] = [];
+  const f = doc.fulfilment?.state;
+  if (f === "failed") reasons.push("label_failed");
+  if (f === "unknown") reasons.push("outcome_unknown");
+  const paidAt = doc.payment?.paidAt ? new Date(doc.payment.paidAt).getTime() : 0;
+  if (doc.status === "paid" && (f === "none" || f === undefined) && paidAt && now.getTime() - paidAt > LABEL_OVERDUE_MINUTES * 60_000) reasons.push("label_overdue");
+  if (doc.payment?.state === "mismatch") reasons.push("amount_mismatch");
+  if (doc.payment?.refundState === "failed") reasons.push("refund_failed");
+  return reasons;
+}
+
+/** Staff view: the client view plus ownership, payment, fulfilment and what needs attention. Pricing is attached by the route. */
 export function toAdminShipmentDTO(doc: ShipmentDoc, user?: AccountUserInfo | null) {
+  const p = doc.payment;
   return {
     ...toClientShipmentDTO(doc),
     userId: doc.userId || "",
     accountId: doc.accountId || "",
     accountType: doc.accountType!,
     user: { name: user?.name || "", email: user?.email || "", companyName: user?.companyName || "" },
+    payment: {
+      provider: p?.provider || "",
+      state: p?.state || "none",
+      attempts: p?.attempts ?? 0,
+      sessionId: p?.sessionId || "",
+      paymentIntentId: p?.paymentIntentId || "",
+      amountCents: p?.amountCents ?? null,
+      paidAt: iso(p?.paidAt),
+      refundedCents: p?.refundedCents ?? 0,
+      refunds: (p?.refunds || []).map((r) => ({ refundId: r.refundId, amountCents: r.amountCents, at: iso(r.at), reason: r.reason, by: r.by })),
+      refundState: p?.refundState || "none",
+      refundError: p?.refundError || "",
+      duplicatePayments: (p?.duplicatePayments || []).map((d) => ({ paymentIntentId: d.paymentIntentId, refundId: d.refundId || "", at: iso(d.at) })),
+      mismatchNote: p?.mismatchNote || "",
+    },
+    fulfilment: {
+      state: doc.fulfilment?.state || "none",
+      attempts: doc.fulfilment?.attempts ?? 0,
+      lastError: doc.fulfilment?.lastError || "",
+      lastAttemptAt: iso(doc.fulfilment?.lastAttemptAt),
+    },
+    label: doc.label ? { source: doc.label.source, uploadedAt: iso(doc.label.uploadedAt), bytes: doc.label.bytes } : null,
+    pickupConfirmation: doc.pickupConfirmation || "",
+    cancellation: doc.cancellation ? { reason: doc.cancellation.reason, by: doc.cancellation.by, at: iso(doc.cancellation.at), refundCents: doc.cancellation.refundCents } : null,
+    attention: attentionReasons(doc),
   };
 }

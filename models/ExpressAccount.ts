@@ -1,4 +1,14 @@
 import mongoose, { Document, Model, Schema } from "mongoose";
+import {
+  CATEGORY_VALUES,
+  CLIENT_COUNT_VALUES,
+  PAYMENT_VALUES,
+  RESTRICTED_VALUES,
+  SHIPS_FOR_VALUES,
+  VALUE_VALUES,
+  WEIGHT_VALUES,
+  type ShippingProfile,
+} from "@/lib/express/shippingProfile";
 
 export type ExpressAccountType = "b2c" | "b2b";
 export type ExpressAccountStatus = "pending" | "active" | "rejected" | "suspended";
@@ -26,6 +36,9 @@ export interface IExpressAccount extends Document {
     businessType: string;
     expectedMonthlyVolume: string;
   };
+
+  /** B2B only. What they ship and for whom, so staff can decide. Absent on accounts made before it existed. */
+  shippingProfile?: ShippingProfile;
 
   /** B2B only. Percent off base freight, 0-100. B2C uses the global setting. */
   discountPct: number | null;
@@ -66,6 +79,28 @@ const ExpressAccountSchema = new Schema<IExpressAccount>(
           contactPerson: { type: String, required: true, trim: true, maxlength: 120 },
           businessType: { type: String, required: true, trim: true, maxlength: 120 },
           expectedMonthlyVolume: { type: String, required: true, trim: true, maxlength: 60 },
+        },
+        { _id: false }
+      ),
+      default: undefined,
+    },
+
+    shippingProfile: {
+      type: new Schema(
+        {
+          categories: { type: [{ type: String, enum: CATEGORY_VALUES }], default: [] },
+          goodsDescription: { type: String, required: true, trim: true, maxlength: 500 },
+          shipsFor: { type: String, enum: SHIPS_FOR_VALUES, required: true },
+          clientCount: { type: String, enum: CLIENT_COUNT_VALUES },
+          clientsDescription: { type: String, trim: true, maxlength: 300 },
+          destinations: { type: String, required: true, trim: true, maxlength: 200 },
+          typicalWeight: { type: String, enum: WEIGHT_VALUES, required: true },
+          typicalValue: { type: String, enum: VALUE_VALUES, required: true },
+          restrictedGoods: { type: [{ type: String, enum: RESTRICTED_VALUES }], default: [] },
+          currentCarriers: { type: String, trim: true, maxlength: 200 },
+          paymentPreference: { type: String, enum: PAYMENT_VALUES, required: true },
+          businessNumber: { type: String, trim: true, maxlength: 60 },
+          website: { type: String, trim: true, maxlength: 200 },
         },
         { _id: false }
       ),

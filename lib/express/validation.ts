@@ -1,5 +1,14 @@
 import { z } from "zod";
 import { COUNTRIES } from "@/lib/data/countries";
+import {
+  CATEGORY_VALUES,
+  CLIENT_COUNT_VALUES,
+  PAYMENT_VALUES,
+  RESTRICTED_VALUES,
+  SHIPS_FOR_VALUES,
+  VALUE_VALUES,
+  WEIGHT_VALUES,
+} from "./shippingProfile";
 
 const COUNTRY_CODES = new Set(COUNTRIES.map((c) => c.code));
 
@@ -23,6 +32,52 @@ const acceptTerms = z.literal(true, { errorMap: () => ({ message: "You must acce
 
 /** The terms version the client was shown; the server rejects it if it is no longer current. */
 const termsVersion = z.string().trim().min(1, "Terms version is required").max(40);
+
+const unique = <T,>(list: T[]) => Array.from(new Set(list));
+const optionalText = (max: number) =>
+  z
+    .string()
+    .trim()
+    .max(max)
+    .optional()
+    .transform((v) => v || undefined);
+
+/**
+ * A business applicant's answers about what they ship and for whom. Staff read these to decide
+ * whether to approve the account and on what terms, so the important ones are required.
+ */
+export const shippingProfileSchema = z
+  .object({
+    categories: z.array(z.enum(CATEGORY_VALUES)).min(1, "Choose at least one type of goods").transform(unique),
+    goodsDescription: z.string({ required_error: "Describe what you ship" }).trim().min(5, "Describe what you ship").max(500),
+    shipsFor: z.enum(SHIPS_FOR_VALUES, { errorMap: () => ({ message: "Tell us who you ship for" }) }),
+    clientCount: z.enum(CLIENT_COUNT_VALUES).optional(),
+    clientsDescription: optionalText(300),
+    destinations: z.string({ required_error: "Tell us where you ship to" }).trim().min(2, "Tell us where you ship to").max(200),
+    typicalWeight: z.enum(WEIGHT_VALUES, { errorMap: () => ({ message: "Choose a typical parcel weight" }) }),
+    typicalValue: z.enum(VALUE_VALUES, { errorMap: () => ({ message: "Choose a typical shipment value" }) }),
+    restrictedGoods: z.array(z.enum(RESTRICTED_VALUES)).min(1, "Tell us about restricted goods, or choose \"None of these\"").transform(unique),
+    currentCarriers: optionalText(200),
+    paymentPreference: z.enum(PAYMENT_VALUES, { errorMap: () => ({ message: "Choose how you would like to pay" }) }),
+    businessNumber: optionalText(60),
+    website: optionalText(200).refine((v) => v === undefined || /^(https?:\/\/)?[^\s/]+\.[^\s]{2,}$/i.test(v), "Enter a valid website"),
+  })
+  .superRefine((v, ctx) => {
+    if (v.shipsFor !== "own" && !v.clientCount) {
+      ctx.addIssue({ code: "custom", path: ["clientCount"], message: "Tell us roughly how many clients you ship for" });
+    }
+    if (v.restrictedGoods.includes("none") && v.restrictedGoods.length > 1) {
+      ctx.addIssue({ code: "custom", path: ["restrictedGoods"], message: "\"None of these\" cannot be combined with other choices" });
+    }
+  })
+  .transform((v) => ({
+    ...v,
+    // Questions that only apply to people who ship for clients are dropped for everyone else.
+    clientCount: v.shipsFor === "own" ? undefined : v.clientCount,
+    clientsDescription: v.shipsFor === "own" ? undefined : v.clientsDescription,
+  }));
+
+export type ShippingProfileInput = z.infer<typeof shippingProfileSchema>;
 
 /**
  * What a client may send when applying. Unknown keys are stripped, so a
@@ -54,6 +109,7 @@ export const applySchema = z.discriminatedUnion("type", [
       businessType: text("Business type", 120),
       expectedMonthlyVolume: text("Expected monthly volume", 60),
     }),
+    shippingProfile: shippingProfileSchema,
   }),
 ]);
 

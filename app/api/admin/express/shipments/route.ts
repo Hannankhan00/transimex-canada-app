@@ -4,9 +4,19 @@ import connectDB from "@/lib/mongoose";
 import User from "@/models/User";
 import ExpressShipment from "@/models/ExpressShipment";
 import { requireExpressStaff } from "@/lib/express/access";
-import { toAdminShipmentDTO } from "@/lib/express/shipmentDto";
+import { LABEL_OVERDUE_MINUTES, toAdminShipmentDTO } from "@/lib/express/shipmentDto";
 
 const STATUSES = ["awaiting_payment", "paid", "label_ready", "cancelled"] as const;
+
+/** Bookings that need a human: a label problem, an unclear DHL outcome, a payment mismatch, a failed refund, or paid with no label for too long. */
+const attentionFilter = (): Record<string, any> => ({
+  $or: [
+    { "fulfilment.state": { $in: ["failed", "unknown"] } },
+    { "payment.state": "mismatch" },
+    { "payment.refundState": "failed" },
+    { status: "paid", "fulfilment.state": { $in: ["none", null] }, "payment.paidAt": { $lt: new Date(Date.now() - LABEL_OVERDUE_MINUTES * 60_000) } },
+  ],
+});
 
 export async function GET(req: Request) {
   try {
@@ -18,12 +28,14 @@ export async function GET(req: Request) {
     const q = (searchParams.get("q") || "").trim().toLowerCase();
 
     const filter: Record<string, unknown> = {};
-    if (status && (STATUSES as readonly string[]).includes(status)) filter.status = status;
+    if (status === "attention") Object.assign(filter, attentionFilter());
+    else if (status && (STATUSES as readonly string[]).includes(status)) filter.status = status;
 
     await connectDB();
-    const [docs, grouped] = await Promise.all([
+    const [docs, grouped, attentionCount] = await Promise.all([
       ExpressShipment.find(filter).sort({ createdAt: -1 }).limit(500).lean(),
       ExpressShipment.aggregate([{ $group: { _id: "$status", count: { $sum: 1 } } }]),
+      ExpressShipment.countDocuments(attentionFilter()),
     ]);
 
     const userIds = Array.from(new Set(docs.map((d) => d.userId))).filter((id) => isValidObjectId(id));
@@ -39,7 +51,7 @@ export async function GET(req: Request) {
       );
     }
 
-    const counts: Record<string, number> = { awaiting_payment: 0, paid: 0, label_ready: 0, cancelled: 0 };
+    const counts: Record<string, number> = { awaiting_payment: 0, paid: 0, label_ready: 0, cancelled: 0, attention: attentionCount };
     for (const g of grouped) counts[g._id] = g.count;
 
     return NextResponse.json({ success: true, shipments, counts });

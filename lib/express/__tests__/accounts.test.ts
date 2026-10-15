@@ -11,7 +11,17 @@ const company = {
   businessType: "Retail",
   expectedMonthlyVolume: "50 parcels",
 };
-const b2b = { ...b2c, type: "b2b", company };
+const shippingProfile = {
+  categories: ["clothing"],
+  goodsDescription: "Women's clothing",
+  shipsFor: "own",
+  destinations: "Cameroon",
+  typicalWeight: "light",
+  typicalValue: "under_100",
+  restrictedGoods: ["none"],
+  paymentPreference: "pay_at_booking",
+};
+const b2b = { ...b2c, type: "b2b", company, shippingProfile };
 
 describe("apply validation", () => {
   it("accepts a B2C application and normalises the country", () => {

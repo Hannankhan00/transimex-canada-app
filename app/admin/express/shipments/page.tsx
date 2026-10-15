@@ -2,14 +2,14 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { Package, Search } from "lucide-react";
+import { AlertTriangle, Package, Search } from "lucide-react";
 import PermissionGuard from "@/components/admin/PermissionGuard";
 import { ExpressAdminTabs, ShipmentStatusBadge, adminInput, formatDate, useTr } from "@/components/admin/express/expressAdminShared";
 import { formatCad } from "@/lib/shipping/core/money";
 import type { toAdminShipmentDTO } from "@/lib/express/shipmentDto";
 
 type Row = ReturnType<typeof toAdminShipmentDTO>;
-type Filter = "all" | "awaiting_payment" | "paid" | "label_ready" | "cancelled";
+type Filter = "all" | "attention" | "awaiting_payment" | "paid" | "label_ready" | "cancelled";
 
 export default function AdminExpressShipmentsPage() {
   const { language, tr } = useTr();
@@ -44,9 +44,10 @@ export default function AdminExpressShipmentsPage() {
     return () => clearTimeout(timer);
   }, [load, query]);
 
-  const total = Object.values(counts).reduce((a, b) => a + b, 0);
+  const total = ["awaiting_payment", "paid", "label_ready", "cancelled"].reduce((a, k) => a + (counts[k] ?? 0), 0);
   const filters: { key: Filter; label: string; count: number }[] = [
     { key: "all", label: tr("All", "Tous"), count: total },
+    { key: "attention", label: tr("Needs attention", "À traiter"), count: counts.attention ?? 0 },
     { key: "awaiting_payment", label: tr("Awaiting payment", "En attente de paiement"), count: counts.awaiting_payment ?? 0 },
     { key: "paid", label: tr("Paid", "Payés"), count: counts.paid ?? 0 },
     { key: "label_ready", label: tr("Label ready", "Étiquette prête"), count: counts.label_ready ?? 0 },
@@ -114,6 +115,12 @@ export default function AdminExpressShipmentsPage() {
                         <span className="font-mono font-bold text-sm text-[#0B2545]">{s.reference}</span>
                         <ShipmentStatusBadge status={s.status} />
                         <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[10px] font-bold uppercase">{s.accountType}</span>
+                        {s.attention.length > 0 && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-50 border border-red-200 text-red-700 text-[10px] font-bold">
+                            <AlertTriangle className="w-3 h-3" />
+                            {tr("Needs attention", "À traiter")}
+                          </span>
+                        )}
                       </div>
                       <div className="text-xs text-slate-500 mt-0.5 truncate">
                         {s.user.companyName || s.user.name} · {s.user.email} → {s.recipient.city}, {s.recipient.countryCode}
