@@ -66,7 +66,10 @@ export interface MockEventInput {
   eventId: string;
   type: "checkout.session.completed" | "checkout.session.expired";
   sessionId: string;
-  shipmentId: string;
+  /** A booking... */
+  shipmentId?: string;
+  /** ...or an invoice. */
+  invoiceId?: string;
   reference: string;
   amountCents: number;
   paid: boolean;
@@ -89,8 +92,8 @@ export function buildMockWebhook(input: MockEventInput): { payload: string; head
         currency: "cad",
         payment_status: input.paid ? "paid" : "unpaid",
         payment_intent: input.paid ? mockPaymentIntentId(input.sessionId) : null,
-        client_reference_id: input.shipmentId,
-        metadata: { shipmentId: input.shipmentId, reference: input.reference },
+        client_reference_id: input.shipmentId ?? input.invoiceId,
+        metadata: input.invoiceId ? { invoiceId: input.invoiceId, reference: input.reference } : { shipmentId: input.shipmentId, reference: input.reference },
       },
     },
   });

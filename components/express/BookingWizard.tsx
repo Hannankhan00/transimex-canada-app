@@ -12,6 +12,7 @@ import type { TermsContent } from "@/lib/express/terms";
 import type { ClientQuoteDTO } from "@/lib/express/quoteDto";
 import type { ClientAccountDTO } from "@/lib/express/accountDto";
 import type { PartnerCustomerDTO } from "@/lib/express/partnerDto";
+import type { CreditSummary } from "@/lib/express/credit";
 
 const AFRICA = COUNTRIES.filter((c) => AFRICAN_COUNTRY_CODES.has(c.code));
 const EXPORT_REASONS = ["sale", "gift", "sample", "return", "repair", "personal_effects"] as const;
@@ -169,6 +170,12 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
   // Partners can book for one of their customers ("" = their own shipment).
   const [customers, setCustomers] = useState<PartnerCustomerDTO[]>([]);
   const [forCustomer, setForCustomer] = useState("");
+  // Business accounts with invoice billing can put a booking on their weekly invoice.
+  const modes = account.billingModes ?? [];
+  const canInvoice = account.type === "b2b" && modes.includes("invoice");
+  const canCard = account.type !== "b2b" || modes.includes("pay_at_booking");
+  const [payMethod, setPayMethod] = useState<"card" | "invoice">(canCard ? "card" : "invoice");
+  const [credit, setCredit] = useState<CreditSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const [quote, setQuote] = useState<ClientQuoteDTO | null>(null);
@@ -181,6 +188,18 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
   const [accepted, setAccepted] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [serverIssues, setServerIssues] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!canInvoice) return;
+    let alive = true;
+    fetch("/api/express/credit")
+      .then((r) => r.json())
+      .then((d) => alive && d.success && setCredit(d.credit))
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [canInvoice]);
 
   useEffect(() => {
     if (!account.partner) return;
@@ -377,6 +396,7 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
           dutiesPayer: duties,
           acceptTerms: true,
           termsVersion: terms.version,
+          ...(canInvoice ? { paymentMethod: payMethod } : {}),
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -411,6 +431,12 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
         return;
       } else if (data.code === "billing_not_available") {
         setError(b.billingBlocked);
+      } else if (data.code === "credit_exceeded") {
+        setError(t.express.invoices.creditExceeded);
+      } else if (data.code === "invoice_overdue") {
+        setError(t.express.invoices.invoiceOverdue);
+      } else if (data.code === "invoice_not_allowed") {
+        setError(t.express.invoices.notAllowed);
       } else if (data.code?.startsWith("account_")) {
         setError(b.accountBlocked);
       } else if (Array.isArray(data.fields)) {
@@ -742,6 +768,36 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
             ) : null}
           </section>
 
+          {canInvoice && (
+            <section className="bg-white border border-slate-200 rounded-2xl p-5 sm:p-6 space-y-3">
+              <h2 className="font-bold text-[#0B2545]">{t.express.invoices.payTitle}</h2>
+              {canCard ? (
+                <div className="grid gap-2 sm:grid-cols-2" role="radiogroup" aria-label={t.express.invoices.payTitle}>
+                  {([
+                    ["card", t.express.invoices.payCard, t.express.invoices.payCardHelp],
+                    ["invoice", t.express.invoices.payInvoice, t.express.invoices.payInvoiceHelp],
+                  ] as const).map(([value, label, help]) => (
+                    <label key={value} className={`flex cursor-pointer items-start gap-2.5 rounded-xl border p-3.5 text-sm ${payMethod === value ? "border-[#0B2545] bg-slate-50" : "border-slate-200"}`}>
+                      <input type="radio" name="payMethod" className="mt-0.5 accent-[#0B2545]" checked={payMethod === value} onChange={() => setPayMethod(value)} />
+                      <span>
+                        <b className="block text-slate-800">{label}</b>
+                        <span className="text-xs text-slate-500">{help}</span>
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-slate-700">{t.express.invoices.invoiceOnly}</p>
+              )}
+              {payMethod === "invoice" && credit && credit.limitCents != null && (
+                <p className="text-xs text-slate-600">
+                  {t.express.invoices.creditLeft}: <b className="text-slate-800">{m(credit.availableCents)}</b> / {m(credit.limitCents)}
+                  {credit.overdueCount > 0 && <span className="ml-2 font-bold text-red-600">{t.express.invoices.invoiceOverdue}</span>}
+                </p>
+              )}
+            </section>
+          )}
+
           <section className="bg-white border border-slate-200 rounded-2xl p-5 sm:p-6 space-y-3">
             <h2 className="font-bold text-[#0B2545]">{b.termsHeading}</h2>
             <div className="max-h-56 overflow-y-auto rounded-xl bg-slate-50 border border-slate-200 p-4 space-y-3 text-sm text-slate-700 leading-relaxed">
@@ -764,7 +820,7 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
               <input type="checkbox" checked={accepted} onChange={(e) => setAccepted(e.target.checked)} className="mt-0.5 h-4 w-4 accent-[#0B2545]" />
               <span>{b.acceptTerms}</span>
             </label>
-            <p className="text-xs text-slate-500">{b.paymentNote}</p>
+            {!(canInvoice && payMethod === "invoice") && <p className="text-xs text-slate-500">{b.paymentNote}</p>}
           </section>
         </div>
       )}
@@ -806,7 +862,7 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
             className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#D21F27] hover:bg-[#b91a21] disabled:opacity-50 text-white text-sm font-bold cursor-pointer"
           >
             {confirming && <Loader2 className="w-4 h-4 animate-spin" />}
-            {confirming ? b.confirming : b.confirm}
+            {confirming ? b.confirming : canInvoice && payMethod === "invoice" ? t.express.invoices.confirmInvoice : b.confirm}
           </button>
         )}
       </div>

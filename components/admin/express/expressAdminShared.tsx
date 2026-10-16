@@ -45,8 +45,9 @@ export function ExpressAdminTabs() {
   const pathname = usePathname();
   const { tr } = useTr();
   const tabs = [
-    { href: "/admin/express", label: tr("Applications", "Demandes"), active: pathname === "/admin/express" || /^\/admin\/express\/(?!settings|terms|simulator|shipments)/.test(pathname) },
+    { href: "/admin/express", label: tr("Applications", "Demandes"), active: pathname === "/admin/express" || /^\/admin\/express\/(?!settings|terms|simulator|shipments|invoices)/.test(pathname) },
     { href: "/admin/express/shipments", label: tr("Shipments", "Envois"), active: pathname.startsWith("/admin/express/shipments") },
+    { href: "/admin/express/invoices", label: tr("Invoices", "Factures"), active: pathname.startsWith("/admin/express/invoices") },
     { href: "/admin/express/terms", label: tr("Terms", "Conditions"), active: pathname === "/admin/express/terms" },
     { href: "/admin/express/simulator", label: tr("Quote simulator", "Simulateur de soumission"), active: pathname === "/admin/express/simulator" },
     { href: "/admin/express/settings", label: tr("Settings", "Paramètres"), active: pathname === "/admin/express/settings" },
@@ -79,6 +80,24 @@ export function dollarsToCents(value: string): number | null {
 export function formatDate(iso: string | null, lang: "en" | "fr") {
   if (!iso) return "";
   return new Intl.DateTimeFormat(lang === "fr" ? "fr-CA" : "en-CA", { dateStyle: "medium", timeStyle: "short" }).format(new Date(iso));
+}
+
+export const INVOICE_STATUS_STYLES: Record<string, string> = {
+  issued: "bg-amber-50 text-amber-700 border-amber-200",
+  overdue: "bg-red-50 text-red-700 border-red-200",
+  paid: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  void: "bg-slate-100 text-slate-600 border-slate-300",
+};
+
+export function InvoiceStatusBadge({ status }: { status: string }) {
+  const { tr } = useTr();
+  const labels: Record<string, string> = {
+    issued: tr("Unpaid", "Impayée"),
+    overdue: tr("Overdue", "En retard"),
+    paid: tr("Paid", "Payée"),
+    void: tr("Void", "Annulée"),
+  };
+  return <span className={`px-2 py-0.5 rounded-full border text-[10px] font-bold ${INVOICE_STATUS_STYLES[status] || ""}`}>{labels[status] || status}</span>;
 }
 
 export const SHIPMENT_STATUS_STYLES: Record<string, string> = {

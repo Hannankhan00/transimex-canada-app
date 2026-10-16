@@ -285,3 +285,74 @@ export async function sendExpressShipmentEmail(params: {
     category: `express-shipment-${params.kind}`,
   });
 }
+
+export type ExpressInvoiceEmailKind = "issued" | "overdue" | "paid";
+
+const INVOICE_COPY: Record<Lang, Record<ExpressInvoiceEmailKind, { subject: string; heading: string; body: string }>> = {
+  en: {
+    issued: {
+      subject: "Your Transimex Express invoice",
+      heading: "A new invoice is ready",
+      body: "Your weekly Transimex Express invoice has been issued. You can see every shipment on it and pay by card from your Express area.",
+    },
+    overdue: {
+      subject: "Your Transimex Express invoice is overdue",
+      heading: "Invoice overdue",
+      body: "This invoice is past its due date. Please pay it as soon as possible. New bookings on credit are paused until it is paid.",
+    },
+    paid: {
+      subject: "We received your Transimex Express payment",
+      heading: "Invoice paid",
+      body: "Thank you. Your invoice is paid.",
+    },
+  },
+  fr: {
+    issued: {
+      subject: "Votre facture Transimex Express",
+      heading: "Une nouvelle facture est prête",
+      body: "Votre facture hebdomadaire Transimex Express a été émise. Vous pouvez voir chaque envoi qui y figure et payer par carte depuis votre espace Express.",
+    },
+    overdue: {
+      subject: "Votre facture Transimex Express est en retard",
+      heading: "Facture en retard",
+      body: "Cette facture a dépassé sa date d'échéance. Veuillez la payer dès que possible. Les nouvelles réservations à crédit sont suspendues jusqu'au paiement.",
+    },
+    paid: {
+      subject: "Nous avons reçu votre paiement Transimex Express",
+      heading: "Facture payée",
+      body: "Merci. Votre facture est payée.",
+    },
+  },
+};
+
+/** Tells an invoice account about its invoice, in its language. */
+export async function sendExpressInvoiceEmail(params: {
+  to: string;
+  name: string;
+  language: Lang;
+  kind: ExpressInvoiceEmailKind;
+  number: string;
+  invoiceId: string;
+  totalCents: number;
+  dueAt: Date;
+}) {
+  const lang: Lang = params.language === "fr" ? "fr" : "en";
+  const copy = INVOICE_COPY[lang][params.kind];
+  const url = `${appUrl()}/express/invoices/${params.invoiceId}`;
+  const money = new Intl.NumberFormat(lang === "fr" ? "fr-CA" : "en-CA", { style: "currency", currency: "CAD" }).format(params.totalCents / 100);
+  const due = new Intl.DateTimeFormat(lang === "fr" ? "fr-CA" : "en-CA", { dateStyle: "long" }).format(params.dueAt);
+  const content = `
+    <h1 class="h1">${copy.heading}</h1>
+    <p>${lang === "fr" ? "Bonjour" : "Hello"} <strong>${escapeHtml(params.name)}</strong>,</p>
+    <p>${copy.body}</p>
+    <div class="cred-box"><strong>${lang === "fr" ? "Facture" : "Invoice"}:</strong> ${escapeHtml(params.number)}<br/><strong>${lang === "fr" ? "Montant" : "Amount"}:</strong> ${money}<br/><strong>${lang === "fr" ? "Échéance" : "Due"}:</strong> ${due}</div>
+    <div style="text-align:center;"><a href="${url}" class="btn" target="_blank">${lang === "fr" ? "Voir la facture" : "View invoice"}</a></div>
+  `;
+  return sendExpressEmail({
+    to: params.to,
+    subject: `${copy.subject} (${params.number})`,
+    html: emailTemplateWrapper(content, copy.heading),
+    text: `${copy.heading}. ${copy.body} ${params.number} ${money} ${url}`,
+    category: `express-invoice-${params.kind}`,
+  });
+}

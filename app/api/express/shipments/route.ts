@@ -12,6 +12,8 @@ import { toClientQuoteDTO } from "@/lib/express/quoteDto";
 import { toClientShipmentDTO, toCustomerShipmentDTO } from "@/lib/express/shipmentDto";
 import { resolvePricingContext } from "@/lib/express/partnerPricing";
 import { getPricingSettings } from "@/lib/express/settings";
+import { creditSummary, decideInvoiceBooking } from "@/lib/express/credit";
+import { authorizeOnAccount } from "@/lib/express/invoiceBooking";
 import { getCurrentTerms } from "@/lib/express/termsStore";
 import { canUseExpress } from "@/lib/express/transitions";
 
@@ -75,14 +77,6 @@ export async function POST(req: Request) {
         { status: 403 }
       );
     }
-    // Card payment at booking is the only method until invoice billing is built.
-    if (account.type === "b2b" && !account.billingModes.includes("pay_at_booking")) {
-      return NextResponse.json(
-        { error: "Booking on invoice is not available yet. Please contact us.", code: "billing_not_available" },
-        { status: 403 }
-      );
-    }
-
     const currentTerms = await getCurrentTerms();
     if (input.termsVersion !== currentTerms.version) {
       return NextResponse.json(
@@ -121,6 +115,26 @@ export async function POST(req: Request) {
       };
     }
 
+    // How this booking is paid: by card now, or on the account's weekly invoice (business accounts only).
+    const modes = account.type === "b2b" ? account.billingModes : (["pay_at_booking"] as const);
+    const method = input.paymentMethod ?? (modes.includes("pay_at_booking") ? "card" : "invoice");
+    if (method === "card" && !modes.includes("pay_at_booking")) {
+      return NextResponse.json({ error: "Card payment is not enabled for your account. Please contact us.", code: "billing_not_available" }, { status: 403 });
+    }
+    if (method === "invoice") {
+      const summary = await creditSummary(account);
+      const decision = decideInvoiceBooking({
+        billingModes: [...modes],
+        creditLimitCents: account.creditLimitCents ?? null,
+        usedCents: summary.usedCents,
+        overdueCount: summary.overdueCount,
+        totalCents: quote.pricing.client.totalCents,
+      });
+      if (!decision.ok) {
+        return NextResponse.json({ error: decision.message, code: decision.code }, { status: decision.code === "invoice_not_allowed" ? 403 : 402 });
+      }
+    }
+
     const issues = checkBookingAgainstQuote(input, quote);
     if (issues.length > 0) {
       return NextResponse.json({ error: "Validation failed", fields: issues }, { status: 422 });
@@ -146,6 +160,7 @@ export async function POST(req: Request) {
       pickupRequested: quote.request.pickupRequested,
       dutiesPayer: input.dutiesPayer,
       totalCents: quote.pricing.client.totalCents,
+      ...(method === "invoice" ? { billing: { mode: "invoice" as const, chargeCents: quote.pricing.client.totalCents, creditedCents: 0 } } : {}),
       currency: "CAD" as const,
       termsAccepted: { version: currentTerms.version, acceptedAt: now },
     };
@@ -165,6 +180,20 @@ export async function POST(req: Request) {
       }
     }
     if (!created) throw new Error("Could not allocate a unique shipment reference");
+
+    // On credit: check the limit again with this booking counted, then start the label.
+    if (method === "invoice") {
+      const result = await authorizeOnAccount(String(created._id), account);
+      if (!result.ok) {
+        const status = result.code === "credit_exceeded" ? 402 : 409;
+        return NextResponse.json({ error: result.message, code: result.code }, { status });
+      }
+      const fresh = await ExpressShipment.findById(created._id).lean();
+      return NextResponse.json(
+        { success: true, replayed: false, shipment: toClientShipmentDTO((fresh ?? created.toObject()) as any), quote: toClientQuoteDTO(quote as any) },
+        { status: 201 }
+      );
+    }
 
     await notifyUser({
       userId,

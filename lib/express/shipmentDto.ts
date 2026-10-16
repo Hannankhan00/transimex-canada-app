@@ -64,6 +64,8 @@ export function toClientShipmentDTO(doc: ShipmentDoc) {
     paidAt: iso(doc.payment?.paidAt),
     refundedCents: doc.payment?.refundedCents ?? 0,
     labelReady: doc.status === "label_ready" && Boolean(doc.label?.key),
+    // How this booking is paid. "invoice" = on the account's weekly invoice (invoiceId once invoiced).
+    billing: doc.billing?.mode === "invoice" ? { mode: "invoice" as const, invoiceId: doc.billing.invoiceId || null } : null,
     // Only when a partner booked this for one of their customers.
     partner: doc.partnerCustomerId
       ? { customerId: doc.partnerCustomerId, customerName: doc.partnerCustomerName || "", markupCents: doc.markupCents ?? 0, customerTotalCents: doc.customerTotalCents ?? doc.totalCents ?? 0 }
@@ -94,6 +96,7 @@ export function toCustomerShipmentDTO(doc: ShipmentDoc) {
     ...full,
     totalCents: doc.customerTotalCents ?? full.totalCents,
     partner: null,
+    billing: null,
     quoteId: "",
     termsVersion: "",
     canPay: false,
@@ -167,6 +170,10 @@ export function toAdminShipmentDTO(doc: ShipmentDoc, user?: AccountUserInfo | nu
     },
     label: doc.label ? { source: doc.label.source, uploadedAt: iso(doc.label.uploadedAt), bytes: doc.label.bytes } : null,
     pickupConfirmation: doc.pickupConfirmation || "",
+    // Invoice-account detail (staff only): the charge, what was credited back, and the invoice it is on.
+    billingDetail: doc.billing?.mode === "invoice"
+      ? { mode: "invoice" as const, chargeCents: doc.billing.chargeCents, creditedCents: doc.billing.creditedCents ?? 0, invoiceId: doc.billing.invoiceId || null }
+      : null,
     trackingCheck: { failures: doc.tracking?.failures ?? 0, lastError: doc.tracking?.lastError || "", lastChangedAt: iso(doc.tracking?.lastChangedAt) },
     cancellation: doc.cancellation ? { reason: doc.cancellation.reason, by: doc.cancellation.by, at: iso(doc.cancellation.at), refundCents: doc.cancellation.refundCents } : null,
     attention: attentionReasons(doc),

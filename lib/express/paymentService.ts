@@ -4,6 +4,7 @@ import { CHECKOUT_TTL_MINUTES } from "./payments/config";
 import { PaymentError, type PaymentEvent, type PaymentProvider } from "./payments/types";
 import { fulfilShipment } from "./fulfilment";
 import { notifyShipmentEvent } from "./shipmentNotify";
+import { handleInvoicePaymentEvent } from "./invoicePayment";
 
 export type CheckoutFailure = {
   ok: false;
@@ -105,7 +106,9 @@ const centsMatch = (event: PaymentEvent, sh: IExpressShipment) => event.amountTo
 export async function handlePaymentEvent(event: PaymentEvent, provider: PaymentProvider): Promise<string> {
   await connectDB();
 
-  if (event.type === "other" || !event.shipmentId) return "ignored";
+  if (event.type === "other") return "ignored";
+  if (event.invoiceId) return handleInvoicePaymentEvent(event, provider);
+  if (!event.shipmentId) return "ignored";
   const sh = await ExpressShipment.findById(event.shipmentId).lean<IExpressShipment>().catch(() => null);
   if (!sh) {
     console.warn("[Express] Payment event for an unknown shipment:", event.shipmentId);

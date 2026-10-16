@@ -189,6 +189,21 @@ function Detail() {
 
       {isCustomer && <p className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">{pt.customerNote}</p>}
 
+      {shipment.billing && (
+        <p className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
+          {shipment.billing.invoiceId ? (
+            <>
+              {t.express.invoices.shipmentOnInvoice} ·{" "}
+              <Link href={`/express/invoices/${shipment.billing.invoiceId}`} className="font-bold text-[#0B2545] underline">
+                {t.express.invoices.viewInvoice}
+              </Link>
+            </>
+          ) : (
+            t.express.invoices.shipmentNextInvoice
+          )}
+        </p>
+      )}
+
       {shipment.partner && (
         <section className="bg-white border border-slate-200 rounded-2xl p-5 space-y-2">
           <h2 className="font-bold text-[#0B2545] text-sm">{shipment.partner.customerName}</h2>

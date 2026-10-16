@@ -26,7 +26,8 @@ export interface IExpressRefund {
 }
 
 export interface IExpressShipmentPayment {
-  provider?: "stripe" | "mock";
+  /** "invoice" = put on the account's credit instead of paid by card. */
+  provider?: "stripe" | "mock" | "invoice";
   state: ExpressPaymentState;
   /** How many checkout sessions have been started; keys the provider idempotency. */
   attempts: number;
@@ -84,6 +85,20 @@ export interface IExpressShipmentTracking {
   notified: string[];
 }
 
+/** How a booking is paid for. Absent on card bookings (they are tracked by `payment`). */
+export interface IExpressShipmentBilling {
+  mode: "card" | "invoice";
+  /** Invoice mode: what the account is charged for this booking, CAD cents. */
+  chargeCents: number;
+  /** Invoice mode: credited back so far (cancellation). The billable amount is chargeCents - creditedCents. */
+  creditedCents: number;
+  /** Set once the booking is on an invoice. */
+  invoiceId?: string;
+  invoicedAt?: Date;
+  /** What the invoice line billed (chargeCents - creditedCents at the time of invoicing). */
+  billedCents?: number;
+}
+
 export interface IExpressShipment extends Document {
   /** Human-readable reference shown to clients and staff, e.g. EX-261015-K7QZ4. */
   reference: string;
@@ -123,6 +138,7 @@ export interface IExpressShipment extends Document {
   termsAccepted: { version: string; acceptedAt: Date };
 
   payment: IExpressShipmentPayment;
+  billing?: IExpressShipmentBilling;
   fulfilment: IExpressShipmentFulfilment;
   label?: IExpressShipmentLabel;
 
@@ -200,7 +216,7 @@ const RefundSchema = new Schema(
 
 const PaymentSchema = new Schema(
   {
-    provider: { type: String, enum: ["stripe", "mock"] },
+    provider: { type: String, enum: ["stripe", "mock", "invoice"] },
     state: { type: String, enum: ["none", "pending", "paid", "expired", "mismatch"], default: "none" },
     attempts: { type: Number, default: 0, min: 0 },
     sessionId: { type: String },
@@ -218,6 +234,18 @@ const PaymentSchema = new Schema(
       default: [],
     },
     mismatchNote: { type: String },
+  },
+  { _id: false }
+);
+
+const BillingSchema = new Schema(
+  {
+    mode: { type: String, enum: ["card", "invoice"], required: true },
+    chargeCents: { type: Number, required: true, min: 0 },
+    creditedCents: { type: Number, default: 0, min: 0 },
+    invoiceId: { type: String },
+    invoicedAt: { type: Date },
+    billedCents: { type: Number, min: 0 },
   },
   { _id: false }
 );
@@ -306,6 +334,7 @@ const ExpressShipmentSchema = new Schema<IExpressShipment>(
     },
 
     payment: { type: PaymentSchema, default: () => ({}) },
+    billing: { type: BillingSchema },
     fulfilment: { type: FulfilmentSchema, default: () => ({}) },
     label: { type: LabelSchema },
 
@@ -334,6 +363,8 @@ ExpressShipmentSchema.index({ userId: 1, idempotencyKey: 1 }, { unique: true });
 ExpressShipmentSchema.index({ userId: 1, createdAt: -1 });
 ExpressShipmentSchema.index({ status: 1, createdAt: -1 });
 ExpressShipmentSchema.index({ "payment.sessionId": 1 });
+// The invoice run and the credit check scan an account's invoice-mode bookings.
+ExpressShipmentSchema.index({ accountId: 1, "billing.mode": 1, "billing.invoiceId": 1, status: 1 });
 // The tracking job scans label_ready parcels that are not yet delivered.
 ExpressShipmentSchema.index({ status: 1, "tracking.status": 1, "tracking.lastCheckedAt": 1 });
 

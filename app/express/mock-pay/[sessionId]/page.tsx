@@ -72,7 +72,7 @@ export default function MockPayPage() {
             <p className="mt-2 text-3xl font-extrabold text-[#0B2545]">{formatCad(info.amountCents, language)}</p>
           </div>
 
-          {!info.payable && <p className="text-sm text-slate-600">{tr("This booking is no longer waiting for payment.", "Cette réservation n'attend plus de paiement.")}</p>}
+          {!info.payable && <p className="text-sm text-slate-600">{tr("This is no longer waiting for payment.", "Ce paiement n'est plus en attente.")}</p>}
 
           <div className="space-y-2">
             <button

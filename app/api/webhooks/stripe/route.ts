@@ -37,7 +37,7 @@ export async function POST(req: Request) {
     // Record the event. A repeat of one we already finished is acknowledged and ignored; one that
     // was received but never finished (a crash) is processed again.
     try {
-      await ExpressPaymentEvent.create({ eventId: event.id, type: event.rawType, shipmentId: event.shipmentId });
+      await ExpressPaymentEvent.create({ eventId: event.id, type: event.rawType, shipmentId: event.shipmentId, invoiceId: event.invoiceId });
     } catch (error: any) {
       if (error?.code !== 11000) throw error;
       const seen = await ExpressPaymentEvent.findOne({ eventId: event.id }).lean();

@@ -54,6 +54,8 @@ export const bookingSchema = z.object({
   items: z.array(customsItemSchema).min(1, "Add at least one item").max(20, "At most 20 items"),
   contentDescription: opt(200),
   dutiesPayer: z.enum(["recipient", "sender"]).default("recipient"),
+  /** Business accounts with both modes choose; omitted = card when allowed, otherwise invoice. */
+  paymentMethod: z.enum(["card", "invoice"]).optional(),
   acceptTerms: z.literal(true, { errorMap: () => ({ message: "You must accept the terms" }) }),
   termsVersion: z.string().trim().min(1).max(40),
 });

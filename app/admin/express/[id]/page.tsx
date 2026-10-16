@@ -88,6 +88,7 @@ export default function AdminExpressAccountPage() {
   const { language, tr } = useTr();
   const [account, setAccount] = useState<AdminAccountDTO | null>(null);
   const [history, setHistory] = useState<HistoryRow[]>([]);
+  const [credit, setCredit] = useState<{ limitCents: number | null; usedCents: number; availableCents: number; unpaidInvoiceCents: number; uninvoicedCents: number; pendingCreditCents: number; overdueCount: number; overdueCents: number } | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -109,6 +110,7 @@ export default function AdminExpressAccountPage() {
       if (!res.ok) throw new Error(data.error || "Failed to load account");
       setAccount(data.account);
       setHistory(data.discountHistory);
+      setCredit(data.credit ?? null);
     } catch (err: any) {
       setLoadError(err.message);
     } finally {
@@ -311,6 +313,23 @@ export default function AdminExpressAccountPage() {
                 />
               ) : (
                 <p className="text-xs text-slate-500">{tr("Terms can be edited once the account is active.", "Les conditions peuvent être modifiées lorsque le compte est actif.")}</p>
+              )}
+              {credit && credit.limitCents != null && (
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700 space-y-1">
+                  <p className="font-bold text-[#0B2545]">{tr("Credit position", "Position de crédit")}</p>
+                  <p>
+                    {tr("Used", "Utilisé")} <b>{formatCad(credit.usedCents, language)}</b> / {formatCad(credit.limitCents, language)} · {tr("available", "disponible")} <b>{formatCad(credit.availableCents, language)}</b>
+                  </p>
+                  <p className="text-slate-500">
+                    {tr("Unpaid invoices", "Factures impayées")} {formatCad(credit.unpaidInvoiceCents, language)} · {tr("not yet invoiced", "pas encore facturé")} {formatCad(credit.uninvoicedCents, language)}
+                    {credit.pendingCreditCents > 0 ? ` · ${tr("credits waiting", "crédits en attente")} −${formatCad(credit.pendingCreditCents, language)}` : ""}
+                  </p>
+                  {credit.overdueCount > 0 && (
+                    <p className="font-bold text-red-700">
+                      {tr("Overdue", "En retard")}: {credit.overdueCount} · {formatCad(credit.overdueCents, language)} {tr("(credit bookings are blocked)", "(les réservations à crédit sont bloquées)")}
+                    </p>
+                  )}
+                </div>
               )}
               {account.discountPct != null && (
                 <p className="text-[11px] text-slate-500">

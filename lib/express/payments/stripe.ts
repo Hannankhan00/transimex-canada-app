@@ -23,7 +23,9 @@ export function normalizeStripeEvent(event: Stripe.Event): PaymentEvent {
       amountTotalCents: s.amount_total ?? undefined,
       currency: s.currency ?? undefined,
       paymentStatus: s.payment_status,
-      shipmentId: s.metadata?.shipmentId || s.client_reference_id || undefined,
+      // An invoice payment carries invoiceId in its metadata; its client_reference_id must not be mistaken for a booking.
+      shipmentId: s.metadata?.shipmentId || (s.metadata?.invoiceId ? undefined : s.client_reference_id) || undefined,
+      invoiceId: s.metadata?.invoiceId || undefined,
     };
   }
   return { id: event.id, type: "other", rawType: event.type };
@@ -56,14 +58,17 @@ export class StripePaymentProvider implements PaymentProvider {
               price_data: {
                 currency: "cad",
                 unit_amount: p.amountCents,
-                product_data: { name: `Transimex Express shipment ${p.reference}`, description: p.description },
+                product_data: { name: `Transimex Express ${p.invoiceId ? "invoice" : "shipment"} ${p.reference}`, description: p.description },
               },
             },
           ],
-          client_reference_id: p.shipmentId,
+          client_reference_id: p.shipmentId ?? p.invoiceId,
           customer_email: p.customerEmail,
-          metadata: { shipmentId: p.shipmentId, reference: p.reference },
-          payment_intent_data: { metadata: { shipmentId: p.shipmentId, reference: p.reference }, description: `Express ${p.reference}` },
+          metadata: p.invoiceId ? { invoiceId: p.invoiceId, reference: p.reference } : { shipmentId: p.shipmentId!, reference: p.reference },
+          payment_intent_data: {
+            metadata: p.invoiceId ? { invoiceId: p.invoiceId, reference: p.reference } : { shipmentId: p.shipmentId!, reference: p.reference },
+            description: `Express ${p.reference}`,
+          },
           success_url: p.successUrl,
           cancel_url: p.cancelUrl,
           expires_at: expiresAt,

@@ -2,6 +2,7 @@ import connectDB from "@/lib/mongoose";
 import ExpressShipment, { type IExpressShipment } from "@/models/ExpressShipment";
 import { PaymentError, type PaymentProvider } from "./payments/types";
 import { notifyShipmentEvent } from "./shipmentNotify";
+import { creditInvoiceBooking } from "./invoiceBooking";
 
 export type CancelFailure = {
   ok: false;
@@ -22,7 +23,15 @@ export type CancelResult = CancelSuccess | CancelFailure;
 
 const fail = (code: CancelFailure["code"], status: number, message: string): CancelFailure => ({ ok: false, code, status, message });
 
-export const refundableCents = (sh: Pick<IExpressShipment, "payment">) => Math.max(0, (sh.payment?.amountCents ?? 0) - (sh.payment?.refundedCents ?? 0));
+/**
+ * What can still be given back on a cancellation: for a card booking the amount
+ * paid less refunds; for a booking on the invoice account the charge less what
+ * was already credited.
+ */
+export const refundableCents = (sh: Pick<IExpressShipment, "payment" | "billing">) =>
+  sh.billing?.mode === "invoice"
+    ? Math.max(0, (sh.billing.chargeCents ?? 0) - (sh.billing.creditedCents ?? 0))
+    : Math.max(0, (sh.payment?.amountCents ?? 0) - (sh.payment?.refundedCents ?? 0));
 
 /**
  * Issues a refund and records it on the booking. The provider key is derived
@@ -113,9 +122,18 @@ export async function cancelShipment(params: {
     return { ok: true, refundedCents: 0, refundFailed: false };
   }
 
-  // Everything below moves money: staff only.
+  // Everything below moves money or credit: staff only.
   if (!actor.staff) return fail("forbidden", 403, "Only Transimex staff can cancel a paid booking. Please contact us.");
-  if (!params.provider) return fail("payments_unavailable", 503, "Payments are not available, so a refund cannot be issued.");
+  // A booking on the invoice account is credited, not refunded to a card, so it needs no payment provider.
+  const onAccount = sh.billing?.mode === "invoice";
+  if (!onAccount && !params.provider) return fail("payments_unavailable", 503, "Payments are not available, so a refund cannot be issued.");
+  const giveBack = async (booking: IExpressShipment, cents: number): Promise<{ ok: true; amountCents: number } | { ok: false }> => {
+    if (onAccount) {
+      await creditInvoiceBooking(booking, cents, reason, actor.id);
+      return { ok: true, amountCents: cents };
+    }
+    return issueRefund(booking, cents, reason, actor.id, params.provider!);
+  };
 
   // ---- paid, no label yet: full refund ----
   if (sh.status === "paid") {
@@ -132,8 +150,8 @@ export async function cancelShipment(params: {
     ).lean<IExpressShipment>();
     if (!updated) return fail("conflict", 409, "This booking changed while you were cancelling it. Reload and try again.");
 
-    const r = await issueRefund(updated, full, reason, actor.id, params.provider);
-    await notifyShipmentEvent(String(sh._id), r.ok ? "refunded" : "cancelled");
+    const r = await giveBack(updated, full);
+    await notifyShipmentEvent(String(sh._id), r.ok && !onAccount ? "refunded" : "cancelled");
     return { ok: true, refundedCents: r.ok ? r.amountCents : 0, refundFailed: !r.ok };
   }
 
@@ -151,8 +169,8 @@ export async function cancelShipment(params: {
     ).lean<IExpressShipment>();
     if (!updated) return fail("conflict", 409, "This booking changed while you were cancelling it. Reload and try again.");
 
-    const r = await issueRefund(updated, amount, reason, actor.id, params.provider);
-    await notifyShipmentEvent(String(sh._id), r.ok && amount > 0 ? "refunded" : "cancelled");
+    const r = await giveBack(updated, amount);
+    await notifyShipmentEvent(String(sh._id), r.ok && amount > 0 && !onAccount ? "refunded" : "cancelled");
     return { ok: true, refundedCents: r.ok ? r.amountCents : 0, refundFailed: !r.ok };
   }
 

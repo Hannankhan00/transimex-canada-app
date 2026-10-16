@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ArrowLeft, LayoutDashboard, Lock, LogOut, Package, PackagePlus, Users, X } from "lucide-react";
+import { ArrowLeft, FileText, LayoutDashboard, Lock, LogOut, Package, PackagePlus, Users, X } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import TransimexLogo from "@/components/TransimexLogo";
 
@@ -25,6 +25,8 @@ interface Props {
   isPartner?: boolean;
   /** A login a partner gave to their customer: can check prices and follow shipments, not book. */
   isCustomer?: boolean;
+  /** A business account with invoice billing: shows the invoices page. */
+  hasInvoices?: boolean;
 }
 
 interface NavItem {
@@ -37,7 +39,7 @@ interface NavItem {
   lockedHint?: string;
 }
 
-export default function ExpressSidebar({ mobileOpen, onClose, user, fallbackName, onLogout, accountStatus = null, isPartner = false, isCustomer = false }: Props) {
+export default function ExpressSidebar({ mobileOpen, onClose, user, fallbackName, onLogout, accountStatus = null, isPartner = false, isCustomer = false, hasInvoices = false }: Props) {
   const pathname = usePathname();
   const { t } = useLanguage();
   const e = t.express;
@@ -51,6 +53,7 @@ export default function ExpressSidebar({ mobileOpen, onClose, user, fallbackName
   const shipping: NavItem[] = [
     { href: "/express/book", label: isCustomer ? e.partner.customerQuoteTitle : e.navBook, icon: PackagePlus, match: (p) => p.startsWith("/express/book"), lockedHint: accountStatus && accountStatus !== "active" ? e.lockedHint : undefined },
     { href: "/express/shipments", label: e.navShipments, icon: Package, match: (p) => p.startsWith("/express/shipments") },
+    ...(hasInvoices ? [{ href: "/express/invoices", label: e.invoices.nav, icon: FileText, match: (p: string) => p.startsWith("/express/invoices") }] : []),
   ];
 
   const displayName = user?.name || fallbackName || "";

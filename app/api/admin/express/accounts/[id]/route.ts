@@ -12,6 +12,7 @@ import { checkTransition } from "@/lib/express/transitions";
 import { accountActionSchema, type B2bTermsInput } from "@/lib/express/validation";
 import { sendExpressDecisionEmail, type ExpressDecision } from "@/lib/expressEmail";
 import { formatCad } from "@/lib/shipping/core/money";
+import { creditSummary } from "@/lib/express/credit";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -48,6 +49,7 @@ export async function GET(_req: Request, { params }: Ctx) {
     return NextResponse.json({
       success: true,
       account: toAdminAccountDTO(doc, user),
+      credit: doc.type === "b2b" && doc.billingModes?.includes("invoice") ? await creditSummary(doc) : null,
       discountHistory: history.map((h) => ({
         id: String(h._id),
         oldPct: h.oldPct,

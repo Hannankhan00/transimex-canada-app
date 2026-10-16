@@ -7,7 +7,9 @@
  */
 
 export interface CheckoutParams {
-  shipmentId: string;
+  /** Exactly one of shipmentId (a booking) or invoiceId (a weekly invoice) is set. */
+  shipmentId?: string;
+  invoiceId?: string;
   reference: string;
   amountCents: number;
   description: string;
@@ -53,6 +55,7 @@ export interface PaymentEvent {
   currency?: string;
   paymentStatus?: string;
   shipmentId?: string;
+  invoiceId?: string;
 }
 
 export interface PaymentProvider {

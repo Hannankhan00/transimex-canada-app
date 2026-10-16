@@ -153,7 +153,9 @@ export default function AdminExpressShipmentPage() {
     const p = quote?.pricing;
     const pay = shipment.payment;
     const ful = shipment.fulfilment;
-    const left = Math.max(0, (pay.amountCents ?? 0) - pay.refundedCents);
+    // A booking on the invoice account is credited, not refunded to a card.
+    const onAccount = shipment.billingDetail?.mode === "invoice";
+    const left = onAccount ? Math.max(0, shipment.billingDetail!.chargeCents - shipment.billingDetail!.creditedCents) : Math.max(0, (pay.amountCents ?? 0) - pay.refundedCents);
     const canRetryLabel = shipment.status === "paid" && ful.state !== "unknown" && ful.state !== "pending" && !shipment.trackingNumber;
     const canUpload = shipment.status === "paid" && ful.state !== "pending";
     const canRetryRefund = shipment.status === "cancelled" && pay.refundState === "failed";
@@ -292,7 +294,13 @@ export default function AdminExpressShipmentPage() {
                 {(
                   [
                     [tr("State", "État"), pay.state],
-                    [tr("Provider", "Fournisseur"), pay.provider || "—"],
+                    [tr("Provider", "Fournisseur"), onAccount ? tr("Account credit (weekly invoice)", "Crédit du compte (facture hebdomadaire)") : pay.provider || "—"],
+                    ...(onAccount
+                      ? ([
+                          [tr("Credited back", "Crédité"), shipment.billingDetail!.creditedCents > 0 ? m(shipment.billingDetail!.creditedCents) : "—"],
+                          [tr("Invoice", "Facture"), shipment.billingDetail!.invoiceId ? "yes" : tr("not yet invoiced", "pas encore facturé")],
+                        ] as [string, string][])
+                      : []),
                     [tr("Amount due", "Montant dû"), m(shipment.totalCents)],
                     [tr("Paid", "Payé"), pay.paidAt ? `${m(pay.amountCents ?? 0)} · ${formatDate(pay.paidAt, language)}` : "—"],
                     [tr("Payment reference", "Référence du paiement"), pay.paymentIntentId || "—"],
@@ -390,8 +398,14 @@ export default function AdminExpressShipmentPage() {
                   <div className="space-y-2">
                     <p className="text-xs text-slate-600">
                       {shipment.status === "awaiting_payment" && tr("Nothing was paid, so nothing is refunded.", "Rien n'a été payé; il n'y a donc rien à rembourser.")}
-                      {shipment.status === "paid" && tr(`The full payment (${m(left)}) will be refunded to the client's card.`, `Le paiement complet (${m(left)}) sera remboursé sur la carte du client.`)}
-                      {shipment.status === "label_ready" &&
+                      {shipment.status === "paid" && onAccount && tr(`The full charge (${m(left)}) will be credited to the account.`, `La totalité des frais (${m(left)}) sera créditée au compte.`)}
+                      {shipment.status === "paid" && !onAccount && tr(`The full payment (${m(left)}) will be refunded to the client's card.`, `Le paiement complet (${m(left)}) sera remboursé sur la carte du client.`)}
+                      {shipment.status === "label_ready" && onAccount &&
+                        tr(
+                          "A label already exists. Choose how much to credit back to the account (on the next invoice if this one is already invoiced). The DHL shipment is NOT cancelled automatically: handle that with DHL.",
+                          "Une étiquette existe déjà. Choisissez le montant à créditer au compte (sur la prochaine facture si celle-ci est déjà facturée). L'envoi DHL n'est PAS annulé automatiquement : réglez cela avec DHL."
+                        )}
+                      {shipment.status === "label_ready" && !onAccount &&
                         tr(
                           "A label already exists. Choose how much to refund. The DHL shipment is NOT cancelled automatically: handle that with DHL.",
                           "Une étiquette existe déjà. Choisissez le montant à rembourser. L'envoi DHL n'est PAS annulé automatiquement : réglez cela avec DHL."
@@ -402,7 +416,7 @@ export default function AdminExpressShipmentPage() {
                     {shipment.status === "label_ready" && (
                       <label className="block space-y-1">
                         <span className="text-xs font-bold text-slate-700">
-                          {tr("Refund amount (CAD)", "Montant à rembourser (CAD)")} · {tr("up to", "jusqu'à")} {m(left)}
+                          {onAccount ? tr("Credit amount (CAD)", "Montant à créditer (CAD)") : tr("Refund amount (CAD)", "Montant à rembourser (CAD)")} · {tr("up to", "jusqu'à")} {m(left)}
                         </span>
                         <input className={adminInput} value={refund} onChange={(e) => setRefund(e.target.value)} inputMode="decimal" />
                       </label>
