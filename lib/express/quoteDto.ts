@@ -1,5 +1,6 @@
 import type { PriceBreakdown } from "./pricing";
 import type { IExpressQuote } from "@/models/ExpressQuote";
+import { contentTypeOf } from "./contentType";
 
 type QuoteDoc = Omit<Partial<IExpressQuote>, "_id" | "pricing"> & { _id: unknown; pricing: PriceBreakdown };
 
@@ -35,6 +36,7 @@ export function toClientQuoteDTO(doc: QuoteDoc, now: Date = new Date()) {
       postalCode: doc.request?.destination.postalCode || "",
     },
     pickupRequested: Boolean(doc.request?.pickupRequested),
+    contentType: contentTypeOf(doc.request?.contentType),
     price: {
       publicBaseFreightCents: p.publicList.baseFreightCents,
       discountPct: p.clientDiscountPct,

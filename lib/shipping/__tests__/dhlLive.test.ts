@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { DhlConfig } from "@/lib/express/config";
 import { DhlHttpClient } from "../carriers/dhl/client";
-import { DhlApiAdapter, mapTrackingStatus, splitBreakdown } from "../carriers/dhl/live";
+import { DhlApiAdapter, isVisibleTrackingEvent, mapTrackingStatus, splitBreakdown } from "../carriers/dhl/live";
 import type { RateRequest } from "../core/types";
 
 const config: DhlConfig = { mode: "sandbox", baseUrl: "https://dhl.test", apiKey: "k", apiSecret: "s", accountNumber: "123456789" };
@@ -85,6 +85,27 @@ describe("DHL rate mapping", () => {
     expect(rate.publicList).toBeUndefined();
   });
 
+  it("follows DHL's sample: first line has no serviceCode, unpriced option lines are ignored", () => {
+    const split = splitBreakdown("P", [
+      { name: "EXPRESS WORLDWIDE", price: 130 },
+      { name: "FUEL SURCHARGE", serviceCode: "FF", price: 27.68 },
+      { name: "SATURDAY DELIVERY", serviceCode: "AA" } as any,
+      { name: "IMPORT BILLING ACCOUNT", serviceCode: "30" } as any,
+    ]);
+    expect(split.baseFreightCents).toBe(13000);
+    expect(split.surcharges).toEqual([{ code: "FF", name: "FUEL SURCHARGE", amountCents: 2768 }]);
+  });
+
+  it("sends the schema's shape: accounts array, no top-level accountNumber, x-version header", async () => {
+    const fetchImpl = vi.fn(async () => json({ products: [] }));
+    await adapterWith(fetchImpl).getRates(rateRequest);
+    const [, init] = fetchImpl.mock.calls[0] as unknown as [URL, RequestInit];
+    const body = JSON.parse(String(init.body));
+    expect(body.accounts).toEqual([{ typeCode: "shipper", number: "123456789" }]);
+    expect(body.accountNumber).toBeUndefined();
+    expect((init.headers as Record<string, string>)["x-version"]).toBe("3.3.4");
+  });
+
   it("refuses a non-CAD billing currency rather than converting", async () => {
     await expect(adapterWith(vi.fn(async () => json(ratesBody("USD", 10, 10)))).getRates(rateRequest)).rejects.toMatchObject({
       code: "config",
@@ -151,5 +172,40 @@ describe("DHL tracking mapping", () => {
     expect(mapTrackingStatus("WC")).toBe("out_for_delivery");
     expect(mapTrackingStatus("PU")).toBe("in_transit");
     expect(mapTrackingStatus("MS")).toBe("exception");
+  });
+
+  it("a normal hub scan (PL, processed at location) is movement, never 'awaiting pickup'", () => {
+    expect(mapTrackingStatus("PL")).toBe("in_transit");
+    expect(mapTrackingStatus("AF")).toBe("in_transit");
+    expect(mapTrackingStatus("DF")).toBe("in_transit");
+    expect(mapTrackingStatus("SD")).toBe("pre_transit");
+  });
+
+  it("delivered damaged still counts as delivered; refusals, holds and delays are exceptions", () => {
+    expect(mapTrackingStatus("DD")).toBe("delivered");
+    for (const code of ["RD", "NH", "BA", "HP", "CD", "UD", "OH", "ND", "MD", "CM"]) expect(mapTrackingStatus(code)).toBe("exception");
+    expect(mapTrackingStatus("RT")).toBe("returned");
+  });
+
+  it("internal scans DHL marks as not visible are dropped from the timeline", () => {
+    for (const code of ["LV", "UV", "RW", "MF", "CI", "DP"]) expect(isVisibleTrackingEvent(code)).toBe(false);
+    for (const code of ["PU", "PL", "OK", "WC", "RD"]) expect(isVisibleTrackingEvent(code)).toBe(true);
+  });
+
+  it("the adapter leaves internal events out of the result", async () => {
+    const body = {
+      shipments: [
+        {
+          events: [
+            { date: "2026-10-09", time: "10:00:00", typeCode: "PU", description: "Shipment picked up" },
+            { date: "2026-10-09", time: "11:00:00", typeCode: "LV", description: "Load vehicle" },
+            { date: "2026-10-09", time: "12:00:00", typeCode: "PL", description: "Processed at Montreal" },
+          ],
+        },
+      ],
+    };
+    const result = await adapterWith(vi.fn(async () => json(body))).track("123");
+    expect(result.events.map((e) => e.description)).toEqual(["Processed at Montreal", "Shipment picked up"]);
+    expect(result.status).toBe("in_transit");
   });
 });

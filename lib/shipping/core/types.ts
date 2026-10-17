@@ -67,6 +67,9 @@ export interface CustomsItem {
 
 export type DutiesPayer = "recipient" | "sender";
 
+/** Paper documents with no commercial value, or goods. Documents need no customs paperwork. */
+export type ContentType = "documents" | "goods";
+
 // --- Rates -----------------------------------------------------------------
 
 export interface RateRequest {
@@ -79,6 +82,8 @@ export interface RateRequest {
   plannedShipDate: string;
   /** True when the client wants DHL to collect the parcel, so the carrier can quote its pickup fee. */
   pickupRequested?: boolean;
+  /** Defaults to goods. Documents are quoted as a non-customs shipment on the carrier's document product. */
+  contentType?: ContentType;
 }
 
 export interface RateOption {
@@ -129,6 +134,8 @@ export interface ShipmentRequest {
   dutiesPayer: DutiesPayer;
   /** True when the carrier should collect from the shipper's address. */
   pickupRequested: boolean;
+  /** Defaults to goods. For documents `items` is empty and no customs declaration is sent. */
+  contentType?: ContentType;
 }
 
 export interface ShipmentLabel {
@@ -161,6 +168,7 @@ export interface PickupRequest {
   closeAt: string;
   parcels: Parcel[];
   instructions?: string;
+  contentType?: ContentType;
 }
 
 export interface PickupResult {

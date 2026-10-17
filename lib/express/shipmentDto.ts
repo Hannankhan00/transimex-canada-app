@@ -1,5 +1,6 @@
 import type { IExpressShipment } from "@/models/ExpressShipment";
 import type { AccountUserInfo } from "./accountDto";
+import { contentTypeOf } from "./contentType";
 
 type ShipmentDoc = Omit<Partial<IExpressShipment>, "_id"> & { _id: unknown };
 
@@ -38,6 +39,7 @@ export function toClientShipmentDTO(doc: ShipmentDoc) {
     createdAt: iso(doc.createdAt),
     plannedShipDate: doc.plannedShipDate || "",
     quoteId: doc.quoteId || "",
+    contentType: contentTypeOf(doc.contentType),
     shipper: address(doc.shipper),
     recipient: address(doc.recipient),
     parcels: (doc.parcels || []).map((p) => ({ weightKg: p.weightKg, lengthCm: p.lengthCm, widthCm: p.widthCm, heightCm: p.heightCm })),
@@ -146,6 +148,7 @@ export function toAdminShipmentDTO(doc: ShipmentDoc, user?: AccountUserInfo | nu
     userId: doc.userId || "",
     accountId: doc.accountId || "",
     accountType: doc.accountType!,
+    documentsDeclaredAt: iso(doc.documentsDeclaredAt),
     user: { name: user?.name || "", email: user?.email || "", companyName: user?.companyName || "" },
     payment: {
       provider: p?.provider || "",

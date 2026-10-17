@@ -78,7 +78,6 @@ describe("booking validation", () => {
     expect(bookingSchema.safeParse({ ...booking, acceptTerms: false }).success).toBe(false);
     expect(bookingSchema.safeParse({ ...booking, idempotencyKey: "short" }).success).toBe(false);
     expect(bookingSchema.safeParse({ ...booking, idempotencyKey: "has spaces and symbols !!!!!!!!!" }).success).toBe(false);
-    expect(bookingSchema.safeParse({ ...booking, items: [] }).success).toBe(false);
     expect(bookingSchema.safeParse({ ...booking, shipper: { ...booking.shipper, email: "" } }).success).toBe(false);
     expect(bookingSchema.safeParse({ ...booking, recipient: { ...booking.recipient, phone: "abc" } }).success).toBe(false);
     expect(bookingSchema.safeParse({ ...booking, recipient: { ...booking.recipient, line1: "" } }).success).toBe(false);

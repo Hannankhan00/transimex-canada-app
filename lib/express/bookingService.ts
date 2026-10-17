@@ -1,6 +1,7 @@
 import { randomBytes } from "node:crypto";
 import type { BookingInput } from "./shipmentSchemas";
 import type { IExpressQuote } from "@/models/ExpressQuote";
+import { contentTypeOf } from "./contentType";
 
 export interface BookingIssue {
   path: string;
@@ -39,6 +40,25 @@ export function checkBookingAgainstQuote(
   }
   if (normalizePostal(input.shipper.postalCode) !== normalizePostal(q.origin.postalCode)) {
     issues.push({ path: "shipper.postalCode", message: "The pickup postal code must match the quote." });
+  }
+
+  if (contentTypeOf(q.contentType) === "documents") {
+    // Documents: no customs items, a plain description of what the paper is, and the client's confirmation.
+    if (input.items.length > 0) {
+      issues.push({ path: "items", message: "A documents shipment does not list customs items. Choose Goods if you are sending items." });
+    }
+    if ((input.contentDescription ?? "").trim().length < 3) {
+      issues.push({ path: "contentDescription", message: "Describe the documents, for example \"Employment contract\"." });
+    }
+    if (input.documentsDeclaration !== true) {
+      issues.push({ path: "documentsDeclaration", message: "Confirm that the shipment contains only documents with no commercial value." });
+    }
+    return issues;
+  }
+
+  if (input.items.length === 0) {
+    issues.push({ path: "items", message: "Add at least one item." });
+    return issues;
   }
 
   const total = itemsTotalCents(input.items);

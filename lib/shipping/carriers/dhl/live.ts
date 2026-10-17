@@ -120,35 +120,70 @@ function contactInformation(a: Address) {
 }
 
 function exportReasonType(items: CustomsItem[]): string {
-  // VERIFY: DHL's accepted exportReasonType values. Free text goes in exportReason.
-  const reason = items[0]?.exportReason;
-  if (reason === "return") return "return";
-  if (reason === "repair") return "temporary";
-  return "permanent";
+  // Values from DHL's OpenAPI enum (v3.3.4). Free text goes in exportReason.
+  switch (items[0]?.exportReason) {
+    case "return":
+      return "return";
+    case "repair":
+      return "temporary";
+    case "gift":
+      return "gift";
+    case "sample":
+      return "sample";
+    case "personal_effects":
+      return "personal_belongings_or_personal_use";
+    default:
+      return "commercial_purpose_or_sale";
+  }
 }
 
-/** Maps a DHL event type code to our neutral status. VERIFY the full code list. */
+/** The value and export declaration for a goods shipment. Documents send neither. */
+function customsContent(request: ShipmentRequest) {
+  return {
+    declaredValue: fromCents(request.declaredValueCents),
+    declaredValueCurrency: "CAD",
+    exportDeclaration: {
+      lineItems: request.items.map((item, i) => ({
+        number: i + 1,
+        description: item.description,
+        price: fromCents(item.unitValueCents),
+        quantity: { value: item.quantity, unitOfMeasurement: "PCS" },
+        commodityCodes: [{ typeCode: "outbound", value: item.hsCode }],
+        exportReasonType: exportReasonType(request.items),
+        manufacturerCountry: item.countryOfOrigin.toUpperCase(),
+        weight: { netValue: item.netWeightKg, grossValue: item.netWeightKg },
+      })),
+      invoice: { number: request.reference, date: request.plannedShipDate },
+      exportReason: request.items[0]?.exportReason ?? "sale",
+      exportReasonType: exportReasonType(request.items),
+    },
+  };
+}
+
+/**
+ * DHL's own list (MyDHL API reference data, trackingEventCode sheet, v3.3.4)
+ * marks some events as not visible to customers (internal scans such as
+ * "Load vehicle" or "Weigh & dimension"). They are dropped from the timeline.
+ */
+const HIDDEN_EVENT_CODES = new Set(["BL", "CI", "CU", "DG", "DI", "DM", "DP", "ES", "HI", "HN", "HO", "IA", "LV", "MF", "NA", "PW", "RW", "SI", "ST", "TD", "TI", "TT", "UV"]);
+
+/** Events that happen before DHL has the parcel. */
+const PRE_TRANSIT_CODES = new Set(["SD", "EM"]);
+
+/** Events that mean something needs attention: a failed delivery, a hold, a refusal, a clearance delay. */
+const EXCEPTION_CODES = new Set(["BA", "CA", "CC", "CD", "CM", "DS", "HP", "MC", "MD", "MS", "ND", "NH", "OH", "PD", "RD", "SS", "TP", "UD"]);
+
+export const isVisibleTrackingEvent = (typeCode: string) => !HIDDEN_EVENT_CODES.has(typeCode);
+
+/** Maps a DHL event type code to our neutral status, using DHL's published event codes. Anything else is plain movement. */
 export function mapTrackingStatus(typeCode: string): TrackingStatus {
-  switch (typeCode) {
-    case "OK":
-      return "delivered";
-    case "WC":
-      return "out_for_delivery";
-    case "RT":
-      return "returned";
-    case "RD":
-    case "UD":
-    case "MS":
-    case "HO":
-    case "CA":
-    case "OH":
-    case "NH":
-      return "exception";
-    case "PL":
-      return "pre_transit";
-    default:
-      return "in_transit";
-  }
+  if (typeCode === "OK" || typeCode === "DD") return "delivered"; // DD = delivered damaged, still delivered
+  if (typeCode === "WC") return "out_for_delivery";
+  if (typeCode === "RT") return "returned";
+  if (EXCEPTION_CODES.has(typeCode)) return "exception";
+  if (PRE_TRANSIT_CODES.has(typeCode)) return "pre_transit";
+  // PU, SA, AF, DF, PL ("processed at location", a normal hub scan), AR, IC, CR, SM, TR and the rest.
+  return "in_transit";
 }
 
 /**
@@ -161,6 +196,9 @@ export function splitBreakdown(
   productCode: string,
   lines: DhlBreakdownLine[]
 ): { baseFreightCents: number; surcharges: Surcharge[] } {
+  // DHL's sample puts the product line first with no serviceCode, and lists optional
+  // services with no price at all. Unpriced lines are not charges, so drop them first.
+  lines = lines.filter((l) => typeof l.price === "number");
   const baseIndex = Math.max(
     0,
     lines.findIndex((l) => l.serviceCode === productCode)
@@ -210,13 +248,13 @@ export class DhlApiAdapter implements CarrierAdapter {
               countryCode: request.destination.countryCode.toUpperCase(),
             },
           },
-          accountNumber: this.config.accountNumber,
+          // The schema has no top-level accountNumber and rejects unknown keys.
+          accounts: [{ typeCode: "shipper", number: this.config.accountNumber }],
           plannedShippingDateAndTime: dhlDateTime(request.plannedShipDate, "10:00:00"),
           unitOfMeasurement: "metric",
           isCustomsDeclarable: request.isCustomsDeclarable,
-          monetaryAmount: [
-            { typeCode: "declaredValue", value: fromCents(request.declaredValueCents), currency: "CAD" },
-          ],
+          // Documents have no commercial value to declare.
+          ...(request.contentType === "documents" ? {} : { monetaryAmount: [{ typeCode: "declaredValue", value: fromCents(request.declaredValueCents), currency: "CAD" }] }),
           requestAllValueAddedServices: false,
           returnStandardProductsOnly: false,
           nextBusinessDay: false,
@@ -304,7 +342,9 @@ export class DhlApiAdapter implements CarrierAdapter {
   }
 
   async createShipment(request: ShipmentRequest): Promise<ShipmentResult> {
-    const senderPays = request.dutiesPayer === "sender";
+    const documents = request.contentType === "documents";
+    // Documents carry no duties, so there is nothing for the sender to pay.
+    const senderPays = !documents && request.dutiesPayer === "sender";
     const response = await this.http.request<DhlShipmentResponse>({
       method: "POST",
       path: "/shipments",
@@ -324,27 +364,13 @@ export class DhlApiAdapter implements CarrierAdapter {
         },
         content: {
           packages: packagesPayload(request.parcels).map((p) => ({ ...p, customerReferences: [{ value: request.reference, typeCode: "CU" }] })),
-          isCustomsDeclarable: true,
-          declaredValue: fromCents(request.declaredValueCents),
-          declaredValueCurrency: "CAD",
-          description: request.contentDescription,
+          isCustomsDeclarable: !documents,
+          // The schema requires a description (max 70 characters), an incoterm and the unit for every shipment.
+          description: request.contentDescription.slice(0, 70),
           unitOfMeasurement: "metric",
           incoterm: senderPays ? "DDP" : "DAP", // VERIFY
-          exportDeclaration: {
-            lineItems: request.items.map((item, i) => ({
-              number: i + 1,
-              description: item.description,
-              price: fromCents(item.unitValueCents),
-              quantity: { value: item.quantity, unitOfMeasurement: "PCS" },
-              commodityCodes: [{ typeCode: "outbound", value: item.hsCode }],
-              exportReasonType: exportReasonType(request.items),
-              manufacturerCountry: item.countryOfOrigin.toUpperCase(),
-              weight: { netValue: item.netWeightKg, grossValue: item.netWeightKg },
-            })),
-            invoice: { number: request.reference, date: request.plannedShipDate },
-            exportReason: request.items[0]?.exportReason ?? "sale",
-            exportReasonType: exportReasonType(request.items),
-          },
+          // A document shipment sends no value and no export declaration.
+          ...(documents ? {} : customsContent(request)),
         },
         // VERIFY: service code for "duties and taxes paid".
         ...(senderPays ? { valueAddedServices: [{ serviceCode: "DD" }] } : {}),
@@ -397,9 +423,9 @@ export class DhlApiAdapter implements CarrierAdapter {
         },
         shipmentDetails: [
           {
-            productCode: "P",
-            accountNumber: this.config.accountNumber,
-            isCustomsDeclarable: true,
+            productCode: request.contentType === "documents" ? "D" : "P",
+            accounts: [{ typeCode: "shipper", number: this.config.accountNumber }],
+            isCustomsDeclarable: request.contentType !== "documents",
             unitOfMeasurement: "metric",
             packages: packagesPayload(request.parcels),
           },
@@ -420,7 +446,7 @@ export class DhlApiAdapter implements CarrierAdapter {
       path: `/shipments/${encodeURIComponent(trackingNumber)}/tracking`,
     });
 
-    const raw = response.shipments?.[0]?.events ?? [];
+    const raw = (response.shipments?.[0]?.events ?? []).filter((e) => isVisibleTrackingEvent(e.typeCode));
     const events: TrackingEvent[] = raw
       .map((e) => ({
         timestamp: new Date(`${e.date}T${e.time}`).toISOString(),

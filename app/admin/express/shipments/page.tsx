@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { AlertTriangle, Package, Search } from "lucide-react";
 import PermissionGuard from "@/components/admin/PermissionGuard";
-import { ExpressAdminTabs, ShipmentStatusBadge, adminInput, formatDate, useTr } from "@/components/admin/express/expressAdminShared";
+import { ContentTypeBadge, ExpressAdminTabs, ShipmentStatusBadge, adminInput, formatDate, useTr } from "@/components/admin/express/expressAdminShared";
 import { formatCad } from "@/lib/shipping/core/money";
 import type { toAdminShipmentDTO } from "@/lib/express/shipmentDto";
 
@@ -114,6 +114,7 @@ export default function AdminExpressShipmentsPage() {
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="font-mono font-bold text-sm text-[#0B2545]">{s.reference}</span>
                         <ShipmentStatusBadge status={s.status} />
+                        <ContentTypeBadge type={s.contentType} />
                         <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[10px] font-bold uppercase">{s.accountType}</span>
                         {s.attention.length > 0 && (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-50 border border-red-200 text-red-700 text-[10px] font-bold">

@@ -7,6 +7,7 @@ import ExpressShipment from "@/models/ExpressShipment";
 import { notifyUser } from "@/lib/notifications";
 import { requireExpressClient, validationError } from "@/lib/express/access";
 import { bookingSchema } from "@/lib/express/shipmentSchemas";
+import { contentTypeOf } from "@/lib/express/contentType";
 import { checkBookingAgainstQuote, defaultContentDescription, generateReference } from "@/lib/express/bookingService";
 import { toClientQuoteDTO } from "@/lib/express/quoteDto";
 import { toClientShipmentDTO, toCustomerShipmentDTO } from "@/lib/express/shipmentDto";
@@ -141,6 +142,8 @@ export async function POST(req: Request) {
     }
 
     const now = new Date();
+    const contentType = contentTypeOf(quote.request.contentType);
+    const documents = contentType === "documents";
     const base = {
       userId,
       accountId: String(account._id),
@@ -153,12 +156,15 @@ export async function POST(req: Request) {
       shipper: { ...input.shipper, countryCode: "CA" },
       recipient: input.recipient,
       parcels: quote.request.parcels,
-      items: input.items,
-      declaredValueCents: quote.request.declaredValueCents,
-      contentDescription: input.contentDescription || defaultContentDescription(input.items),
+      contentType,
+      ...(documents ? { documentsDeclaredAt: now } : {}),
+      items: documents ? [] : input.items,
+      declaredValueCents: documents ? 0 : quote.request.declaredValueCents,
+      contentDescription: documents ? (input.contentDescription ?? "").trim() : input.contentDescription || defaultContentDescription(input.items),
       plannedShipDate: quote.request.plannedShipDate,
       pickupRequested: quote.request.pickupRequested,
-      dutiesPayer: input.dutiesPayer,
+      // Documents carry no duties.
+      dutiesPayer: documents ? ("recipient" as const) : input.dutiesPayer,
       totalCents: quote.pricing.client.totalCents,
       ...(method === "invoice" ? { billing: { mode: "invoice" as const, chargeCents: quote.pricing.client.totalCents, creditedCents: 0 } } : {}),
       currency: "CAD" as const,

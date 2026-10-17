@@ -122,6 +122,11 @@ export interface IExpressShipment extends Document {
   shipper: Address;
   recipient: Address;
   parcels: Parcel[];
+  /** Documents (paper, no commercial value) or goods. Records from before this field are goods. */
+  contentType?: "documents" | "goods";
+  /** When the client confirmed the shipment holds only documents. Documents only. */
+  documentsDeclaredAt?: Date;
+  /** Empty for documents. */
   items: CustomsItem[];
   declaredValueCents: number;
   contentDescription: string;
@@ -317,7 +322,9 @@ const ExpressShipmentSchema = new Schema<IExpressShipment>(
     shipper: { type: AddressSchema, required: true },
     recipient: { type: AddressSchema, required: true },
     parcels: { type: [ParcelSchema], required: true },
-    items: { type: [ItemSchema], required: true },
+    contentType: { type: String, enum: ["documents", "goods"], default: "goods" },
+    documentsDeclaredAt: { type: Date },
+    items: { type: [ItemSchema], default: [] },
     declaredValueCents: { type: Number, required: true, min: 0 },
     contentDescription: { type: String, required: true, maxlength: 200 },
     plannedShipDate: { type: String, required: true },

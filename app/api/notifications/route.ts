@@ -5,7 +5,17 @@ import Shipment from "@/models/Shipment";
 import { getCurrentUser } from "@/lib/session";
 import { timeAgo, formatDateTimeLabel } from "@/lib/formatDate";
 
-export async function GET() {
+/**
+ * Express alerts are the ones that link into /express. The client portal and the Express
+ * area each show only their own: `?scope=express` returns Express, anything else excludes it.
+ */
+const EXPRESS_LINK = /^\/express(\/|$)/;
+function scopeFilter(request: Request) {
+  const express = new URL(request.url).searchParams.get("scope") === "express";
+  return express ? { link: { $regex: EXPRESS_LINK } } : { link: { $not: EXPRESS_LINK } };
+}
+
+export async function GET(request: Request) {
   const currentUser = await getCurrentUser();
   if (!currentUser) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
@@ -13,7 +23,7 @@ export async function GET() {
 
   try {
     await connectDB();
-    const notifications = await Notification.find({ userId: currentUser.userId })
+    const notifications = await Notification.find({ userId: currentUser.userId, ...scopeFilter(request) })
       .sort({ createdAt: -1 })
       .lean();
 
@@ -59,7 +69,7 @@ export async function GET() {
   }
 }
 
-export async function PATCH() {
+export async function PATCH(request: Request) {
   const currentUser = await getCurrentUser();
   if (!currentUser) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
@@ -67,7 +77,7 @@ export async function PATCH() {
 
   try {
     await connectDB();
-    await Notification.updateMany({ userId: currentUser.userId, read: false }, { $set: { read: true } });
+    await Notification.updateMany({ userId: currentUser.userId, read: false, ...scopeFilter(request) }, { $set: { read: true } });
     return NextResponse.json({ success: true });
   } catch (error: any) {
     console.error("Error marking all notifications read:", error);

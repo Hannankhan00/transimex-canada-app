@@ -161,6 +161,12 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
   };
 
   const [step, setStep] = useState(1);
+  // Documents (paper, no commercial value) or goods. Documents skip the customs items.
+  const [contentType, setContentType] = useState<"documents" | "goods">("goods");
+  const [docDescription, setDocDescription] = useState("");
+  const [docDeclared, setDocDeclared] = useState(false);
+  const [docMaxKg, setDocMaxKg] = useState(2);
+  const documents = contentType === "documents";
   const [shipper, setShipper] = useState<AddressForm>(emptyAddress("CA"));
   const [recipient, setRecipient] = useState<AddressForm>(emptyAddress("CM"));
   const [parcels, setParcels] = useState<ParcelForm[]>([emptyParcel()]);
@@ -188,6 +194,17 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
   const [accepted, setAccepted] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [serverIssues, setServerIssues] = useState<string[]>([]);
+
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/express/status")
+      .then((r) => r.json())
+      .then((d) => alive && typeof d.documentMaxWeightKg === "number" && setDocMaxKg(d.documentMaxWeightKg))
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (!canInvoice) return;
@@ -252,13 +269,14 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
   useEffect(() => {
     setError(null);
     setServerIssues([]);
-  }, [shipper, recipient, parcels, items, pickup, duties]);
+  }, [shipper, recipient, parcels, items, pickup, duties, contentType, docDescription, docDeclared]);
 
   const inputsKey = JSON.stringify({
     o: [shipper.postalCode, shipper.city],
     d: [recipient.countryCode, recipient.postalCode, recipient.city],
     p: parcels,
-    v: itemsTotalCents,
+    t: contentType,
+    v: documents ? 0 : itemsTotalCents,
     u: pickup,
     c: forCustomer,
   });
@@ -279,7 +297,13 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
         const w = num(p.weight), l = num(p.length), wd = num(p.width), h = num(p.height);
         return w >= 0.1 && w <= 70 && [l, wd, h].every((d) => d >= 1 && d <= 120);
       });
-      return ok ? null : b.required;
+      if (!ok) return b.required;
+      if (documents && parcelWeight > docMaxKg + 0.001) return b.docsTooHeavy.replace("{kg}", String(docMaxKg));
+      return null;
+    }
+    if (s === 3 && documents) {
+      if (docDescription.trim().length < 3) return b.required;
+      return docDeclared ? null : b.docsDeclarationNeeded;
     }
     if (s === 3) {
       const ok = items.every(
@@ -317,14 +341,17 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
           origin: { postalCode: shipper.postalCode.trim(), city: shipper.city.trim() },
           destination: { countryCode: recipient.countryCode, postalCode: recipient.postalCode.trim(), city: recipient.city.trim() },
           parcels: parcels.map((p) => ({ weightKg: num(p.weight), lengthCm: num(p.length), widthCm: num(p.width), heightCm: num(p.height) })),
-          declaredValueCents: itemsTotalCents,
-          isCustomsDeclarable: true,
+          contentType,
+          declaredValueCents: documents ? 0 : itemsTotalCents,
+          isCustomsDeclarable: !documents,
           pickupRequested: pickup,
           ...(forCustomer ? { partnerCustomerId: forCustomer } : {}),
         }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
+        if (data.code === "documents_unavailable") throw new Error(b.docsUnavailable);
+        if (data.code === "documents_too_heavy") throw new Error(b.docsTooHeavy.replace("{kg}", String(docMaxKg)));
         if (data.code === "account_pending" || data.code?.startsWith("account_")) throw new Error(b.accountBlocked);
         throw new Error(data.error || b.priceError);
       }
@@ -337,7 +364,7 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
     } finally {
       setQuoteLoading(false);
     }
-  }, [shipper, recipient, parcels, itemsTotalCents, pickup, forCustomer, inputsKey, b]);
+  }, [shipper, recipient, parcels, itemsTotalCents, pickup, forCustomer, inputsKey, b, contentType, documents, docMaxKg]);
 
   const loadTerms = useCallback(async () => {
     try {
@@ -384,16 +411,19 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
           idempotencyKey: idempotencyKey.current,
           shipper: addr(shipper, false),
           recipient: addr(recipient, true),
-          items: items.map((i) => ({
-            description: i.description.trim(),
-            hsCode: i.hsCode,
-            quantity: num(i.quantity),
-            unitValueCents: cents(i.unitValue),
-            countryOfOrigin: i.country,
-            netWeightKg: num(i.netWeight),
-            exportReason: i.reason,
-          })),
-          dutiesPayer: duties,
+          items: documents
+            ? []
+            : items.map((i) => ({
+                description: i.description.trim(),
+                hsCode: i.hsCode,
+                quantity: num(i.quantity),
+                unitValueCents: cents(i.unitValue),
+                countryOfOrigin: i.country,
+                netWeightKg: num(i.netWeight),
+                exportReason: i.reason,
+              })),
+          ...(documents ? { contentDescription: docDescription.trim(), documentsDeclaration: true } : {}),
+          dutiesPayer: documents ? "recipient" : duties,
           acceptTerms: true,
           termsVersion: terms.version,
           ...(canInvoice ? { paymentMethod: payMethod } : {}),
@@ -452,39 +482,64 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
     }
   };
 
-  const stepNames = [b.steps.addresses, b.steps.parcels, b.steps.customs, b.steps.options, b.steps.review];
+  const stepNames = [b.steps.addresses, b.steps.parcels, documents ? b.stepContents : b.steps.customs, b.steps.options, b.steps.review];
   const m = (c: number) => formatCad(c, language);
   const termsText = terms?.content[language];
 
   return (
-    <div className="max-w-3xl space-y-6">
+    <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-extrabold text-[#0B2545]">{b.title}</h1>
         <p className="mt-1 text-sm text-slate-600">{b.subtitle}</p>
       </div>
 
-      <ol className="flex flex-wrap gap-2" aria-label="Progress">
+      <ol className="flex items-center rounded-2xl border border-slate-200 bg-white p-3 shadow-xs sm:p-4" aria-label="Progress">
         {stepNames.map((name, i) => {
           const n = i + 1;
           const done = n < step;
           const current = n === step;
           return (
-            <li
-              key={name}
-              aria-current={current ? "step" : undefined}
-              className={`flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-bold ${
-                current ? "border-[#0B2545] bg-[#0B2545] text-white" : done ? "border-emerald-300 bg-emerald-50 text-emerald-700" : "border-slate-200 bg-white text-slate-500"
-              }`}
-            >
-              <span className="grid place-items-center h-4 w-4 rounded-full bg-white/20 text-[10px]">{done ? <Check className="w-3 h-3" /> : n}</span>
-              {name}
+            <li key={name} aria-current={current ? "step" : undefined} className={`flex items-center ${i < stepNames.length - 1 ? "flex-1" : ""}`}>
+              <span className="flex items-center gap-2.5">
+                <span
+                  className={`grid h-8 w-8 flex-shrink-0 place-items-center rounded-full text-xs font-bold ${
+                    current ? "bg-[#0B2545] text-white ring-4 ring-[#0B2545]/10" : done ? "bg-emerald-500 text-white" : "bg-slate-100 text-slate-500"
+                  }`}
+                >
+                  {done ? <Check className="h-4 w-4" /> : n}
+                </span>
+                <span className={`text-xs font-bold ${current ? "inline text-[#0B2545]" : "hidden md:inline"} ${done ? "text-emerald-700" : current ? "" : "text-slate-500"}`}>{name}</span>
+              </span>
+              {i < stepNames.length - 1 && <span className={`mx-3 h-0.5 flex-1 rounded ${done ? "bg-emerald-400" : "bg-slate-200"}`} aria-hidden="true" />}
             </li>
           );
         })}
       </ol>
 
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+      <div className="min-w-0 space-y-6">
       {step === 1 && (
         <div className="space-y-5">
+          <section className="bg-white border border-slate-200 rounded-2xl p-5 sm:p-6 space-y-3">
+            <div>
+              <h2 className="font-bold text-[#0B2545]">{b.typeTitle}</h2>
+              <p className="text-xs text-slate-500 mt-1">{b.typeHint}</p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2" role="radiogroup" aria-label={b.typeTitle}>
+              {([
+                ["documents", b.typeDocuments, b.typeDocumentsDesc],
+                ["goods", b.typeGoods, b.typeGoodsDesc],
+              ] as const).map(([value, title, desc]) => (
+                <label key={value} className={`flex gap-3 rounded-xl border p-4 cursor-pointer ${contentType === value ? "border-[#0B2545] bg-[#0B2545]/5" : "border-slate-200"}`}>
+                  <input type="radio" name="contentType" checked={contentType === value} onChange={() => setContentType(value)} className="mt-1 accent-[#0B2545]" />
+                  <span>
+                    <span className="block text-sm font-bold text-slate-900">{title}</span>
+                    <span className="block text-xs text-slate-600 mt-0.5">{desc}</span>
+                  </span>
+                </label>
+              ))}
+            </div>
+          </section>
           {account.partner && customers.length > 0 && (
             <section className="bg-white border border-slate-200 rounded-2xl p-5 sm:p-6 space-y-2">
               <h2 className="font-bold text-[#0B2545]">{t.express.partner.bookingFor}</h2>
@@ -500,6 +555,7 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
               <p className="text-xs text-slate-500">{t.express.partner.bookingForHelp}</p>
             </section>
           )}
+          <div className="grid items-start gap-5 xl:grid-cols-2">
           <section className="bg-white border border-slate-200 rounded-2xl p-5 sm:p-6 space-y-4">
             <h2 className="font-bold text-[#0B2545]">{b.sender}</h2>
             <AddressFields value={shipper} onChange={setShipper} withCountry={false} emailRequired labels={addressLabels} countryLabel={countryLabel} />
@@ -508,6 +564,7 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
             <h2 className="font-bold text-[#0B2545]">{b.recipient}</h2>
             <AddressFields value={recipient} onChange={setRecipient} withCountry emailRequired={false} labels={addressLabels} countryLabel={countryLabel} />
           </section>
+          </div>
         </div>
       )}
 
@@ -516,6 +573,7 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
           <div>
             <h2 className="font-bold text-[#0B2545]">{b.parcelsTitle}</h2>
             <p className="text-xs text-slate-500 mt-1">{b.parcelsHint}</p>
+            {documents && <p className="text-xs font-semibold text-slate-700 mt-1">{b.docsLimit.replace("{kg}", String(docMaxKg))}</p>}
           </div>
           {parcels.map((p, i) => (
             <div key={i} className="rounded-xl border border-slate-200 p-4 space-y-3">
@@ -553,7 +611,23 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
         </section>
       )}
 
-      {step === 3 && (
+      {step === 3 && documents && (
+        <section className="bg-white border border-slate-200 rounded-2xl p-5 sm:p-6 space-y-4">
+          <div>
+            <h2 className="font-bold text-[#0B2545]">{b.docsTitle}</h2>
+            <p className="text-xs text-slate-500 mt-1">{b.docsHint}</p>
+          </div>
+          <Field label={b.docsDescription}>
+            <input className={inputClass} value={docDescription} onChange={(e) => setDocDescription(e.target.value)} placeholder={b.docsExample} maxLength={70} />
+          </Field>
+          <label className="flex items-start gap-2.5 text-sm text-slate-800 cursor-pointer">
+            <input type="checkbox" checked={docDeclared} onChange={(e) => setDocDeclared(e.target.checked)} className="mt-0.5 h-4 w-4 accent-[#0B2545]" />
+            <span>{b.docsDeclaration}</span>
+          </label>
+        </section>
+      )}
+
+      {step === 3 && !documents && (
         <section className="bg-white border border-slate-200 rounded-2xl p-5 sm:p-6 space-y-4">
           <div>
             <h2 className="font-bold text-[#0B2545]">{b.customsTitle}</h2>
@@ -626,7 +700,7 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
       )}
 
       {step === 4 && (
-        <div className="space-y-5">
+        <div className="grid items-start gap-5 xl:grid-cols-2">
           <section className="bg-white border border-slate-200 rounded-2xl p-5 sm:p-6 space-y-3">
             <h2 className="font-bold text-[#0B2545]">{b.pickupTitle}</h2>
             {[
@@ -642,6 +716,9 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
               </label>
             ))}
           </section>
+          {documents ? (
+            <p className="rounded-2xl border border-slate-200 bg-white px-5 py-4 text-sm text-slate-600">{b.docsNoDuties}</p>
+          ) : (
           <section className="bg-white border border-slate-200 rounded-2xl p-5 sm:p-6 space-y-3">
             <h2 className="font-bold text-[#0B2545]">{b.dutiesTitle}</h2>
             {[
@@ -657,6 +734,7 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
               </label>
             ))}
           </section>
+          )}
         </div>
       )}
 
@@ -667,10 +745,11 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
             <dl className="text-sm divide-y divide-slate-100">
               {[
                 [b.route, `${shipper.city}, Canada → ${recipient.city}, ${countryName(recipient.countryCode)}`],
+                [b.typeTitle, documents ? `${b.typeDocuments} · ${docDescription.trim()}` : b.typeGoods],
                 [b.parcelsTitle, `${parcels.length} · ${parcelWeight.toFixed(1)} kg`],
-                [b.declaredTotal, m(itemsTotalCents)],
+                ...(documents ? [] : [[b.declaredTotal, m(itemsTotalCents)]]),
                 [b.pickupLabel, pickup ? b.pickupYes : b.pickupNo],
-                [b.dutiesLabel, duties === "recipient" ? b.dutiesRecipientShort : b.dutiesSenderShort],
+                ...(documents ? [] : [[b.dutiesLabel, duties === "recipient" ? b.dutiesRecipientShort : b.dutiesSenderShort]]),
               ].map(([k, v]) => (
                 <div key={k} className="py-2 grid sm:grid-cols-3 gap-1">
                   <dt className="text-slate-500">{k}</dt>
@@ -865,6 +944,33 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
             {confirming ? b.confirming : canInvoice && payMethod === "invoice" ? t.express.invoices.confirmInvoice : b.confirm}
           </button>
         )}
+      </div>
+      </div>
+
+      <aside className="space-y-4 lg:sticky lg:top-24">
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
+          <h2 className="text-sm font-bold text-[#0B2545]">{b.summary}</h2>
+          <dl className="mt-3 divide-y divide-slate-100 text-sm">
+            {[
+              [b.route, `${shipper.city || "–"} → ${recipient.city ? `${recipient.city}, ${countryName(recipient.countryCode)}` : "–"}`],
+              [b.typeTitle, documents ? b.typeDocuments : b.typeGoods],
+              [b.parcelsTitle, `${parcels.length} · ${parcelWeight.toFixed(1)} kg`],
+              [b.pickupLabel, pickup ? b.pickupYes : b.pickupNo],
+            ].map(([k, v]) => (
+              <div key={k} className="flex items-start justify-between gap-3 py-2.5">
+                <dt className="text-slate-500">{k}</dt>
+                <dd className="text-right font-semibold text-slate-800">{v}</dd>
+              </div>
+            ))}
+          </dl>
+          {quote && (
+            <div className="mt-3 flex items-center justify-between rounded-xl bg-[#0B2545] px-4 py-3 text-white">
+              <span className="text-xs font-semibold">{b.total}</span>
+              <span className="text-lg font-extrabold tabular-nums">{m(quote.price.totalCents)}</span>
+            </div>
+          )}
+        </section>
+      </aside>
       </div>
     </div>
   );

@@ -5,6 +5,8 @@ export interface IExpressQuoteRequest {
   origin: { countryCode: string; postalCode: string; city: string };
   destination: { countryCode: string; postalCode: string; city: string };
   parcels: { weightKg: number; lengthCm: number; widthCm: number; heightCm: number }[];
+  /** Absent on quotes from before documents existed: those are goods. */
+  contentType?: "documents" | "goods";
   declaredValueCents: number;
   isCustomsDeclarable: boolean;
   pickupRequested: boolean;

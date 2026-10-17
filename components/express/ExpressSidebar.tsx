@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ArrowLeft, FileText, LayoutDashboard, Lock, LogOut, Package, PackagePlus, Users, X } from "lucide-react";
+import { ArrowLeft, Bell, FileText, LayoutDashboard, Lock, LogOut, Package, PackagePlus, Users, X } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import TransimexLogo from "@/components/TransimexLogo";
 
@@ -133,6 +133,7 @@ export default function ExpressSidebar({ mobileOpen, onClose, user, fallbackName
 
         {sectionLabel(e.navAccount)}
         <div className="space-y-0.5">
+          {renderItem({ href: "/express/notifications", label: e.notif.title, icon: Bell, match: (p) => p.startsWith("/express/notifications") })}
           <Link
             href="/dashboard"
             onClick={onClose}

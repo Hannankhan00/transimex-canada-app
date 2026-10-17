@@ -14,6 +14,8 @@ export interface IExpressSettings extends Document {
   dhlContractDiscountPct: number | null;
   /** Flat fee (CAD cents) added to the quote when DHL pickup is chosen. */
   pickupFeeCents: number;
+  /** Heaviest document shipment (kg, all parcels together). Set from DHL; 2 until then. */
+  documentMaxWeightKg: number;
   updatedBy?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -25,6 +27,7 @@ const ExpressSettingsSchema = new Schema<IExpressSettings>(
     b2cDiscountPct: { type: Number, required: true, default: 0, min: 0, max: 100 },
     dhlContractDiscountPct: { type: Number, default: null, min: 0, max: 99.99 },
     pickupFeeCents: { type: Number, default: 0, min: 0, max: 100000 },
+    documentMaxWeightKg: { type: Number, default: 2, min: 0.1, max: 70 },
     updatedBy: { type: String },
   },
   { timestamps: true }

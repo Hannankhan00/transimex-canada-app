@@ -178,6 +178,7 @@ function Detail() {
 
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="text-2xl font-extrabold text-[#0B2545] font-mono">{shipment.reference}</h1>
+        {shipment.contentType === "documents" && <span className="px-2.5 py-0.5 rounded-full border border-amber-200 bg-amber-50 text-xs font-bold text-amber-800">{book.typeDocuments}</span>}
         {shipment.status === "label_ready" && shipment.tracking ? (
           <span className={`px-2.5 py-0.5 rounded-full border text-xs font-bold ${TRACKING_STYLE[shipment.tracking.status] || STATUS_STYLE.label_ready}`}>
             {t.express.trackingStatus[shipment.tracking.status as keyof typeof t.express.trackingStatus]}
@@ -316,9 +317,9 @@ function Detail() {
         <dl className="text-sm divide-y divide-slate-100">
           {[
             [book.pickupLabel, shipment.pickupRequested ? book.pickupYes : book.pickupNo],
-            [book.dutiesLabel, shipment.dutiesPayer === "recipient" ? book.dutiesRecipientShort : book.dutiesSenderShort],
+            ...(shipment.contentType === "documents" ? [[book.docsDescription, shipment.contentDescription]] : [[book.dutiesLabel, shipment.dutiesPayer === "recipient" ? book.dutiesRecipientShort : book.dutiesSenderShort]]),
             [s.parcels, shipment.parcels.map((p) => `${p.weightKg} kg · ${p.lengthCm}×${p.widthCm}×${p.heightCm} cm`).join("  |  ")],
-            [book.declaredTotal, m(shipment.declaredValueCents)],
+            ...(shipment.contentType === "documents" ? [] : [[book.declaredTotal, m(shipment.declaredValueCents)]]),
             ...(shipment.paidAt ? [[s.paidOn, date(shipment.paidAt)]] : []),
           ].map(([k, v]) => (
             <div key={k} className="py-2 grid sm:grid-cols-3 gap-1">
@@ -329,6 +330,7 @@ function Detail() {
         </dl>
       </section>
 
+      {shipment.contentType !== "documents" && (
       <section className="bg-white border border-slate-200 rounded-2xl p-5">
         <h2 className="font-bold text-[#0B2545] text-sm mb-3">{s.items}</h2>
         <div className="overflow-x-auto">
@@ -358,6 +360,7 @@ function Detail() {
           </table>
         </div>
       </section>
+      )}
 
       <section className="bg-white border border-slate-200 rounded-2xl p-5 space-y-3">
         <h2 className="font-bold text-[#0B2545] text-sm">{s.priceTitle}</h2>

@@ -156,11 +156,12 @@ export class MockDhlAdapter implements CarrierAdapter {
     const estimated = new Date(`${request.plannedShipDate}T12:00:00Z`);
     estimated.setUTCDate(estimated.getUTCDate() + zone.transitDays);
 
+    const documents = request.contentType === "documents";
     return [
       {
         carrier: "dhl",
-        serviceCode: "P",
-        serviceName: "EXPRESS WORLDWIDE",
+        serviceCode: documents ? "D" : "P",
+        serviceName: documents ? "EXPRESS WORLDWIDE DOC" : "EXPRESS WORLDWIDE",
         currency: "CAD",
         account: priceForZone(zone, weightKg, remote, ACCOUNT_RATE_SHARE),
         publicList: this.omitPublicList ? undefined : priceForZone(zone, weightKg, remote, 1),

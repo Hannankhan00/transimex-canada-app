@@ -17,6 +17,7 @@ interface SettingsView {
   b2cDiscountPct: number;
   dhlContractDiscountPct: number | null;
   pickupFeeCents: number;
+  documentMaxWeightKg: number;
   history: HistoryRow[];
 }
 
@@ -25,6 +26,7 @@ export default function AdminExpressSettingsPage() {
   const [b2c, setB2c] = useState("");
   const [contract, setContract] = useState("");
   const [pickup, setPickup] = useState("");
+  const [docKg, setDocKg] = useState("");
   const [history, setHistory] = useState<HistoryRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -34,6 +36,7 @@ export default function AdminExpressSettingsPage() {
     setB2c(String(s.b2cDiscountPct));
     setContract(s.dhlContractDiscountPct != null ? String(s.dhlContractDiscountPct) : "");
     setPickup(String(s.pickupFeeCents / 100));
+    setDocKg(String(s.documentMaxWeightKg));
     setHistory(s.history);
   };
 
@@ -78,12 +81,18 @@ export default function AdminExpressSettingsPage() {
       return;
     }
 
+    const docKgNum = Number(docKg);
+    if (docKg.trim() === "" || !Number.isFinite(docKgNum) || docKgNum < 0.1 || docKgNum > 70) {
+      setMessage({ text: tr("Enter a document weight limit between 0.1 and 70 kg.", "Entrez une limite de poids des documents entre 0,1 et 70 kg."), error: true });
+      return;
+    }
+
     setSaving(true);
     try {
       const res = await fetch("/api/admin/express/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ b2cDiscountPct: b2cPct, dhlContractDiscountPct: contractPct, pickupFeeCents: pickupCents }),
+        body: JSON.stringify({ b2cDiscountPct: b2cPct, dhlContractDiscountPct: contractPct, pickupFeeCents: pickupCents, documentMaxWeightKg: docKgNum }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -155,6 +164,20 @@ export default function AdminExpressSettingsPage() {
                 <label className="block space-y-1">
                   <span className="text-xs font-bold text-slate-700">{tr("Pickup fee (CAD)", "Frais de ramassage (CAD)")}</span>
                   <input className={adminInput} value={pickup} onChange={(e) => setPickup(e.target.value)} inputMode="decimal" />
+                </label>
+              </div>
+
+              <div className="space-y-2 pt-4 border-t border-slate-100">
+                <h2 className="font-bold text-[#0B2545] text-sm">{tr("Document weight limit", "Limite de poids des documents")}</h2>
+                <p className="text-xs text-slate-500">
+                  {tr(
+                    "The heaviest a documents shipment can be, all parcels together. Heavier shipments must be booked as goods. Set this to the limit DHL gives you for the document product; 2 kg is a placeholder until then.",
+                    "Le poids maximal d'un envoi de documents, tous colis confondus. Un envoi plus lourd doit être réservé comme marchandises. Indiquez la limite que DHL vous donne pour le produit documents; 2 kg est une valeur provisoire d'ici là."
+                  )}
+                </p>
+                <label className="block space-y-1">
+                  <span className="text-xs font-bold text-slate-700">{tr("Maximum weight (kg)", "Poids maximal (kg)")}</span>
+                  <input className={adminInput} value={docKg} onChange={(e) => setDocKg(e.target.value)} inputMode="decimal" />
                 </label>
               </div>
 

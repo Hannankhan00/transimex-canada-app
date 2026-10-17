@@ -51,7 +51,10 @@ export const bookingSchema = z.object({
   idempotencyKey: z.string().trim().min(16, "Idempotency key is too short").max(64).regex(/^[A-Za-z0-9_-]+$/, "Invalid idempotency key"),
   shipper: address.extend({ email }),
   recipient: address.extend({ countryCode: country, email: email.optional() }),
-  items: z.array(customsItemSchema).min(1, "Add at least one item").max(20, "At most 20 items"),
+  /** Goods need at least one item and documents none: the saved quote says which, so that is checked against it. */
+  items: z.array(customsItemSchema).max(20, "At most 20 items").default([]),
+  /** Documents only: the client confirms the shipment holds paper documents with no commercial value. */
+  documentsDeclaration: z.literal(true).optional(),
   contentDescription: opt(200),
   dutiesPayer: z.enum(["recipient", "sender"]).default("recipient"),
   /** Business accounts with both modes choose; omitted = card when allowed, otherwise invoice. */

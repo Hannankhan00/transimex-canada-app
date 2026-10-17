@@ -1,4 +1,5 @@
 import connectDB from "@/lib/mongoose";
+import { DEFAULT_DOCUMENT_MAX_KG } from "./contentType";
 import ExpressSettings, { EXPRESS_SETTINGS_KEY } from "@/models/ExpressSettings";
 
 /** The single settings record, created with a 0% B2C discount on first read. */
@@ -20,6 +21,7 @@ export interface ExpressPricingSettings {
   b2cDiscountPct: number;
   dhlContractDiscountPct: number | null;
   pickupFeeCents: number;
+  documentMaxWeightKg: number;
 }
 
 /** Everything the pricing step needs, with defaults for older records. */
@@ -29,5 +31,6 @@ export async function getPricingSettings(): Promise<ExpressPricingSettings> {
     b2cDiscountPct: s?.b2cDiscountPct ?? 0,
     dhlContractDiscountPct: s?.dhlContractDiscountPct ?? null,
     pickupFeeCents: s?.pickupFeeCents ?? 0,
+    documentMaxWeightKg: s?.documentMaxWeightKg ?? DEFAULT_DOCUMENT_MAX_KG,
   };
 }

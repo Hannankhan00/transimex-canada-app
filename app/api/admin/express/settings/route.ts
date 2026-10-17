@@ -56,6 +56,7 @@ export async function PUT(req: Request) {
       b2cDiscountPct: input.b2cDiscountPct,
       dhlContractDiscountPct: input.dhlContractDiscountPct === undefined ? before.dhlContractDiscountPct : input.dhlContractDiscountPct,
       pickupFeeCents: input.pickupFeeCents ?? before.pickupFeeCents,
+      documentMaxWeightKg: input.documentMaxWeightKg ?? before.documentMaxWeightKg,
     };
 
     const changes: string[] = [];
@@ -65,6 +66,10 @@ export async function PUT(req: Request) {
     }
     if (next.pickupFeeCents !== before.pickupFeeCents) {
       changes.push(`pickup fee ${formatCad(before.pickupFeeCents)} -> ${formatCad(next.pickupFeeCents)}`);
+    }
+
+    if (next.documentMaxWeightKg !== before.documentMaxWeightKg) {
+      changes.push(`document weight limit ${before.documentMaxWeightKg} kg -> ${next.documentMaxWeightKg} kg`);
     }
 
     if (changes.length > 0) {

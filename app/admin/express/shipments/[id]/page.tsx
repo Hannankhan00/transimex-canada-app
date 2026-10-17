@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { AlertTriangle, ArrowLeft, Download, Loader2 } from "lucide-react";
 import PermissionGuard from "@/components/admin/PermissionGuard";
-import { ExpressAdminTabs, ShipmentStatusBadge, adminInput, dollarsToCents, formatDate, useTr } from "@/components/admin/express/expressAdminShared";
+import { ContentTypeBadge, ExpressAdminTabs, ShipmentStatusBadge, adminInput, dollarsToCents, formatDate, useTr } from "@/components/admin/express/expressAdminShared";
 import { formatCad } from "@/lib/shipping/core/money";
 import { COUNTRIES } from "@/lib/data/countries";
 import type { toAdminShipmentDTO } from "@/lib/express/shipmentDto";
@@ -186,6 +186,7 @@ export default function AdminExpressShipmentPage() {
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="font-mono font-bold text-[#0B2545]">{shipment.reference}</h2>
                 <ShipmentStatusBadge status={shipment.status} />
+                <ContentTypeBadge type={shipment.contentType} />
                 <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[10px] font-bold uppercase">{shipment.accountType}</span>
               </div>
               <dl className="text-sm divide-y divide-slate-100">
@@ -194,9 +195,13 @@ export default function AdminExpressShipmentPage() {
                   [tr("Booked", "Réservé"), formatDate(shipment.createdAt, language)],
                   [tr("Ship date", "Date d'expédition"), shipment.plannedShipDate],
                   [tr("Pickup", "Ramassage"), shipment.pickupRequested ? tr("DHL pickup", "Ramassage DHL") : tr("Drop-off at DHL service point", "Dépôt à un point de service DHL")],
-                  [tr("Duties and taxes", "Droits et taxes"), shipment.dutiesPayer === "recipient" ? tr("Recipient pays on delivery", "Le destinataire paie à la livraison") : tr("Sender pays", "L'expéditeur paie")],
+                  ...(shipment.contentType === "documents"
+                    ? [[tr("Contents", "Contenu"), shipment.contentDescription]]
+                    : [[tr("Duties and taxes", "Droits et taxes"), shipment.dutiesPayer === "recipient" ? tr("Recipient pays on delivery", "Le destinataire paie à la livraison") : tr("Sender pays", "L'expéditeur paie")]]),
                   [tr("Parcels", "Colis"), shipment.parcels.map((x) => `${x.weightKg} kg · ${x.lengthCm}×${x.widthCm}×${x.heightCm} cm`).join("  |  ")],
-                  [tr("Declared value", "Valeur déclarée"), m(shipment.declaredValueCents)],
+                  ...(shipment.contentType === "documents"
+                    ? [[tr("Documents confirmed", "Documents confirmés"), shipment.documentsDeclaredAt ? formatDate(shipment.documentsDeclaredAt, language) : "—"]]
+                    : [[tr("Declared value", "Valeur déclarée"), m(shipment.declaredValueCents)]]),
                   [tr("Terms accepted", "Conditions acceptées"), shipment.termsVersion],
                   [tr("Tracking", "Suivi"), shipment.trackingNumber || "—"],
                   ...(shipment.pickupConfirmation ? [[tr("DHL pickup confirmation", "Confirmation du ramassage DHL"), shipment.pickupConfirmation] as [string, string]] : []),
@@ -255,6 +260,7 @@ export default function AdminExpressShipmentPage() {
               </section>
             </div>
 
+            {shipment.contentType !== "documents" && (
             <section className="bg-white rounded-2xl border border-slate-200 p-5">
               <h2 className="font-bold text-[#0B2545] text-sm mb-3">{tr("Customs items", "Articles douaniers")}</h2>
               <div className="overflow-x-auto">
@@ -284,6 +290,7 @@ export default function AdminExpressShipmentPage() {
                 </table>
               </div>
             </section>
+            )}
           </div>
 
           <div className="lg:col-span-2 space-y-5">

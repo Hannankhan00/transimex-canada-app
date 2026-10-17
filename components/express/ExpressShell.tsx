@@ -66,7 +66,7 @@ function ShellFrame({ children, userName }: ExpressShellProps) {
       <div className="flex min-w-0 flex-1 flex-col md:pl-[260px]">
         <ExpressTopBar onOpenMenu={() => setMenuOpen(true)} userName={user?.name || userName} />
         <main className="flex-1 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
-          <div className="mx-auto w-full max-w-[1100px]">{children}</div>
+          <div className="mx-auto w-full max-w-[1480px]">{children}</div>
         </main>
       </div>
     </div>

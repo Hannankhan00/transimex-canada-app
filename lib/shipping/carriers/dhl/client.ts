@@ -44,6 +44,8 @@ export class DhlHttpClient {
         headers: {
           Authorization: `Basic ${authorization}`,
           Accept: "application/json",
+          // Required by the OpenAPI spec: the interface version, "do not change".
+          "x-version": "3.3.4",
           ...(req.body !== undefined ? { "Content-Type": "application/json" } : {}),
         },
         body: req.body !== undefined ? JSON.stringify(req.body) : undefined,

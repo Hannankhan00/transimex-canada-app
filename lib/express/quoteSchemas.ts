@@ -32,6 +32,8 @@ export const quoteRequestSchema = z.object({
   declaredValueCents: z.number().int("Whole cents only").min(0).max(100_000_000),
   /** Partners only: price this for one of their customers. The server checks the customer is theirs. */
   partnerCustomerId: z.string().trim().regex(/^[a-f\d]{24}$/i, "Invalid customer").optional(),
+  /** Paper documents (no customs paperwork, DHL document product) or goods. Documents ignore the declared value. */
+  contentType: z.enum(["documents", "goods"]).default("goods"),
   isCustomsDeclarable: z.boolean().default(true),
   pickupRequested: z.boolean().default(false),
   plannedShipDate: z

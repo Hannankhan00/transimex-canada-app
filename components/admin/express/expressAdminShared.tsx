@@ -107,6 +107,16 @@ export const SHIPMENT_STATUS_STYLES: Record<string, string> = {
   cancelled: "bg-slate-100 text-slate-600 border-slate-300",
 };
 
+/** Documents or goods, shown on every shipment so a mislabelled booking is easy to spot. */
+export function ContentTypeBadge({ type }: { type?: string }) {
+  const { tr } = useTr();
+  return type === "documents" ? (
+    <span className="px-2 py-0.5 rounded-md bg-amber-50 border border-amber-200 text-amber-800 text-[10px] font-bold uppercase">{tr("Documents", "Documents")}</span>
+  ) : (
+    <span className="px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200 text-slate-700 text-[10px] font-bold uppercase">{tr("Goods", "Marchandises")}</span>
+  );
+}
+
 export function ShipmentStatusBadge({ status }: { status: string }) {
   const { tr } = useTr();
   const labels: Record<string, string> = {

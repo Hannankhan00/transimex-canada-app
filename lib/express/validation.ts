@@ -172,6 +172,7 @@ export const settingsSchema = z.object({
   b2cDiscountPct: discountPctSchema,
   dhlContractDiscountPct: contractDiscountSchema.nullable().optional(),
   pickupFeeCents: z.number().int("Whole cents only").min(0).max(100000, "At most $1,000").optional(),
+  documentMaxWeightKg: z.number({ invalid_type_error: "Must be a number" }).min(0.1, "At least 0.1 kg").max(70, "At most 70 kg").optional(),
 });
 
 /** Staff actions on an account, discriminated by `action`. */

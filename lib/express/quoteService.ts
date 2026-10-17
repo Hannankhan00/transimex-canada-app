@@ -4,11 +4,12 @@ import type { RateOption } from "@/lib/shipping/core/types";
 import { PricingError, priceShipment, type MarkupInput, type PriceBreakdown } from "./pricing";
 import type { QuoteRequestInput } from "./quoteSchemas";
 import type { ExpressPricingSettings } from "./settings";
+import { DEFAULT_DOCUMENT_MAX_KG, productCodeFor, type ContentType } from "./contentType";
 
 /** How long a saved quote can be used to book. */
 export const QUOTE_TTL_MINUTES = 60;
 
-export type QuoteErrorCode = "not_serviced" | "carrier_unavailable" | "pricing_unavailable" | "invalid_account";
+export type QuoteErrorCode = "not_serviced" | "carrier_unavailable" | "pricing_unavailable" | "invalid_account" | "documents_too_heavy" | "documents_unavailable";
 
 export class QuoteError extends Error {
   constructor(
@@ -25,6 +26,7 @@ export interface NormalizedQuoteRequest {
   origin: { countryCode: "CA"; postalCode: string; city: string };
   destination: { countryCode: string; postalCode: string; city: string };
   parcels: QuoteRequestInput["parcels"];
+  contentType: ContentType;
   declaredValueCents: number;
   isCustomsDeclarable: boolean;
   pickupRequested: boolean;
@@ -40,12 +42,15 @@ export interface PricedRequest {
 const tomorrow = (now: Date) => new Date(now.getTime() + 86_400_000).toISOString().slice(0, 10);
 
 export function normalizeRequest(input: QuoteRequestInput, now: Date = new Date()): NormalizedQuoteRequest {
+  // Documents have no commercial value and need no customs declaration, whatever else was sent.
+  const documents = input.contentType === "documents";
   return {
     origin: { countryCode: "CA", postalCode: input.origin.postalCode, city: input.origin.city },
     destination: { ...input.destination },
     parcels: input.parcels,
-    declaredValueCents: input.declaredValueCents,
-    isCustomsDeclarable: input.isCustomsDeclarable,
+    contentType: documents ? "documents" : "goods",
+    declaredValueCents: documents ? 0 : input.declaredValueCents,
+    isCustomsDeclarable: !documents,
     pickupRequested: input.pickupRequested,
     plannedShipDate: input.plannedShipDate ?? tomorrow(now),
   };
@@ -60,11 +65,19 @@ export async function priceRequest(params: {
   input: QuoteRequestInput;
   adapter: CarrierAdapter;
   clientDiscountPct: number;
-  settings: Pick<ExpressPricingSettings, "dhlContractDiscountPct" | "pickupFeeCents">;
+  settings: Pick<ExpressPricingSettings, "dhlContractDiscountPct" | "pickupFeeCents"> & { documentMaxWeightKg?: number };
   markup?: MarkupInput | null;
   now?: Date;
 }): Promise<PricedRequest> {
   const request = normalizeRequest(params.input, params.now);
+
+  if (request.contentType === "documents") {
+    const limit = params.settings.documentMaxWeightKg ?? DEFAULT_DOCUMENT_MAX_KG;
+    const weight = request.parcels.reduce((sum, p) => sum + p.weightKg, 0);
+    if (weight > limit + 0.001) {
+      throw new QuoteError("documents_too_heavy", `Documents can weigh at most ${limit} kg in total. Choose "Goods" for anything heavier.`, 422);
+    }
+  }
 
   let options: RateOption[];
   try {
@@ -87,6 +100,7 @@ export async function priceRequest(params: {
       isCustomsDeclarable: request.isCustomsDeclarable,
       plannedShipDate: request.plannedShipDate,
       pickupRequested: request.pickupRequested,
+      contentType: request.contentType,
     });
   } catch (error) {
     if (error instanceof QuoteError) throw error;
@@ -104,8 +118,18 @@ export async function priceRequest(params: {
     throw new QuoteError("not_serviced", "DHL has no service for this route.", 422);
   }
 
+  // The booking is made on one DHL product (P for goods, D for documents), so only that product can be quoted.
+  const wanted = productCodeFor(request.contentType);
+  const matching = options.filter((o) => o.serviceCode === wanted);
+  if (matching.length === 0) {
+    if (request.contentType === "documents") {
+      throw new QuoteError("documents_unavailable", "Document shipping is not available for this destination. Book it as goods instead.", 422);
+    }
+    throw new QuoteError("not_serviced", "DHL has no service for this route.", 422);
+  }
+
   // One quote per request: the cheapest service by what DHL charges us.
-  const option = options.reduce((best, o) => (o.account.totalCents < best.account.totalCents ? o : best));
+  const option = matching.reduce((best, o) => (o.account.totalCents < best.account.totalCents ? o : best));
 
   try {
     const breakdown = priceShipment({

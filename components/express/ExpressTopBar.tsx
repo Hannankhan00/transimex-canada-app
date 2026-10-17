@@ -1,13 +1,132 @@
 "use client";
 
-import React from "react";
-import { Menu } from "lucide-react";
-import { usePathname } from "next/navigation";
+import React, { useEffect, useRef, useState } from "react";
+import { Bell, CheckCheck, Menu } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 interface Props {
   onOpenMenu: () => void;
   userName?: string;
+}
+
+interface ExpressNotification {
+  id: string;
+  title: string;
+  titleFr: string;
+  desc: string;
+  descFr: string;
+  time: string;
+  link: string;
+  unread: boolean;
+}
+
+/** Bell with the Express-only feed. The client portal has its own bell and never shows these. */
+function ExpressNotifications() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const { t, language } = useLanguage();
+  const n = t.express.notif;
+  const [items, setItems] = useState<ExpressNotification[] | null>(null);
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  // Reload on every page change so a booking or payment made a moment ago shows up.
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/notifications?scope=express")
+      .then((r) => r.json())
+      .then((d) => alive && setItems(d.success ? d.notifications : []))
+      .catch(() => alive && setItems([]));
+    return () => {
+      alive = false;
+    };
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => ref.current && !ref.current.contains(e.target as Node) && setOpen(false);
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    document.addEventListener("mousedown", onDown);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  const unread = items ? items.filter((i) => i.unread).length : 0;
+
+  const openItem = (item: ExpressNotification) => {
+    if (item.unread) {
+      setItems((prev) => prev && prev.map((i) => (i.id === item.id ? { ...i, unread: false } : i)));
+      fetch(`/api/notifications/${item.id}`, { method: "PATCH" }).catch(() => {});
+    }
+    setOpen(false);
+    if (item.link) router.push(item.link);
+  };
+
+  const markAll = () => {
+    setItems((prev) => prev && prev.map((i) => ({ ...i, unread: false })));
+    fetch("/api/notifications?scope=express", { method: "PATCH" }).catch(() => {});
+  };
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-label={n.title}
+        aria-expanded={open}
+        className="relative cursor-pointer rounded-lg border border-slate-200 bg-white p-2 text-slate-600 transition hover:bg-slate-50 hover:text-[#0B2545]"
+      >
+        <Bell className="h-4 w-4" />
+        {unread > 0 && <span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-[#D21F27] px-1 text-[9px] font-bold text-white">{unread}</span>}
+      </button>
+
+      {open && (
+        <div className="absolute right-0 z-30 mt-2 w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl">
+          <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
+            <span className="text-xs font-bold text-slate-900">{n.title}</span>
+            {unread > 0 && (
+              <button type="button" onClick={markAll} className="inline-flex cursor-pointer items-center gap-1 text-[11px] font-bold text-[#D21F27] hover:underline">
+                <CheckCheck className="h-3.5 w-3.5" />
+                {n.markAll}
+              </button>
+            )}
+          </div>
+          <div className="max-h-96 divide-y divide-slate-100 overflow-y-auto">
+            {items === null ? (
+              <p className="px-4 py-6 text-center text-xs text-slate-400">{n.loading}</p>
+            ) : items.length === 0 ? (
+              <p className="px-4 py-8 text-center text-xs text-slate-400">{n.empty}</p>
+            ) : (
+              items.slice(0, 20).map((item) => (
+                <button key={item.id} type="button" onClick={() => openItem(item)} className="flex w-full cursor-pointer items-start gap-3 px-4 py-3 text-left transition hover:bg-slate-50">
+                  <span className={`mt-1.5 h-2 w-2 flex-shrink-0 rounded-full ${item.unread ? "bg-[#D21F27]" : "bg-transparent"}`} />
+                  <span className="min-w-0 flex-1">
+                    <span className={`block truncate text-xs ${item.unread ? "font-bold text-slate-900" : "font-semibold text-slate-700"}`}>{language === "fr" ? item.titleFr : item.title}</span>
+                    <span className="mt-0.5 line-clamp-2 block text-[11px] leading-snug text-slate-500">{language === "fr" ? item.descFr : item.desc}</span>
+                    <span className="mt-1 block text-[10px] text-slate-400">{item.time}</span>
+                  </span>
+                </button>
+              ))
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setOpen(false);
+              router.push("/express/notifications");
+            }}
+            className="w-full cursor-pointer border-t border-slate-100 py-2.5 text-center text-xs font-bold text-[#D21F27] transition-colors hover:bg-red-50"
+          >
+            {n.viewAll}
+          </button>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function ExpressTopBar({ onOpenMenu, userName }: Props) {
@@ -20,7 +139,9 @@ export default function ExpressTopBar({ onOpenMenu, userName }: Props) {
       ? e.navOverview
       : pathname.startsWith("/express/apply")
         ? e.pageApply
-        : pathname.startsWith("/express/book")
+        : pathname.startsWith("/express/notifications")
+          ? e.notif.title
+          : pathname.startsWith("/express/book")
           ? e.navBook
           : pathname.startsWith("/express/shipments/")
             ? e.shipments.details
@@ -49,6 +170,7 @@ export default function ExpressTopBar({ onOpenMenu, userName }: Props) {
       </div>
 
       <div className="flex items-center gap-3 sm:gap-4">
+        <ExpressNotifications />
         <div role="group" aria-label={e.switchLanguage} className="flex overflow-hidden rounded-lg border border-slate-200 text-xs font-bold">
           {(["en", "fr"] as const).map((lang) => (
             <button

@@ -5,6 +5,8 @@ import ExpressAccount from "@/models/ExpressAccount";
 import { isStaffRole } from "@/lib/rbac";
 import { isExpressEnabled } from "@/lib/express/config";
 import { getPaymentsMode } from "@/lib/express/payments/config";
+import { getPricingSettings } from "@/lib/express/settings";
+import { DEFAULT_DOCUMENT_MAX_KG } from "@/lib/express/contentType";
 
 /**
  * What the signed-in client portal needs to know: whether Express is on, whether online
@@ -26,15 +28,17 @@ export async function GET() {
 
   const enabled = isExpressEnabled();
   let account: { status: string; type: string } | null = null;
+  let documentMaxWeightKg = DEFAULT_DOCUMENT_MAX_KG;
   if (enabled && !isStaffRole(user.role)) {
     try {
       await connectDB();
       const doc = await ExpressAccount.findOne({ userId: user.userId }).select("status type").lean();
       if (doc) account = { status: doc.status, type: doc.type };
+      documentMaxWeightKg = (await getPricingSettings()).documentMaxWeightKg;
     } catch (error) {
       console.error("Express status: account lookup failed:", error);
     }
   }
 
-  return NextResponse.json({ success: true, enabled, payments, account });
+  return NextResponse.json({ success: true, enabled, payments, account, documentMaxWeightKg });
 }

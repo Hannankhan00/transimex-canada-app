@@ -6,6 +6,7 @@ import type { ShipmentRequest } from "@/lib/shipping/core/types";
 import { getCarrierAdapter } from "@/lib/shipping/registry";
 import { labelKey, r2LabelStore, type LabelStore } from "./labelStore";
 import { notifyShipmentEvent } from "./shipmentNotify";
+import { contentTypeOf, productCodeFor } from "./contentType";
 
 export interface FulfilDeps {
   adapter?: CarrierAdapter;
@@ -24,10 +25,12 @@ export type FulfilOutcome = "ok" | "failed" | "unknown" | "skipped";
 const today = (now: Date) => now.toISOString().slice(0, 10);
 
 /** The carrier request for a paid booking. The ship date can never be in the past by the time it is paid. */
-export function buildShipmentRequest(sh: Pick<IExpressShipment, "reference" | "shipper" | "recipient" | "parcels" | "items" | "declaredValueCents" | "contentDescription" | "plannedShipDate" | "dutiesPayer" | "pickupRequested">, now: Date): ShipmentRequest {
+export function buildShipmentRequest(sh: Pick<IExpressShipment, "reference" | "shipper" | "recipient" | "parcels" | "items" | "declaredValueCents" | "contentDescription" | "plannedShipDate" | "dutiesPayer" | "pickupRequested"> & { contentType?: "documents" | "goods" }, now: Date): ShipmentRequest {
+  const contentType = contentTypeOf(sh.contentType);
   return {
     reference: sh.reference,
-    serviceCode: "P",
+    contentType,
+    serviceCode: productCodeFor(contentType),
     shipper: sh.shipper,
     recipient: sh.recipient,
     parcels: sh.parcels,
