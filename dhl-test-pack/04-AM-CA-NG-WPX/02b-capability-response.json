@@ -1,0 +1,1371 @@
+{
+  "products": [
+    {
+      "productName": "MEDICAL EXPRESS",
+      "productCode": "Q",
+      "localProductCode": "Q",
+      "localProductCountryCode": "CA",
+      "networkTypeCode": "TD",
+      "isCustomerAgreement": true,
+      "breakdown": [
+        {
+          "name": "MEDICAL EXPRESS"
+        },
+        {
+          "name": "IMPORT DESTINATION BILLING",
+          "serviceCode": "30",
+          "localServiceCode": "30",
+          "typeCode": "IMPORT BILLING ACCOUNT",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "3RD COUNTRY SHIPMENTS INTERNATIONAL",
+          "serviceCode": "33",
+          "localServiceCode": "33",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "SATURDAY DELIVERY",
+          "serviceCode": "AA",
+          "localServiceCode": "AA",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "UNKNOWN SHIPPER",
+          "serviceCode": "CT",
+          "localServiceCode": "CT",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "DUTY TAX PAID",
+          "serviceCode": "DD",
+          "localServiceCode": "DD",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "DUTIES & TAXES UNPAID",
+          "serviceCode": "DS",
+          "localServiceCode": "DS",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": false,
+          "isMarketedService": false
+        },
+        {
+          "name": "IMPORT BILLING",
+          "serviceCode": "DT",
+          "localServiceCode": "DT",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": false,
+          "isMarketedService": false
+        },
+        {
+          "name": "DUTY TAX PROCESSING",
+          "serviceCode": "DU",
+          "localServiceCode": "DU",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "GOGREEN PLUS - CARBON REDUCED",
+          "serviceCode": "FD",
+          "localServiceCode": "FD",
+          "serviceTypeCode": "SCH",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "GOGREEN PLUS - CARBON REDUCED",
+          "serviceCode": "FE",
+          "localServiceCode": "FE",
+          "serviceTypeCode": "SCH",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "FUEL SURCHARGE",
+          "serviceCode": "FF",
+          "localServiceCode": "FF",
+          "serviceTypeCode": "SCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": false
+        },
+        {
+          "name": "GOGREEN PLUS - CARBON REDUCED",
+          "serviceCode": "FT",
+          "localServiceCode": "FT",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "SODIUM ION PI978",
+          "serviceCode": "HA",
+          "localServiceCode": "HA",
+          "typeCode": "SODIUM BATTERIES IN EQUIPMENT",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": true,
+          "isMarketedService": true
+        },
+        {
+          "name": "SODIUM ION PI977",
+          "serviceCode": "HB",
+          "localServiceCode": "HB",
+          "typeCode": "SODIUM BATTERIES WITH EQUIPMENT",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": true,
+          "isMarketedService": true
+        },
+        {
+          "name": "DRY ICE UN1845",
+          "serviceCode": "HC",
+          "localServiceCode": "HC",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": true,
+          "isMarketedService": true
+        },
+        {
+          "name": "LITHIUM ION PI966 SECTION II",
+          "serviceCode": "HD",
+          "localServiceCode": "HD",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": true,
+          "isMarketedService": true
+        },
+        {
+          "name": "FULL DANGEROUS GOODS",
+          "serviceCode": "HE",
+          "localServiceCode": "HE",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": true,
+          "isMarketedService": true
+        },
+        {
+          "name": "EXCEPTED QUANTITIES",
+          "serviceCode": "HH",
+          "localServiceCode": "HH",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": true,
+          "isMarketedService": true
+        },
+        {
+          "name": "LITHIUM METAL PI969 SECTION II",
+          "serviceCode": "HM",
+          "localServiceCode": "HM",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": true,
+          "isMarketedService": true
+        },
+        {
+          "name": "ACTIVE DATA LOGGER HANDLING",
+          "serviceCode": "HT",
+          "localServiceCode": "HT",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "NOT RESTRICTED DANGEROUS GOODS",
+          "serviceCode": "HU",
+          "localServiceCode": "HU",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": true,
+          "isMarketedService": true
+        },
+        {
+          "name": "LITHIUM ION PI967 SECTION II",
+          "serviceCode": "HV",
+          "localServiceCode": "HV",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": true,
+          "isMarketedService": true
+        },
+        {
+          "name": "LITHIUM METAL PI970 SECTION II",
+          "serviceCode": "HW",
+          "localServiceCode": "HW",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": true,
+          "isMarketedService": true
+        },
+        {
+          "name": "BIOLOGICAL SUBSTANCE",
+          "serviceCode": "HY",
+          "localServiceCode": "HY",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": true,
+          "isMarketedService": true
+        },
+        {
+          "name": "SHIPMENT INSURANCE",
+          "serviceCode": "II",
+          "localServiceCode": "II",
+          "typeCode": "SHIPMENT VALUE PROTECTION",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "REFRIGERATED +2 TO +8C",
+          "serviceCode": "LG",
+          "localServiceCode": "LG",
+          "typeCode": "REFRIGERATED 2-8C",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "HOLD FOR COLLECTION",
+          "serviceCode": "LX",
+          "localServiceCode": "LX",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "ADDRESS CORRECTION",
+          "serviceCode": "MA",
+          "localServiceCode": "MA",
+          "serviceTypeCode": "SCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": false
+        },
+        {
+          "name": "NEUTRAL DELIVERY",
+          "serviceCode": "NN",
+          "localServiceCode": "NN",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "REMOTE AREA PICKUP",
+          "serviceCode": "OB",
+          "localServiceCode": "OB",
+          "serviceTypeCode": "SCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": false
+        },
+        {
+          "name": "REMOTE AREA DELIVERY",
+          "serviceCode": "OO",
+          "localServiceCode": "OO",
+          "serviceTypeCode": "SCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": false
+        },
+        {
+          "name": "SHIPMENT PREPARATION",
+          "serviceCode": "PA",
+          "localServiceCode": "PA",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": false
+        },
+        {
+          "name": "DATA ENTRY",
+          "serviceCode": "PD",
+          "localServiceCode": "PD",
+          "serviceTypeCode": "SCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "AUTOMATED DIGITAL IMAGING",
+          "serviceCode": "PJ",
+          "localServiceCode": "PJ",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": false,
+          "isMarketedService": false
+        },
+        {
+          "name": "OPTICAL CHARACTER RECOGNITION",
+          "serviceCode": "PL",
+          "localServiceCode": "PL",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "ADDITIONAL SHIPMENT DATA MERGE",
+          "serviceCode": "PM",
+          "localServiceCode": "PM",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "DATA STAGING 03",
+          "serviceCode": "PT",
+          "localServiceCode": "PT",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "DATA STAGING 06",
+          "serviceCode": "PU",
+          "localServiceCode": "PU",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "DATA STAGING 12",
+          "serviceCode": "PV",
+          "localServiceCode": "PV",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "DATA STAGING 24",
+          "serviceCode": "PW",
+          "localServiceCode": "PW",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "DEDICATED PICKUP",
+          "serviceCode": "QA",
+          "localServiceCode": "QA",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "SIGNATURE REQUIRED",
+          "serviceCode": "SG",
+          "localServiceCode": "SG",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "VERIFIED DELIVERY",
+          "serviceCode": "TF",
+          "localServiceCode": "TF",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "CHILLED BOX S",
+          "serviceCode": "UF",
+          "localServiceCode": "UF",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": true,
+          "isMarketedService": true
+        },
+        {
+          "name": "CHILLED BOX M",
+          "serviceCode": "UG",
+          "localServiceCode": "UG",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": true,
+          "isMarketedService": true
+        },
+        {
+          "name": "CHILLED BOX L",
+          "serviceCode": "UH",
+          "localServiceCode": "UH",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": true,
+          "isMarketedService": true
+        },
+        {
+          "name": "CLEARANCE PROCESSING",
+          "serviceCode": "W5",
+          "localServiceCode": "W5",
+          "serviceTypeCode": "SCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "SINGLE CLEARANCE",
+          "serviceCode": "WA",
+          "localServiceCode": "WA",
+          "serviceTypeCode": "CDZ",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "NON-ROUTINE ENTRY",
+          "serviceCode": "WB",
+          "localServiceCode": "WB",
+          "serviceTypeCode": "SCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": false
+        },
+        {
+          "name": "DUTY TAX PROCESSING",
+          "serviceCode": "WC",
+          "localServiceCode": "WC",
+          "serviceTypeCode": "CDZ",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "PERMITS & LICENSES",
+          "serviceCode": "WJ",
+          "localServiceCode": "WJ",
+          "serviceTypeCode": "SCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": false
+        },
+        {
+          "name": "BONDED STORAGE",
+          "serviceCode": "WK",
+          "localServiceCode": "WK",
+          "serviceTypeCode": "SCH",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "TEMPORARY IMPORT/EXPORT",
+          "serviceCode": "WM",
+          "localServiceCode": "WM",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "EXPORT DECLARATION",
+          "serviceCode": "WO",
+          "localServiceCode": "WO",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "IMPORT EXPORT TAXES",
+          "serviceCode": "XB",
+          "localServiceCode": "XB",
+          "serviceTypeCode": "FIS",
+          "isCustomerAgreement": false,
+          "isMarketedService": false
+        },
+        {
+          "name": "REGULATORY CHARGES",
+          "serviceCode": "XK",
+          "localServiceCode": "XK",
+          "serviceTypeCode": "FIS",
+          "isCustomerAgreement": false,
+          "isMarketedService": false
+        },
+        {
+          "name": "LOW VALUE REGULATORY TAX",
+          "serviceCode": "XM",
+          "localServiceCode": "XM",
+          "serviceTypeCode": "FIS",
+          "isCustomerAgreement": false,
+          "isMarketedService": false
+        },
+        {
+          "name": "IMPORT EXPORT DUTIES",
+          "serviceCode": "XX",
+          "localServiceCode": "XX",
+          "serviceTypeCode": "FIS",
+          "isCustomerAgreement": false,
+          "isMarketedService": false
+        }
+      ],
+      "pickupCapabilities": {
+        "nextBusinessDay": false,
+        "localCutoffDateAndTime": "2026-10-22T16:30:00",
+        "pickupEarliest": "11:00:00",
+        "pickupLatest": "17:30:00",
+        "pickupCutoffSameDayOutboundProcessing": "17:30:00",
+        "originServiceAreaCode": "YUL",
+        "originFacilityAreaCode": "GTW",
+        "pickupAdditionalDays": 0,
+        "pickupDayOfWeek": 4
+      },
+      "deliveryCapabilities": {
+        "deliveryTypeCode": "QDDF",
+        "estimatedDeliveryDateAndTime": "2026-10-28T23:59:00",
+        "destinationServiceAreaCode": "KAD",
+        "destinationFacilityAreaCode": "KAN",
+        "deliveryAdditionalDays": 1,
+        "deliveryDayOfWeek": 3,
+        "totalTransitDays": 5
+      }
+    },
+    {
+      "productName": "EXPRESS WORLDWIDE",
+      "productCode": "P",
+      "localProductCode": "P",
+      "localProductCountryCode": "CA",
+      "networkTypeCode": "TD",
+      "isCustomerAgreement": false,
+      "breakdown": [
+        {
+          "name": "EXPRESS WORLDWIDE",
+          "typeCode": "EXPRESS WORLDWIDE NONDOC"
+        },
+        {
+          "name": "IMPORT DESTINATION BILLING",
+          "serviceCode": "30",
+          "localServiceCode": "30",
+          "typeCode": "IMPORT BILLING ACCOUNT",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "3RD COUNTRY SHIPMENTS INTERNATIONAL",
+          "serviceCode": "33",
+          "localServiceCode": "33",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "DIPLOMATIC MATERIAL",
+          "serviceCode": "CG",
+          "localServiceCode": "CG",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": true,
+          "isMarketedService": true
+        },
+        {
+          "name": "EMERGENCY SITUATION",
+          "serviceCode": "CQ",
+          "localServiceCode": "CQ",
+          "serviceTypeCode": "SCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "UNKNOWN SHIPPER",
+          "serviceCode": "CT",
+          "localServiceCode": "CT",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "DUTY TAX PAID",
+          "serviceCode": "DD",
+          "localServiceCode": "DD",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "RECEIVER PAID",
+          "serviceCode": "DE",
+          "localServiceCode": "DE",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "DUTIES & TAXES UNPAID",
+          "serviceCode": "DS",
+          "localServiceCode": "DS",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": false,
+          "isMarketedService": false
+        },
+        {
+          "name": "IMPORT BILLING",
+          "serviceCode": "DT",
+          "localServiceCode": "DT",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": false,
+          "isMarketedService": false
+        },
+        {
+          "name": "DUTY TAX PROCESSING",
+          "serviceCode": "DU",
+          "localServiceCode": "DU",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "GOGREEN PLUS - CARBON REDUCED",
+          "serviceCode": "FD",
+          "localServiceCode": "FD",
+          "serviceTypeCode": "SCH",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "GOGREEN PLUS - CARBON REDUCED",
+          "serviceCode": "FE",
+          "localServiceCode": "FE",
+          "serviceTypeCode": "SCH",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "FUEL SURCHARGE",
+          "serviceCode": "FF",
+          "localServiceCode": "FF",
+          "serviceTypeCode": "SCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": false
+        },
+        {
+          "name": "GOGREEN PLUS - CARBON REDUCED",
+          "serviceCode": "FT",
+          "localServiceCode": "FT",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "SODIUM ION PI978",
+          "serviceCode": "HA",
+          "localServiceCode": "HA",
+          "typeCode": "SODIUM BATTERIES IN EQUIPMENT",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": true,
+          "isMarketedService": true
+        },
+        {
+          "name": "SODIUM ION PI977",
+          "serviceCode": "HB",
+          "localServiceCode": "HB",
+          "typeCode": "SODIUM BATTERIES WITH EQUIPMENT",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": true,
+          "isMarketedService": true
+        },
+        {
+          "name": "DRY ICE UN1845",
+          "serviceCode": "HC",
+          "localServiceCode": "HC",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": true,
+          "isMarketedService": true
+        },
+        {
+          "name": "LITHIUM ION PI966 SECTION II",
+          "serviceCode": "HD",
+          "localServiceCode": "HD",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": true,
+          "isMarketedService": true
+        },
+        {
+          "name": "FULL DANGEROUS GOODS",
+          "serviceCode": "HE",
+          "localServiceCode": "HE",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": true,
+          "isMarketedService": true
+        },
+        {
+          "name": "EXCEPTED QUANTITIES",
+          "serviceCode": "HH",
+          "localServiceCode": "HH",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": true,
+          "isMarketedService": true
+        },
+        {
+          "name": "CONSUMER GOODS ID8000",
+          "serviceCode": "HK",
+          "localServiceCode": "HK",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": true,
+          "isMarketedService": true
+        },
+        {
+          "name": "LITHIUM METAL PI969 SECTION II",
+          "serviceCode": "HM",
+          "localServiceCode": "HM",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": true,
+          "isMarketedService": true
+        },
+        {
+          "name": "ACTIVE DATA LOGGER HANDLING",
+          "serviceCode": "HT",
+          "localServiceCode": "HT",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "NOT RESTRICTED DANGEROUS GOODS",
+          "serviceCode": "HU",
+          "localServiceCode": "HU",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": true,
+          "isMarketedService": true
+        },
+        {
+          "name": "LITHIUM ION PI967 SECTION II",
+          "serviceCode": "HV",
+          "localServiceCode": "HV",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": true,
+          "isMarketedService": true
+        },
+        {
+          "name": "LITHIUM METAL PI970 SECTION II",
+          "serviceCode": "HW",
+          "localServiceCode": "HW",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": true,
+          "isMarketedService": true
+        },
+        {
+          "name": "MAGNETIZED MATERIAL",
+          "serviceCode": "HX",
+          "localServiceCode": "HX",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": true,
+          "isMarketedService": true
+        },
+        {
+          "name": "SHIPMENT INSURANCE",
+          "serviceCode": "II",
+          "localServiceCode": "II",
+          "typeCode": "SHIPMENT VALUE PROTECTION",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "SANCTIONS ROUTING",
+          "serviceCode": "LU",
+          "localServiceCode": "LU",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "EMBARGO ROUTING",
+          "serviceCode": "LV",
+          "localServiceCode": "LV",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "HOLD FOR COLLECTION",
+          "serviceCode": "LX",
+          "localServiceCode": "LX",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "ADDRESS CORRECTION",
+          "serviceCode": "MA",
+          "localServiceCode": "MA",
+          "serviceTypeCode": "SCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": false
+        },
+        {
+          "name": "NEUTRAL DELIVERY",
+          "serviceCode": "NN",
+          "localServiceCode": "NN",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "DEMAND SURCHARGE",
+          "serviceCode": "NX",
+          "localServiceCode": "NX",
+          "serviceTypeCode": "SCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "REMOTE AREA PICKUP",
+          "serviceCode": "OB",
+          "localServiceCode": "OB",
+          "serviceTypeCode": "SCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": false
+        },
+        {
+          "name": "REMOTE AREA DELIVERY",
+          "serviceCode": "OO",
+          "localServiceCode": "OO",
+          "serviceTypeCode": "SCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": false
+        },
+        {
+          "name": "SHIPMENT PREPARATION",
+          "serviceCode": "PA",
+          "localServiceCode": "PA",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": false
+        },
+        {
+          "name": "DATA ENTRY",
+          "serviceCode": "PD",
+          "localServiceCode": "PD",
+          "serviceTypeCode": "SCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "RETURN TO SELLER",
+          "serviceCode": "PH",
+          "localServiceCode": "PH",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "AUTOMATED DIGITAL IMAGING",
+          "serviceCode": "PJ",
+          "localServiceCode": "PJ",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": false,
+          "isMarketedService": false
+        },
+        {
+          "name": "OPTICAL CHARACTER RECOGNITION",
+          "serviceCode": "PL",
+          "localServiceCode": "PL",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "ADDITIONAL SHIPMENT DATA MERGE",
+          "serviceCode": "PM",
+          "localServiceCode": "PM",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "COMAT",
+          "serviceCode": "PO",
+          "localServiceCode": "PO",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "NEUTRAL DESCRIPTION LABEL",
+          "serviceCode": "PP",
+          "localServiceCode": "PP",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "RETURN TO ORIGIN",
+          "serviceCode": "PR",
+          "localServiceCode": "PR",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "DATA STAGING 03",
+          "serviceCode": "PT",
+          "localServiceCode": "PT",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "DATA STAGING 06",
+          "serviceCode": "PU",
+          "localServiceCode": "PU",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "DATA STAGING 12",
+          "serviceCode": "PV",
+          "localServiceCode": "PV",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "DATA STAGING 24",
+          "serviceCode": "PW",
+          "localServiceCode": "PW",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "LABEL FREE",
+          "serviceCode": "PZ",
+          "localServiceCode": "PZ",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": false,
+          "isMarketedService": false
+        },
+        {
+          "name": "DEDICATED PICKUP",
+          "serviceCode": "QA",
+          "localServiceCode": "QA",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "DIRECT SIGNATURE",
+          "serviceCode": "SF",
+          "localServiceCode": "SF",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "SIGNATURE REQUIRED",
+          "serviceCode": "SG",
+          "localServiceCode": "SG",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "VERIFIED DELIVERY",
+          "serviceCode": "TF",
+          "localServiceCode": "TF",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "RESIDENTIAL ADDRESS",
+          "serviceCode": "TK",
+          "localServiceCode": "TK",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "SCHEDULED DELIVERY",
+          "serviceCode": "TT",
+          "localServiceCode": "TT",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "DIRECT TO SERVICE POINT",
+          "serviceCode": "TV",
+          "localServiceCode": "TV",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "CLEARANCE PROCESSING",
+          "serviceCode": "W5",
+          "localServiceCode": "W5",
+          "serviceTypeCode": "SCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "SINGLE CLEARANCE",
+          "serviceCode": "WA",
+          "localServiceCode": "WA",
+          "serviceTypeCode": "CDZ",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "NON-ROUTINE ENTRY",
+          "serviceCode": "WB",
+          "localServiceCode": "WB",
+          "serviceTypeCode": "SCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": false
+        },
+        {
+          "name": "DUTY TAX PROCESSING",
+          "serviceCode": "WC",
+          "localServiceCode": "WC",
+          "serviceTypeCode": "CDZ",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "MULTILINE ENTRY",
+          "serviceCode": "WE",
+          "localServiceCode": "WE",
+          "serviceTypeCode": "SCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": false
+        },
+        {
+          "name": "BROKER NOTIFICATION",
+          "serviceCode": "WG",
+          "localServiceCode": "WG",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "PERMITS & LICENSES",
+          "serviceCode": "WJ",
+          "localServiceCode": "WJ",
+          "serviceTypeCode": "SCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": false
+        },
+        {
+          "name": "BONDED STORAGE",
+          "serviceCode": "WK",
+          "localServiceCode": "WK",
+          "serviceTypeCode": "SCH",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "BONDED TRANSIT",
+          "serviceCode": "WL",
+          "localServiceCode": "WL",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "TEMPORARY IMPORT/EXPORT",
+          "serviceCode": "WM",
+          "localServiceCode": "WM",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "RELEASE TO BROKER",
+          "serviceCode": "WN",
+          "localServiceCode": "WN",
+          "serviceTypeCode": "CDZ",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "EXPORT DECLARATION",
+          "serviceCode": "WO",
+          "localServiceCode": "WO",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "PREFERENTIAL ORIGIN",
+          "serviceCode": "WQ",
+          "localServiceCode": "WQ",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": true,
+          "isMarketedService": true
+        },
+        {
+          "name": "POST CLEARANCE MODIFICATION",
+          "serviceCode": "WS",
+          "localServiceCode": "WS",
+          "serviceTypeCode": "SCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": false
+        },
+        {
+          "name": "IMPORT EXPORT TAXES",
+          "serviceCode": "XB",
+          "localServiceCode": "XB",
+          "serviceTypeCode": "FIS",
+          "isCustomerAgreement": false,
+          "isMarketedService": false
+        },
+        {
+          "name": "MERCHANDISE PROCESS",
+          "serviceCode": "XE",
+          "localServiceCode": "XE",
+          "serviceTypeCode": "FIS",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "TRADE ZONE PROCESS",
+          "serviceCode": "XJ",
+          "localServiceCode": "XJ",
+          "serviceTypeCode": "FIS",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "REGULATORY CHARGES",
+          "serviceCode": "XK",
+          "localServiceCode": "XK",
+          "serviceTypeCode": "FIS",
+          "isCustomerAgreement": false,
+          "isMarketedService": false
+        },
+        {
+          "name": "LOW VALUE REGULATORY TAX",
+          "serviceCode": "XM",
+          "localServiceCode": "XM",
+          "serviceTypeCode": "FIS",
+          "isCustomerAgreement": false,
+          "isMarketedService": false
+        },
+        {
+          "name": "IMPORT EXPORT DUTIES",
+          "serviceCode": "XX",
+          "localServiceCode": "XX",
+          "serviceTypeCode": "FIS",
+          "isCustomerAgreement": false,
+          "isMarketedService": false
+        },
+        {
+          "name": "NON STACKABLE PALLET",
+          "serviceCode": "YC",
+          "localServiceCode": "YC",
+          "serviceTypeCode": "SCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": false
+        },
+        {
+          "name": "NON CONVEYABLE PIECE - IRREGULAR",
+          "serviceCode": "YL",
+          "localServiceCode": "YL",
+          "serviceTypeCode": "SCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "BREAKBULK MOTHER",
+          "serviceCode": "YW",
+          "localServiceCode": "YW",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": true,
+          "isMarketedService": true
+        }
+      ],
+      "pickupCapabilities": {
+        "nextBusinessDay": false,
+        "localCutoffDateAndTime": "2026-10-22T16:30:00",
+        "pickupEarliest": "11:00:00",
+        "pickupLatest": "17:30:00",
+        "pickupCutoffSameDayOutboundProcessing": "17:30:00",
+        "originServiceAreaCode": "YUL",
+        "originFacilityAreaCode": "GTW",
+        "pickupAdditionalDays": 0,
+        "pickupDayOfWeek": 4
+      },
+      "deliveryCapabilities": {
+        "deliveryTypeCode": "QDDF",
+        "estimatedDeliveryDateAndTime": "2026-10-28T23:59:00",
+        "destinationServiceAreaCode": "KAD",
+        "destinationFacilityAreaCode": "KAN",
+        "deliveryAdditionalDays": 1,
+        "deliveryDayOfWeek": 3,
+        "totalTransitDays": 5
+      }
+    },
+    {
+      "productName": "EXPRESS EASY",
+      "productCode": "8",
+      "localProductCode": "8",
+      "localProductCountryCode": "CA",
+      "networkTypeCode": "TD",
+      "isCustomerAgreement": true,
+      "breakdown": [
+        {
+          "name": "EXPRESS EASY",
+          "typeCode": "EXPRESS EASY NONDOC"
+        },
+        {
+          "name": "SATURDAY DELIVERY",
+          "serviceCode": "AA",
+          "localServiceCode": "AA",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "UNKNOWN SHIPPER",
+          "serviceCode": "CT",
+          "localServiceCode": "CT",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "DUTIES & TAXES UNPAID",
+          "serviceCode": "DS",
+          "localServiceCode": "DS",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": false,
+          "isMarketedService": false
+        },
+        {
+          "name": "FUEL SURCHARGE",
+          "serviceCode": "FF",
+          "localServiceCode": "FF",
+          "serviceTypeCode": "SCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": false
+        },
+        {
+          "name": "SHIPMENT INSURANCE",
+          "serviceCode": "II",
+          "localServiceCode": "II",
+          "typeCode": "SHIPMENT VALUE PROTECTION",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "DATA ENTRY",
+          "serviceCode": "PD",
+          "localServiceCode": "PD",
+          "serviceTypeCode": "SCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "AUTOMATED DIGITAL IMAGING",
+          "serviceCode": "PJ",
+          "localServiceCode": "PJ",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": false,
+          "isMarketedService": false
+        },
+        {
+          "name": "OPTICAL CHARACTER RECOGNITION",
+          "serviceCode": "PL",
+          "localServiceCode": "PL",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "NEUTRAL DESCRIPTION LABEL",
+          "serviceCode": "PP",
+          "localServiceCode": "PP",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "LABEL FREE",
+          "serviceCode": "PZ",
+          "localServiceCode": "PZ",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": false,
+          "isMarketedService": false
+        },
+        {
+          "name": "DIRECT SIGNATURE",
+          "serviceCode": "SF",
+          "localServiceCode": "SF",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "RESIDENTIAL ADDRESS",
+          "serviceCode": "TK",
+          "localServiceCode": "TK",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "DIRECT TO SERVICE POINT",
+          "serviceCode": "TV",
+          "localServiceCode": "TV",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "CLEARANCE PROCESSING",
+          "serviceCode": "W5",
+          "localServiceCode": "W5",
+          "serviceTypeCode": "SCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "NON-ROUTINE ENTRY",
+          "serviceCode": "WB",
+          "localServiceCode": "WB",
+          "serviceTypeCode": "SCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": false
+        },
+        {
+          "name": "MULTILINE ENTRY",
+          "serviceCode": "WE",
+          "localServiceCode": "WE",
+          "serviceTypeCode": "SCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": false
+        },
+        {
+          "name": "BONDED STORAGE",
+          "serviceCode": "WK",
+          "localServiceCode": "WK",
+          "serviceTypeCode": "SCH",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "REGULATORY CHARGES",
+          "serviceCode": "XK",
+          "localServiceCode": "XK",
+          "serviceTypeCode": "FIS",
+          "isCustomerAgreement": false,
+          "isMarketedService": false
+        },
+        {
+          "name": "LOW VALUE REGULATORY TAX",
+          "serviceCode": "XM",
+          "localServiceCode": "XM",
+          "serviceTypeCode": "FIS",
+          "isCustomerAgreement": false,
+          "isMarketedService": false
+        }
+      ],
+      "pickupCapabilities": {
+        "nextBusinessDay": false,
+        "localCutoffDateAndTime": "2026-10-22T16:30:00",
+        "pickupEarliest": "11:00:00",
+        "pickupLatest": "17:30:00",
+        "pickupCutoffSameDayOutboundProcessing": "17:30:00",
+        "originServiceAreaCode": "YUL",
+        "originFacilityAreaCode": "GTW",
+        "pickupAdditionalDays": 0,
+        "pickupDayOfWeek": 4
+      },
+      "deliveryCapabilities": {
+        "deliveryTypeCode": "QDDF",
+        "estimatedDeliveryDateAndTime": "2026-10-28T23:59:00",
+        "destinationServiceAreaCode": "KAD",
+        "destinationFacilityAreaCode": "KAN",
+        "deliveryAdditionalDays": 1,
+        "deliveryDayOfWeek": 3,
+        "totalTransitDays": 5
+      }
+    }
+  ]
+}

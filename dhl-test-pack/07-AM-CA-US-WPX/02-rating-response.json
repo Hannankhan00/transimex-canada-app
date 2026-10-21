@@ -1,0 +1,724 @@
+{
+  "products": [
+    {
+      "productName": "EXPRESS WORLDWIDE",
+      "productCode": "P",
+      "localProductCode": "P",
+      "localProductCountryCode": "CA",
+      "networkTypeCode": "TD",
+      "isCustomerAgreement": false,
+      "weight": {
+        "volumetric": 152.29,
+        "provided": 185,
+        "unitOfMeasurement": "imperial"
+      },
+      "totalPrice": [
+        {
+          "currencyType": "BILLC",
+          "priceCurrency": "CAD",
+          "price": 896.51
+        },
+        {
+          "currencyType": "PULCL",
+          "priceCurrency": "CAD",
+          "price": 896.51
+        },
+        {
+          "currencyType": "BASEC",
+          "priceCurrency": "EUR",
+          "price": 556.77
+        }
+      ],
+      "totalPriceBreakdown": [
+        {
+          "currencyType": "BILLC",
+          "priceCurrency": "CAD",
+          "priceBreakdown": [
+            {
+              "typeCode": "STDIS",
+              "price": 1850.81
+            },
+            {
+              "typeCode": "SPRQT",
+              "price": 448.68
+            }
+          ]
+        },
+        {
+          "currencyType": "PULCL",
+          "priceCurrency": "CAD",
+          "priceBreakdown": [
+            {
+              "typeCode": "STDIS",
+              "price": 1850.81
+            },
+            {
+              "typeCode": "SPRQT",
+              "price": 448.68
+            }
+          ]
+        },
+        {
+          "currencyType": "BASEC",
+          "priceCurrency": "EUR",
+          "priceBreakdown": [
+            {
+              "typeCode": "STDIS",
+              "price": 1149.45
+            },
+            {
+              "typeCode": "SPRQT",
+              "price": 278.65
+            }
+          ]
+        }
+      ],
+      "detailedPriceBreakdown": [
+        {
+          "currencyType": "BILLC",
+          "priceCurrency": "CAD",
+          "breakdown": [
+            {
+              "name": "EXPRESS WORLDWIDE",
+              "price": 448.68,
+              "priceBreakdown": [
+                {
+                  "priceType": "DISCOUNT",
+                  "typeCode": "W",
+                  "price": 1346.04,
+                  "rate": 75,
+                  "basePrice": 1794.72
+                }
+              ]
+            },
+            {
+              "name": "OVERWEIGHT PIECE",
+              "serviceCode": "YY",
+              "localServiceCode": "YY",
+              "serviceTypeCode": "SCH",
+              "price": 130,
+              "isCustomerAgreement": false,
+              "isMarketedService": false,
+              "priceBreakdown": []
+            },
+            {
+              "name": "GOGREEN PLUS - CARBON REDUCED",
+              "serviceCode": "FD",
+              "localServiceCode": "FD",
+              "serviceTypeCode": "SCH",
+              "price": 49.95,
+              "isCustomerAgreement": true,
+              "isMarketedService": false,
+              "priceBreakdown": []
+            },
+            {
+              "name": "DEMAND SURCHARGE",
+              "serviceCode": "NX",
+              "localServiceCode": "NX",
+              "serviceTypeCode": "SCH",
+              "price": 37,
+              "isCustomerAgreement": false,
+              "isMarketedService": true,
+              "priceBreakdown": []
+            },
+            {
+              "name": "FUEL SURCHARGE",
+              "serviceCode": "FF",
+              "localServiceCode": "FF",
+              "serviceTypeCode": "SCH",
+              "price": 230.88,
+              "isCustomerAgreement": false,
+              "isMarketedService": false,
+              "priceBreakdown": [
+                {
+                  "priceType": "DISCOUNT",
+                  "typeCode": "W",
+                  "price": 504.77,
+                  "rate": 68.62,
+                  "basePrice": 735.65
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "currencyType": "PULCL",
+          "priceCurrency": "CAD",
+          "breakdown": [
+            {
+              "name": "EXPRESS WORLDWIDE",
+              "price": 448.68,
+              "priceBreakdown": [
+                {
+                  "priceType": "DISCOUNT",
+                  "typeCode": "W",
+                  "price": 1346.04,
+                  "rate": 75,
+                  "basePrice": 1794.72
+                }
+              ]
+            },
+            {
+              "name": "OVERWEIGHT PIECE",
+              "serviceCode": "YY",
+              "localServiceCode": "YY",
+              "serviceTypeCode": "SCH",
+              "price": 130,
+              "isCustomerAgreement": false,
+              "isMarketedService": false,
+              "priceBreakdown": []
+            },
+            {
+              "name": "GOGREEN PLUS - CARBON REDUCED",
+              "serviceCode": "FD",
+              "localServiceCode": "FD",
+              "serviceTypeCode": "SCH",
+              "price": 49.95,
+              "isCustomerAgreement": true,
+              "isMarketedService": false,
+              "priceBreakdown": []
+            },
+            {
+              "name": "DEMAND SURCHARGE",
+              "serviceCode": "NX",
+              "localServiceCode": "NX",
+              "serviceTypeCode": "SCH",
+              "price": 37,
+              "isCustomerAgreement": false,
+              "isMarketedService": true,
+              "priceBreakdown": []
+            },
+            {
+              "name": "FUEL SURCHARGE",
+              "serviceCode": "FF",
+              "localServiceCode": "FF",
+              "serviceTypeCode": "SCH",
+              "price": 230.88,
+              "isCustomerAgreement": false,
+              "isMarketedService": false,
+              "priceBreakdown": [
+                {
+                  "priceType": "DISCOUNT",
+                  "typeCode": "W",
+                  "price": 504.77,
+                  "rate": 68.62,
+                  "basePrice": 735.65
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "currencyType": "BASEC",
+          "priceCurrency": "EUR",
+          "breakdown": [
+            {
+              "name": "EXPRESS WORLDWIDE",
+              "price": 278.65,
+              "priceBreakdown": [
+                {
+                  "priceType": "DISCOUNT",
+                  "typeCode": "W",
+                  "price": 835.96,
+                  "rate": 75,
+                  "basePrice": 1114.61
+                }
+              ]
+            },
+            {
+              "name": "OVERWEIGHT PIECE",
+              "serviceCode": "YY",
+              "localServiceCode": "YY",
+              "serviceTypeCode": "SCH",
+              "price": 80.74,
+              "isCustomerAgreement": false,
+              "isMarketedService": false,
+              "priceBreakdown": []
+            },
+            {
+              "name": "GOGREEN PLUS - CARBON REDUCED",
+              "serviceCode": "FD",
+              "localServiceCode": "FD",
+              "serviceTypeCode": "SCH",
+              "price": 31.02,
+              "isCustomerAgreement": true,
+              "isMarketedService": false,
+              "priceBreakdown": []
+            },
+            {
+              "name": "DEMAND SURCHARGE",
+              "serviceCode": "NX",
+              "localServiceCode": "NX",
+              "serviceTypeCode": "SCH",
+              "price": 22.98,
+              "isCustomerAgreement": false,
+              "isMarketedService": true,
+              "priceBreakdown": []
+            },
+            {
+              "name": "FUEL SURCHARGE",
+              "serviceCode": "FF",
+              "localServiceCode": "FF",
+              "serviceTypeCode": "SCH",
+              "price": 143.38,
+              "isCustomerAgreement": false,
+              "isMarketedService": false,
+              "priceBreakdown": [
+                {
+                  "priceType": "DISCOUNT",
+                  "typeCode": "W",
+                  "price": 313.49,
+                  "rate": 68.62,
+                  "basePrice": 456.87
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "pickupCapabilities": {
+        "nextBusinessDay": false,
+        "localCutoffDateAndTime": "2026-10-22T16:30:00",
+        "pickupEarliest": "11:00:00",
+        "pickupLatest": "17:30:00",
+        "pickupCutoffSameDayOutboundProcessing": "17:30:00",
+        "originServiceAreaCode": "YUL",
+        "originFacilityAreaCode": "GTW",
+        "pickupAdditionalDays": 0,
+        "pickupDayOfWeek": 4
+      },
+      "deliveryCapabilities": {
+        "deliveryTypeCode": "QDDF",
+        "estimatedDeliveryDateAndTime": "2026-10-23T23:59:00",
+        "destinationServiceAreaCode": "SLC",
+        "destinationFacilityAreaCode": "SLC",
+        "deliveryAdditionalDays": 0,
+        "deliveryDayOfWeek": 5,
+        "totalTransitDays": 1
+      },
+      "pricingDate": "2026-10-21"
+    },
+    {
+      "productName": "MEDICAL EXPRESS",
+      "productCode": "Q",
+      "localProductCode": "Q",
+      "localProductCountryCode": "CA",
+      "networkTypeCode": "TD",
+      "isCustomerAgreement": true,
+      "weight": {
+        "volumetric": 152.29,
+        "provided": 185,
+        "unitOfMeasurement": "imperial"
+      },
+      "totalPrice": [
+        {
+          "currencyType": "BILLC",
+          "priceCurrency": "CAD",
+          "price": 2730.82
+        },
+        {
+          "currencyType": "PULCL",
+          "priceCurrency": "CAD",
+          "price": 2730.82
+        },
+        {
+          "currencyType": "BASEC",
+          "priceCurrency": "EUR",
+          "price": 1695.98
+        }
+      ],
+      "totalPriceBreakdown": [
+        {
+          "currencyType": "BILLC",
+          "priceCurrency": "CAD",
+          "priceBreakdown": [
+            {
+              "typeCode": "SPRQT",
+              "price": 1819.72
+            }
+          ]
+        },
+        {
+          "currencyType": "PULCL",
+          "priceCurrency": "CAD",
+          "priceBreakdown": [
+            {
+              "typeCode": "SPRQT",
+              "price": 1819.72
+            }
+          ]
+        },
+        {
+          "currencyType": "BASEC",
+          "priceCurrency": "EUR",
+          "priceBreakdown": [
+            {
+              "typeCode": "SPRQT",
+              "price": 1130.14
+            }
+          ]
+        }
+      ],
+      "detailedPriceBreakdown": [
+        {
+          "currencyType": "BILLC",
+          "priceCurrency": "CAD",
+          "breakdown": [
+            {
+              "name": "MEDICAL EXPRESS",
+              "price": 1819.72
+            },
+            {
+              "name": "OVERWEIGHT PIECE",
+              "serviceCode": "YY",
+              "localServiceCode": "YY",
+              "serviceTypeCode": "SCH",
+              "price": 130,
+              "isCustomerAgreement": false,
+              "isMarketedService": false,
+              "priceBreakdown": []
+            },
+            {
+              "name": "GOGREEN PLUS - CARBON REDUCED",
+              "serviceCode": "FD",
+              "localServiceCode": "FD",
+              "serviceTypeCode": "SCH",
+              "price": 49.95,
+              "isCustomerAgreement": true,
+              "isMarketedService": false,
+              "priceBreakdown": []
+            },
+            {
+              "name": "FUEL SURCHARGE",
+              "serviceCode": "FF",
+              "localServiceCode": "FF",
+              "serviceTypeCode": "SCH",
+              "price": 731.15,
+              "isCustomerAgreement": false,
+              "isMarketedService": false,
+              "priceBreakdown": []
+            }
+          ]
+        },
+        {
+          "currencyType": "PULCL",
+          "priceCurrency": "CAD",
+          "breakdown": [
+            {
+              "name": "MEDICAL EXPRESS",
+              "price": 1819.72
+            },
+            {
+              "name": "OVERWEIGHT PIECE",
+              "serviceCode": "YY",
+              "localServiceCode": "YY",
+              "serviceTypeCode": "SCH",
+              "price": 130,
+              "isCustomerAgreement": false,
+              "isMarketedService": false,
+              "priceBreakdown": []
+            },
+            {
+              "name": "GOGREEN PLUS - CARBON REDUCED",
+              "serviceCode": "FD",
+              "localServiceCode": "FD",
+              "serviceTypeCode": "SCH",
+              "price": 49.95,
+              "isCustomerAgreement": true,
+              "isMarketedService": false,
+              "priceBreakdown": []
+            },
+            {
+              "name": "FUEL SURCHARGE",
+              "serviceCode": "FF",
+              "localServiceCode": "FF",
+              "serviceTypeCode": "SCH",
+              "price": 731.15,
+              "isCustomerAgreement": false,
+              "isMarketedService": false,
+              "priceBreakdown": []
+            }
+          ]
+        },
+        {
+          "currencyType": "BASEC",
+          "priceCurrency": "EUR",
+          "breakdown": [
+            {
+              "name": "MEDICAL EXPRESS",
+              "price": 1130.14
+            },
+            {
+              "name": "OVERWEIGHT PIECE",
+              "serviceCode": "YY",
+              "localServiceCode": "YY",
+              "serviceTypeCode": "SCH",
+              "price": 80.74,
+              "isCustomerAgreement": false,
+              "isMarketedService": false,
+              "priceBreakdown": []
+            },
+            {
+              "name": "GOGREEN PLUS - CARBON REDUCED",
+              "serviceCode": "FD",
+              "localServiceCode": "FD",
+              "serviceTypeCode": "SCH",
+              "price": 31.02,
+              "isCustomerAgreement": true,
+              "isMarketedService": false,
+              "priceBreakdown": []
+            },
+            {
+              "name": "FUEL SURCHARGE",
+              "serviceCode": "FF",
+              "localServiceCode": "FF",
+              "serviceTypeCode": "SCH",
+              "price": 454.08,
+              "isCustomerAgreement": false,
+              "isMarketedService": false,
+              "priceBreakdown": []
+            }
+          ]
+        }
+      ],
+      "pickupCapabilities": {
+        "nextBusinessDay": false,
+        "localCutoffDateAndTime": "2026-10-22T16:30:00",
+        "pickupEarliest": "11:00:00",
+        "pickupLatest": "17:30:00",
+        "pickupCutoffSameDayOutboundProcessing": "17:30:00",
+        "originServiceAreaCode": "YUL",
+        "originFacilityAreaCode": "GTW",
+        "pickupAdditionalDays": 0,
+        "pickupDayOfWeek": 4
+      },
+      "deliveryCapabilities": {
+        "deliveryTypeCode": "QDDF",
+        "estimatedDeliveryDateAndTime": "2026-10-23T23:59:00",
+        "destinationServiceAreaCode": "SLC",
+        "destinationFacilityAreaCode": "SLC",
+        "deliveryAdditionalDays": 0,
+        "deliveryDayOfWeek": 5,
+        "totalTransitDays": 1
+      },
+      "pricingDate": "2026-10-21"
+    },
+    {
+      "productName": "ECONOMY SELECT",
+      "productCode": "H",
+      "localProductCode": "H",
+      "localProductCountryCode": "CA",
+      "networkTypeCode": "DD",
+      "isCustomerAgreement": true,
+      "weight": {
+        "volumetric": 152.29,
+        "provided": 185,
+        "unitOfMeasurement": "imperial"
+      },
+      "totalPrice": [
+        {
+          "currencyType": "BILLC",
+          "priceCurrency": "CAD",
+          "price": 2211.03
+        },
+        {
+          "currencyType": "PULCL",
+          "priceCurrency": "CAD",
+          "price": 2211.03
+        },
+        {
+          "currencyType": "BASEC",
+          "priceCurrency": "EUR",
+          "price": 1373.16
+        }
+      ],
+      "totalPriceBreakdown": [
+        {
+          "currencyType": "BILLC",
+          "priceCurrency": "CAD",
+          "priceBreakdown": [
+            {
+              "typeCode": "SPRQT",
+              "price": 1459.52
+            }
+          ]
+        },
+        {
+          "currencyType": "PULCL",
+          "priceCurrency": "CAD",
+          "priceBreakdown": [
+            {
+              "typeCode": "SPRQT",
+              "price": 1459.52
+            }
+          ]
+        },
+        {
+          "currencyType": "BASEC",
+          "priceCurrency": "EUR",
+          "priceBreakdown": [
+            {
+              "typeCode": "SPRQT",
+              "price": 906.43
+            }
+          ]
+        }
+      ],
+      "detailedPriceBreakdown": [
+        {
+          "currencyType": "BILLC",
+          "priceCurrency": "CAD",
+          "breakdown": [
+            {
+              "name": "ECONOMY SELECT",
+              "price": 1459.52
+            },
+            {
+              "name": "OVERWEIGHT PIECE",
+              "serviceCode": "YY",
+              "localServiceCode": "YY",
+              "serviceTypeCode": "SCH",
+              "price": 130,
+              "isCustomerAgreement": false,
+              "isMarketedService": false,
+              "priceBreakdown": []
+            },
+            {
+              "name": "DEMAND SURCHARGE",
+              "serviceCode": "NX",
+              "localServiceCode": "NX",
+              "serviceTypeCode": "SCH",
+              "price": 18.5,
+              "isCustomerAgreement": false,
+              "isMarketedService": true,
+              "priceBreakdown": []
+            },
+            {
+              "name": "FUEL SURCHARGE",
+              "serviceCode": "FF",
+              "localServiceCode": "FF",
+              "serviceTypeCode": "SCH",
+              "price": 603.01,
+              "isCustomerAgreement": false,
+              "isMarketedService": false,
+              "priceBreakdown": []
+            }
+          ]
+        },
+        {
+          "currencyType": "PULCL",
+          "priceCurrency": "CAD",
+          "breakdown": [
+            {
+              "name": "ECONOMY SELECT",
+              "price": 1459.52
+            },
+            {
+              "name": "OVERWEIGHT PIECE",
+              "serviceCode": "YY",
+              "localServiceCode": "YY",
+              "serviceTypeCode": "SCH",
+              "price": 130,
+              "isCustomerAgreement": false,
+              "isMarketedService": false,
+              "priceBreakdown": []
+            },
+            {
+              "name": "DEMAND SURCHARGE",
+              "serviceCode": "NX",
+              "localServiceCode": "NX",
+              "serviceTypeCode": "SCH",
+              "price": 18.5,
+              "isCustomerAgreement": false,
+              "isMarketedService": true,
+              "priceBreakdown": []
+            },
+            {
+              "name": "FUEL SURCHARGE",
+              "serviceCode": "FF",
+              "localServiceCode": "FF",
+              "serviceTypeCode": "SCH",
+              "price": 603.01,
+              "isCustomerAgreement": false,
+              "isMarketedService": false,
+              "priceBreakdown": []
+            }
+          ]
+        },
+        {
+          "currencyType": "BASEC",
+          "priceCurrency": "EUR",
+          "breakdown": [
+            {
+              "name": "ECONOMY SELECT",
+              "price": 906.43
+            },
+            {
+              "name": "OVERWEIGHT PIECE",
+              "serviceCode": "YY",
+              "localServiceCode": "YY",
+              "serviceTypeCode": "SCH",
+              "price": 80.74,
+              "isCustomerAgreement": false,
+              "isMarketedService": false,
+              "priceBreakdown": []
+            },
+            {
+              "name": "DEMAND SURCHARGE",
+              "serviceCode": "NX",
+              "localServiceCode": "NX",
+              "serviceTypeCode": "SCH",
+              "price": 11.49,
+              "isCustomerAgreement": false,
+              "isMarketedService": true,
+              "priceBreakdown": []
+            },
+            {
+              "name": "FUEL SURCHARGE",
+              "serviceCode": "FF",
+              "localServiceCode": "FF",
+              "serviceTypeCode": "SCH",
+              "price": 374.5,
+              "isCustomerAgreement": false,
+              "isMarketedService": false,
+              "priceBreakdown": []
+            }
+          ]
+        }
+      ],
+      "pickupCapabilities": {
+        "nextBusinessDay": false,
+        "localCutoffDateAndTime": "2026-10-22T15:30:00",
+        "pickupEarliest": "00:00:00",
+        "pickupLatest": "17:30:00",
+        "pickupCutoffSameDayOutboundProcessing": "17:30:00",
+        "originServiceAreaCode": "YUL",
+        "originFacilityAreaCode": "GTW",
+        "pickupAdditionalDays": 0,
+        "pickupDayOfWeek": 4
+      },
+      "deliveryCapabilities": {
+        "deliveryTypeCode": "QDDC",
+        "estimatedDeliveryDateAndTime": "2026-10-27T23:59:00",
+        "destinationServiceAreaCode": "SLC",
+        "destinationFacilityAreaCode": "SLC",
+        "deliveryAdditionalDays": 0,
+        "deliveryDayOfWeek": 2,
+        "totalTransitDays": 5
+      },
+      "pricingDate": "2026-10-21"
+    }
+  ],
+  "exchangeRates": [
+    {
+      "currentExchangeRate": 0.621049,
+      "currency": "CAD",
+      "baseCurrency": "EUR"
+    },
+    {
+      "currentExchangeRate": 0.621049,
+      "currency": "CAD",
+      "baseCurrency": "EUR"
+    }
+  ]
+}

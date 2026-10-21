@@ -1,0 +1,43 @@
+{
+  "customerDetails": {
+    "shipperDetails": {
+      "postalCode": "0001",
+      "cityName": "Oslo",
+      "countryCode": "NO"
+    },
+    "receiverDetails": {
+      "postalCode": "1011",
+      "cityName": "Amsterdam",
+      "countryCode": "NL"
+    }
+  },
+  "accounts": [
+    {
+      "typeCode": "shipper",
+      "number": "974044956"
+    }
+  ],
+  "plannedShippingDateAndTime": "2026-10-23T12:00:00GMT+00:00",
+  "unitOfMeasurement": "metric",
+  "isCustomsDeclarable": true,
+  "monetaryAmount": [
+    {
+      "typeCode": "declaredValue",
+      "value": 400,
+      "currency": "CAD"
+    }
+  ],
+  "requestAllValueAddedServices": false,
+  "returnStandardProductsOnly": false,
+  "nextBusinessDay": false,
+  "packages": [
+    {
+      "weight": 2,
+      "dimensions": {
+        "length": 40,
+        "width": 30,
+        "height": 20
+      }
+    }
+  ]
+}

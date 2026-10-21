@@ -1,0 +1,43 @@
+{
+  "customerDetails": {
+    "shipperDetails": {
+      "postalCode": "H4E 4N4",
+      "cityName": "Montreal",
+      "countryCode": "CA"
+    },
+    "receiverDetails": {
+      "postalCode": "84601",
+      "cityName": "Provo",
+      "countryCode": "US"
+    }
+  },
+  "accounts": [
+    {
+      "typeCode": "shipper",
+      "number": "973995169"
+    }
+  ],
+  "plannedShippingDateAndTime": "2026-10-22T12:00:00GMT+00:00",
+  "unitOfMeasurement": "imperial",
+  "isCustomsDeclarable": true,
+  "monetaryAmount": [
+    {
+      "typeCode": "declaredValue",
+      "value": 600,
+      "currency": "CAD"
+    }
+  ],
+  "requestAllValueAddedServices": false,
+  "returnStandardProductsOnly": false,
+  "nextBusinessDay": false,
+  "packages": [
+    {
+      "weight": 185,
+      "dimensions": {
+        "length": 42,
+        "width": 42,
+        "height": 12
+      }
+    }
+  ]
+}

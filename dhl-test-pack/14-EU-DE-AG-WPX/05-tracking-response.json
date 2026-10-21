@@ -1,0 +1,50 @@
+{
+  "shipments": [
+    {
+      "shipmentTrackingNumber": "9339343506",
+      "status": "Success",
+      "shipmentTimestamp": "2026-10-22T12:00:00",
+      "productCode": "P",
+      "description": "Electronic components, integrated circuits",
+      "shipperDetails": {
+        "name": "",
+        "postalAddress": {
+          "cityName": "",
+          "postalCode": "",
+          "countryCode": "DE"
+        },
+        "serviceArea": [
+          {
+            "code": "BER",
+            "description": "Berlin-DE"
+          }
+        ]
+      },
+      "receiverDetails": {
+        "name": "",
+        "postalAddress": {
+          "cityName": "",
+          "countyName": "",
+          "countryCode": "AG"
+        },
+        "serviceArea": [
+          {
+            "code": "ANU",
+            "description": "Antigua-AG",
+            "facilityCode": "ANU"
+          }
+        ]
+      },
+      "totalWeight": 1,
+      "unitOfMeasurements": "metric",
+      "shipperReferences": [
+        {
+          "value": "EU-DE-AG-WPX-1",
+          "typeCode": "CU"
+        }
+      ],
+      "events": [],
+      "numberOfPieces": 1
+    }
+  ]
+}

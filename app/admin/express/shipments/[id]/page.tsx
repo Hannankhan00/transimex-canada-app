@@ -365,6 +365,12 @@ export default function AdminExpressShipmentPage() {
                     {tr("Download label", "Télécharger l'étiquette")}
                   </a>
                 )}
+                {shipment.invoice && (
+                  <a href={`/api/admin/express/shipments/${shipment.id}/invoice`} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-300 text-xs font-bold text-slate-700 hover:bg-slate-50">
+                    <Download className="w-3.5 h-3.5" />
+                    {tr("Download invoice", "Télécharger la facture")} · {shipment.invoice.paperless ? tr("paperless", "sans papier") : tr("print it", "à imprimer")}
+                  </a>
+                )}
                 {canRetryLabel && (
                   <button type="button" onClick={retryLabel} disabled={!!busy} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#0B2545] text-white text-xs font-bold disabled:opacity-60 cursor-pointer">
                     {busy === "retry" && <Loader2 className="w-3.5 h-3.5 animate-spin" />}

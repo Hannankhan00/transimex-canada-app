@@ -4,7 +4,7 @@ import type { CarrierAdapter } from "@/lib/shipping/core/adapter";
 import { CarrierError } from "@/lib/shipping/core/errors";
 import type { ShipmentRequest } from "@/lib/shipping/core/types";
 import { getCarrierAdapter } from "@/lib/shipping/registry";
-import { labelKey, r2LabelStore, type LabelStore } from "./labelStore";
+import { invoiceKey, labelKey, r2LabelStore, type LabelStore } from "./labelStore";
 import { notifyShipmentEvent } from "./shipmentNotify";
 import { contentTypeOf, productCodeFor } from "./contentType";
 
@@ -117,12 +117,25 @@ export async function fulfilShipment(shipmentId: string, deps: FulfilDeps = {}):
     return fail("failed", `DHL booked the shipment (tracking ${result.trackingNumber}) but the label could not be stored: ${message}. Upload the label by hand.`);
   }
 
+  // The commercial invoice. A problem here must not lose the label, so it is logged and staff can see it is missing.
+  let invoice: { key: string; bytes: number; paperless: boolean } | undefined;
+  if (result.invoice) {
+    const invoicePdf = Buffer.from(result.invoice.contentBase64, "base64");
+    try {
+      await putWithRetry(store, invoiceKey(shipmentId), invoicePdf);
+      invoice = { key: invoiceKey(shipmentId), bytes: invoicePdf.length, paperless: Boolean(result.paperless) };
+    } catch (error) {
+      console.error(`[Express] Invoice could not be stored for ${claimed.reference}:`, error);
+    }
+  }
+
   const done = await ExpressShipment.findOneAndUpdate(
     { _id: shipmentId, status: "paid" },
     {
       $set: {
         status: "label_ready",
         label: { key, source: "carrier", uploadedAt: now(), bytes: pdf.length },
+        ...(invoice ? { invoice } : {}),
         "fulfilment.state": "ok",
       },
       $unset: { "fulfilment.lastError": "" },

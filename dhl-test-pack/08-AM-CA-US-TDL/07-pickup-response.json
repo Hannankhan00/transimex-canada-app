@@ -1,0 +1,7 @@
+{
+  "instance": "/expressapi/pickups",
+  "detail": "202401: No billing address found",
+  "title": "Bad request",
+  "message": "Bad request",
+  "status": "400"
+}

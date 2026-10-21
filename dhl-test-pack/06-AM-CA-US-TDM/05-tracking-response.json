@@ -1,0 +1,52 @@
+{
+  "shipments": [
+    {
+      "shipmentTrackingNumber": "9339342924",
+      "status": "Success",
+      "shipmentTimestamp": "2026-10-22T12:00:00",
+      "productCode": "M",
+      "description": "Automotive brake pads, ceramic, for passenger cars",
+      "shipperDetails": {
+        "name": "",
+        "postalAddress": {
+          "cityName": "",
+          "postalCode": "",
+          "provinceCode": "",
+          "countryCode": "CA"
+        },
+        "serviceArea": [
+          {
+            "code": "YUL",
+            "description": "Quebec Service Area-CA"
+          }
+        ]
+      },
+      "receiverDetails": {
+        "name": "",
+        "postalAddress": {
+          "cityName": "",
+          "postalCode": "",
+          "provinceCode": "",
+          "countryCode": "US"
+        },
+        "serviceArea": [
+          {
+            "code": "SDM",
+            "description": "South San Diego-US",
+            "facilityCode": "SDM"
+          }
+        ]
+      },
+      "totalWeight": 60,
+      "unitOfMeasurements": "imperial",
+      "shipperReferences": [
+        {
+          "value": "AM-CA-US-TDM-1",
+          "typeCode": "CU"
+        }
+      ],
+      "events": [],
+      "numberOfPieces": 3
+    }
+  ]
+}

@@ -3,12 +3,11 @@
 import React, { useState } from "react";
 import { AlertTriangle, Loader2 } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
-import { COUNTRIES } from "@/lib/data/countries";
-import { AFRICAN_COUNTRY_CODES } from "@/lib/express/africa";
+import CountrySelect from "./CountrySelect";
+import UnitToggle from "./UnitToggle";
+import { lengthToCm, unitLabel, weightToKg, type UnitSystem } from "@/lib/express/units";
 import { formatCad } from "@/lib/shipping/core/money";
 import type { CustomerQuoteDTO } from "@/lib/express/quoteDto";
-
-const AFRICA = COUNTRIES.filter((c) => AFRICAN_COUNTRY_CODES.has(c.code));
 
 const inputClass =
   "w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B2545]/20 focus:border-[#0B2545]";
@@ -23,7 +22,8 @@ export default function CustomerQuote() {
   const { t, language } = useLanguage();
   const p = t.express.partner;
   const b = t.express.book;
-  const [f, setF] = useState({ fromCity: "", fromPostal: "", country: "", toCity: "", toPostal: "", weight: "", length: "", width: "", height: "", value: "", pickup: false });
+  const [f, setF] = useState({ fromCountry: "CA", fromCity: "", fromPostal: "", country: "", toCity: "", toPostal: "", weight: "", length: "", width: "", height: "", value: "", pickup: false });
+  const [units, setUnits] = useState<UnitSystem>("imperial");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [quote, setQuote] = useState<CustomerQuoteDTO | null>(null);
@@ -37,9 +37,10 @@ export default function CustomerQuote() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (loading) return;
-    const dims = [f.length, f.width, f.height].map(num);
+    const dims = [f.length, f.width, f.height].map((v) => lengthToCm(num(v), units));
+    const weightKg = weightToKg(num(f.weight), units);
     const value = Math.round(num(f.value) * 100);
-    if (!f.fromCity.trim() || !f.fromPostal.trim() || !f.country || !f.toCity.trim() || !f.toPostal.trim() || !(num(f.weight) >= 0.1) || dims.some((d) => !(d >= 1)) || !Number.isFinite(value) || value < 0) {
+    if (!f.fromCity.trim() || !f.country || !f.toCity.trim() || !(weightKg >= 0.1) || dims.some((d) => !(d >= 1)) || !Number.isFinite(value) || value < 0) {
       return setError(p.customerQuoteRequired);
     }
     setLoading(true);
@@ -49,9 +50,9 @@ export default function CustomerQuote() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          origin: { postalCode: f.fromPostal.trim(), city: f.fromCity.trim() },
+          origin: { countryCode: f.fromCountry, postalCode: f.fromPostal.trim(), city: f.fromCity.trim() },
           destination: { countryCode: f.country, postalCode: f.toPostal.trim(), city: f.toCity.trim() },
-          parcels: [{ weightKg: num(f.weight), lengthCm: dims[0], widthCm: dims[1], heightCm: dims[2] }],
+          parcels: [{ weightKg, lengthCm: dims[0], widthCm: dims[1], heightCm: dims[2] }],
           declaredValueCents: value,
           isCustomsDeclarable: true,
           pickupRequested: f.pickup,
@@ -85,6 +86,10 @@ export default function CustomerQuote() {
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-3">
             <h2 className="text-sm font-bold text-[#0B2545]">{p.customerQuoteFrom}</h2>
+            {field(
+              b.country,
+              <CountrySelect className={inputClass} value={f.fromCountry} onChange={(code) => set("fromCountry", code)} ariaLabel={b.country} />
+            )}
             {field(b.city, <input className={inputClass} value={f.fromCity} onChange={(e) => set("fromCity", e.target.value)} />)}
             {field(b.postal, <input className={inputClass} value={f.fromPostal} onChange={(e) => set("fromPostal", e.target.value)} />)}
           </div>
@@ -92,14 +97,7 @@ export default function CustomerQuote() {
             <h2 className="text-sm font-bold text-[#0B2545]">{p.customerQuoteTo}</h2>
             {field(
               b.country,
-              <select className={inputClass} value={f.country} onChange={(e) => set("country", e.target.value)}>
-                <option value="" />
-                {AFRICA.map((c) => (
-                  <option key={c.code} value={c.code}>
-                    {language === "fr" ? c.nameFr : c.name}
-                  </option>
-                ))}
-              </select>
+              <CountrySelect className={inputClass} value={f.country} onChange={(code) => set("country", code)} ariaLabel={b.country} />
             )}
             <div className="grid grid-cols-2 gap-3">
               {field(b.city, <input className={inputClass} value={f.toCity} onChange={(e) => set("toCity", e.target.value)} />)}
@@ -108,11 +106,14 @@ export default function CustomerQuote() {
           </div>
         </div>
 
+        <div className="flex justify-end">
+          <UnitToggle value={units} onChange={setUnits} />
+        </div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-          {field(p.customerQuoteWeight, <input className={inputClass} inputMode="decimal" value={f.weight} onChange={(e) => set("weight", e.target.value)} />)}
-          {field(b.length, <input className={inputClass} inputMode="decimal" value={f.length} onChange={(e) => set("length", e.target.value)} />)}
-          {field(b.width, <input className={inputClass} inputMode="decimal" value={f.width} onChange={(e) => set("width", e.target.value)} />)}
-          {field(b.height, <input className={inputClass} inputMode="decimal" value={f.height} onChange={(e) => set("height", e.target.value)} />)}
+          {field(unitLabel(p.customerQuoteWeight, units), <input className={inputClass} inputMode="decimal" value={f.weight} onChange={(e) => set("weight", e.target.value)} />)}
+          {field(unitLabel(b.length, units), <input className={inputClass} inputMode="decimal" value={f.length} onChange={(e) => set("length", e.target.value)} />)}
+          {field(unitLabel(b.width, units), <input className={inputClass} inputMode="decimal" value={f.width} onChange={(e) => set("width", e.target.value)} />)}
+          {field(unitLabel(b.height, units), <input className={inputClass} inputMode="decimal" value={f.height} onChange={(e) => set("height", e.target.value)} />)}
           {field(p.customerQuoteValue, <input className={inputClass} inputMode="decimal" value={f.value} onChange={(e) => set("value", e.target.value)} />)}
         </div>
 

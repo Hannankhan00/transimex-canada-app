@@ -1,0 +1,54 @@
+{
+  "plannedPickupDateAndTime": "2026-10-22T14:00:00GMT+00:00",
+  "closeTime": "18:00",
+  "location": "reception",
+  "locationType": "business",
+  "accounts": [
+    {
+      "typeCode": "shipper",
+      "number": "973995169"
+    }
+  ],
+  "customerDetails": {
+    "shipperDetails": {
+      "postalAddress": {
+        "postalCode": "H4E 4N4",
+        "cityName": "Montreal",
+        "provinceCode": "QC",
+        "countryCode": "CA",
+        "addressLine1": "1 Test Street"
+      },
+      "contactInformation": {
+        "companyName": "Transimex Canada",
+        "fullName": "Transimex Shipping",
+        "phone": "+15145550100",
+        "email": "sales@canzova.com"
+      }
+    }
+  },
+  "shipmentDetails": [
+    {
+      "productCode": "P",
+      "accounts": [
+        {
+          "typeCode": "shipper",
+          "number": "973995169"
+        }
+      ],
+      "isCustomsDeclarable": true,
+      "declaredValue": 600,
+      "declaredValueCurrency": "CAD",
+      "unitOfMeasurement": "imperial",
+      "packages": [
+        {
+          "weight": 185,
+          "dimensions": {
+            "length": 42,
+            "width": 42,
+            "height": 12
+          }
+        }
+      ]
+    }
+  ]
+}

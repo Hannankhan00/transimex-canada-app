@@ -1,0 +1,84 @@
+{
+  "plannedShippingDateAndTime": "2026-10-22T12:00:00GMT+00:00",
+  "pickup": {
+    "isRequested": false
+  },
+  "productCode": "D",
+  "accounts": [
+    {
+      "typeCode": "shipper",
+      "number": "974044956"
+    }
+  ],
+  "customerDetails": {
+    "shipperDetails": {
+      "postalAddress": {
+        "postalCode": "10000",
+        "cityName": "New York",
+        "provinceCode": "NY",
+        "countryCode": "US",
+        "addressLine1": "1 Test Avenue"
+      },
+      "contactInformation": {
+        "companyName": "Transimex Test Shipper",
+        "fullName": "Test Shipper",
+        "phone": "+12125550100",
+        "email": "sales@canzova.com"
+      }
+    },
+    "receiverDetails": {
+      "postalAddress": {
+        "cityName": "Brampton",
+        "countryCode": "CA",
+        "postalCode": "L6T 5M1",
+        "addressLine1": "1 Test Street",
+        "provinceCode": "ON"
+      },
+      "contactInformation": {
+        "companyName": "Test Receiver",
+        "fullName": "Test Receiver",
+        "phone": "+15145550199",
+        "email": "receiver@example.com"
+      }
+    }
+  },
+  "content": {
+    "packages": [
+      {
+        "weight": 1,
+        "dimensions": {
+          "length": 5,
+          "width": 5,
+          "height": 2
+        },
+        "customerReferences": [
+          {
+            "typeCode": "CU",
+            "value": "AM-US-CA-DOX-1"
+          }
+        ]
+      }
+    ],
+    "isCustomsDeclarable": false,
+    "description": "Reports",
+    "unitOfMeasurement": "imperial",
+    "incoterm": "DAP"
+  },
+  "outputImageProperties": {
+    "printerDPI": 300,
+    "encodingFormat": "pdf",
+    "imageOptions": [
+      {
+        "typeCode": "label",
+        "templateName": "ECOM26_84_001"
+      },
+      {
+        "typeCode": "waybillDoc",
+        "templateName": "ARCH_8X4",
+        "isRequested": true,
+        "hideAccountNumber": false,
+        "numberOfCopies": 1
+      }
+    ]
+  }
+}

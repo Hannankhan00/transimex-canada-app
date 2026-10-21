@@ -66,6 +66,8 @@ export function toClientShipmentDTO(doc: ShipmentDoc) {
     paidAt: iso(doc.payment?.paidAt),
     refundedCents: doc.payment?.refundedCents ?? 0,
     labelReady: doc.status === "label_ready" && Boolean(doc.label?.key),
+    // The commercial invoice for goods: paperless means it goes to customs electronically, otherwise the client prints it.
+    invoice: doc.status === "label_ready" && doc.invoice?.key ? { paperless: Boolean(doc.invoice.paperless) } : null,
     // How this booking is paid. "invoice" = on the account's weekly invoice (invoiceId once invoiced).
     billing: doc.billing?.mode === "invoice" ? { mode: "invoice" as const, invoiceId: doc.billing.invoiceId || null } : null,
     // Only when a partner booked this for one of their customers.
@@ -172,6 +174,7 @@ export function toAdminShipmentDTO(doc: ShipmentDoc, user?: AccountUserInfo | nu
       lastAttemptAt: iso(doc.fulfilment?.lastAttemptAt),
     },
     label: doc.label ? { source: doc.label.source, uploadedAt: iso(doc.label.uploadedAt), bytes: doc.label.bytes } : null,
+    invoice: doc.invoice?.key ? { paperless: Boolean(doc.invoice.paperless), bytes: doc.invoice.bytes } : null,
     pickupConfirmation: doc.pickupConfirmation || "",
     // Invoice-account detail (staff only): the charge, what was credited back, and the invoice it is on.
     billingDetail: doc.billing?.mode === "invoice"

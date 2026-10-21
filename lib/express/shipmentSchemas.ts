@@ -50,7 +50,7 @@ export const bookingSchema = z.object({
   quoteId: z.string().trim().min(1, "Quote is required"),
   idempotencyKey: z.string().trim().min(16, "Idempotency key is too short").max(64).regex(/^[A-Za-z0-9_-]+$/, "Invalid idempotency key"),
   shipper: address.extend({ email }),
-  recipient: address.extend({ countryCode: country, email: email.optional() }),
+  recipient: address.extend({ countryCode: country, email: email.optional(), postalCode: z.string().trim().max(20).default("") }),
   /** Goods need at least one item and documents none: the saved quote says which, so that is checked against it. */
   items: z.array(customsItemSchema).max(20, "At most 20 items").default([]),
   /** Documents only: the client confirms the shipment holds paper documents with no commercial value. */

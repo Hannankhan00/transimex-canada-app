@@ -1,0 +1,52 @@
+{
+  "shipments": [
+    {
+      "shipmentTrackingNumber": "9339343145",
+      "status": "Success",
+      "shipmentTimestamp": "2026-10-22T12:00:00",
+      "productCode": "P",
+      "description": "Women's cotton knitted blouses",
+      "shipperDetails": {
+        "name": "",
+        "postalAddress": {
+          "cityName": "",
+          "postalCode": "",
+          "provinceCode": "",
+          "countryCode": "CA"
+        },
+        "serviceArea": [
+          {
+            "code": "YUL",
+            "description": "Quebec Service Area-CA"
+          }
+        ]
+      },
+      "receiverDetails": {
+        "name": "",
+        "postalAddress": {
+          "cityName": "",
+          "postalCode": "",
+          "provinceCode": "",
+          "countryCode": "MX"
+        },
+        "serviceArea": [
+          {
+            "code": "GDL",
+            "description": "Guadalajara-MX",
+            "facilityCode": "GDL"
+          }
+        ]
+      },
+      "totalWeight": 1,
+      "unitOfMeasurements": "imperial",
+      "shipperReferences": [
+        {
+          "value": "AM-CA-MX-WPX-1",
+          "typeCode": "CU"
+        }
+      ],
+      "events": [],
+      "numberOfPieces": 1
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "instance": "/expressapi/shipments",
+  "detail": "1001: The requested product(s) (E) not available based on your search criteria.(6ad8c59ffa1ebfd423ec7c79dff38dee)",
+  "title": "Bad request",
+  "message": "Bad request",
+  "status": "400"
+}

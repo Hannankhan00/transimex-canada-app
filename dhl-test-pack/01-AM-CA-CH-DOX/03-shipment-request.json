@@ -1,0 +1,83 @@
+{
+  "plannedShippingDateAndTime": "2026-10-22T12:00:00GMT+00:00",
+  "pickup": {
+    "isRequested": false
+  },
+  "productCode": "D",
+  "accounts": [
+    {
+      "typeCode": "shipper",
+      "number": "973995169"
+    }
+  ],
+  "customerDetails": {
+    "shipperDetails": {
+      "postalAddress": {
+        "postalCode": "H4E 4N4",
+        "cityName": "Montreal",
+        "provinceCode": "QC",
+        "countryCode": "CA",
+        "addressLine1": "1 Test Street"
+      },
+      "contactInformation": {
+        "companyName": "Transimex Canada",
+        "fullName": "Transimex Shipping",
+        "phone": "+15145550100",
+        "email": "sales@canzova.com"
+      }
+    },
+    "receiverDetails": {
+      "postalAddress": {
+        "cityName": "Bern",
+        "countryCode": "CH",
+        "postalCode": "3011",
+        "addressLine1": "1 Test Street"
+      },
+      "contactInformation": {
+        "companyName": "Test Receiver",
+        "fullName": "Test Receiver",
+        "phone": "+15145550199",
+        "email": "receiver@example.com"
+      }
+    }
+  },
+  "content": {
+    "packages": [
+      {
+        "weight": 1,
+        "dimensions": {
+          "length": 5,
+          "width": 5,
+          "height": 5
+        },
+        "customerReferences": [
+          {
+            "typeCode": "CU",
+            "value": "AM-CA-CH-DOX-1"
+          }
+        ]
+      }
+    ],
+    "isCustomsDeclarable": false,
+    "description": "Documents",
+    "unitOfMeasurement": "imperial",
+    "incoterm": "DAP"
+  },
+  "outputImageProperties": {
+    "printerDPI": 300,
+    "encodingFormat": "pdf",
+    "imageOptions": [
+      {
+        "typeCode": "label",
+        "templateName": "ECOM26_84_001"
+      },
+      {
+        "typeCode": "waybillDoc",
+        "templateName": "ARCH_8X4",
+        "isRequested": true,
+        "hideAccountNumber": false,
+        "numberOfCopies": 1
+      }
+    ]
+  }
+}

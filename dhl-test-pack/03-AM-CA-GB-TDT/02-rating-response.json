@@ -1,0 +1,900 @@
+{
+  "products": [
+    {
+      "productName": "EXPRESS 9:00",
+      "productCode": "K",
+      "localProductCode": "K",
+      "localProductCountryCode": "CA",
+      "networkTypeCode": "TD",
+      "isCustomerAgreement": false,
+      "weight": {
+        "volumetric": 0.58,
+        "provided": 1,
+        "unitOfMeasurement": "imperial"
+      },
+      "totalPrice": [
+        {
+          "currencyType": "BILLC",
+          "priceCurrency": "CAD",
+          "price": 77.15
+        },
+        {
+          "currencyType": "PULCL",
+          "priceCurrency": "CAD",
+          "price": 77.15
+        },
+        {
+          "currencyType": "BASEC",
+          "priceCurrency": "EUR",
+          "price": 47.93
+        }
+      ],
+      "totalPriceBreakdown": [
+        {
+          "currencyType": "BILLC",
+          "priceCurrency": "CAD",
+          "priceBreakdown": [
+            {
+              "typeCode": "STDIS",
+              "price": 127.49
+            },
+            {
+              "typeCode": "SPRQT",
+              "price": 30.91
+            }
+          ]
+        },
+        {
+          "currencyType": "PULCL",
+          "priceCurrency": "CAD",
+          "priceBreakdown": [
+            {
+              "typeCode": "STDIS",
+              "price": 127.49
+            },
+            {
+              "typeCode": "SPRQT",
+              "price": 30.91
+            }
+          ]
+        },
+        {
+          "currencyType": "BASEC",
+          "priceCurrency": "EUR",
+          "priceBreakdown": [
+            {
+              "typeCode": "STDIS",
+              "price": 79.17
+            },
+            {
+              "typeCode": "SPRQT",
+              "price": 19.2
+            }
+          ]
+        }
+      ],
+      "detailedPriceBreakdown": [
+        {
+          "currencyType": "BILLC",
+          "priceCurrency": "CAD",
+          "breakdown": [
+            {
+              "name": "EXPRESS 9:00",
+              "price": 30.91,
+              "priceBreakdown": [
+                {
+                  "priceType": "DISCOUNT",
+                  "typeCode": "W",
+                  "price": 92.72,
+                  "rate": 75,
+                  "basePrice": 123.63
+                }
+              ]
+            },
+            {
+              "name": "9:00 PREMIUM",
+              "serviceCode": "YI",
+              "localServiceCode": "YI",
+              "serviceTypeCode": "SCH",
+              "price": 25,
+              "isCustomerAgreement": false,
+              "isMarketedService": true,
+              "priceBreakdown": []
+            },
+            {
+              "name": "GOGREEN PLUS - CARBON REDUCED",
+              "serviceCode": "FD",
+              "localServiceCode": "FD",
+              "serviceTypeCode": "SCH",
+              "price": 0.27,
+              "isCustomerAgreement": true,
+              "isMarketedService": false,
+              "priceBreakdown": []
+            },
+            {
+              "name": "FUEL SURCHARGE",
+              "serviceCode": "FF",
+              "localServiceCode": "FF",
+              "serviceTypeCode": "SCH",
+              "price": 20.97,
+              "isCustomerAgreement": false,
+              "isMarketedService": false,
+              "priceBreakdown": [
+                {
+                  "priceType": "DISCOUNT",
+                  "typeCode": "W",
+                  "price": 34.77,
+                  "rate": 62.38,
+                  "basePrice": 55.74
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "currencyType": "PULCL",
+          "priceCurrency": "CAD",
+          "breakdown": [
+            {
+              "name": "EXPRESS 9:00",
+              "price": 30.91,
+              "priceBreakdown": [
+                {
+                  "priceType": "DISCOUNT",
+                  "typeCode": "W",
+                  "price": 92.72,
+                  "rate": 75,
+                  "basePrice": 123.63
+                }
+              ]
+            },
+            {
+              "name": "9:00 PREMIUM",
+              "serviceCode": "YI",
+              "localServiceCode": "YI",
+              "serviceTypeCode": "SCH",
+              "price": 25,
+              "isCustomerAgreement": false,
+              "isMarketedService": true,
+              "priceBreakdown": []
+            },
+            {
+              "name": "GOGREEN PLUS - CARBON REDUCED",
+              "serviceCode": "FD",
+              "localServiceCode": "FD",
+              "serviceTypeCode": "SCH",
+              "price": 0.27,
+              "isCustomerAgreement": true,
+              "isMarketedService": false,
+              "priceBreakdown": []
+            },
+            {
+              "name": "FUEL SURCHARGE",
+              "serviceCode": "FF",
+              "localServiceCode": "FF",
+              "serviceTypeCode": "SCH",
+              "price": 20.97,
+              "isCustomerAgreement": false,
+              "isMarketedService": false,
+              "priceBreakdown": [
+                {
+                  "priceType": "DISCOUNT",
+                  "typeCode": "W",
+                  "price": 34.77,
+                  "rate": 62.38,
+                  "basePrice": 55.74
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "currencyType": "BASEC",
+          "priceCurrency": "EUR",
+          "breakdown": [
+            {
+              "name": "EXPRESS 9:00",
+              "price": 19.2,
+              "priceBreakdown": [
+                {
+                  "priceType": "DISCOUNT",
+                  "typeCode": "W",
+                  "price": 57.58,
+                  "rate": 75,
+                  "basePrice": 76.78
+                }
+              ]
+            },
+            {
+              "name": "9:00 PREMIUM",
+              "serviceCode": "YI",
+              "localServiceCode": "YI",
+              "serviceTypeCode": "SCH",
+              "price": 15.53,
+              "isCustomerAgreement": false,
+              "isMarketedService": true,
+              "priceBreakdown": []
+            },
+            {
+              "name": "GOGREEN PLUS - CARBON REDUCED",
+              "serviceCode": "FD",
+              "localServiceCode": "FD",
+              "serviceTypeCode": "SCH",
+              "price": 0.17,
+              "isCustomerAgreement": true,
+              "isMarketedService": false,
+              "priceBreakdown": []
+            },
+            {
+              "name": "FUEL SURCHARGE",
+              "serviceCode": "FF",
+              "localServiceCode": "FF",
+              "serviceTypeCode": "SCH",
+              "price": 13.03,
+              "isCustomerAgreement": false,
+              "isMarketedService": false,
+              "priceBreakdown": [
+                {
+                  "priceType": "DISCOUNT",
+                  "typeCode": "W",
+                  "price": 21.59,
+                  "rate": 62.38,
+                  "basePrice": 34.62
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "pickupCapabilities": {
+        "nextBusinessDay": false,
+        "localCutoffDateAndTime": "2026-10-22T16:30:00",
+        "pickupEarliest": "11:00:00",
+        "pickupLatest": "17:30:00",
+        "pickupCutoffSameDayOutboundProcessing": "17:30:00",
+        "originServiceAreaCode": "YUL",
+        "originFacilityAreaCode": "GTW",
+        "pickupAdditionalDays": 0,
+        "pickupDayOfWeek": 4
+      },
+      "deliveryCapabilities": {
+        "deliveryTypeCode": "QDDF",
+        "estimatedDeliveryDateAndTime": "2026-10-26T09:00:00",
+        "destinationServiceAreaCode": "ZLS",
+        "destinationFacilityAreaCode": "ZLS",
+        "deliveryAdditionalDays": 0,
+        "deliveryDayOfWeek": 1,
+        "totalTransitDays": 4
+      },
+      "pricingDate": "2026-10-21"
+    },
+    {
+      "productName": "EXPRESS 12:00",
+      "productCode": "T",
+      "localProductCode": "T",
+      "localProductCountryCode": "CA",
+      "networkTypeCode": "TD",
+      "isCustomerAgreement": false,
+      "weight": {
+        "volumetric": 0.58,
+        "provided": 1,
+        "unitOfMeasurement": "imperial"
+      },
+      "totalPrice": [
+        {
+          "currencyType": "BILLC",
+          "priceCurrency": "CAD",
+          "price": 47.58
+        },
+        {
+          "currencyType": "PULCL",
+          "priceCurrency": "CAD",
+          "price": 47.58
+        },
+        {
+          "currencyType": "BASEC",
+          "priceCurrency": "EUR",
+          "price": 29.56
+        }
+      ],
+      "totalPriceBreakdown": [
+        {
+          "currencyType": "BILLC",
+          "priceCurrency": "CAD",
+          "priceBreakdown": [
+            {
+              "typeCode": "STDIS",
+              "price": 127.49
+            },
+            {
+              "typeCode": "SPRQT",
+              "price": 30.91
+            }
+          ]
+        },
+        {
+          "currencyType": "PULCL",
+          "priceCurrency": "CAD",
+          "priceBreakdown": [
+            {
+              "typeCode": "STDIS",
+              "price": 127.49
+            },
+            {
+              "typeCode": "SPRQT",
+              "price": 30.91
+            }
+          ]
+        },
+        {
+          "currencyType": "BASEC",
+          "priceCurrency": "EUR",
+          "priceBreakdown": [
+            {
+              "typeCode": "STDIS",
+              "price": 79.17
+            },
+            {
+              "typeCode": "SPRQT",
+              "price": 19.2
+            }
+          ]
+        }
+      ],
+      "detailedPriceBreakdown": [
+        {
+          "currencyType": "BILLC",
+          "priceCurrency": "CAD",
+          "breakdown": [
+            {
+              "name": "EXPRESS 12:00",
+              "price": 30.91,
+              "priceBreakdown": [
+                {
+                  "priceType": "DISCOUNT",
+                  "typeCode": "W",
+                  "price": 92.72,
+                  "rate": 75,
+                  "basePrice": 123.63
+                }
+              ]
+            },
+            {
+              "name": "12:00 PREMIUM",
+              "serviceCode": "YK",
+              "localServiceCode": "YK",
+              "serviceTypeCode": "SCH",
+              "price": 3.5,
+              "isCustomerAgreement": false,
+              "isMarketedService": true,
+              "priceBreakdown": []
+            },
+            {
+              "name": "GOGREEN PLUS - CARBON REDUCED",
+              "serviceCode": "FD",
+              "localServiceCode": "FD",
+              "serviceTypeCode": "SCH",
+              "price": 0.27,
+              "isCustomerAgreement": true,
+              "isMarketedService": false,
+              "priceBreakdown": []
+            },
+            {
+              "name": "FUEL SURCHARGE",
+              "serviceCode": "FF",
+              "localServiceCode": "FF",
+              "serviceTypeCode": "SCH",
+              "price": 12.9,
+              "isCustomerAgreement": false,
+              "isMarketedService": false,
+              "priceBreakdown": [
+                {
+                  "priceType": "DISCOUNT",
+                  "typeCode": "W",
+                  "price": 34.77,
+                  "rate": 72.94,
+                  "basePrice": 47.67
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "currencyType": "PULCL",
+          "priceCurrency": "CAD",
+          "breakdown": [
+            {
+              "name": "EXPRESS 12:00",
+              "price": 30.91,
+              "priceBreakdown": [
+                {
+                  "priceType": "DISCOUNT",
+                  "typeCode": "W",
+                  "price": 92.72,
+                  "rate": 75,
+                  "basePrice": 123.63
+                }
+              ]
+            },
+            {
+              "name": "12:00 PREMIUM",
+              "serviceCode": "YK",
+              "localServiceCode": "YK",
+              "serviceTypeCode": "SCH",
+              "price": 3.5,
+              "isCustomerAgreement": false,
+              "isMarketedService": true,
+              "priceBreakdown": []
+            },
+            {
+              "name": "GOGREEN PLUS - CARBON REDUCED",
+              "serviceCode": "FD",
+              "localServiceCode": "FD",
+              "serviceTypeCode": "SCH",
+              "price": 0.27,
+              "isCustomerAgreement": true,
+              "isMarketedService": false,
+              "priceBreakdown": []
+            },
+            {
+              "name": "FUEL SURCHARGE",
+              "serviceCode": "FF",
+              "localServiceCode": "FF",
+              "serviceTypeCode": "SCH",
+              "price": 12.9,
+              "isCustomerAgreement": false,
+              "isMarketedService": false,
+              "priceBreakdown": [
+                {
+                  "priceType": "DISCOUNT",
+                  "typeCode": "W",
+                  "price": 34.77,
+                  "rate": 72.94,
+                  "basePrice": 47.67
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "currencyType": "BASEC",
+          "priceCurrency": "EUR",
+          "breakdown": [
+            {
+              "name": "EXPRESS 12:00",
+              "price": 19.2,
+              "priceBreakdown": [
+                {
+                  "priceType": "DISCOUNT",
+                  "typeCode": "W",
+                  "price": 57.58,
+                  "rate": 75,
+                  "basePrice": 76.78
+                }
+              ]
+            },
+            {
+              "name": "12:00 PREMIUM",
+              "serviceCode": "YK",
+              "localServiceCode": "YK",
+              "serviceTypeCode": "SCH",
+              "price": 2.17,
+              "isCustomerAgreement": false,
+              "isMarketedService": true,
+              "priceBreakdown": []
+            },
+            {
+              "name": "GOGREEN PLUS - CARBON REDUCED",
+              "serviceCode": "FD",
+              "localServiceCode": "FD",
+              "serviceTypeCode": "SCH",
+              "price": 0.17,
+              "isCustomerAgreement": true,
+              "isMarketedService": false,
+              "priceBreakdown": []
+            },
+            {
+              "name": "FUEL SURCHARGE",
+              "serviceCode": "FF",
+              "localServiceCode": "FF",
+              "serviceTypeCode": "SCH",
+              "price": 8.02,
+              "isCustomerAgreement": false,
+              "isMarketedService": false,
+              "priceBreakdown": [
+                {
+                  "priceType": "DISCOUNT",
+                  "typeCode": "W",
+                  "price": 21.59,
+                  "rate": 72.94,
+                  "basePrice": 29.61
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "pickupCapabilities": {
+        "nextBusinessDay": false,
+        "localCutoffDateAndTime": "2026-10-22T16:30:00",
+        "pickupEarliest": "11:00:00",
+        "pickupLatest": "17:30:00",
+        "pickupCutoffSameDayOutboundProcessing": "17:30:00",
+        "originServiceAreaCode": "YUL",
+        "originFacilityAreaCode": "GTW",
+        "pickupAdditionalDays": 0,
+        "pickupDayOfWeek": 4
+      },
+      "deliveryCapabilities": {
+        "deliveryTypeCode": "QDDF",
+        "estimatedDeliveryDateAndTime": "2026-10-26T12:00:00",
+        "destinationServiceAreaCode": "ZLS",
+        "destinationFacilityAreaCode": "ZLS",
+        "deliveryAdditionalDays": 0,
+        "deliveryDayOfWeek": 1,
+        "totalTransitDays": 4
+      },
+      "pricingDate": "2026-10-21"
+    },
+    {
+      "productName": "EXPRESS WORLDWIDE",
+      "productCode": "D",
+      "localProductCode": "D",
+      "localProductCountryCode": "CA",
+      "networkTypeCode": "TD",
+      "isCustomerAgreement": false,
+      "weight": {
+        "volumetric": 0.58,
+        "provided": 1,
+        "unitOfMeasurement": "imperial"
+      },
+      "totalPrice": [
+        {
+          "currencyType": "BILLC",
+          "priceCurrency": "CAD",
+          "price": 42.77
+        },
+        {
+          "currencyType": "PULCL",
+          "priceCurrency": "CAD",
+          "price": 42.77
+        },
+        {
+          "currencyType": "BASEC",
+          "priceCurrency": "EUR",
+          "price": 26.57
+        }
+      ],
+      "totalPriceBreakdown": [
+        {
+          "currencyType": "BILLC",
+          "priceCurrency": "CAD",
+          "priceBreakdown": [
+            {
+              "typeCode": "STDIS",
+              "price": 127.49
+            },
+            {
+              "typeCode": "SPRQT",
+              "price": 30.91
+            }
+          ]
+        },
+        {
+          "currencyType": "PULCL",
+          "priceCurrency": "CAD",
+          "priceBreakdown": [
+            {
+              "typeCode": "STDIS",
+              "price": 127.49
+            },
+            {
+              "typeCode": "SPRQT",
+              "price": 30.91
+            }
+          ]
+        },
+        {
+          "currencyType": "BASEC",
+          "priceCurrency": "EUR",
+          "priceBreakdown": [
+            {
+              "typeCode": "STDIS",
+              "price": 79.17
+            },
+            {
+              "typeCode": "SPRQT",
+              "price": 19.2
+            }
+          ]
+        }
+      ],
+      "detailedPriceBreakdown": [
+        {
+          "currencyType": "BILLC",
+          "priceCurrency": "CAD",
+          "breakdown": [
+            {
+              "name": "EXPRESS WORLDWIDE",
+              "price": 30.91,
+              "priceBreakdown": [
+                {
+                  "priceType": "DISCOUNT",
+                  "typeCode": "W",
+                  "price": 92.72,
+                  "rate": 75,
+                  "basePrice": 123.63
+                }
+              ]
+            },
+            {
+              "name": "GOGREEN PLUS - CARBON REDUCED",
+              "serviceCode": "FD",
+              "localServiceCode": "FD",
+              "serviceTypeCode": "SCH",
+              "price": 0.27,
+              "isCustomerAgreement": true,
+              "isMarketedService": false,
+              "priceBreakdown": []
+            },
+            {
+              "name": "FUEL SURCHARGE",
+              "serviceCode": "FF",
+              "localServiceCode": "FF",
+              "serviceTypeCode": "SCH",
+              "price": 11.59,
+              "isCustomerAgreement": false,
+              "isMarketedService": false,
+              "priceBreakdown": [
+                {
+                  "priceType": "DISCOUNT",
+                  "typeCode": "W",
+                  "price": 34.77,
+                  "rate": 75,
+                  "basePrice": 46.36
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "currencyType": "PULCL",
+          "priceCurrency": "CAD",
+          "breakdown": [
+            {
+              "name": "EXPRESS WORLDWIDE",
+              "price": 30.91,
+              "priceBreakdown": [
+                {
+                  "priceType": "DISCOUNT",
+                  "typeCode": "W",
+                  "price": 92.72,
+                  "rate": 75,
+                  "basePrice": 123.63
+                }
+              ]
+            },
+            {
+              "name": "GOGREEN PLUS - CARBON REDUCED",
+              "serviceCode": "FD",
+              "localServiceCode": "FD",
+              "serviceTypeCode": "SCH",
+              "price": 0.27,
+              "isCustomerAgreement": true,
+              "isMarketedService": false,
+              "priceBreakdown": []
+            },
+            {
+              "name": "FUEL SURCHARGE",
+              "serviceCode": "FF",
+              "localServiceCode": "FF",
+              "serviceTypeCode": "SCH",
+              "price": 11.59,
+              "isCustomerAgreement": false,
+              "isMarketedService": false,
+              "priceBreakdown": [
+                {
+                  "priceType": "DISCOUNT",
+                  "typeCode": "W",
+                  "price": 34.77,
+                  "rate": 75,
+                  "basePrice": 46.36
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "currencyType": "BASEC",
+          "priceCurrency": "EUR",
+          "breakdown": [
+            {
+              "name": "EXPRESS WORLDWIDE",
+              "price": 19.2,
+              "priceBreakdown": [
+                {
+                  "priceType": "DISCOUNT",
+                  "typeCode": "W",
+                  "price": 57.58,
+                  "rate": 75,
+                  "basePrice": 76.78
+                }
+              ]
+            },
+            {
+              "name": "GOGREEN PLUS - CARBON REDUCED",
+              "serviceCode": "FD",
+              "localServiceCode": "FD",
+              "serviceTypeCode": "SCH",
+              "price": 0.17,
+              "isCustomerAgreement": true,
+              "isMarketedService": false,
+              "priceBreakdown": []
+            },
+            {
+              "name": "FUEL SURCHARGE",
+              "serviceCode": "FF",
+              "localServiceCode": "FF",
+              "serviceTypeCode": "SCH",
+              "price": 7.2,
+              "isCustomerAgreement": false,
+              "isMarketedService": false,
+              "priceBreakdown": [
+                {
+                  "priceType": "DISCOUNT",
+                  "typeCode": "W",
+                  "price": 21.59,
+                  "rate": 75,
+                  "basePrice": 28.79
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "pickupCapabilities": {
+        "nextBusinessDay": false,
+        "localCutoffDateAndTime": "2026-10-22T16:30:00",
+        "pickupEarliest": "11:00:00",
+        "pickupLatest": "17:30:00",
+        "pickupCutoffSameDayOutboundProcessing": "17:30:00",
+        "originServiceAreaCode": "YUL",
+        "originFacilityAreaCode": "GTW",
+        "pickupAdditionalDays": 0,
+        "pickupDayOfWeek": 4
+      },
+      "deliveryCapabilities": {
+        "deliveryTypeCode": "QDDF",
+        "estimatedDeliveryDateAndTime": "2026-10-26T23:59:00",
+        "destinationServiceAreaCode": "ZLS",
+        "destinationFacilityAreaCode": "ZLS",
+        "deliveryAdditionalDays": 0,
+        "deliveryDayOfWeek": 1,
+        "totalTransitDays": 4
+      },
+      "pricingDate": "2026-10-21"
+    },
+    {
+      "productName": "EXPRESS EASY",
+      "productCode": "7",
+      "localProductCode": "7",
+      "localProductCountryCode": "CA",
+      "networkTypeCode": "TD",
+      "isCustomerAgreement": true,
+      "weight": {
+        "volumetric": 0.58,
+        "provided": 1,
+        "unitOfMeasurement": "imperial"
+      },
+      "totalPrice": [
+        {
+          "currencyType": "BILLC",
+          "priceCurrency": "CAD",
+          "price": 80.9
+        },
+        {
+          "currencyType": "PULCL",
+          "priceCurrency": "CAD",
+          "price": 80.9
+        },
+        {
+          "currencyType": "BASEC",
+          "priceCurrency": "EUR",
+          "price": 50.24
+        }
+      ],
+      "totalPriceBreakdown": [
+        {
+          "currencyType": "BILLC",
+          "priceCurrency": "CAD",
+          "priceBreakdown": [
+            {
+              "typeCode": "SPRQT",
+              "price": 80.9
+            }
+          ]
+        },
+        {
+          "currencyType": "PULCL",
+          "priceCurrency": "CAD",
+          "priceBreakdown": [
+            {
+              "typeCode": "SPRQT",
+              "price": 80.9
+            }
+          ]
+        },
+        {
+          "currencyType": "BASEC",
+          "priceCurrency": "EUR",
+          "priceBreakdown": [
+            {
+              "typeCode": "SPRQT",
+              "price": 50.24
+            }
+          ]
+        }
+      ],
+      "detailedPriceBreakdown": [
+        {
+          "currencyType": "BILLC",
+          "priceCurrency": "CAD",
+          "breakdown": [
+            {
+              "name": "EXPRESS EASY",
+              "price": 80.9
+            }
+          ]
+        },
+        {
+          "currencyType": "PULCL",
+          "priceCurrency": "CAD",
+          "breakdown": [
+            {
+              "name": "EXPRESS EASY",
+              "price": 80.9
+            }
+          ]
+        },
+        {
+          "currencyType": "BASEC",
+          "priceCurrency": "EUR",
+          "breakdown": [
+            {
+              "name": "EXPRESS EASY",
+              "price": 50.24
+            }
+          ]
+        }
+      ],
+      "pickupCapabilities": {
+        "nextBusinessDay": false,
+        "localCutoffDateAndTime": "2026-10-22T16:30:00",
+        "pickupEarliest": "11:00:00",
+        "pickupLatest": "17:30:00",
+        "pickupCutoffSameDayOutboundProcessing": "17:30:00",
+        "originServiceAreaCode": "YUL",
+        "originFacilityAreaCode": "GTW",
+        "pickupAdditionalDays": 0,
+        "pickupDayOfWeek": 4
+      },
+      "deliveryCapabilities": {
+        "deliveryTypeCode": "QDDF",
+        "estimatedDeliveryDateAndTime": "2026-10-26T23:59:00",
+        "destinationServiceAreaCode": "ZLS",
+        "destinationFacilityAreaCode": "ZLS",
+        "deliveryAdditionalDays": 0,
+        "deliveryDayOfWeek": 1,
+        "totalTransitDays": 4
+      },
+      "pricingDate": "2026-10-21"
+    }
+  ],
+  "exchangeRates": [
+    {
+      "currentExchangeRate": 0.621049,
+      "currency": "CAD",
+      "baseCurrency": "EUR"
+    }
+  ]
+}

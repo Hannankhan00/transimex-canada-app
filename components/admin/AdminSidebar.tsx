@@ -64,9 +64,12 @@ export default function AdminSidebar({
   const displayRoleTitle =
     language === "fr" ? rolePreset.titleFr : rolePreset.titleEn;
 
-  const sectionLabels: Record<"operations" | "clients" | "insights" | "system", string> = {
+  type SectionKey = "operations" | "clients" | "express" | "insights" | "system";
+
+  const sectionLabels: Record<SectionKey, string> = {
     operations: language === "fr" ? "Opérations" : "Operations",
     clients: language === "fr" ? "Clients & Support" : "Clients & Support",
+    express: "Transimex Express",
     insights: language === "fr" ? "Analytique & Contenu" : "Analytics & Content",
     system: language === "fr" ? "Système & Accès" : "System & Access",
   };
@@ -78,7 +81,7 @@ export default function AdminSidebar({
     icon: React.ComponentType<{ className?: string }>;
     exact?: boolean;
     module: PermissionModule | null;
-    section: "operations" | "clients" | "insights" | "system" | null;
+    section: SectionKey | null;
   }> = [
     {
       name: language === "fr" ? "Aperçu Opérations" : "Dashboard Overview",
@@ -124,13 +127,6 @@ export default function AdminSidebar({
       section: "clients",
     },
     {
-      name: "Transimex Express",
-      href: "/admin/express",
-      icon: Plane,
-      module: "express",
-      section: "clients",
-    },
-    {
       name: language === "fr" ? "Billets de Support" : "Support Tickets",
       href: "/admin/support",
       icon: LifeBuoy,
@@ -143,6 +139,13 @@ export default function AdminSidebar({
       icon: Mail,
       module: "messages",
       section: "clients",
+    },
+    {
+      name: "Transimex Express",
+      href: "/admin/express",
+      icon: Plane,
+      module: "express",
+      section: "express",
     },
     {
       name: language === "fr" ? "Analytique & Rapports" : "Analytics & Reports",
@@ -230,7 +233,7 @@ export default function AdminSidebar({
               <React.Fragment key={item.href}>
                 {showSectionLabel && (
                   <div className="px-3.5 pt-4 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                    {sectionLabels[item.section as "operations" | "clients" | "insights" | "system"]}
+                    {sectionLabels[item.section as SectionKey]}
                   </div>
                 )}
                 <Link

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { isAfricanCountry } from "./africa";
+import { isDhlCountry } from "@/lib/data/dhlCountries";
 
 const place = (label: string) => z.string({ required_error: `${label} is required` }).trim().min(1, `${label} is required`).max(80);
 
@@ -13,10 +13,17 @@ const parcel = z.object({
 const today = () => new Date().toISOString().slice(0, 10);
 const addDays = (days: number) => new Date(Date.now() + days * 86_400_000).toISOString().slice(0, 10);
 
-/** What anyone requesting a quote supplies. Canada to Africa only. */
+/** What anyone requesting a quote supplies: any two countries DHL serves. */
 export const quoteRequestSchema = z.object({
   origin: z.object({
-    postalCode: place("Origin postal code"),
+    countryCode: z
+      .string()
+      .trim()
+      .default("CA")
+      .transform((v) => v.toUpperCase())
+      .refine(isDhlCountry, "Choose a country DHL ships from"),
+    // Some countries have no postal codes. DHL accepts an empty one and says if a country needs it.
+    postalCode: z.string().trim().max(80).default(""),
     city: place("Origin city"),
   }),
   destination: z.object({
@@ -24,8 +31,9 @@ export const quoteRequestSchema = z.object({
       .string()
       .trim()
       .transform((v) => v.toUpperCase())
-      .refine(isAfricanCountry, "Express ships from Canada to African countries only"),
-    postalCode: place("Destination postal code"),
+      .refine(isDhlCountry, "Choose a country DHL ships to"),
+    // Some countries have no postal codes. DHL accepts an empty one and says if a country needs it.
+    postalCode: z.string().trim().max(80).default(""),
     city: place("Destination city"),
   }),
   parcels: z.array(parcel).min(1, "Add at least one parcel").max(10, "At most 10 parcels per quote"),

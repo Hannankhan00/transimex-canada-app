@@ -1,0 +1,36 @@
+{
+  "customerDetails": {
+    "shipperDetails": {
+      "postalCode": "10000",
+      "cityName": "New York",
+      "countryCode": "US"
+    },
+    "receiverDetails": {
+      "postalCode": "L6T 5M1",
+      "cityName": "Brampton",
+      "countryCode": "CA"
+    }
+  },
+  "accounts": [
+    {
+      "typeCode": "shipper",
+      "number": "974044956"
+    }
+  ],
+  "plannedShippingDateAndTime": "2026-10-22T12:00:00GMT+00:00",
+  "unitOfMeasurement": "imperial",
+  "isCustomsDeclarable": false,
+  "requestAllValueAddedServices": false,
+  "returnStandardProductsOnly": false,
+  "nextBusinessDay": false,
+  "packages": [
+    {
+      "weight": 1,
+      "dimensions": {
+        "length": 5,
+        "width": 5,
+        "height": 2
+      }
+    }
+  ]
+}

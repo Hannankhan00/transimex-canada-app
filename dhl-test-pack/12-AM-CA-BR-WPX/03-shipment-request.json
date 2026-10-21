@@ -1,0 +1,132 @@
+{
+  "plannedShippingDateAndTime": "2026-10-22T12:00:00GMT+00:00",
+  "pickup": {
+    "isRequested": false
+  },
+  "productCode": "P",
+  "accounts": [
+    {
+      "typeCode": "shipper",
+      "number": "973995169"
+    },
+    {
+      "typeCode": "duties-taxes",
+      "number": "973995169"
+    }
+  ],
+  "customerDetails": {
+    "shipperDetails": {
+      "postalAddress": {
+        "postalCode": "H4E 4N4",
+        "cityName": "Montreal",
+        "provinceCode": "QC",
+        "countryCode": "CA",
+        "addressLine1": "1 Test Street"
+      },
+      "contactInformation": {
+        "companyName": "Transimex Canada",
+        "fullName": "Transimex Shipping",
+        "phone": "+15145550100",
+        "email": "sales@canzova.com"
+      }
+    },
+    "receiverDetails": {
+      "postalAddress": {
+        "cityName": "Sao Paulo",
+        "countryCode": "BR",
+        "postalCode": "01003",
+        "addressLine1": "1 Test Street"
+      },
+      "contactInformation": {
+        "companyName": "Test Receiver",
+        "fullName": "Test Receiver",
+        "phone": "+15145550199",
+        "email": "receiver@example.com"
+      }
+    }
+  },
+  "content": {
+    "packages": [
+      {
+        "weight": 2,
+        "dimensions": {
+          "length": 15,
+          "width": 10,
+          "height": 5
+        },
+        "customerReferences": [
+          {
+            "typeCode": "CU",
+            "value": "AM-CA-BR-WPX-1"
+          }
+        ]
+      }
+    ],
+    "isCustomsDeclarable": true,
+    "description": "Men's leather belts, finished, buckle type",
+    "unitOfMeasurement": "imperial",
+    "incoterm": "DDP",
+    "declaredValue": 50,
+    "declaredValueCurrency": "CAD",
+    "exportDeclaration": {
+      "lineItems": [
+        {
+          "number": 1,
+          "description": "Men's leather belts, finished, buckle type",
+          "price": 50,
+          "quantity": {
+            "value": 1,
+            "unitOfMeasurement": "PCS"
+          },
+          "commodityCodes": [
+            {
+              "typeCode": "outbound",
+              "value": "420330"
+            }
+          ],
+          "exportReasonType": "permanent",
+          "manufacturerCountry": "CA",
+          "weight": {
+            "netValue": 2,
+            "grossValue": 2
+          }
+        }
+      ],
+      "invoice": {
+        "number": "AM-CA-BR-WPX",
+        "date": "2026-10-22"
+      },
+      "exportReason": "sale",
+      "exportReasonType": "permanent"
+    }
+  },
+  "outputImageProperties": {
+    "printerDPI": 300,
+    "encodingFormat": "pdf",
+    "imageOptions": [
+      {
+        "typeCode": "label",
+        "templateName": "ECOM26_84_001"
+      },
+      {
+        "typeCode": "waybillDoc",
+        "templateName": "ARCH_8X4",
+        "isRequested": true,
+        "hideAccountNumber": false,
+        "numberOfCopies": 1
+      },
+      {
+        "typeCode": "invoice",
+        "templateName": "COMMERCIAL_INVOICE_P_10",
+        "isRequested": true,
+        "invoiceType": "commercial",
+        "languageCode": "eng"
+      }
+    ]
+  },
+  "valueAddedServices": [
+    {
+      "serviceCode": "WY"
+    }
+  ]
+}

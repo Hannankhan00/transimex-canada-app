@@ -156,25 +156,25 @@ describe("the pickup fee comes from DHL", () => {
       pickupRequested: pickup,
     });
 
-  it("uses DHL's fee over the Settings fallback", async () => {
-    const r = await priceRequest({ input: input(true), adapter: new MockDhlAdapter(), clientDiscountPct: 5, settings: { dhlContractDiscountPct: null, pickupFeeCents: 9999 } });
-    expect(r.breakdown.pickupFeeCents).toBe(1500); // the mock DHL fee, not 9999
+  it("uses the fee DHL quotes, when it quotes one", async () => {
+    const r = await priceRequest({ input: input(true), adapter: new MockDhlAdapter(), clientDiscountPct: 5, settings: { dhlContractDiscountPct: null } });
+    expect(r.breakdown.pickupFeeCents).toBe(1500); // the mock DHL fee
   });
 
-  it("charges no pickup fee for drop-off, whatever DHL or Settings say", async () => {
-    const r = await priceRequest({ input: input(false), adapter: new MockDhlAdapter(), clientDiscountPct: 5, settings: { dhlContractDiscountPct: null, pickupFeeCents: 9999 } });
+  it("charges no pickup fee for drop-off", async () => {
+    const r = await priceRequest({ input: input(false), adapter: new MockDhlAdapter(), clientDiscountPct: 5, settings: { dhlContractDiscountPct: null } });
     expect(r.breakdown.pickupFeeCents).toBe(0);
   });
 
-  it("falls back to the Settings fee only when DHL supplies none", async () => {
+  it("charges nothing for pickup when DHL supplies no fee (the live API does not)", async () => {
     const mock = new MockDhlAdapter();
     const noFee = {
       carrier: "dhl",
       validateAddress: mock.validateAddress.bind(mock),
       getRates: async (req: Parameters<CarrierAdapter["getRates"]>[0]) => (await mock.getRates(req)).map((o) => ({ ...o, pickupFeeCents: undefined })),
     } as unknown as CarrierAdapter;
-    const r = await priceRequest({ input: input(true), adapter: noFee, clientDiscountPct: 5, settings: { dhlContractDiscountPct: null, pickupFeeCents: 900 } });
-    expect(r.breakdown.pickupFeeCents).toBe(900);
+    const r = await priceRequest({ input: input(true), adapter: noFee, clientDiscountPct: 5, settings: { dhlContractDiscountPct: null } });
+    expect(r.breakdown.pickupFeeCents).toBe(0);
   });
 
   it("passes the pickup request to the carrier so it can quote the fee", async () => {
@@ -188,7 +188,7 @@ describe("the pickup fee comes from DHL", () => {
         return mock.getRates(req);
       },
     } as unknown as CarrierAdapter;
-    await priceRequest({ input: input(true), adapter: spy, clientDiscountPct: 0, settings: { dhlContractDiscountPct: null, pickupFeeCents: 0 } });
+    await priceRequest({ input: input(true), adapter: spy, clientDiscountPct: 0, settings: { dhlContractDiscountPct: null } });
     expect(seen).toBe(true);
   });
 });

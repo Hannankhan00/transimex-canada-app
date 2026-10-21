@@ -23,7 +23,7 @@ export class QuoteError extends Error {
 }
 
 export interface NormalizedQuoteRequest {
-  origin: { countryCode: "CA"; postalCode: string; city: string };
+  origin: { countryCode: string; postalCode: string; city: string };
   destination: { countryCode: string; postalCode: string; city: string };
   parcels: QuoteRequestInput["parcels"];
   contentType: ContentType;
@@ -45,7 +45,7 @@ export function normalizeRequest(input: QuoteRequestInput, now: Date = new Date(
   // Documents have no commercial value and need no customs declaration, whatever else was sent.
   const documents = input.contentType === "documents";
   return {
-    origin: { countryCode: "CA", postalCode: input.origin.postalCode, city: input.origin.city },
+    origin: { countryCode: input.origin.countryCode, postalCode: input.origin.postalCode, city: input.origin.city },
     destination: { ...input.destination },
     parcels: input.parcels,
     contentType: documents ? "documents" : "goods",
@@ -65,7 +65,7 @@ export async function priceRequest(params: {
   input: QuoteRequestInput;
   adapter: CarrierAdapter;
   clientDiscountPct: number;
-  settings: Pick<ExpressPricingSettings, "dhlContractDiscountPct" | "pickupFeeCents"> & { documentMaxWeightKg?: number };
+  settings: Pick<ExpressPricingSettings, "dhlContractDiscountPct"> & { documentMaxWeightKg?: number };
   markup?: MarkupInput | null;
   now?: Date;
 }): Promise<PricedRequest> {
@@ -137,8 +137,8 @@ export async function priceRequest(params: {
       publicList: option.publicList,
       dhlContractDiscountPct: params.settings.dhlContractDiscountPct,
       clientDiscountPct: params.clientDiscountPct,
-      // The pickup fee comes from DHL; the Settings value is only a fallback if DHL did not supply one.
-      pickupFeeCents: request.pickupRequested ? (option.pickupFeeCents ?? params.settings.pickupFeeCents) : 0,
+      // The pickup fee is whatever DHL's rate includes (the live API returns none, so pickups are not charged separately).
+      pickupFeeCents: request.pickupRequested ? (option.pickupFeeCents ?? 0) : 0,
       markup: params.markup,
     });
     return { option, breakdown, request };

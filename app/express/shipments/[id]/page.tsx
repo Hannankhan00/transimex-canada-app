@@ -301,6 +301,20 @@ function Detail() {
         </section>
       )}
 
+      {shipment.labelReady && shipment.invoice && (
+        <section className={`rounded-2xl border p-5 space-y-3 bg-white ${shipment.invoice.paperless ? "border-slate-200" : "border-amber-300"}`}>
+          <h2 className="font-bold text-[#0B2545] text-sm">{s.invoiceTitle}</h2>
+          <p className="text-sm text-slate-600">{shipment.invoice.paperless ? s.invoicePaperless : s.invoicePrint}</p>
+          <a
+            href={`/api/express/shipments/${shipment.id}/invoice`}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-800 text-sm font-bold"
+          >
+            <Download className="w-4 h-4" />
+            {s.downloadInvoice}
+          </a>
+        </section>
+      )}
+
       <div className="grid md:grid-cols-2 gap-5">
         <section className="bg-white border border-slate-200 rounded-2xl p-5 space-y-2">
           <h2 className="font-bold text-[#0B2545] text-sm">{s.sender}</h2>

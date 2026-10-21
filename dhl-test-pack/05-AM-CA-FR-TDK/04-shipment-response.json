@@ -1,0 +1,11 @@
+{
+  "instance": "/expressapi/shipments",
+  "detail": "Multiple problems found, see Additional Details",
+  "title": "Bad request",
+  "message": "Bad request",
+  "additionalDetails": [
+    "1001: The requested product(s) (K) not available based on your search criteria.(6ad8c5679d3c112a8b3ae38f7fe5e373)",
+    "410137: Product(s) filtered out on delivery (delivery time in TTS > marketed delivery time in GREF), K/-"
+  ],
+  "status": "400"
+}

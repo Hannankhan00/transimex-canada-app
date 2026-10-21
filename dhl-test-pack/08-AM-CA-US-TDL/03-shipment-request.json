@@ -1,0 +1,98 @@
+{
+  "plannedShippingDateAndTime": "2026-10-22T12:00:00GMT+00:00",
+  "pickup": {
+    "isRequested": false
+  },
+  "productCode": "L",
+  "accounts": [
+    {
+      "typeCode": "shipper",
+      "number": "973995169"
+    }
+  ],
+  "customerDetails": {
+    "shipperDetails": {
+      "postalAddress": {
+        "postalCode": "H4E 4N4",
+        "cityName": "Montreal",
+        "provinceCode": "QC",
+        "countryCode": "CA",
+        "addressLine1": "1 Test Street"
+      },
+      "contactInformation": {
+        "companyName": "Transimex Canada",
+        "fullName": "Transimex Shipping",
+        "phone": "+15145550100",
+        "email": "sales@canzova.com"
+      }
+    },
+    "receiverDetails": {
+      "postalAddress": {
+        "cityName": "Cincinnati",
+        "countryCode": "US",
+        "postalCode": "45236",
+        "addressLine1": "1 Test Street",
+        "provinceCode": "OH"
+      },
+      "contactInformation": {
+        "companyName": "Test Receiver",
+        "fullName": "Test Receiver",
+        "phone": "+15145550199",
+        "email": "receiver@example.com"
+      }
+    }
+  },
+  "content": {
+    "packages": [
+      {
+        "weight": 2,
+        "dimensions": {
+          "length": 10,
+          "width": 10,
+          "height": 1
+        },
+        "customerReferences": [
+          {
+            "typeCode": "CU",
+            "value": "AM-CA-US-TDL-1"
+          }
+        ]
+      },
+      {
+        "weight": 3,
+        "dimensions": {
+          "length": 12,
+          "width": 5,
+          "height": 2
+        },
+        "customerReferences": [
+          {
+            "typeCode": "CU",
+            "value": "AM-CA-US-TDL-2"
+          }
+        ]
+      }
+    ],
+    "isCustomsDeclarable": false,
+    "description": "Brochures",
+    "unitOfMeasurement": "imperial",
+    "incoterm": "DAP"
+  },
+  "outputImageProperties": {
+    "printerDPI": 300,
+    "encodingFormat": "pdf",
+    "imageOptions": [
+      {
+        "typeCode": "label",
+        "templateName": "ECOM26_84_001"
+      },
+      {
+        "typeCode": "waybillDoc",
+        "templateName": "ARCH_8X4",
+        "isRequested": true,
+        "hideAccountNumber": false,
+        "numberOfCopies": 1
+      }
+    ]
+  }
+}

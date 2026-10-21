@@ -7,7 +7,7 @@ import { quoteRequestSchema, simulateSchema } from "../quoteSchemas";
 import { QuoteError, normalizeRequest, priceRequest } from "../quoteService";
 import { toAdminQuoteDTO, toClientQuoteDTO } from "../quoteDto";
 import { settingsSchema } from "../validation";
-import { isAfricanCountry } from "../africa";
+import { isDhlCountry } from "@/lib/data/dhlCountries";
 
 const validRequest = {
   origin: { postalCode: "M5V 2T6", city: "Toronto" },
@@ -17,7 +17,7 @@ const validRequest = {
 };
 const input = (over: Record<string, unknown> = {}) => quoteRequestSchema.parse({ ...validRequest, ...over });
 
-const settings = { dhlContractDiscountPct: null as number | null, pickupFeeCents: 0 };
+const settings = { dhlContractDiscountPct: null as number | null };
 
 describe("quote request validation", () => {
   it("accepts a Canada to Africa request and fills defaults", () => {
@@ -27,11 +27,14 @@ describe("quote request validation", () => {
     expect(r.pickupRequested).toBe(false);
   });
 
-  it("only ships to African countries", () => {
-    expect(isAfricanCountry("ng")).toBe(true);
-    expect(isAfricanCountry("FR")).toBe(false);
-    expect(quoteRequestSchema.safeParse({ ...validRequest, destination: { ...validRequest.destination, countryCode: "FR" } }).success).toBe(false);
-    expect(quoteRequestSchema.safeParse({ ...validRequest, destination: { ...validRequest.destination, countryCode: "CA" } }).success).toBe(false);
+  it("ships between any countries DHL serves, and defaults the origin to Canada", () => {
+    expect(isDhlCountry("ng")).toBe(true);
+    expect(isDhlCountry("FR")).toBe(true);
+    expect(isDhlCountry("KP")).toBe(false);
+    expect(input().origin.countryCode).toBe("CA");
+    expect(quoteRequestSchema.safeParse({ ...validRequest, destination: { ...validRequest.destination, countryCode: "FR" } }).success).toBe(true);
+    expect(quoteRequestSchema.safeParse({ ...validRequest, origin: { ...validRequest.origin, countryCode: "us" } }).success).toBe(true);
+    expect(quoteRequestSchema.safeParse({ ...validRequest, destination: { ...validRequest.destination, countryCode: "KP" } }).success).toBe(false);
   });
 
   it("limits parcels, weight and dimensions", () => {
@@ -98,10 +101,9 @@ describe("pricing a request with the mock carrier (hand-calculated)", () => {
     expect(r.breakdown.client.totalCents).toBe(14976 + 2800);
   });
 
-  it("adds the pickup fee only when DHL pickup is requested", async () => {
-    const withFee = { ...settings, pickupFeeCents: 1500 };
-    const dropOff = await priceRequest({ input: input(), adapter, clientDiscountPct: 5, settings: withFee });
-    const pickup = await priceRequest({ input: input({ pickupRequested: true }), adapter, clientDiscountPct: 5, settings: withFee });
+  it("adds the pickup fee DHL quotes, only when DHL pickup is requested", async () => {
+    const dropOff = await priceRequest({ input: input(), adapter, clientDiscountPct: 5, settings });
+    const pickup = await priceRequest({ input: input({ pickupRequested: true }), adapter, clientDiscountPct: 5, settings });
     expect(dropOff.breakdown.pickupFeeCents).toBe(0);
     expect(pickup.breakdown.pickupFeeCents).toBe(1500);
     expect(pickup.breakdown.client.totalCents).toBe(14976 + 1500);
@@ -173,7 +175,7 @@ describe("who sees what", () => {
   const STAFF_KEYS = ["account", "profitCents", "belowCost", "dhlContractDiscountPct", "publicSource", "pricing", "customerTotalCents", "markupCents"];
 
   async function savedQuote() {
-    const priced = await priceRequest({ input: input({ pickupRequested: true }), adapter: new MockDhlAdapter(), clientDiscountPct: 5, settings: { ...settings, pickupFeeCents: 1500 } });
+    const priced = await priceRequest({ input: input({ pickupRequested: true }), adapter: new MockDhlAdapter(), clientDiscountPct: 5, settings });
     return {
       _id: "q1",
       userId: "u1",
@@ -230,14 +232,11 @@ describe("who sees what", () => {
 });
 
 describe("settings validation", () => {
-  it("keeps the contract discount below 100 and the pickup fee sensible", () => {
-    expect(settingsSchema.safeParse({ b2cDiscountPct: 5, dhlContractDiscountPct: 75, pickupFeeCents: 1500 }).success).toBe(true);
+  it("keeps the contract discount below 100", () => {
+    expect(settingsSchema.safeParse({ b2cDiscountPct: 5, dhlContractDiscountPct: 75 }).success).toBe(true);
     expect(settingsSchema.safeParse({ b2cDiscountPct: 5, dhlContractDiscountPct: null }).success).toBe(true);
     expect(settingsSchema.safeParse({ b2cDiscountPct: 5 }).success).toBe(true);
     expect(settingsSchema.safeParse({ b2cDiscountPct: 5, dhlContractDiscountPct: 100 }).success).toBe(false);
     expect(settingsSchema.safeParse({ b2cDiscountPct: 5, dhlContractDiscountPct: -1 }).success).toBe(false);
-    expect(settingsSchema.safeParse({ b2cDiscountPct: 5, pickupFeeCents: -1 }).success).toBe(false);
-    expect(settingsSchema.safeParse({ b2cDiscountPct: 5, pickupFeeCents: 1.5 }).success).toBe(false);
-    expect(settingsSchema.safeParse({ b2cDiscountPct: 5, pickupFeeCents: 100001 }).success).toBe(false);
   });
 });

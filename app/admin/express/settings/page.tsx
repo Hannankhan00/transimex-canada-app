@@ -16,7 +16,6 @@ interface HistoryRow {
 interface SettingsView {
   b2cDiscountPct: number;
   dhlContractDiscountPct: number | null;
-  pickupFeeCents: number;
   documentMaxWeightKg: number;
   history: HistoryRow[];
 }
@@ -25,7 +24,6 @@ export default function AdminExpressSettingsPage() {
   const { language, tr } = useTr();
   const [b2c, setB2c] = useState("");
   const [contract, setContract] = useState("");
-  const [pickup, setPickup] = useState("");
   const [docKg, setDocKg] = useState("");
   const [history, setHistory] = useState<HistoryRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -35,7 +33,6 @@ export default function AdminExpressSettingsPage() {
   const apply = (s: SettingsView) => {
     setB2c(String(s.b2cDiscountPct));
     setContract(s.dhlContractDiscountPct != null ? String(s.dhlContractDiscountPct) : "");
-    setPickup(String(s.pickupFeeCents / 100));
     setDocKg(String(s.documentMaxWeightKg));
     setHistory(s.history);
   };
@@ -75,12 +72,6 @@ export default function AdminExpressSettingsPage() {
         return;
       }
     }
-    const pickupCents = pickup.trim() === "" ? 0 : dollarsToCents(pickup);
-    if (pickupCents == null || pickupCents < 0 || pickupCents > 100000) {
-      setMessage({ text: tr("Enter a pickup fee between $0 and $1,000.", "Entrez des frais de ramassage entre 0 $ et 1 000 $."), error: true });
-      return;
-    }
-
     const docKgNum = Number(docKg);
     if (docKg.trim() === "" || !Number.isFinite(docKgNum) || docKgNum < 0.1 || docKgNum > 70) {
       setMessage({ text: tr("Enter a document weight limit between 0.1 and 70 kg.", "Entrez une limite de poids des documents entre 0,1 et 70 kg."), error: true });
@@ -92,7 +83,7 @@ export default function AdminExpressSettingsPage() {
       const res = await fetch("/api/admin/express/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ b2cDiscountPct: b2cPct, dhlContractDiscountPct: contractPct, pickupFeeCents: pickupCents, documentMaxWeightKg: docKgNum }),
+        body: JSON.stringify({ b2cDiscountPct: b2cPct, dhlContractDiscountPct: contractPct, documentMaxWeightKg: docKgNum }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -150,20 +141,6 @@ export default function AdminExpressSettingsPage() {
                 <label className="block space-y-1">
                   <span className="text-xs font-bold text-slate-700">{tr("Contract discount (%)", "Rabais du contrat (%)")}</span>
                   <input className={adminInput} value={contract} onChange={(e) => setContract(e.target.value)} inputMode="decimal" placeholder={tr("not set", "non défini")} />
-                </label>
-              </div>
-
-              <div className="space-y-2 pt-4 border-t border-slate-100">
-                <h2 className="font-bold text-[#0B2545] text-sm">{tr("Fallback pickup fee", "Frais de ramassage de secours")}</h2>
-                <p className="text-xs text-slate-500">
-                  {tr(
-                    "The pickup fee comes from DHL with each rate. This amount is used only if DHL does not return one. It is added when the client chooses DHL pickup and is never discounted. 0 means no fee.",
-                    "Les frais de ramassage viennent de DHL avec chaque tarif. Ce montant n'est utilisé que si DHL n'en retourne pas. Il est ajouté lorsque le client choisit le ramassage DHL et n'est jamais rabaissé. 0 signifie aucuns frais."
-                  )}
-                </p>
-                <label className="block space-y-1">
-                  <span className="text-xs font-bold text-slate-700">{tr("Pickup fee (CAD)", "Frais de ramassage (CAD)")}</span>
-                  <input className={adminInput} value={pickup} onChange={(e) => setPickup(e.target.value)} inputMode="decimal" />
                 </label>
               </div>
 

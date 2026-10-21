@@ -1,0 +1,59 @@
+{
+  "customerDetails": {
+    "shipperDetails": {
+      "postalCode": "H4E 4N4",
+      "cityName": "Montreal",
+      "countryCode": "CA"
+    },
+    "receiverDetails": {
+      "postalCode": "91902",
+      "cityName": "Bonita",
+      "countryCode": "US"
+    }
+  },
+  "accounts": [
+    {
+      "typeCode": "shipper",
+      "number": "973995169"
+    }
+  ],
+  "plannedShippingDateAndTime": "2026-10-22T12:00:00GMT+00:00",
+  "unitOfMeasurement": "imperial",
+  "isCustomsDeclarable": true,
+  "monetaryAmount": [
+    {
+      "typeCode": "declaredValue",
+      "value": 1500,
+      "currency": "CAD"
+    }
+  ],
+  "requestAllValueAddedServices": false,
+  "returnStandardProductsOnly": false,
+  "nextBusinessDay": false,
+  "packages": [
+    {
+      "weight": 20,
+      "dimensions": {
+        "length": 18,
+        "width": 18,
+        "height": 18
+      }
+    },
+    {
+      "weight": 20,
+      "dimensions": {
+        "length": 18,
+        "width": 18,
+        "height": 18
+      }
+    },
+    {
+      "weight": 20,
+      "dimensions": {
+        "length": 18,
+        "width": 18,
+        "height": 18
+      }
+    }
+  ]
+}

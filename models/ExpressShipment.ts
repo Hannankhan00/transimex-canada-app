@@ -61,6 +61,14 @@ export interface IExpressShipmentLabel {
   bytes: number;
 }
 
+/** The commercial invoice DHL produced for a goods shipment. */
+export interface IExpressShipmentInvoice {
+  key: string;
+  bytes: number;
+  /** True when it travels electronically (Paperless Trade). False: print it and attach it to the parcel. */
+  paperless: boolean;
+}
+
 export type ExpressTrackingStatus = "unknown" | "pre_transit" | "in_transit" | "out_for_delivery" | "delivered" | "exception" | "returned";
 
 export interface IExpressTrackingEvent {
@@ -146,6 +154,7 @@ export interface IExpressShipment extends Document {
   billing?: IExpressShipmentBilling;
   fulfilment: IExpressShipmentFulfilment;
   label?: IExpressShipmentLabel;
+  invoice?: IExpressShipmentInvoice;
 
   /** Set when DHL books the shipment (or staff enter it by hand). */
   trackingNumber?: string;
@@ -167,7 +176,8 @@ const AddressSchema = new Schema(
     line2: { type: String, trim: true, maxlength: 120 },
     city: { type: String, required: true, trim: true, maxlength: 80 },
     region: { type: String, trim: true, maxlength: 80 },
-    postalCode: { type: String, required: true, trim: true, maxlength: 20 },
+    // Some destination countries have no postal codes, so this may be empty. The form still requires one for the shipper.
+    postalCode: { type: String, default: "", trim: true, maxlength: 20 },
     countryCode: { type: String, required: true, uppercase: true, minlength: 2, maxlength: 2 },
     phone: { type: String, trim: true, maxlength: 30 },
     email: { type: String, trim: true, lowercase: true, maxlength: 160 },
@@ -344,6 +354,7 @@ const ExpressShipmentSchema = new Schema<IExpressShipment>(
     billing: { type: BillingSchema },
     fulfilment: { type: FulfilmentSchema, default: () => ({}) },
     label: { type: LabelSchema },
+    invoice: { type: new Schema({ key: { type: String, required: true }, bytes: { type: Number, required: true }, paperless: { type: Boolean, default: false } }, { _id: false }) },
 
     trackingNumber: { type: String },
     trackingUrl: { type: String },

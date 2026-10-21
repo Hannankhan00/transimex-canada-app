@@ -1,0 +1,127 @@
+{
+  "plannedShippingDateAndTime": "2026-10-23T12:00:00GMT+00:00",
+  "pickup": {
+    "isRequested": false
+  },
+  "productCode": "P",
+  "accounts": [
+    {
+      "typeCode": "shipper",
+      "number": "974044956"
+    }
+  ],
+  "customerDetails": {
+    "shipperDetails": {
+      "postalAddress": {
+        "postalCode": "0001",
+        "cityName": "Oslo",
+        "countryCode": "NO",
+        "addressLine1": "Testgata 1"
+      },
+      "contactInformation": {
+        "companyName": "Transimex Test Shipper",
+        "fullName": "Test Shipper",
+        "phone": "+4722555010",
+        "email": "sales@canzova.com"
+      }
+    },
+    "receiverDetails": {
+      "postalAddress": {
+        "cityName": "Amsterdam",
+        "countryCode": "NL",
+        "postalCode": "1011",
+        "addressLine1": "1 Test Street"
+      },
+      "contactInformation": {
+        "companyName": "Test Receiver",
+        "fullName": "Test Receiver",
+        "phone": "+15145550199",
+        "email": "receiver@example.com"
+      }
+    }
+  },
+  "content": {
+    "packages": [
+      {
+        "weight": 2,
+        "dimensions": {
+          "length": 40,
+          "width": 30,
+          "height": 20
+        },
+        "customerReferences": [
+          {
+            "typeCode": "CU",
+            "value": "EU-NO-NL-WPX-1"
+          }
+        ]
+      }
+    ],
+    "isCustomsDeclarable": true,
+    "description": "Personal computer, laptop, used",
+    "unitOfMeasurement": "metric",
+    "incoterm": "DAP",
+    "declaredValue": 400,
+    "declaredValueCurrency": "CAD",
+    "exportDeclaration": {
+      "lineItems": [
+        {
+          "number": 1,
+          "description": "Personal computer, laptop, used",
+          "price": 400,
+          "quantity": {
+            "value": 1,
+            "unitOfMeasurement": "PCS"
+          },
+          "commodityCodes": [
+            {
+              "typeCode": "outbound",
+              "value": "847130"
+            }
+          ],
+          "exportReasonType": "temporary",
+          "manufacturerCountry": "NO",
+          "weight": {
+            "netValue": 2,
+            "grossValue": 2
+          }
+        }
+      ],
+      "invoice": {
+        "number": "EU-NO-NL-WPX",
+        "date": "2026-10-23"
+      },
+      "exportReason": "temporary export",
+      "exportReasonType": "temporary"
+    }
+  },
+  "outputImageProperties": {
+    "printerDPI": 300,
+    "encodingFormat": "pdf",
+    "imageOptions": [
+      {
+        "typeCode": "label",
+        "templateName": "ECOM26_84_001"
+      },
+      {
+        "typeCode": "waybillDoc",
+        "templateName": "ARCH_8X4",
+        "isRequested": true,
+        "hideAccountNumber": false,
+        "numberOfCopies": 1
+      },
+      {
+        "typeCode": "invoice",
+        "templateName": "COMMERCIAL_INVOICE_P_10",
+        "isRequested": true,
+        "invoiceType": "commercial",
+        "languageCode": "eng"
+      }
+    ]
+  },
+  "valueAddedServices": [
+    {
+      "serviceCode": "AA"
+    }
+  ]
+}

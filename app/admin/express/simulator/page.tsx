@@ -4,8 +4,9 @@ import React, { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, Loader2 } from "lucide-react";
 import PermissionGuard from "@/components/admin/PermissionGuard";
 import { ExpressAdminTabs, adminInput, dollarsToCents, useTr } from "@/components/admin/express/expressAdminShared";
-import { COUNTRIES } from "@/lib/data/countries";
-import { AFRICAN_COUNTRY_CODES } from "@/lib/express/africa";
+import CountrySelect from "@/components/express/CountrySelect";
+import UnitToggle from "@/components/express/UnitToggle";
+import { lengthToCm, unitLabel, weightToKg, type UnitSystem } from "@/lib/express/units";
 import { formatCad } from "@/lib/shipping/core/money";
 import type { PriceBreakdown } from "@/lib/express/pricing";
 import type { AdminAccountDTO } from "@/lib/express/accountDto";
@@ -17,13 +18,29 @@ interface SimResult {
   pricing: PriceBreakdown;
 }
 
-const AFRICA = COUNTRIES.filter((c) => AFRICAN_COUNTRY_CODES.has(c.code));
+
+function FormSection({ title, hint, action, children }: { title: string; hint?: string; action?: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <section className="space-y-2.5">
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div>
+          <h2 className="text-sm font-bold text-[#0B2545]">{title}</h2>
+          {hint && <p className="text-[11px] text-slate-500 mt-0.5 max-w-sm">{hint}</p>}
+        </div>
+        {action}
+      </div>
+      {children}
+    </section>
+  );
+}
 
 export default function AdminExpressSimulatorPage() {
   const { language, tr } = useTr();
   const [accounts, setAccounts] = useState<AdminAccountDTO[]>([]);
   const [form, setForm] = useState({
     accountId: "",
+    contentType: "goods" as "goods" | "documents",
+    originCountry: "CA",
     originPostal: "M5V 2T6",
     originCity: "Toronto",
     country: "CM",
@@ -34,12 +51,13 @@ export default function AdminExpressSimulatorPage() {
     width: "20",
     height: "20",
     declared: "100",
-    customs: true,
     pickup: false,
     override: "",
     markupKind: "none" as "none" | "flat" | "percent",
     markupValue: "",
   });
+  const [units, setUnits] = useState<UnitSystem>("imperial");
+  const documents = form.contentType === "documents";
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<SimResult | null>(null);
@@ -59,7 +77,7 @@ export default function AdminExpressSimulatorPage() {
     setError(null);
     setResult(null);
 
-    const declaredCents = dollarsToCents(form.declared);
+    const declaredCents = documents ? 0 : dollarsToCents(form.declared);
     const num = (v: string) => (v.trim() === "" ? NaN : Number(v));
     if (declaredCents == null || declaredCents < 0) return setError(tr("Enter the declared value in CAD.", "Entrez la valeur déclarée en CAD."));
     if ([num(form.weight), num(form.length), num(form.width), num(form.height)].some((n) => !Number.isFinite(n))) {
@@ -79,15 +97,17 @@ export default function AdminExpressSimulatorPage() {
 
     const body = {
       request: {
-        origin: { postalCode: form.originPostal, city: form.originCity },
+        origin: { countryCode: form.originCountry, postalCode: form.originPostal, city: form.originCity },
         destination: { countryCode: form.country, postalCode: form.destPostal, city: form.destCity },
-        parcels: [{ weightKg: num(form.weight), lengthCm: num(form.length), widthCm: num(form.width), heightCm: num(form.height) }],
+        parcels: [{ weightKg: weightToKg(num(form.weight), units), lengthCm: lengthToCm(num(form.length), units), widthCm: lengthToCm(num(form.width), units), heightCm: lengthToCm(num(form.height), units) }],
+        contentType: form.contentType,
         declaredValueCents: declaredCents,
-        isCustomsDeclarable: form.customs,
+        isCustomsDeclarable: !documents,
         pickupRequested: form.pickup,
       },
-      ...(form.accountId ? { accountId: form.accountId } : {}),
-      ...(form.override.trim() !== "" ? { discountPctOverride: Number(form.override) } : {}),
+      // "No discount": no account and a 0% client discount, so the client column shows DHL's public price.
+      ...(form.accountId && form.accountId !== "none" ? { accountId: form.accountId } : {}),
+      ...(form.accountId === "none" ? { discountPctOverride: 0 } : form.override.trim() !== "" ? { discountPctOverride: Number(form.override) } : {}),
       markup,
     };
 
@@ -112,6 +132,11 @@ export default function AdminExpressSimulatorPage() {
   };
 
   const m = (cents: number) => formatCad(cents, language);
+
+  // The discount DHL gave Transimex on base freight, worked out from the two prices DHL returned.
+  const dhlDiscountPct = result && result.pricing.publicList.baseFreightCents > 0
+    ? Math.round((1 - result.pricing.account.baseFreightCents / result.pricing.publicList.baseFreightCents) * 10000) / 100
+    : 0;
 
   const rows = useMemo(() => {
     if (!result) return [];
@@ -142,78 +167,91 @@ export default function AdminExpressSimulatorPage() {
 
         <div className="grid xl:grid-cols-5 gap-5">
           <form onSubmit={submit} className="xl:col-span-2 bg-white rounded-2xl border border-slate-200 p-5 space-y-4" noValidate>
-            <label className="block space-y-1">
-              <span className="text-xs font-bold text-slate-700">{tr("Account", "Compte")}</span>
-              <select className={adminInput} value={form.accountId} onChange={set("accountId")}>
+            <FormSection title={tr("1. Who is it priced for?", "1. Pour qui est le prix ?")} hint={tr("The account decides the client discount. \"No discount\" shows DHL's public price.", "Le compte détermine le rabais client. « Aucun rabais » montre le prix public DHL.")}>
+              <select className={adminInput} value={form.accountId} onChange={set("accountId")} aria-label={tr("Account", "Compte")}>
                 <option value="">{tr("B2C (global discount)", "B2C (rabais global)")}</option>
+                <option value="none">{tr("No discount (DHL public price)", "Aucun rabais (prix public DHL)")}</option>
                 {accounts.map((a) => (
                   <option key={a.id} value={a.id}>
                     {(a.company?.name || a.contactName) + " · " + a.type.toUpperCase() + (a.discountPct != null ? ` · ${a.discountPct}%` : "")}
                   </option>
                 ))}
               </select>
-            </label>
+            </FormSection>
 
-            <div className="grid grid-cols-2 gap-3">
-              <label className="block space-y-1">
-                <span className="text-xs font-bold text-slate-700">{tr("Origin postal code", "Code postal d'origine")}</span>
-                <input className={adminInput} value={form.originPostal} onChange={set("originPostal")} />
-              </label>
-              <label className="block space-y-1">
-                <span className="text-xs font-bold text-slate-700">{tr("Origin city", "Ville d'origine")}</span>
-                <input className={adminInput} value={form.originCity} onChange={set("originCity")} />
-              </label>
-            </div>
-
-            <label className="block space-y-1">
-              <span className="text-xs font-bold text-slate-700">{tr("Destination country", "Pays de destination")}</span>
-              <select className={adminInput} value={form.country} onChange={set("country")}>
-                {AFRICA.map((c) => (
-                  <option key={c.code} value={c.code}>
-                    {language === "fr" ? c.nameFr : c.name}
-                  </option>
+            <FormSection title={tr("2. What is being sent?", "2. Que envoie-t-on ?")} hint={tr("The same choice the client makes first. Documents use a different DHL product and need no customs details.", "Le même choix que fait le client en premier. Les documents utilisent un autre produit DHL et n'exigent aucune information douanière.")}>
+              <div className="grid grid-cols-2 gap-2" role="radiogroup">
+                {([
+                  ["goods", tr("Goods", "Marchandises"), tr("Customs value and duties apply", "Valeur en douane et droits applicables")],
+                  ["documents", tr("Documents", "Documents"), tr("Paper only, no commercial value", "Papier seulement, sans valeur commerciale")],
+                ] as const).map(([value, title, desc]) => (
+                  <label key={value} className={`flex gap-2.5 rounded-xl border p-3 cursor-pointer ${form.contentType === value ? "border-[#0B2545] bg-[#0B2545]/5" : "border-slate-200"}`}>
+                    <input type="radio" name="contentType" className="mt-0.5 accent-[#0B2545]" checked={form.contentType === value} onChange={() => setForm((f) => ({ ...f, contentType: value }))} />
+                    <span>
+                      <span className="block text-xs font-bold text-slate-900">{title}</span>
+                      <span className="block text-[11px] text-slate-500 mt-0.5">{desc}</span>
+                    </span>
+                  </label>
                 ))}
-              </select>
-            </label>
-            <div className="grid grid-cols-2 gap-3">
-              <label className="block space-y-1">
-                <span className="text-xs font-bold text-slate-700">{tr("Destination postal code", "Code postal de destination")}</span>
-                <input className={adminInput} value={form.destPostal} onChange={set("destPostal")} />
-              </label>
-              <label className="block space-y-1">
-                <span className="text-xs font-bold text-slate-700">{tr("Destination city", "Ville de destination")}</span>
-                <input className={adminInput} value={form.destCity} onChange={set("destCity")} />
-              </label>
-            </div>
-
-            <div className="grid grid-cols-4 gap-3">
-              {([["weight", "kg"], ["length", "cm"], ["width", "cm"], ["height", "cm"]] as [keyof typeof form, string][]).map(([k, unit]) => (
-                <label key={k} className="block space-y-1">
-                  <span className="text-xs font-bold text-slate-700 capitalize">
-                    {k === "weight" ? tr("Weight", "Poids") : k === "length" ? tr("Length", "Long.") : k === "width" ? tr("Width", "Larg.") : tr("Height", "Haut.")} ({unit})
-                  </span>
-                  <input className={adminInput} value={form[k] as string} onChange={set(k)} inputMode="decimal" />
+              </div>
+              {!documents && (
+                <label className="block space-y-1">
+                  <span className="text-xs font-bold text-slate-700">{tr("Declared value (CAD)", "Valeur déclarée (CAD)")}</span>
+                  <input className={adminInput} value={form.declared} onChange={set("declared")} inputMode="decimal" />
                 </label>
-              ))}
-            </div>
+              )}
+            </FormSection>
 
-            <label className="block space-y-1">
-              <span className="text-xs font-bold text-slate-700">{tr("Declared value (CAD)", "Valeur déclarée (CAD)")}</span>
-              <input className={adminInput} value={form.declared} onChange={set("declared")} inputMode="decimal" />
-            </label>
+            <FormSection title={tr("3. From and to", "3. D'où et vers où")} hint={tr("Any two countries DHL serves. Postal codes are optional where a country has none.", "Deux pays quelconques desservis par DHL. Le code postal est facultatif si le pays n'en a pas.")}>
+              <div className="space-y-2">
+                <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">{tr("From (pickup)", "De (ramassage)")}</p>
+                <CountrySelect className={adminInput} value={form.originCountry} onChange={(code) => setForm((f) => ({ ...f, originCountry: code }))} ariaLabel={tr("Origin country", "Pays d'origine")} />
+                <div className="grid grid-cols-2 gap-3">
+                  <input className={adminInput} value={form.originCity} onChange={set("originCity")} placeholder={tr("City", "Ville")} aria-label={tr("Origin city", "Ville d'origine")} />
+                  <input className={adminInput} value={form.originPostal} onChange={set("originPostal")} placeholder={tr("Postal code", "Code postal")} aria-label={tr("Origin postal code", "Code postal d'origine")} />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">{tr("To (delivery)", "Vers (livraison)")}</p>
+                <CountrySelect className={adminInput} value={form.country} onChange={(code) => setForm((f) => ({ ...f, country: code }))} ariaLabel={tr("Destination country", "Pays de destination")} />
+                <div className="grid grid-cols-2 gap-3">
+                  <input className={adminInput} value={form.destCity} onChange={set("destCity")} placeholder={tr("City", "Ville")} aria-label={tr("Destination city", "Ville de destination")} />
+                  <input className={adminInput} value={form.destPostal} onChange={set("destPostal")} placeholder={tr("Postal code", "Code postal")} aria-label={tr("Destination postal code", "Code postal de destination")} />
+                </div>
+              </div>
+            </FormSection>
 
-            <div className="flex flex-wrap gap-5 text-sm">
-              <label className="flex items-center gap-2">
-                <input type="checkbox" checked={form.customs} onChange={set("customs")} className="accent-[#0B2545]" />
-                {tr("Customs declarable", "Déclaration en douane")}
-              </label>
-              <label className="flex items-center gap-2">
-                <input type="checkbox" checked={form.pickup} onChange={set("pickup")} className="accent-[#0B2545]" />
-                {tr("DHL pickup", "Ramassage DHL")}
-              </label>
-            </div>
+            <FormSection
+              title={tr("4. The parcel", "4. Le colis")}
+              hint={tr("DHL charges on the greater of actual and volumetric weight. Add one parcel here.", "DHL facture selon le plus élevé du poids réel et du poids volumétrique. Ajoutez un colis ici.")}
+              action={<UnitToggle value={units} onChange={setUnits} />}
+            >
+              <div className="grid grid-cols-4 gap-3">
+                {([["weight", tr("Weight (kg)", "Poids (kg)")], ["length", tr("Length (cm)", "Long. (cm)")], ["width", tr("Width (cm)", "Larg. (cm)")], ["height", tr("Height (cm)", "Haut. (cm)")]] as [keyof typeof form, string][]).map(([k, label]) => (
+                  <label key={k} className="block space-y-1">
+                    <span className="text-xs font-bold text-slate-700">{unitLabel(label, units)}</span>
+                    <input className={adminInput} value={form[k] as string} onChange={set(k)} inputMode="decimal" />
+                  </label>
+                ))}
+              </div>
+            </FormSection>
 
-            <div className="grid grid-cols-3 gap-3 pt-3 border-t border-slate-100">
+            <FormSection title={tr("5. Pickup", "5. Ramassage")} hint={tr("How the client hands the parcel to DHL.", "Comment le client remet le colis à DHL.")}>
+              <div className="grid grid-cols-2 gap-2" role="radiogroup">
+                {([
+                  [true, tr("DHL pickup", "Ramassage DHL")],
+                  [false, tr("Drop-off at a DHL service point", "Dépôt à un point de service DHL")],
+                ] as const).map(([value, title]) => (
+                  <label key={String(value)} className={`flex gap-2.5 rounded-xl border p-3 cursor-pointer ${form.pickup === value ? "border-[#0B2545] bg-[#0B2545]/5" : "border-slate-200"}`}>
+                    <input type="radio" name="pickup" className="mt-0.5 accent-[#0B2545]" checked={form.pickup === value} onChange={() => setForm((f) => ({ ...f, pickup: value }))} />
+                    <span className="text-xs font-bold text-slate-900">{title}</span>
+                  </label>
+                ))}
+              </div>
+            </FormSection>
+
+            <p className="pt-3 border-t border-slate-100 text-sm font-bold text-[#0B2545]">{tr("6. What-if (optional)", "6. Hypothèses (facultatif)")}</p>
+            <div className="grid grid-cols-3 gap-3">
               <label className="block space-y-1">
                 <span className="text-xs font-bold text-slate-700">{tr("What-if discount %", "Rabais hypothétique %")}</span>
                 <input className={adminInput} value={form.override} onChange={set("override")} inputMode="decimal" placeholder={tr("none", "aucun")} />
@@ -301,6 +339,14 @@ export default function AdminExpressSimulatorPage() {
                 <section className="bg-white rounded-2xl border border-slate-200 divide-y divide-slate-100 text-sm">
                   {(
                     [
+                      // What DHL charges Transimex, laid out like the DHL invoice: list price, discount, then what is billed.
+                      [tr("DHL public price (base freight)", "Prix public DHL (fret de base)"), m(result.pricing.publicList.baseFreightCents)],
+                      [
+                        tr("DHL discount to Transimex", "Rabais de DHL à Transimex"),
+                        `${dhlDiscountPct}% = −${m(result.pricing.publicList.baseFreightCents - result.pricing.account.baseFreightCents)}`,
+                      ],
+                      [tr("DHL charges Transimex (base freight)", "DHL facture à Transimex (fret de base)"), m(result.pricing.account.baseFreightCents)],
+                      [tr("DHL charges Transimex (total with surcharges)", "DHL facture à Transimex (total avec suppléments)"), m(result.pricing.account.totalCents)],
                       [tr("Client discount", "Rabais client"), `${result.pricing.clientDiscountPct}% = −${m(result.pricing.discountCents)} ${tr("on base freight", "sur le fret de base")}`],
                       [
                         tr("Public price source", "Source du prix public"),

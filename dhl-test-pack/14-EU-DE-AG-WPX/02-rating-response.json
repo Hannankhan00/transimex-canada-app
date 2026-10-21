@@ -1,0 +1,249 @@
+{
+  "products": [
+    {
+      "productName": "EXPRESS WORLDWIDE",
+      "productCode": "P",
+      "localProductCode": "S",
+      "localProductCountryCode": "DE",
+      "networkTypeCode": "TD",
+      "isCustomerAgreement": false,
+      "weight": {
+        "volumetric": 0.01,
+        "provided": 1,
+        "unitOfMeasurement": "metric"
+      },
+      "totalPrice": [
+        {
+          "currencyType": "BILLC",
+          "priceCurrency": "CAD",
+          "price": 308.82
+        },
+        {
+          "currencyType": "PULCL",
+          "priceCurrency": "CAD",
+          "price": 308.82
+        },
+        {
+          "currencyType": "BASEC",
+          "priceCurrency": "EUR",
+          "price": 191.79
+        }
+      ],
+      "totalPriceBreakdown": [
+        {
+          "currencyType": "BILLC",
+          "priceCurrency": "CAD",
+          "priceBreakdown": [
+            {
+              "typeCode": "SPRQT",
+              "price": 220.39
+            }
+          ]
+        },
+        {
+          "currencyType": "PULCL",
+          "priceCurrency": "CAD",
+          "priceBreakdown": [
+            {
+              "typeCode": "SPRQT",
+              "price": 220.39
+            }
+          ]
+        },
+        {
+          "currencyType": "BASEC",
+          "priceCurrency": "EUR",
+          "priceBreakdown": [
+            {
+              "typeCode": "SPRQT",
+              "price": 136.87
+            }
+          ]
+        }
+      ],
+      "detailedPriceBreakdown": [
+        {
+          "currencyType": "BILLC",
+          "priceCurrency": "CAD",
+          "breakdown": [
+            {
+              "name": "EXPRESS WORLDWIDE",
+              "price": 220.39
+            },
+            {
+              "name": "GOGREEN PLUS - CARBON REDUCED",
+              "serviceCode": "FD",
+              "localServiceCode": "FD",
+              "serviceTypeCode": "SCH",
+              "price": 0.6,
+              "isCustomerAgreement": true,
+              "isMarketedService": false,
+              "priceBreakdown": []
+            },
+            {
+              "name": "DEMAND SURCHARGE",
+              "serviceCode": "NX",
+              "localServiceCode": "NX",
+              "serviceTypeCode": "SCH",
+              "price": 0.79,
+              "isCustomerAgreement": false,
+              "isMarketedService": true,
+              "priceBreakdown": []
+            },
+            {
+              "name": "FUEL SURCHARGE",
+              "serviceCode": "FF",
+              "localServiceCode": "FF",
+              "serviceTypeCode": "SCH",
+              "price": 82.94,
+              "isCustomerAgreement": false,
+              "isMarketedService": false,
+              "priceBreakdown": []
+            },
+            {
+              "name": "SHIPMENT VALUE PROTECTION",
+              "serviceCode": "II",
+              "localServiceCode": "II",
+              "typeCode": "SHIPMENT INSURANCE",
+              "serviceTypeCode": "XCH",
+              "price": 4.1,
+              "isCustomerAgreement": false,
+              "isMarketedService": true,
+              "priceBreakdown": []
+            }
+          ]
+        },
+        {
+          "currencyType": "PULCL",
+          "priceCurrency": "CAD",
+          "breakdown": [
+            {
+              "name": "EXPRESS WORLDWIDE",
+              "price": 220.39
+            },
+            {
+              "name": "GOGREEN PLUS - CARBON REDUCED",
+              "serviceCode": "FD",
+              "localServiceCode": "FD",
+              "serviceTypeCode": "SCH",
+              "price": 0.6,
+              "isCustomerAgreement": true,
+              "isMarketedService": false,
+              "priceBreakdown": []
+            },
+            {
+              "name": "DEMAND SURCHARGE",
+              "serviceCode": "NX",
+              "localServiceCode": "NX",
+              "serviceTypeCode": "SCH",
+              "price": 0.79,
+              "isCustomerAgreement": false,
+              "isMarketedService": true,
+              "priceBreakdown": []
+            },
+            {
+              "name": "FUEL SURCHARGE",
+              "serviceCode": "FF",
+              "localServiceCode": "FF",
+              "serviceTypeCode": "SCH",
+              "price": 82.94,
+              "isCustomerAgreement": false,
+              "isMarketedService": false,
+              "priceBreakdown": []
+            },
+            {
+              "name": "SHIPMENT VALUE PROTECTION",
+              "serviceCode": "II",
+              "localServiceCode": "II",
+              "typeCode": "SHIPMENT INSURANCE",
+              "serviceTypeCode": "XCH",
+              "price": 4.1,
+              "isCustomerAgreement": false,
+              "isMarketedService": true,
+              "priceBreakdown": []
+            }
+          ]
+        },
+        {
+          "currencyType": "BASEC",
+          "priceCurrency": "EUR",
+          "breakdown": [
+            {
+              "name": "EXPRESS WORLDWIDE",
+              "price": 136.87
+            },
+            {
+              "name": "GOGREEN PLUS - CARBON REDUCED",
+              "serviceCode": "FD",
+              "localServiceCode": "FD",
+              "serviceTypeCode": "SCH",
+              "price": 0.37,
+              "isCustomerAgreement": true,
+              "isMarketedService": false,
+              "priceBreakdown": []
+            },
+            {
+              "name": "DEMAND SURCHARGE",
+              "serviceCode": "NX",
+              "localServiceCode": "NX",
+              "serviceTypeCode": "SCH",
+              "price": 0.49,
+              "isCustomerAgreement": false,
+              "isMarketedService": true,
+              "priceBreakdown": []
+            },
+            {
+              "name": "FUEL SURCHARGE",
+              "serviceCode": "FF",
+              "localServiceCode": "FF",
+              "serviceTypeCode": "SCH",
+              "price": 51.51,
+              "isCustomerAgreement": false,
+              "isMarketedService": false,
+              "priceBreakdown": []
+            },
+            {
+              "name": "SHIPMENT VALUE PROTECTION",
+              "serviceCode": "II",
+              "localServiceCode": "II",
+              "typeCode": "SHIPMENT INSURANCE",
+              "serviceTypeCode": "XCH",
+              "price": 2.55,
+              "isCustomerAgreement": false,
+              "isMarketedService": true,
+              "priceBreakdown": []
+            }
+          ]
+        }
+      ],
+      "pickupCapabilities": {
+        "nextBusinessDay": false,
+        "localCutoffDateAndTime": "2026-10-22T16:00:00",
+        "pickupEarliest": "10:00:00",
+        "pickupLatest": "18:30:00",
+        "pickupCutoffSameDayOutboundProcessing": "18:30:00",
+        "originServiceAreaCode": "BER",
+        "originFacilityAreaCode": "BER",
+        "pickupAdditionalDays": 0,
+        "pickupDayOfWeek": 4
+      },
+      "deliveryCapabilities": {
+        "deliveryTypeCode": "QDDF",
+        "estimatedDeliveryDateAndTime": "2026-10-28T23:59:00",
+        "destinationServiceAreaCode": "ANU",
+        "destinationFacilityAreaCode": "ANU",
+        "deliveryAdditionalDays": 0,
+        "deliveryDayOfWeek": 3,
+        "totalTransitDays": 6
+      },
+      "pricingDate": "2026-10-21"
+    }
+  ],
+  "exchangeRates": [
+    {
+      "currentExchangeRate": 0.621049,
+      "currency": "CAD",
+      "baseCurrency": "EUR"
+    }
+  ]
+}

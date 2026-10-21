@@ -1,0 +1,50 @@
+{
+  "shipments": [
+    {
+      "shipmentTrackingNumber": "9339343440",
+      "status": "Success",
+      "shipmentTimestamp": "2026-10-22T12:00:00",
+      "productCode": "P",
+      "description": "Men's knitted cotton t-shirts, short sleeve",
+      "shipperDetails": {
+        "name": "",
+        "postalAddress": {
+          "cityName": "",
+          "postalCode": "",
+          "provinceCode": "",
+          "countryCode": "CA"
+        },
+        "serviceArea": [
+          {
+            "code": "YUL",
+            "description": "Quebec Service Area-CA"
+          }
+        ]
+      },
+      "receiverDetails": {
+        "name": "",
+        "postalAddress": {
+          "cityName": "",
+          "countryCode": "NG"
+        },
+        "serviceArea": [
+          {
+            "code": "KAD",
+            "description": "Kaduna-NG",
+            "facilityCode": "KAN"
+          }
+        ]
+      },
+      "totalWeight": 2,
+      "unitOfMeasurements": "imperial",
+      "shipperReferences": [
+        {
+          "value": "AM-CA-NG-WPX-1",
+          "typeCode": "CU"
+        }
+      ],
+      "events": [],
+      "numberOfPieces": 1
+    }
+  ]
+}

@@ -37,6 +37,7 @@ const ZONES: Record<string, Zone> = {
   west: { baseCents: 9200, perKgCents: 2400, transitDays: 5 }, // Senegal, Ivory Coast, Ghana, Nigeria, Cameroon...
   east: { baseCents: 10400, perKgCents: 2800, transitDays: 6 }, // Kenya, Ethiopia, Tanzania, Uganda...
   south: { baseCents: 11200, perKgCents: 3100, transitDays: 6 }, // South Africa and neighbours
+  world: { baseCents: 12800, perKgCents: 3400, transitDays: 5 }, // everywhere else
 };
 
 const COUNTRY_ZONE: Record<string, keyof typeof ZONES> = {
@@ -145,10 +146,7 @@ export class MockDhlAdapter implements CarrierAdapter {
     if (NOT_SERVICED.has(country)) {
       throw new CarrierError("not_serviced", `Destination ${country} is not serviced.`);
     }
-    const zoneKey = COUNTRY_ZONE[country];
-    if (!zoneKey) {
-      throw new CarrierError("not_serviced", `Destination ${country} is not available in the mock rate table.`);
-    }
+    const zoneKey = COUNTRY_ZONE[country] ?? "world";
     const zone = ZONES[zoneKey];
     const weightKg = chargeableWeightKg(request);
     const remote = isMockRemoteArea(request.destination.postalCode);

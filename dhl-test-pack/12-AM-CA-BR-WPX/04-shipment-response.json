@@ -1,0 +1,7 @@
+{
+  "instance": "/expressapi/shipments",
+  "detail": "7008: The requested Special Service Code  #/valueAddedServices/0/serviceCode 'WY' is not available between this origin and destination. Please validate the products and services combination (via the /rates or /products service) or contact our customer service.",
+  "title": "Bad request",
+  "message": "Bad request",
+  "status": "400"
+}

@@ -25,7 +25,7 @@ const base = {
   declaredValueCents: 0,
 };
 const docsInput = (over: Record<string, unknown> = {}) => quoteRequestSchema.parse({ ...base, contentType: "documents", ...over });
-const settings = { dhlContractDiscountPct: null as number | null, pickupFeeCents: 0 };
+const settings = { dhlContractDiscountPct: null as number | null };
 
 const option = (serviceCode: string): RateOption => ({
   carrier: "dhl",
@@ -217,7 +217,37 @@ describe("sending documents to DHL", () => {
     expect(body.content.exportDeclaration.lineItems).toHaveLength(1);
     expect(body.content.exportDeclaration.lineItems[0].exportReasonType).toBe("gift");
     expect(body.content.declaredValue).toBe(50);
-    expect(body.valueAddedServices).toEqual([{ serviceCode: "DD" }]);
+    // Sender pays duties (DD) and goods go Paperless Trade (WY) when the lane allows it.
+    expect(body.valueAddedServices).toEqual([{ serviceCode: "DD" }, { serviceCode: "WY" }]);
+    // The commercial invoice is always requested for goods.
+    expect(body.outputImageProperties.imageOptions.map((o: any) => o.typeCode)).toEqual(["label", "invoice"]);
+    // DHL wants the shipment description to match the first line item.
+    expect(body.content.description).toBe("Shirt");
+  });
+
+  it("goods fall back to a printed invoice when DHL refuses Paperless Trade on the lane", async () => {
+    const refusal = JSON.stringify({ detail: "7008: The requested Special Service Code #/valueAddedServices/0/serviceCode 'WY' is not available between this origin and destination." });
+    const ok = JSON.stringify({ shipmentTrackingNumber: "1", documents: [{ typeCode: "label", content: "QQ==" }, { typeCode: "invoice", content: "SU5W" }] });
+    const fetchImpl = vi.fn().mockResolvedValueOnce(new Response(refusal, { status: 400 })).mockResolvedValueOnce(new Response(ok, { status: 201 }));
+    const adapter = new DhlApiAdapter(config, new DhlHttpClient(config, fetchImpl as unknown as typeof fetch, async () => {}));
+    const result = await adapter.createShipment({ ...shipment, serviceCode: "P", contentType: "goods", declaredValueCents: 5000, items: [{ description: "Shirt", hsCode: "610910", quantity: 1, unitValueCents: 5000, countryOfOrigin: "CA", netWeightKg: 0.3, exportReason: "sale" }] } as any);
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    const second = JSON.parse(String((fetchImpl.mock.calls[1] as unknown as [URL, RequestInit])[1].body));
+    expect(second.valueAddedServices).toBeUndefined();
+    expect(result.paperless).toBe(false);
+    expect(result.invoice?.contentBase64).toBe("SU5W");
+  });
+
+  it("a different DHL refusal is not retried", async () => {
+    const fetchImpl = vi.fn(async () => new Response(JSON.stringify({ detail: "1001: product not available" }), { status: 400 }));
+    const adapter = new DhlApiAdapter(config, new DhlHttpClient(config, fetchImpl as unknown as typeof fetch, async () => {}));
+    await expect(adapter.createShipment({ ...shipment, serviceCode: "P", contentType: "goods", items: [{ description: "Shirt", hsCode: "610910", quantity: 1, unitValueCents: 5000, countryOfOrigin: "CA", netWeightKg: 0.3, exportReason: "sale" }] } as any)).rejects.toMatchObject({ code: "rejected" });
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+  });
+
+  it("a destination without a postal code is sent as an empty string, which DHL requires", async () => {
+    const body = await sentBody({ contentType: "documents", recipient: { ...(shipment as any).recipient, postalCode: "" } });
+    expect(body.customerDetails.receiverDetails.postalAddress.postalCode).toBe("");
   });
 
   it("a long description is cut to DHL's 70 characters", async () => {

@@ -9,6 +9,7 @@ export interface LabelStore {
 }
 
 export const labelKey = (shipmentId: string) => `express/labels/${shipmentId}/label.pdf`;
+export const invoiceKey = (shipmentId: string) => `express/labels/${shipmentId}/invoice.pdf`;
 
 /** A label link is valid for two minutes: long enough to start the download, too short to share. */
 export const LABEL_LINK_SECONDS = 120;

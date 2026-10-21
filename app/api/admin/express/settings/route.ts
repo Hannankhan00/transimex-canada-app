@@ -55,7 +55,6 @@ export async function PUT(req: Request) {
     const next = {
       b2cDiscountPct: input.b2cDiscountPct,
       dhlContractDiscountPct: input.dhlContractDiscountPct === undefined ? before.dhlContractDiscountPct : input.dhlContractDiscountPct,
-      pickupFeeCents: input.pickupFeeCents ?? before.pickupFeeCents,
       documentMaxWeightKg: input.documentMaxWeightKg ?? before.documentMaxWeightKg,
     };
 
@@ -63,9 +62,6 @@ export async function PUT(req: Request) {
     if (next.b2cDiscountPct !== before.b2cDiscountPct) changes.push(`B2C discount ${before.b2cDiscountPct}% -> ${next.b2cDiscountPct}%`);
     if (next.dhlContractDiscountPct !== before.dhlContractDiscountPct) {
       changes.push(`DHL contract discount ${before.dhlContractDiscountPct ?? "unset"}% -> ${next.dhlContractDiscountPct ?? "unset"}%`);
-    }
-    if (next.pickupFeeCents !== before.pickupFeeCents) {
-      changes.push(`pickup fee ${formatCad(before.pickupFeeCents)} -> ${formatCad(next.pickupFeeCents)}`);
     }
 
     if (next.documentMaxWeightKg !== before.documentMaxWeightKg) {

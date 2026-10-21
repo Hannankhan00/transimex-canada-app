@@ -11,6 +11,16 @@ Status key: **Open** (needs a decision or fact), **Waiting on DHL API docs**, **
 
 ## 1. Waiting on the DHL API documentation or sandbox
 
+**2026-10-21: SANDBOX ACCESS WORKS (credentials in .env.local, DHL_MODE=sandbox).** We ran DHL's 15-case test pack (`node scripts/dhl-test-pack.mjs`, output in `dhl-test-pack/`) and drove our real adapter against the sandbox. Confirmed: rates, DAP and DDP (service DD) bookings, documents, destinations with no postal code (the key must be sent, empty), tracking calls. Fixed in our code: the commercial invoice is now requested and stored (new download on the client and staff shipment pages); goods are booked Paperless Trade (WY) and fall back to "print the invoice" when DHL refuses WY on the lane; the shipment description now equals the first line item; the destination postal code is optional; pickup requests carry the declared value.
+**Questions to send DHL (status: Open):**
+- **Products K (Paris) and E (Sydney) in the test pack** are not offered in the sandbox at any ship time ("filtered out on delivery"). Cases 5 and 9 cannot pass. Ask them to enable the products or replace the cases.
+- **Paperless (WY) CA to Brazil** (case 12) is refused: the service is not offered on that lane. Same for Nigeria, Egypt, Morocco, Tunisia, Algeria in our rates. Ask which lanes are meant to support it.
+- **The waybill document** (`waybillDoc`) is never returned by the sandbox even when requested. They ask for it in the test pack.
+- **Tracking** returns 404 for every new waybill. Ask which sandbox waybills carry test scan data.
+- **Pickup** (booked with the shipment or on its own) fails with "202401: No billing address found". Ask whether account 973995169 needs a billing address on file, or which shipper address the sandbox accepts. Until this is answered, a booking with pickup requested fails at DHL and goes to staff as a failed label.
+- **Account 973995169 vs the inbound test account 974044956**: both worked in the sandbox. Confirm 973995169 is the right account for live.
+
+
 These depend on what the DHL API really returns. They cannot be decided by guessing.
 
 **2026-10-16: what we could get.** The public DHL page only offers the Reference Data Guide (v3.3.4) and the reference data spreadsheet. I read the spreadsheet (product codes, service/surcharge codes, tracking event codes, units). The page does NOT offer the OpenAPI file or the developer guide, so the shape of the rate and shipment responses is still unconfirmed.

@@ -1,0 +1,50 @@
+{
+  "shipments": [
+    {
+      "shipmentTrackingNumber": "9339343381",
+      "status": "Success",
+      "shipmentTimestamp": "2026-10-23T12:00:00",
+      "productCode": "P",
+      "description": "Personal computer, laptop, used",
+      "shipperDetails": {
+        "name": "",
+        "postalAddress": {
+          "cityName": "",
+          "postalCode": "",
+          "countryCode": "NO"
+        },
+        "serviceArea": [
+          {
+            "code": "OSL",
+            "description": "Oslo-NO"
+          }
+        ]
+      },
+      "receiverDetails": {
+        "name": "",
+        "postalAddress": {
+          "cityName": "",
+          "postalCode": "",
+          "countryCode": "NL"
+        },
+        "serviceArea": [
+          {
+            "code": "AMS",
+            "description": "Amsterdam-NL",
+            "facilityCode": "NV2"
+          }
+        ]
+      },
+      "totalWeight": 2,
+      "unitOfMeasurements": "metric",
+      "shipperReferences": [
+        {
+          "value": "EU-NO-NL-WPX-1",
+          "typeCode": "CU"
+        }
+      ],
+      "events": [],
+      "numberOfPieces": 1
+    }
+  ]
+}

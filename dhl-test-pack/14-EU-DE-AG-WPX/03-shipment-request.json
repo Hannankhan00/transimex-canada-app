@@ -1,0 +1,127 @@
+{
+  "plannedShippingDateAndTime": "2026-10-22T12:00:00GMT+00:00",
+  "pickup": {
+    "isRequested": false
+  },
+  "productCode": "P",
+  "accounts": [
+    {
+      "typeCode": "shipper",
+      "number": "974044956"
+    },
+    {
+      "typeCode": "duties-taxes",
+      "number": "974044956"
+    }
+  ],
+  "customerDetails": {
+    "shipperDetails": {
+      "postalAddress": {
+        "postalCode": "10082",
+        "cityName": "Berlin",
+        "countryCode": "DE",
+        "addressLine1": "Teststrasse 1"
+      },
+      "contactInformation": {
+        "companyName": "Transimex Test Shipper",
+        "fullName": "Test Shipper",
+        "phone": "+4930555010",
+        "email": "sales@canzova.com"
+      }
+    },
+    "receiverDetails": {
+      "postalAddress": {
+        "cityName": "Saint John's",
+        "countryCode": "AG",
+        "postalCode": "",
+        "addressLine1": "1 Test Street",
+        "addressLine2": "Aberdeen"
+      },
+      "contactInformation": {
+        "companyName": "Test Receiver",
+        "fullName": "Test Receiver",
+        "phone": "+15145550199",
+        "email": "receiver@example.com"
+      }
+    }
+  },
+  "content": {
+    "packages": [
+      {
+        "weight": 1,
+        "dimensions": {
+          "length": 2,
+          "width": 3,
+          "height": 4
+        },
+        "customerReferences": [
+          {
+            "typeCode": "CU",
+            "value": "EU-DE-AG-WPX-1"
+          }
+        ]
+      }
+    ],
+    "isCustomsDeclarable": true,
+    "description": "Electronic components, integrated circuits",
+    "unitOfMeasurement": "metric",
+    "incoterm": "DDP",
+    "declaredValue": 150,
+    "declaredValueCurrency": "CAD",
+    "exportDeclaration": {
+      "lineItems": [
+        {
+          "number": 1,
+          "description": "Electronic components, integrated circuits",
+          "price": 50,
+          "quantity": {
+            "value": 3,
+            "unitOfMeasurement": "PCS"
+          },
+          "commodityCodes": [
+            {
+              "typeCode": "outbound",
+              "value": "854231"
+            }
+          ],
+          "exportReasonType": "permanent",
+          "manufacturerCountry": "US",
+          "weight": {
+            "netValue": 0.33,
+            "grossValue": 0.33
+          }
+        }
+      ],
+      "invoice": {
+        "number": "EU-DE-AG-WPX",
+        "date": "2026-10-22"
+      },
+      "exportReason": "sale",
+      "exportReasonType": "permanent"
+    }
+  },
+  "outputImageProperties": {
+    "printerDPI": 300,
+    "encodingFormat": "pdf",
+    "imageOptions": [
+      {
+        "typeCode": "label",
+        "templateName": "ECOM26_84_001"
+      },
+      {
+        "typeCode": "waybillDoc",
+        "templateName": "ARCH_8X4",
+        "isRequested": true,
+        "hideAccountNumber": false,
+        "numberOfCopies": 1
+      },
+      {
+        "typeCode": "invoice",
+        "templateName": "COMMERCIAL_INVOICE_P_10",
+        "isRequested": true,
+        "invoiceType": "commercial",
+        "languageCode": "eng"
+      }
+    ]
+  }
+}

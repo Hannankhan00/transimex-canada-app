@@ -20,7 +20,6 @@ export async function getB2cDiscountPct(): Promise<number> {
 export interface ExpressPricingSettings {
   b2cDiscountPct: number;
   dhlContractDiscountPct: number | null;
-  pickupFeeCents: number;
   documentMaxWeightKg: number;
 }
 
@@ -30,7 +29,6 @@ export async function getPricingSettings(): Promise<ExpressPricingSettings> {
   return {
     b2cDiscountPct: s?.b2cDiscountPct ?? 0,
     dhlContractDiscountPct: s?.dhlContractDiscountPct ?? null,
-    pickupFeeCents: s?.pickupFeeCents ?? 0,
     documentMaxWeightKg: s?.documentMaxWeightKg ?? DEFAULT_DOCUMENT_MAX_KG,
   };
 }

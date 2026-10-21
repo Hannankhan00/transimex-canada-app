@@ -152,6 +152,13 @@ export interface ShipmentResult {
   label: ShipmentLabel;
   /** Present when the carrier confirmed a pickup together with the shipment. */
   pickupConfirmation?: string;
+  /** The commercial invoice for a goods shipment, when the carrier produced one. */
+  invoice?: { contentBase64: string };
+  /**
+   * True when customs paperwork travels electronically (DHL Paperless Trade), so nothing has to be
+   * printed and attached. False means the invoice must be printed and attached to the parcel.
+   */
+  paperless?: boolean;
 }
 
 // --- Pickup ----------------------------------------------------------------
@@ -169,6 +176,8 @@ export interface PickupRequest {
   parcels: Parcel[];
   instructions?: string;
   contentType?: ContentType;
+  /** Goods only: DHL needs the declared value to book the pickup. */
+  declaredValueCents?: Cents;
 }
 
 export interface PickupResult {

@@ -1,0 +1,43 @@
+{
+  "customerDetails": {
+    "shipperDetails": {
+      "postalCode": "H4E 4N4",
+      "cityName": "Montreal",
+      "countryCode": "CA"
+    },
+    "receiverDetails": {
+      "postalCode": "213375",
+      "cityName": "Liyang",
+      "countryCode": "CN"
+    }
+  },
+  "accounts": [
+    {
+      "typeCode": "shipper",
+      "number": "973995169"
+    }
+  ],
+  "plannedShippingDateAndTime": "2026-10-22T12:00:00GMT+00:00",
+  "unitOfMeasurement": "metric",
+  "isCustomsDeclarable": true,
+  "monetaryAmount": [
+    {
+      "typeCode": "declaredValue",
+      "value": 100,
+      "currency": "CAD"
+    }
+  ],
+  "requestAllValueAddedServices": false,
+  "returnStandardProductsOnly": false,
+  "nextBusinessDay": false,
+  "packages": [
+    {
+      "weight": 2,
+      "dimensions": {
+        "length": 10,
+        "width": 10,
+        "height": 10
+      }
+    }
+  ]
+}

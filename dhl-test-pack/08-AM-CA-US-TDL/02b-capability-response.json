@@ -1,0 +1,1033 @@
+{
+  "products": [
+    {
+      "productName": "EXPRESS 10:30",
+      "productCode": "L",
+      "localProductCode": "L",
+      "localProductCountryCode": "CA",
+      "networkTypeCode": "TD",
+      "isCustomerAgreement": false,
+      "breakdown": [
+        {
+          "name": "EXPRESS 10:30",
+          "typeCode": "EXPRESS 10:30 DOC"
+        },
+        {
+          "name": "IMPORT DESTINATION BILLING",
+          "serviceCode": "30",
+          "localServiceCode": "30",
+          "typeCode": "IMPORT BILLING ACCOUNT",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "UNKNOWN SHIPPER",
+          "serviceCode": "CT",
+          "localServiceCode": "CT",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "RECEIVER PAID",
+          "serviceCode": "DE",
+          "localServiceCode": "DE",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "GOGREEN PLUS - CARBON REDUCED",
+          "serviceCode": "FD",
+          "localServiceCode": "FD",
+          "serviceTypeCode": "SCH",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "GOGREEN PLUS - CARBON REDUCED",
+          "serviceCode": "FE",
+          "localServiceCode": "FE",
+          "serviceTypeCode": "SCH",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "FUEL SURCHARGE",
+          "serviceCode": "FF",
+          "localServiceCode": "FF",
+          "serviceTypeCode": "SCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": false
+        },
+        {
+          "name": "GOGREEN PLUS - CARBON REDUCED",
+          "serviceCode": "FT",
+          "localServiceCode": "FT",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "LITHIUM ION PI966 SECTION II",
+          "serviceCode": "HD",
+          "localServiceCode": "HD",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": true,
+          "isMarketedService": true
+        },
+        {
+          "name": "NOT RESTRICTED DANGEROUS GOODS",
+          "serviceCode": "HU",
+          "localServiceCode": "HU",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": true,
+          "isMarketedService": true
+        },
+        {
+          "name": "EXTENDED LIABILITY",
+          "serviceCode": "IB",
+          "localServiceCode": "IB",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "ADDRESS CORRECTION",
+          "serviceCode": "MA",
+          "localServiceCode": "MA",
+          "serviceTypeCode": "SCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": false
+        },
+        {
+          "name": "DEMAND SURCHARGE",
+          "serviceCode": "NX",
+          "localServiceCode": "NX",
+          "serviceTypeCode": "SCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "REMOTE AREA PICKUP",
+          "serviceCode": "OB",
+          "localServiceCode": "OB",
+          "serviceTypeCode": "SCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": false
+        },
+        {
+          "name": "SHIPMENT PREPARATION",
+          "serviceCode": "PA",
+          "localServiceCode": "PA",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": false
+        },
+        {
+          "name": "DATA ENTRY",
+          "serviceCode": "PD",
+          "localServiceCode": "PD",
+          "serviceTypeCode": "SCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "AUTOMATED DIGITAL IMAGING",
+          "serviceCode": "PJ",
+          "localServiceCode": "PJ",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": false,
+          "isMarketedService": false
+        },
+        {
+          "name": "DATA STAGING 03",
+          "serviceCode": "PT",
+          "localServiceCode": "PT",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "DATA STAGING 06",
+          "serviceCode": "PU",
+          "localServiceCode": "PU",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "DATA STAGING 12",
+          "serviceCode": "PV",
+          "localServiceCode": "PV",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "DATA STAGING 24",
+          "serviceCode": "PW",
+          "localServiceCode": "PW",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "LABEL FREE",
+          "serviceCode": "PZ",
+          "localServiceCode": "PZ",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": false,
+          "isMarketedService": false
+        },
+        {
+          "name": "ADULT SIGNATURE",
+          "serviceCode": "SD",
+          "localServiceCode": "SD",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "DIRECT SIGNATURE",
+          "serviceCode": "SF",
+          "localServiceCode": "SF",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "SIGNATURE REQUIRED",
+          "serviceCode": "SG",
+          "localServiceCode": "SG",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "NO SIGNATURE REQUIRED",
+          "serviceCode": "SX",
+          "localServiceCode": "SX",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "VERIFIED DELIVERY",
+          "serviceCode": "TF",
+          "localServiceCode": "TF",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "RESIDENTIAL ADDRESS",
+          "serviceCode": "TK",
+          "localServiceCode": "TK",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "LEAVE IN SAFE PLACE",
+          "serviceCode": "TO",
+          "localServiceCode": "TO",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": false,
+          "isMarketedService": false
+        },
+        {
+          "name": "10:30 PREMIUM",
+          "serviceCode": "YJ",
+          "localServiceCode": "YJ",
+          "serviceTypeCode": "SCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        }
+      ],
+      "pickupCapabilities": {
+        "nextBusinessDay": false,
+        "localCutoffDateAndTime": "2026-10-22T16:30:00",
+        "pickupEarliest": "11:00:00",
+        "pickupLatest": "17:30:00",
+        "pickupCutoffSameDayOutboundProcessing": "17:30:00",
+        "originServiceAreaCode": "YUL",
+        "originFacilityAreaCode": "GTW",
+        "pickupAdditionalDays": 0,
+        "pickupDayOfWeek": 4
+      },
+      "deliveryCapabilities": {
+        "deliveryTypeCode": "QDDF",
+        "estimatedDeliveryDateAndTime": "2026-10-23T10:30:00",
+        "destinationServiceAreaCode": "FFT",
+        "destinationFacilityAreaCode": "FFT",
+        "deliveryAdditionalDays": 0,
+        "deliveryDayOfWeek": 5,
+        "totalTransitDays": 1
+      }
+    },
+    {
+      "productName": "EXPRESS 12:00",
+      "productCode": "T",
+      "localProductCode": "T",
+      "localProductCountryCode": "CA",
+      "networkTypeCode": "TD",
+      "isCustomerAgreement": false,
+      "breakdown": [
+        {
+          "name": "EXPRESS 12:00",
+          "typeCode": "EXPRESS 12:00 DOC"
+        },
+        {
+          "name": "IMPORT DESTINATION BILLING",
+          "serviceCode": "30",
+          "localServiceCode": "30",
+          "typeCode": "IMPORT BILLING ACCOUNT",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "UNKNOWN SHIPPER",
+          "serviceCode": "CT",
+          "localServiceCode": "CT",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "RECEIVER PAID",
+          "serviceCode": "DE",
+          "localServiceCode": "DE",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "GOGREEN PLUS - CARBON REDUCED",
+          "serviceCode": "FD",
+          "localServiceCode": "FD",
+          "serviceTypeCode": "SCH",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "GOGREEN PLUS - CARBON REDUCED",
+          "serviceCode": "FE",
+          "localServiceCode": "FE",
+          "serviceTypeCode": "SCH",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "FUEL SURCHARGE",
+          "serviceCode": "FF",
+          "localServiceCode": "FF",
+          "serviceTypeCode": "SCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": false
+        },
+        {
+          "name": "GOGREEN PLUS - CARBON REDUCED",
+          "serviceCode": "FT",
+          "localServiceCode": "FT",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "LITHIUM ION PI966 SECTION II",
+          "serviceCode": "HD",
+          "localServiceCode": "HD",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": true,
+          "isMarketedService": true
+        },
+        {
+          "name": "EXCEPTED QUANTITIES",
+          "serviceCode": "HH",
+          "localServiceCode": "HH",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": true,
+          "isMarketedService": true
+        },
+        {
+          "name": "NOT RESTRICTED DANGEROUS GOODS",
+          "serviceCode": "HU",
+          "localServiceCode": "HU",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": true,
+          "isMarketedService": true
+        },
+        {
+          "name": "EXTENDED LIABILITY",
+          "serviceCode": "IB",
+          "localServiceCode": "IB",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "ADDRESS CORRECTION",
+          "serviceCode": "MA",
+          "localServiceCode": "MA",
+          "serviceTypeCode": "SCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": false
+        },
+        {
+          "name": "DEMAND SURCHARGE",
+          "serviceCode": "NX",
+          "localServiceCode": "NX",
+          "serviceTypeCode": "SCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "REMOTE AREA PICKUP",
+          "serviceCode": "OB",
+          "localServiceCode": "OB",
+          "serviceTypeCode": "SCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": false
+        },
+        {
+          "name": "SHIPMENT PREPARATION",
+          "serviceCode": "PA",
+          "localServiceCode": "PA",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": false
+        },
+        {
+          "name": "DATA ENTRY",
+          "serviceCode": "PD",
+          "localServiceCode": "PD",
+          "serviceTypeCode": "SCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "AUTOMATED DIGITAL IMAGING",
+          "serviceCode": "PJ",
+          "localServiceCode": "PJ",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": false,
+          "isMarketedService": false
+        },
+        {
+          "name": "DATA STAGING 03",
+          "serviceCode": "PT",
+          "localServiceCode": "PT",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "DATA STAGING 06",
+          "serviceCode": "PU",
+          "localServiceCode": "PU",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "DATA STAGING 12",
+          "serviceCode": "PV",
+          "localServiceCode": "PV",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "DATA STAGING 24",
+          "serviceCode": "PW",
+          "localServiceCode": "PW",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "LABEL FREE",
+          "serviceCode": "PZ",
+          "localServiceCode": "PZ",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": false,
+          "isMarketedService": false
+        },
+        {
+          "name": "ADULT SIGNATURE",
+          "serviceCode": "SD",
+          "localServiceCode": "SD",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "DIRECT SIGNATURE",
+          "serviceCode": "SF",
+          "localServiceCode": "SF",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "SIGNATURE REQUIRED",
+          "serviceCode": "SG",
+          "localServiceCode": "SG",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "NO SIGNATURE REQUIRED",
+          "serviceCode": "SX",
+          "localServiceCode": "SX",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "VERIFIED DELIVERY",
+          "serviceCode": "TF",
+          "localServiceCode": "TF",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "RESIDENTIAL ADDRESS",
+          "serviceCode": "TK",
+          "localServiceCode": "TK",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "LEAVE IN SAFE PLACE",
+          "serviceCode": "TO",
+          "localServiceCode": "TO",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": false,
+          "isMarketedService": false
+        },
+        {
+          "name": "DIRECT TO SERVICE POINT",
+          "serviceCode": "TV",
+          "localServiceCode": "TV",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "12:00 PREMIUM",
+          "serviceCode": "YK",
+          "localServiceCode": "YK",
+          "serviceTypeCode": "SCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "NON CONVEYABLE PIECE - IRREGULAR",
+          "serviceCode": "YL",
+          "localServiceCode": "YL",
+          "serviceTypeCode": "SCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        }
+      ],
+      "pickupCapabilities": {
+        "nextBusinessDay": false,
+        "localCutoffDateAndTime": "2026-10-22T16:30:00",
+        "pickupEarliest": "11:00:00",
+        "pickupLatest": "17:30:00",
+        "pickupCutoffSameDayOutboundProcessing": "17:30:00",
+        "originServiceAreaCode": "YUL",
+        "originFacilityAreaCode": "GTW",
+        "pickupAdditionalDays": 0,
+        "pickupDayOfWeek": 4
+      },
+      "deliveryCapabilities": {
+        "deliveryTypeCode": "QDDF",
+        "estimatedDeliveryDateAndTime": "2026-10-23T12:00:00",
+        "destinationServiceAreaCode": "FFT",
+        "destinationFacilityAreaCode": "FFT",
+        "deliveryAdditionalDays": 0,
+        "deliveryDayOfWeek": 5,
+        "totalTransitDays": 1
+      }
+    },
+    {
+      "productName": "EXPRESS WORLDWIDE",
+      "productCode": "D",
+      "localProductCode": "D",
+      "localProductCountryCode": "CA",
+      "networkTypeCode": "TD",
+      "isCustomerAgreement": false,
+      "breakdown": [
+        {
+          "name": "EXPRESS WORLDWIDE",
+          "typeCode": "EXPRESS WORLDWIDE DOC"
+        },
+        {
+          "name": "IMPORT DESTINATION BILLING",
+          "serviceCode": "30",
+          "localServiceCode": "30",
+          "typeCode": "IMPORT BILLING ACCOUNT",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "DIPLOMATIC MATERIAL",
+          "serviceCode": "CG",
+          "localServiceCode": "CG",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": true,
+          "isMarketedService": true
+        },
+        {
+          "name": "UNKNOWN SHIPPER",
+          "serviceCode": "CT",
+          "localServiceCode": "CT",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "RECEIVER PAID",
+          "serviceCode": "DE",
+          "localServiceCode": "DE",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "GOGREEN PLUS - CARBON REDUCED",
+          "serviceCode": "FD",
+          "localServiceCode": "FD",
+          "serviceTypeCode": "SCH",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "GOGREEN PLUS - CARBON REDUCED",
+          "serviceCode": "FE",
+          "localServiceCode": "FE",
+          "serviceTypeCode": "SCH",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "FUEL SURCHARGE",
+          "serviceCode": "FF",
+          "localServiceCode": "FF",
+          "serviceTypeCode": "SCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": false
+        },
+        {
+          "name": "GOGREEN PLUS - CARBON REDUCED",
+          "serviceCode": "FT",
+          "localServiceCode": "FT",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "EXTENDED LIABILITY",
+          "serviceCode": "IB",
+          "localServiceCode": "IB",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "COURIER TIME WINDOW",
+          "serviceCode": "JY",
+          "localServiceCode": "JY",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "REFRIGERATED +2 TO +8C",
+          "serviceCode": "LG",
+          "localServiceCode": "LG",
+          "typeCode": "REFRIGERATED 2-8C",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "ADDRESS CORRECTION",
+          "serviceCode": "MA",
+          "localServiceCode": "MA",
+          "serviceTypeCode": "SCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": false
+        },
+        {
+          "name": "DEMAND SURCHARGE",
+          "serviceCode": "NX",
+          "localServiceCode": "NX",
+          "serviceTypeCode": "SCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "REMOTE AREA PICKUP",
+          "serviceCode": "OB",
+          "localServiceCode": "OB",
+          "serviceTypeCode": "SCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": false
+        },
+        {
+          "name": "REMOTE AREA DELIVERY",
+          "serviceCode": "OO",
+          "localServiceCode": "OO",
+          "serviceTypeCode": "SCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": false
+        },
+        {
+          "name": "SHIPMENT PREPARATION",
+          "serviceCode": "PA",
+          "localServiceCode": "PA",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": false
+        },
+        {
+          "name": "DATA ENTRY",
+          "serviceCode": "PD",
+          "localServiceCode": "PD",
+          "serviceTypeCode": "SCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "AUTOMATED DIGITAL IMAGING",
+          "serviceCode": "PJ",
+          "localServiceCode": "PJ",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": false,
+          "isMarketedService": false
+        },
+        {
+          "name": "OPTICAL CHARACTER RECOGNITION",
+          "serviceCode": "PL",
+          "localServiceCode": "PL",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "NEUTRAL DESCRIPTION LABEL",
+          "serviceCode": "PP",
+          "localServiceCode": "PP",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "PIECE LABELING",
+          "serviceCode": "PS",
+          "localServiceCode": "PS",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "DATA STAGING 03",
+          "serviceCode": "PT",
+          "localServiceCode": "PT",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "DATA STAGING 06",
+          "serviceCode": "PU",
+          "localServiceCode": "PU",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "LABEL FREE",
+          "serviceCode": "PZ",
+          "localServiceCode": "PZ",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": false,
+          "isMarketedService": false
+        },
+        {
+          "name": "DEDICATED PICKUP",
+          "serviceCode": "QA",
+          "localServiceCode": "QA",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "DIRECT SIGNATURE",
+          "serviceCode": "SF",
+          "localServiceCode": "SF",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "SIGNATURE REQUIRED",
+          "serviceCode": "SG",
+          "localServiceCode": "SG",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "NO SIGNATURE REQUIRED",
+          "serviceCode": "SX",
+          "localServiceCode": "SX",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "DEDICATED DELIVERY",
+          "serviceCode": "TA",
+          "localServiceCode": "TA",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "VERIFIED DELIVERY",
+          "serviceCode": "TF",
+          "localServiceCode": "TF",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "RESIDENTIAL ADDRESS",
+          "serviceCode": "TK",
+          "localServiceCode": "TK",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "LEAVE IN SAFE PLACE",
+          "serviceCode": "TO",
+          "localServiceCode": "TO",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": false,
+          "isMarketedService": false
+        },
+        {
+          "name": "SCHEDULED DELIVERY",
+          "serviceCode": "TT",
+          "localServiceCode": "TT",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "DIRECT TO SERVICE POINT",
+          "serviceCode": "TV",
+          "localServiceCode": "TV",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "NON CONVEYABLE PIECE - IRREGULAR",
+          "serviceCode": "YL",
+          "localServiceCode": "YL",
+          "serviceTypeCode": "SCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        }
+      ],
+      "pickupCapabilities": {
+        "nextBusinessDay": false,
+        "localCutoffDateAndTime": "2026-10-22T16:30:00",
+        "pickupEarliest": "11:00:00",
+        "pickupLatest": "17:30:00",
+        "pickupCutoffSameDayOutboundProcessing": "17:30:00",
+        "originServiceAreaCode": "YUL",
+        "originFacilityAreaCode": "GTW",
+        "pickupAdditionalDays": 0,
+        "pickupDayOfWeek": 4
+      },
+      "deliveryCapabilities": {
+        "deliveryTypeCode": "QDDF",
+        "estimatedDeliveryDateAndTime": "2026-10-23T23:59:00",
+        "destinationServiceAreaCode": "FFT",
+        "destinationFacilityAreaCode": "FFT",
+        "deliveryAdditionalDays": 0,
+        "deliveryDayOfWeek": 5,
+        "totalTransitDays": 1
+      }
+    },
+    {
+      "productName": "EXPRESS EASY",
+      "productCode": "7",
+      "localProductCode": "7",
+      "localProductCountryCode": "CA",
+      "networkTypeCode": "TD",
+      "isCustomerAgreement": true,
+      "breakdown": [
+        {
+          "name": "EXPRESS EASY",
+          "typeCode": "EXPRESS EASY DOC"
+        },
+        {
+          "name": "UNKNOWN SHIPPER",
+          "serviceCode": "CT",
+          "localServiceCode": "CT",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "FUEL SURCHARGE",
+          "serviceCode": "FF",
+          "localServiceCode": "FF",
+          "serviceTypeCode": "SCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": false
+        },
+        {
+          "name": "EXTENDED LIABILITY",
+          "serviceCode": "IB",
+          "localServiceCode": "IB",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "SHIPMENT INSURANCE",
+          "serviceCode": "II",
+          "localServiceCode": "II",
+          "typeCode": "SHIPMENT VALUE PROTECTION",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "DATA ENTRY",
+          "serviceCode": "PD",
+          "localServiceCode": "PD",
+          "serviceTypeCode": "SCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "AUTOMATED DIGITAL IMAGING",
+          "serviceCode": "PJ",
+          "localServiceCode": "PJ",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": false,
+          "isMarketedService": false
+        },
+        {
+          "name": "OPTICAL CHARACTER RECOGNITION",
+          "serviceCode": "PL",
+          "localServiceCode": "PL",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "NEUTRAL DESCRIPTION LABEL",
+          "serviceCode": "PP",
+          "localServiceCode": "PP",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "LABEL FREE",
+          "serviceCode": "PZ",
+          "localServiceCode": "PZ",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": false,
+          "isMarketedService": false
+        },
+        {
+          "name": "ADULT SIGNATURE",
+          "serviceCode": "SD",
+          "localServiceCode": "SD",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "DIRECT SIGNATURE",
+          "serviceCode": "SF",
+          "localServiceCode": "SF",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "SIGNATURE REQUIRED",
+          "serviceCode": "SG",
+          "localServiceCode": "SG",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        },
+        {
+          "name": "RESIDENTIAL ADDRESS",
+          "serviceCode": "TK",
+          "localServiceCode": "TK",
+          "serviceTypeCode": "XCH",
+          "isCustomerAgreement": false,
+          "isMarketedService": true
+        },
+        {
+          "name": "LEAVE IN SAFE PLACE",
+          "serviceCode": "TO",
+          "localServiceCode": "TO",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": false,
+          "isMarketedService": false
+        },
+        {
+          "name": "DIRECT TO SERVICE POINT",
+          "serviceCode": "TV",
+          "localServiceCode": "TV",
+          "serviceTypeCode": "TEC",
+          "isCustomerAgreement": true,
+          "isMarketedService": false
+        }
+      ],
+      "pickupCapabilities": {
+        "nextBusinessDay": false,
+        "localCutoffDateAndTime": "2026-10-22T16:30:00",
+        "pickupEarliest": "11:00:00",
+        "pickupLatest": "17:30:00",
+        "pickupCutoffSameDayOutboundProcessing": "17:30:00",
+        "originServiceAreaCode": "YUL",
+        "originFacilityAreaCode": "GTW",
+        "pickupAdditionalDays": 0,
+        "pickupDayOfWeek": 4
+      },
+      "deliveryCapabilities": {
+        "deliveryTypeCode": "QDDF",
+        "estimatedDeliveryDateAndTime": "2026-10-23T23:59:00",
+        "destinationServiceAreaCode": "FFT",
+        "destinationFacilityAreaCode": "FFT",
+        "deliveryAdditionalDays": 0,
+        "deliveryDayOfWeek": 5,
+        "totalTransitDays": 1
+      }
+    }
+  ]
+}

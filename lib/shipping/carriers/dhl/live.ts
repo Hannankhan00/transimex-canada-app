@@ -10,6 +10,7 @@ import type {
   PickupRequest,
   PickupResult,
   RateOption,
+  RatePrice,
   RateRequest,
   ShipmentRequest,
   ShipmentResult,
@@ -44,6 +45,8 @@ interface DhlBreakdownLine {
   name: string;
   serviceCode?: string;
   price: number;
+  /** Present when DHL applied a discount to this line: the list price before it is `basePrice`. */
+  priceBreakdown?: { priceType?: string; rate?: number; price?: number; basePrice?: number }[];
 }
 
 interface DhlRatesResponse {
@@ -101,7 +104,8 @@ function packagesPayload(parcels: Parcel[]) {
 
 function postalAddress(a: Pick<Address, "line1" | "line2" | "city" | "region" | "postalCode" | "countryCode">) {
   return {
-    postalCode: a.postalCode,
+    // DHL requires this key even for countries without postal codes: an empty string is accepted.
+    postalCode: a.postalCode || "",
     cityName: a.city,
     countryCode: a.countryCode.toUpperCase(),
     ...(a.line1 ? { addressLine1: a.line1 } : {}),
@@ -216,6 +220,29 @@ export function splitBreakdown(
   return { baseFreightCents, surcharges };
 }
 
+/**
+ * DHL's public (list) price, read from DHL itself instead of guessed from a discount setting.
+ *  - The base freight line shows the discount DHL applied: its `basePrice` is the list price.
+ *  - No discount shown on a non-Canadian origin: the contract discount only exists on Canadian shipments,
+ *    so the account price already is the list price.
+ *  - No discount shown on a Canadian origin: unknown, so undefined and the pricing falls back to the
+ *    contract discount set in Express Settings.
+ */
+export function publicListPrice(
+  productCode: string,
+  lines: DhlBreakdownLine[],
+  account: RatePrice,
+  surcharges: Surcharge[],
+  originCountry: string
+): RatePrice | undefined {
+  const priced = lines.filter((l) => typeof l.price === "number");
+  const base = priced.find((l) => l.serviceCode === productCode) ?? priced[0];
+  const discount = base?.priceBreakdown?.find((p) => p.priceType === "DISCOUNT" && typeof p.basePrice === "number");
+  if (discount?.basePrice != null) return buildRatePrice(toCents(discount.basePrice), surcharges);
+  if (originCountry.toUpperCase() !== "CA") return account;
+  return undefined;
+}
+
 // ---- Adapter ---------------------------------------------------------------
 
 export class DhlApiAdapter implements CarrierAdapter {
@@ -284,6 +311,7 @@ export class DhlApiAdapter implements CarrierAdapter {
 
       const { baseFreightCents, surcharges } = splitBreakdown(product.productCode, detailed.breakdown);
       const account = buildRatePrice(baseFreightCents, surcharges);
+      const publicList = publicListPrice(product.productCode, detailed.breakdown, account, surcharges, request.origin.countryCode);
       if (account.totalCents !== toCents(total.price)) {
         throw new CarrierError("unknown", "DHL price breakdown does not add up to its total.", {
           detail: `breakdown ${account.totalCents} vs total ${toCents(total.price)} for ${product.productCode}`,
@@ -296,8 +324,8 @@ export class DhlApiAdapter implements CarrierAdapter {
         serviceName: product.productName,
         currency: "CAD",
         account,
-        // The API returns our account rate only. VERIFY whether a list price is available.
-        publicList: undefined,
+        // DHL's own list price when it shows the discount it applied; see publicListPrice.
+        publicList,
         // VERIFY: whether DHL returns a pickup fee in the rate response. Until confirmed it is left
         // undefined and Transimex falls back to the pickup fee set in Express settings.
         pickupFeeCents: undefined,
@@ -343,9 +371,45 @@ export class DhlApiAdapter implements CarrierAdapter {
 
   async createShipment(request: ShipmentRequest): Promise<ShipmentResult> {
     const documents = request.contentType === "documents";
+    // Goods go Paperless Trade (WY) when DHL offers it on the lane. DHL refuses WY on some lanes (for example
+    // Nigeria, Egypt, Morocco) before booking anything, so asking again without it cannot create a second parcel.
+    let paperless = !documents;
+    let response: DhlShipmentResponse;
+    try {
+      response = await this.sendShipment(request, paperless);
+    } catch (error) {
+      const refusedPaperless = paperless && error instanceof CarrierError && error.code === "rejected" && !error.outcomeUnknown && /\bWY\b|special service/i.test(error.detail || "");
+      if (!refusedPaperless) throw error;
+      paperless = false;
+      response = await this.sendShipment(request, false);
+    }
+
+    const labelDoc = response.documents?.find((d) => d.typeCode === "label");
+    if (!labelDoc?.content) {
+      // The parcel exists at DHL but we have no label: caller must look it up, not re-book.
+      throw new CarrierError("unknown", "DHL booked the shipment but returned no label.", {
+        detail: response.shipmentTrackingNumber,
+        outcomeUnknown: true,
+      });
+    }
+    const invoiceDoc = response.documents?.find((d) => d.typeCode === "invoice");
+
+    return {
+      trackingNumber: response.shipmentTrackingNumber,
+      trackingUrl: response.trackingUrl || `${TRACKING_URL}${response.shipmentTrackingNumber}`,
+      packageTrackingNumbers: response.packages?.map((p) => p.trackingNumber) ?? [response.shipmentTrackingNumber],
+      label: { contentBase64: labelDoc.content, format: "pdf" },
+      pickupConfirmation: request.pickupRequested ? response.dispatchConfirmationNumber : undefined,
+      ...(invoiceDoc?.content ? { invoice: { contentBase64: invoiceDoc.content } } : {}),
+      ...(documents ? {} : { paperless }),
+    };
+  }
+
+  private async sendShipment(request: ShipmentRequest, paperless: boolean): Promise<DhlShipmentResponse> {
+    const documents = request.contentType === "documents";
     // Documents carry no duties, so there is nothing for the sender to pay.
     const senderPays = !documents && request.dutiesPayer === "sender";
-    const response = await this.http.request<DhlShipmentResponse>({
+    return this.http.request<DhlShipmentResponse>({
       method: "POST",
       path: "/shipments",
       mutating: true,
@@ -366,36 +430,24 @@ export class DhlApiAdapter implements CarrierAdapter {
           packages: packagesPayload(request.parcels).map((p) => ({ ...p, customerReferences: [{ value: request.reference, typeCode: "CU" }] })),
           isCustomsDeclarable: !documents,
           // The schema requires a description (max 70 characters), an incoterm and the unit for every shipment.
-          description: request.contentDescription.slice(0, 70),
+          // For goods DHL wants it to be the first line item's description, which customs reads.
+          description: (documents ? request.contentDescription : request.items[0]?.description || request.contentDescription).slice(0, 70),
           unitOfMeasurement: "metric",
           incoterm: senderPays ? "DDP" : "DAP", // VERIFY
           // A document shipment sends no value and no export declaration.
           ...(documents ? {} : customsContent(request)),
         },
-        // VERIFY: service code for "duties and taxes paid".
-        ...(senderPays ? { valueAddedServices: [{ serviceCode: "DD" }] } : {}),
+        // "DD" = duties and taxes paid by the sender (confirmed in the sandbox); "WY" = Paperless Trade.
+        ...(senderPays || paperless ? { valueAddedServices: [...(senderPays ? [{ serviceCode: "DD" }] : []), ...(paperless ? [{ serviceCode: "WY" }] : [])] } : {}),
         outputImageProperties: {
-          imageOptions: [{ typeCode: "label", templateName: "ECOM26_84_001" }],
+          imageOptions: [
+            { typeCode: "label", templateName: "ECOM26_84_001" },
+            // Goods need a commercial invoice: electronic with Paperless Trade, otherwise printed and attached.
+            ...(documents ? [] : [{ typeCode: "invoice", templateName: "COMMERCIAL_INVOICE_P_10", isRequested: true, invoiceType: "commercial", languageCode: "eng" }]),
+          ],
         },
       },
     });
-
-    const labelDoc = response.documents?.find((d) => d.typeCode === "label");
-    if (!labelDoc?.content) {
-      // The parcel exists at DHL but we have no label: caller must look it up, not re-book.
-      throw new CarrierError("unknown", "DHL booked the shipment but returned no label.", {
-        detail: response.shipmentTrackingNumber,
-        outcomeUnknown: true,
-      });
-    }
-
-    return {
-      trackingNumber: response.shipmentTrackingNumber,
-      trackingUrl: response.trackingUrl || `${TRACKING_URL}${response.shipmentTrackingNumber}`,
-      packageTrackingNumbers: response.packages?.map((p) => p.trackingNumber) ?? [response.shipmentTrackingNumber],
-      label: { contentBase64: labelDoc.content, format: "pdf" },
-      pickupConfirmation: request.pickupRequested ? response.dispatchConfirmationNumber : undefined,
-    };
   }
 
   async bookPickup(request: PickupRequest): Promise<PickupResult> {
@@ -426,6 +478,8 @@ export class DhlApiAdapter implements CarrierAdapter {
             productCode: request.contentType === "documents" ? "D" : "P",
             accounts: [{ typeCode: "shipper", number: this.config.accountNumber }],
             isCustomsDeclarable: request.contentType !== "documents",
+            // DHL requires the declared value on a pickup for goods.
+            ...(request.contentType !== "documents" ? { declaredValue: fromCents(request.declaredValueCents ?? 0), declaredValueCurrency: "CAD" } : {}),
             unitOfMeasurement: "metric",
             packages: packagesPayload(request.parcels),
           },

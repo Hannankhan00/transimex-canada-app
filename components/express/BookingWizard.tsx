@@ -2,11 +2,13 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Loader2, Plus, Trash2 } from "lucide-react";
+import { Check, Info, Loader2, Plus, Trash2 } from "lucide-react";
 import { api } from "@/lib/api";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { COUNTRIES } from "@/lib/data/countries";
-import { AFRICAN_COUNTRY_CODES } from "@/lib/express/africa";
+import CountrySelect from "./CountrySelect";
+import UnitToggle from "./UnitToggle";
+import { lengthToCm, unitLabel, weightFromKg, weightToKg, weightUnit, type UnitSystem } from "@/lib/express/units";
 import { formatCad } from "@/lib/shipping/core/money";
 import type { TermsContent } from "@/lib/express/terms";
 import type { ClientQuoteDTO } from "@/lib/express/quoteDto";
@@ -14,7 +16,6 @@ import type { ClientAccountDTO } from "@/lib/express/accountDto";
 import type { PartnerCustomerDTO } from "@/lib/express/partnerDto";
 import type { CreditSummary } from "@/lib/express/credit";
 
-const AFRICA = COUNTRIES.filter((c) => AFRICAN_COUNTRY_CODES.has(c.code));
 const EXPORT_REASONS = ["sale", "gift", "sample", "return", "repair", "personal_effects"] as const;
 
 const inputClass =
@@ -63,7 +64,21 @@ const emailOk = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
 const hsOk = (v: string) => /^\d{6,10}$/.test(v.replace(/[\s.\-]/g, ""));
 const optional = (v: string) => (v.trim() === "" ? undefined : v.trim());
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+/** A small (i) icon that shows a help bubble on hover or keyboard focus. The bubble can hold links. */
+function InfoTip({ children, label }: { children: React.ReactNode; label: string }) {
+  return (
+    <span className="group relative inline-flex align-middle">
+      <span tabIndex={0} role="img" aria-label={label} className="cursor-help text-slate-400 outline-none transition-colors hover:text-[#0B2545] focus:text-[#0B2545]">
+        <Info className="h-3.5 w-3.5" />
+      </span>
+      <span role="tooltip" className="invisible absolute left-0 top-full z-30 w-64 pt-2 opacity-0 transition-opacity group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100">
+        <span className="block rounded-xl bg-[#0B2545] p-3 text-[11px] font-normal leading-relaxed text-white shadow-lg">{children}</span>
+      </span>
+    </span>
+  );
+}
+
+function Field({ label, children }: { label: React.ReactNode; children: React.ReactNode }) {
   return (
     <label className="block space-y-1.5">
       <span className="text-xs font-bold text-slate-700">{label}</span>
@@ -127,13 +142,7 @@ function AddressFields({
       </Field>
       {withCountry ? (
         <Field label={labels.country}>
-          <select className={inputClass} value={value.countryCode} onChange={set("countryCode")}>
-            {AFRICA.map((c) => (
-              <option key={c.code} value={c.code}>
-                {countryLabel(c)}
-              </option>
-            ))}
-          </select>
+          <CountrySelect className={inputClass} value={value.countryCode} onChange={(code) => onChange({ ...value, countryCode: code })} ariaLabel={labels.country} />
         </Field>
       ) : (
         <Field label={labels.country}>
@@ -166,6 +175,10 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
   const [docDescription, setDocDescription] = useState("");
   const [docDeclared, setDocDeclared] = useState(false);
   const [docMaxKg, setDocMaxKg] = useState(2);
+  // Pounds and inches by default (DHL's own sheets use them). The server and DHL always get kilograms and centimetres.
+  const [units, setUnits] = useState<UnitSystem>("imperial");
+  const wUnit = weightUnit(units);
+  const docMaxText = `${weightFromKg(docMaxKg, units)} ${wUnit}`;
   const documents = contentType === "documents";
   const [shipper, setShipper] = useState<AddressForm>(emptyAddress("CA"));
   const [recipient, setRecipient] = useState<AddressForm>(emptyAddress("CM"));
@@ -262,8 +275,9 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
     () => items.reduce((sum, i) => sum + (Number.isFinite(num(i.quantity)) && Number.isFinite(cents(i.unitValue)) ? num(i.quantity) * cents(i.unitValue) : 0), 0),
     [items]
   );
-  const parcelWeight = parcels.reduce((s, p) => s + (Number.isFinite(num(p.weight)) ? num(p.weight) : 0), 0);
-  const itemWeight = items.reduce((s, i) => s + (Number.isFinite(num(i.netWeight)) && Number.isFinite(num(i.quantity)) ? num(i.netWeight) * num(i.quantity) : 0), 0);
+  // Totals in kilograms, whatever unit the client types in.
+  const parcelWeight = weightToKg(parcels.reduce((s, p) => s + (Number.isFinite(num(p.weight)) ? num(p.weight) : 0), 0), units);
+  const itemWeight = weightToKg(items.reduce((s, i) => s + (Number.isFinite(num(i.netWeight)) && Number.isFinite(num(i.quantity)) ? num(i.netWeight) * num(i.quantity) : 0), 0), units);
 
   // A message about a field goes away as soon as the client edits anything.
   useEffect(() => {
@@ -272,9 +286,10 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
   }, [shipper, recipient, parcels, items, pickup, duties, contentType, docDescription, docDeclared]);
 
   const inputsKey = JSON.stringify({
-    o: [shipper.postalCode, shipper.city],
+    o: [shipper.countryCode, shipper.postalCode, shipper.city],
     d: [recipient.countryCode, recipient.postalCode, recipient.city],
     p: parcels,
+    n: units,
     t: contentType,
     v: documents ? 0 : itemsTotalCents,
     u: pickup,
@@ -286,19 +301,31 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
     return c ? countryLabel(c) : code;
   };
 
+  // Switching units converts what was already typed, so the numbers keep their meaning.
+  const switchUnits = (next: UnitSystem) => {
+    if (next === units) return;
+    const conv = (v: string, f: (n: number) => number) => (Number.isFinite(num(v)) ? String(Math.round(f(num(v)) * 100) / 100) : v);
+    const toKg = (n: number) => (next === "metric" ? weightToKg(n, "imperial") : n / 0.45359237);
+    const toCm = (n: number) => (next === "metric" ? lengthToCm(n, "imperial") : n / 2.54);
+    setParcels((ps) => ps.map((p) => ({ weight: conv(p.weight, toKg), length: conv(p.length, toCm), width: conv(p.width, toCm), height: conv(p.height, toCm) })));
+    setItems((is) => is.map((i) => ({ ...i, netWeight: conv(i.netWeight, toKg) })));
+    setUnits(next);
+  };
+
   const validateStep = (s: number): string | null => {
     if (s === 1) {
+      // Postal codes are optional: some countries have none, and DHL says if a lane needs one.
       const need = (a: AddressForm, email: boolean) =>
-        [a.name, a.line1, a.city, a.postalCode, a.phone].every((v) => v.trim()) && (!email || emailOk(a.email)) && (!a.email.trim() || emailOk(a.email));
+        [a.name, a.line1, a.city, a.phone].every((v) => v.trim()) && (!email || emailOk(a.email)) && (!a.email.trim() || emailOk(a.email));
       return need(shipper, true) && need(recipient, false) ? null : b.required;
     }
     if (s === 2) {
       const ok = parcels.every((p) => {
-        const w = num(p.weight), l = num(p.length), wd = num(p.width), h = num(p.height);
+        const w = weightToKg(num(p.weight), units), l = lengthToCm(num(p.length), units), wd = lengthToCm(num(p.width), units), h = lengthToCm(num(p.height), units);
         return w >= 0.1 && w <= 70 && [l, wd, h].every((d) => d >= 1 && d <= 120);
       });
       if (!ok) return b.required;
-      if (documents && parcelWeight > docMaxKg + 0.001) return b.docsTooHeavy.replace("{kg}", String(docMaxKg));
+      if (documents && parcelWeight > docMaxKg + 0.001) return b.docsTooHeavy.replace("{kg} kg", docMaxText);
       return null;
     }
     if (s === 3 && documents) {
@@ -313,7 +340,7 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
           Number.isInteger(num(i.quantity)) && num(i.quantity) >= 1 &&
           cents(i.unitValue) >= 1 &&
           i.country &&
-          num(i.netWeight) >= 0.01 &&
+          weightToKg(num(i.netWeight), units) >= 0.01 &&
           i.reason
       );
       if (!ok) return b.required;
@@ -338,9 +365,9 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          origin: { postalCode: shipper.postalCode.trim(), city: shipper.city.trim() },
+          origin: { countryCode: shipper.countryCode, postalCode: shipper.postalCode.trim(), city: shipper.city.trim() },
           destination: { countryCode: recipient.countryCode, postalCode: recipient.postalCode.trim(), city: recipient.city.trim() },
-          parcels: parcels.map((p) => ({ weightKg: num(p.weight), lengthCm: num(p.length), widthCm: num(p.width), heightCm: num(p.height) })),
+          parcels: parcels.map((p) => ({ weightKg: weightToKg(num(p.weight), units), lengthCm: lengthToCm(num(p.length), units), widthCm: lengthToCm(num(p.width), units), heightCm: lengthToCm(num(p.height), units) })),
           contentType,
           declaredValueCents: documents ? 0 : itemsTotalCents,
           isCustomsDeclarable: !documents,
@@ -351,7 +378,7 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         if (data.code === "documents_unavailable") throw new Error(b.docsUnavailable);
-        if (data.code === "documents_too_heavy") throw new Error(b.docsTooHeavy.replace("{kg}", String(docMaxKg)));
+        if (data.code === "documents_too_heavy") throw new Error(b.docsTooHeavy.replace("{kg} kg", docMaxText));
         if (data.code === "account_pending" || data.code?.startsWith("account_")) throw new Error(b.accountBlocked);
         throw new Error(data.error || b.priceError);
       }
@@ -364,7 +391,7 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
     } finally {
       setQuoteLoading(false);
     }
-  }, [shipper, recipient, parcels, itemsTotalCents, pickup, forCustomer, inputsKey, b, contentType, documents, docMaxKg]);
+  }, [shipper, recipient, parcels, itemsTotalCents, pickup, forCustomer, inputsKey, b, contentType, documents, docMaxKg, units, docMaxText]);
 
   const loadTerms = useCallback(async () => {
     try {
@@ -419,7 +446,7 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
                 quantity: num(i.quantity),
                 unitValueCents: cents(i.unitValue),
                 countryOfOrigin: i.country,
-                netWeightKg: num(i.netWeight),
+                netWeightKg: weightToKg(num(i.netWeight), units),
                 exportReason: i.reason,
               })),
           ...(documents ? { contentDescription: docDescription.trim(), documentsDeclaration: true } : {}),
@@ -558,7 +585,7 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
           <div className="grid items-start gap-5 xl:grid-cols-2">
           <section className="bg-white border border-slate-200 rounded-2xl p-5 sm:p-6 space-y-4">
             <h2 className="font-bold text-[#0B2545]">{b.sender}</h2>
-            <AddressFields value={shipper} onChange={setShipper} withCountry={false} emailRequired labels={addressLabels} countryLabel={countryLabel} />
+            <AddressFields value={shipper} onChange={setShipper} withCountry emailRequired labels={addressLabels} countryLabel={countryLabel} />
           </section>
           <section className="bg-white border border-slate-200 rounded-2xl p-5 sm:p-6 space-y-4">
             <h2 className="font-bold text-[#0B2545]">{b.recipient}</h2>
@@ -570,10 +597,13 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
 
       {step === 2 && (
         <section className="bg-white border border-slate-200 rounded-2xl p-5 sm:p-6 space-y-4">
-          <div>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
             <h2 className="font-bold text-[#0B2545]">{b.parcelsTitle}</h2>
             <p className="text-xs text-slate-500 mt-1">{b.parcelsHint}</p>
-            {documents && <p className="text-xs font-semibold text-slate-700 mt-1">{b.docsLimit.replace("{kg}", String(docMaxKg))}</p>}
+            {documents && <p className="text-xs font-semibold text-slate-700 mt-1">{b.docsLimit.replace("{kg} kg", docMaxText)}</p>}
+            </div>
+            <UnitToggle value={units} onChange={switchUnits} />
           </div>
           {parcels.map((p, i) => (
             <div key={i} className="rounded-xl border border-slate-200 p-4 space-y-3">
@@ -590,7 +620,7 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {(["weight", "length", "width", "height"] as const).map((k) => (
-                  <Field key={k} label={b[k]}>
+                  <Field key={k} label={unitLabel(b[k], units)}>
                     <input
                       className={inputClass}
                       inputMode="decimal"
@@ -653,7 +683,24 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
                   <input className={inputClass} value={it.description} onChange={set("description")} maxLength={100} />
                 </Field>
                 <div className="grid sm:grid-cols-3 gap-3">
-                  <Field label={b.hsCode}>
+                  <Field
+                    label={
+                      <span className="inline-flex items-center gap-1.5">
+                        {b.hsCode}
+                        <InfoTip label={b.hsInfoLabel}>
+                          {b.hsInfo}
+                          <span className="mt-2 block space-y-1">
+                            <a href="https://www.cbsa-asfc.gc.ca/trade-commerce/tariff-tarif/menu-eng.html" target="_blank" rel="noreferrer" className="block font-semibold underline">
+                              {b.hsLinkCbsa}
+                            </a>
+                            <a href="https://www.wcoomd.org/en/topics/nomenclature/instrument-and-tools/hs-nomenclature-2022-edition.aspx" target="_blank" rel="noreferrer" className="block font-semibold underline">
+                              {b.hsLinkWco}
+                            </a>
+                          </span>
+                        </InfoTip>
+                      </span>
+                    }
+                  >
                     <input className={inputClass} value={it.hsCode} onChange={set("hsCode")} placeholder={b.hsHelp} maxLength={14} />
                   </Field>
                   <Field label={b.quantity}>
@@ -671,7 +718,7 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
                       ))}
                     </select>
                   </Field>
-                  <Field label={b.netWeight}>
+                  <Field label={unitLabel(b.netWeight, units)}>
                     <input className={inputClass} value={it.netWeight} onChange={set("netWeight")} inputMode="decimal" />
                   </Field>
                   <Field label={b.reason}>
@@ -744,9 +791,9 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
             <h2 className="font-bold text-[#0B2545]">{b.summary}</h2>
             <dl className="text-sm divide-y divide-slate-100">
               {[
-                [b.route, `${shipper.city}, Canada → ${recipient.city}, ${countryName(recipient.countryCode)}`],
+                [b.route, `${shipper.city}, ${countryName(shipper.countryCode)} → ${recipient.city}, ${countryName(recipient.countryCode)}`],
                 [b.typeTitle, documents ? `${b.typeDocuments} · ${docDescription.trim()}` : b.typeGoods],
-                [b.parcelsTitle, `${parcels.length} · ${parcelWeight.toFixed(1)} kg`],
+                [b.parcelsTitle, `${parcels.length} · ${weightFromKg(parcelWeight, units)} ${wUnit}`],
                 ...(documents ? [] : [[b.declaredTotal, m(itemsTotalCents)]]),
                 [b.pickupLabel, pickup ? b.pickupYes : b.pickupNo],
                 ...(documents ? [] : [[b.dutiesLabel, duties === "recipient" ? b.dutiesRecipientShort : b.dutiesSenderShort]]),
@@ -954,7 +1001,7 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
             {[
               [b.route, `${shipper.city || "–"} → ${recipient.city ? `${recipient.city}, ${countryName(recipient.countryCode)}` : "–"}`],
               [b.typeTitle, documents ? b.typeDocuments : b.typeGoods],
-              [b.parcelsTitle, `${parcels.length} · ${parcelWeight.toFixed(1)} kg`],
+              [b.parcelsTitle, `${parcels.length} · ${weightFromKg(parcelWeight, units)} ${wUnit}`],
               [b.pickupLabel, pickup ? b.pickupYes : b.pickupNo],
             ].map(([k, v]) => (
               <div key={k} className="flex items-start justify-between gap-3 py-2.5">

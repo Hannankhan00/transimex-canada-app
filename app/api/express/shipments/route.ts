@@ -153,7 +153,7 @@ export async function POST(req: Request) {
       idempotencyKey: input.idempotencyKey,
       status: "awaiting_payment" as const,
       statusHistory: [{ status: "awaiting_payment" as const, at: now, by: userId }],
-      shipper: { ...input.shipper, countryCode: "CA" },
+      shipper: { ...input.shipper, countryCode: quote.request.origin.countryCode },
       recipient: input.recipient,
       parcels: quote.request.parcels,
       contentType,
