@@ -49,18 +49,14 @@ interface BlogFullPageEditorProps {
 
 const DEFAULT_AUTHOR = "Transimex Logistics Editorial";
 const CATEGORY_OPTIONS = [
-  "Seasonal Advice",
-  "Logistics Operations",
-  "Cross-Border Freight",
-  "Customs & Compliance",
-  "Cold Chain & Reefer",
-  "Intermodal & Rail",
-  "Maritime & Ocean Shipping",
-  "Air Cargo Express",
-  "Warehousing & Fulfillment",
-  "Supply Chain Strategy",
-  "Industry Insights",
+  "Case Studies",
+  "Shipping Guides",
+  "Blogs",
+  "Company Updates",
+  "Logistics Tips",
+  "Industry News",
 ];
+const DEFAULT_CATEGORY = "Blogs";
 
 export default function BlogFullPageEditor({
   postToEdit,
@@ -95,7 +91,7 @@ export default function BlogFullPageEditor({
 
   // Sidebar / Publishing options
   const [status, setStatus] = useState<"Draft" | "Published">("Draft");
-  const [category, setCategory] = useState("Seasonal Advice");
+  const [category, setCategory] = useState(DEFAULT_CATEGORY);
   const [isCustomCategory, setIsCustomCategory] = useState(false);
   const [customCategory, setCustomCategory] = useState("");
   const [author, setAuthor] = useState(DEFAULT_AUTHOR);
@@ -155,7 +151,7 @@ export default function BlogFullPageEditor({
 
       setStatus(postToEdit.status || "Draft");
 
-      const cat = postToEdit.category || "Seasonal Advice";
+      const cat = postToEdit.category || DEFAULT_CATEGORY;
       if (CATEGORY_OPTIONS.includes(cat)) {
         setCategory(cat);
         setIsCustomCategory(false);
@@ -192,7 +188,7 @@ export default function BlogFullPageEditor({
       setMetaDescEn("");
       setMetaDescFr("");
       setStatus("Draft");
-      setCategory("Seasonal Advice");
+      setCategory(DEFAULT_CATEGORY);
       setIsCustomCategory(false);
       setCustomCategory("");
       setAuthor(DEFAULT_AUTHOR);
@@ -570,7 +566,7 @@ export default function BlogFullPageEditor({
       return;
     }
 
-    const finalCategory = isCustomCategory ? customCategory.trim() || "General" : category;
+    const finalCategory = isCustomCategory ? customCategory.trim() || DEFAULT_CATEGORY : category;
     const finalSlug =
       slug.trim() ||
       titleEn
@@ -1329,18 +1325,10 @@ export default function BlogFullPageEditor({
                     {cat}
                   </option>
                 ))}
-                <option value="__custom__">+ Custom Category...</option>
+                {isCustomCategory && (
+                  <option value="__custom__">{customCategory || "Other"} (legacy)</option>
+                )}
               </select>
-
-              {isCustomCategory && (
-                <input
-                  type="text"
-                  value={customCategory}
-                  onChange={(e) => setCustomCategory(e.target.value)}
-                  placeholder="Enter custom category..."
-                  className="w-full mt-2 px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 outline-none focus:border-[#0B2545]"
-                />
-              )}
             </div>
 
             {/* Author Name */}

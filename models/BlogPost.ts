@@ -59,7 +59,7 @@ const BlogPostSchema = new Schema<IBlogPost>(
       fr: { type: String, default: "" },
     },
     author: { type: String, default: "Transimex Logistics Editorial" },
-    category: { type: String, default: "Industry Insights" },
+    category: { type: String, default: "Blogs" },
     featuredImage: { type: String, default: "" },
     status: {
       type: String,

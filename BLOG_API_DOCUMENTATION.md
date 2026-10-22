@@ -86,7 +86,7 @@ All timestamps are ISO-8601 UTC strings (`2026-09-30T14:05:00.000Z`). Format the
   "metaTitle": "Ocean Freight Trends 2026 | Transimex",
   "metaDescription": "A look at rates, capacity and…",
   "author": "Transimex Logistics Editorial",
-  "category": "Industry Insights",
+  "category": "Industry News",
   "tags": ["ocean", "rates"],
   "featuredImage": "https://…/image.jpg",
   "publishedAt": "2026-09-30T14:05:00.000Z",
@@ -117,14 +117,14 @@ Notes
 | `lang` | – | `en` or `fr` |
 | `page` | `1` | Page number |
 | `limit` | `10` | Page size, 1–50 |
-| `category` | – | Exact category name (case-insensitive) |
+| `category` | – | Exact category name (case-insensitive). Admin categories: `Case Studies`, `Shipping Guides`, `Blogs`, `Company Updates`, `Logistics Tips`, `Industry News` |
 | `tag` | – | Exact tag (case-insensitive) |
 | `q` | – | Search title / excerpt / tags (max 100 chars) |
 | `sort` | `newest` | `newest`, `oldest`, `popular` (by views) |
 
 ```bash
 curl -H "x-api-key: $BLOG_KEY" \
-  "https://<domain>/api/public/blog/posts?lang=en&page=1&limit=6&category=Industry%20Insights"
+  "https://<domain>/api/public/blog/posts?lang=en&page=1&limit=6&category=Industry%20News"
 ```
 
 ```json
@@ -160,7 +160,7 @@ Returns the full article plus previous/next navigation and up to 3 related artic
 ```json
 {
   "success": true,
-  "categories": [ { "name": "Industry Insights", "count": 8 } ],
+  "categories": [ { "name": "Industry News", "count": 8 } ],
   "tags": [ { "name": "ocean", "count": 5 } ]
 }
 ```

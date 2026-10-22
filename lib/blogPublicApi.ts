@@ -146,7 +146,7 @@ export function serializePost(p: any, lang: Lang | null, opts: { includeContent:
     metaTitle: pick(p.metaTitle),
     metaDescription: pick(p.metaDescription),
     author: p.author || "Transimex Logistics Editorial",
-    category: p.category || "Industry Insights",
+    category: p.category || "Blogs",
     tags: p.tags || [],
     featuredImage: p.featuredImage || "",
     publishedAt: iso(p.publishedAt ?? p.createdAt),

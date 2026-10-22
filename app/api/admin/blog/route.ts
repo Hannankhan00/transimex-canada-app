@@ -20,7 +20,7 @@ export async function GET(req: Request) {
       metaTitle: dp.metaTitle || { en: "", fr: "" },
       metaDescription: dp.metaDescription || { en: "", fr: "" },
       author: dp.author || "Transimex Logistics Editorial",
-      category: dp.category || "Industry Insights",
+      category: dp.category || "Blogs",
       status: dp.status,
       publishedDate: dp.publishedAt
         ? new Date(dp.publishedAt).toLocaleDateString("en-US", {
@@ -133,7 +133,7 @@ export async function POST(req: Request) {
       metaTitle: { en: metaTitle?.en || "", fr: metaTitle?.fr || "" },
       metaDescription: { en: metaDescription?.en || "", fr: metaDescription?.fr || "" },
       author: author || "Transimex Logistics Editorial",
-      category: category || "Industry Insights",
+      category: category || "Blogs",
       status: status || "Draft",
       publishedAt,
       views: 0,
