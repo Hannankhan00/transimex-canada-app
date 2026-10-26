@@ -13,6 +13,11 @@ export interface DhlConfig {
   apiKey: string;
   apiSecret: string;
   accountNumber: string;
+  /**
+   * DHL account for shipments that start OUTSIDE Canada (imports). DHL refuses the main account for those:
+   * "8009: Account is not IMP enabled". Optional; only needed when clients ship from other countries.
+   */
+  importAccountNumber: string;
 }
 
 const DEFAULT_BASE_URLS: Record<DhlMode, string> = {
@@ -49,5 +54,6 @@ export function getDhlConfig(env: Record<string, string | undefined> = process.e
     apiKey,
     apiSecret,
     accountNumber,
+    importAccountNumber: env.DHL_IMPORT_ACCOUNT_NUMBER?.trim() || "",
   };
 }

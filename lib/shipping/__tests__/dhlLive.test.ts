@@ -4,7 +4,7 @@ import { DhlHttpClient } from "../carriers/dhl/client";
 import { DhlApiAdapter, isVisibleTrackingEvent, mapTrackingStatus, splitBreakdown } from "../carriers/dhl/live";
 import type { RateRequest } from "../core/types";
 
-const config: DhlConfig = { mode: "sandbox", baseUrl: "https://dhl.test", apiKey: "k", apiSecret: "s", accountNumber: "123456789" };
+const config: DhlConfig = { mode: "sandbox", baseUrl: "https://dhl.test", apiKey: "k", apiSecret: "s", accountNumber: "123456789", importAccountNumber: "987654321" };
 const noSleep = async () => {};
 
 function json(body: unknown, status = 200) {

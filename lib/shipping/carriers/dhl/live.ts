@@ -259,6 +259,18 @@ export class DhlApiAdapter implements CarrierAdapter {
     this.http = http ?? new DhlHttpClient(config);
   }
 
+  /**
+   * The DHL account that pays freight. A shipment starting in Canada uses the main account; one starting anywhere
+   * else is an import for DHL and needs the import-enabled account.
+   */
+  private accountFor(originCountryCode: string): string {
+    if (originCountryCode.toUpperCase() === "CA") return this.config.accountNumber;
+    if (!this.config.importAccountNumber) {
+      throw new CarrierError("config", `Shipments from ${originCountryCode.toUpperCase()} need DHL_IMPORT_ACCOUNT_NUMBER (an import-enabled DHL account).`);
+    }
+    return this.config.importAccountNumber;
+  }
+
   async getRates(request: RateRequest): Promise<RateOption[]> {
     let response: DhlRatesResponse;
     try {
@@ -279,7 +291,7 @@ export class DhlApiAdapter implements CarrierAdapter {
             },
           },
           // The schema has no top-level accountNumber and rejects unknown keys.
-          accounts: [{ typeCode: "shipper", number: this.config.accountNumber }],
+          accounts: [{ typeCode: "shipper", number: this.accountFor(request.origin.countryCode) }],
           plannedShippingDateAndTime: dhlDateTime(request.plannedShipDate, "10:00:00"),
           unitOfMeasurement: "metric",
           isCustomsDeclarable: request.isCustomsDeclarable,
@@ -421,9 +433,9 @@ export class DhlApiAdapter implements CarrierAdapter {
         pickup: { isRequested: request.pickupRequested },
         productCode: request.serviceCode,
         accounts: [
-          { typeCode: "shipper", number: this.config.accountNumber },
-          // VERIFY: billing the sender for duties and taxes.
-          ...(senderPays ? [{ typeCode: "duties-taxes", number: this.config.accountNumber }] : []),
+          { typeCode: "shipper", number: this.accountFor(request.shipper.countryCode) },
+          // The sender pays duties and taxes on the same account.
+          ...(senderPays ? [{ typeCode: "duties-taxes", number: this.accountFor(request.shipper.countryCode) }] : []),
         ],
         customerDetails: {
           shipperDetails: { postalAddress: postalAddress(request.shipper), contactInformation: contactInformation(request.shipper) },
@@ -465,7 +477,7 @@ export class DhlApiAdapter implements CarrierAdapter {
         closeTime: closeAt.toISOString().slice(11, 16),
         location: request.instructions || "reception",
         locationType: "residence",
-        accounts: [{ typeCode: "shipper", number: this.config.accountNumber }],
+        accounts: [{ typeCode: "shipper", number: this.accountFor(request.address.countryCode) }],
         customerDetails: {
           shipperDetails: {
             postalAddress: postalAddress(request.address),
@@ -479,7 +491,7 @@ export class DhlApiAdapter implements CarrierAdapter {
         shipmentDetails: [
           {
             productCode: request.contentType === "documents" ? "D" : "P",
-            accounts: [{ typeCode: "shipper", number: this.config.accountNumber }],
+            accounts: [{ typeCode: "shipper", number: this.accountFor(request.address.countryCode) }],
             isCustomsDeclarable: request.contentType !== "documents",
             // DHL requires the declared value on a pickup for goods.
             ...(request.contentType !== "documents" ? { declaredValue: fromCents(request.declaredValueCents ?? 0), declaredValueCurrency: "CAD" } : {}),

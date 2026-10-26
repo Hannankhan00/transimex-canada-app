@@ -182,7 +182,7 @@ describe("sending documents to DHL", () => {
     expect(buildShipmentRequest({ ...shipment } as any, new Date()).serviceCode).toBe("P");
   });
 
-  const config: DhlConfig = { mode: "sandbox", baseUrl: "https://dhl.test", apiKey: "k", apiSecret: "s", accountNumber: "123456789" };
+  const config: DhlConfig = { mode: "sandbox", baseUrl: "https://dhl.test", apiKey: "k", apiSecret: "s", accountNumber: "123456789", importAccountNumber: "987654321" };
   async function sentBody(request: Record<string, unknown>) {
     const fetchImpl = vi.fn(async () => new Response(JSON.stringify({ shipmentTrackingNumber: "1", documents: [{ typeCode: "label", content: "QQ==" }] }), { status: 201 }));
     const adapter = new DhlApiAdapter(config, new DhlHttpClient(config, fetchImpl as unknown as typeof fetch, async () => {}));
@@ -248,6 +248,21 @@ describe("sending documents to DHL", () => {
   it("a destination without a postal code is sent as an empty string, which DHL requires", async () => {
     const body = await sentBody({ contentType: "documents", recipient: { ...(shipment as any).recipient, postalCode: "" } });
     expect(body.customerDetails.receiverDetails.postalAddress.postalCode).toBe("");
+  });
+
+  it("a shipment starting outside Canada is booked on the import-enabled account, one from Canada on the main one", async () => {
+    const fromCanada = await sentBody({ contentType: "documents" });
+    expect(fromCanada.accounts).toEqual([{ typeCode: "shipper", number: "123456789" }]);
+    const fromAbroad = await sentBody({ contentType: "documents", shipper: { ...(shipment as any).shipper, countryCode: "CI" } });
+    expect(fromAbroad.accounts).toEqual([{ typeCode: "shipper", number: "987654321" }]);
+  });
+
+  it("says so clearly when a shipment starts abroad and no import account is configured", async () => {
+    const cfg = { ...config, importAccountNumber: "" };
+    const fetchImpl = vi.fn();
+    const adapter = new DhlApiAdapter(cfg, new DhlHttpClient(cfg, fetchImpl as unknown as typeof fetch, async () => {}));
+    await expect(adapter.createShipment({ ...shipment, serviceCode: "D", contentType: "documents", shipper: { ...(shipment as any).shipper, countryCode: "CI" } } as any)).rejects.toThrow(/DHL_IMPORT_ACCOUNT_NUMBER/);
+    expect(fetchImpl).not.toHaveBeenCalled();
   });
 
   it("a long description is cut to DHL's 70 characters", async () => {
