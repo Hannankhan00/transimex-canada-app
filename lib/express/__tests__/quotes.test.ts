@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { MockDhlAdapter } from "@/lib/shipping/carriers/dhl/mock";
+import { MockDhlAdapter } from "@/lib/shipping/__tests__/support/fakeDhl";
 import { CarrierError } from "@/lib/shipping/core/errors";
 import type { CarrierAdapter } from "@/lib/shipping/core/adapter";
 import type { RateOption } from "@/lib/shipping/core/types";

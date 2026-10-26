@@ -79,9 +79,10 @@ describe("express config", () => {
     else process.env.EXPRESS_ENABLED = original;
   });
 
-  it("defaults to mock and needs no credentials", () => {
-    expect(getDhlMode({})).toBe("mock");
-    expect(getDhlConfig({}).mode).toBe("mock");
+  it("has no mock mode: a missing DHL_MODE is an error, never made-up rates or labels", () => {
+    expect(() => getDhlMode({})).toThrow(/DHL_MODE is not set/);
+    expect(() => getDhlConfig({})).toThrow(/DHL_MODE is not set/);
+    expect(() => getDhlMode({ DHL_MODE: "mock" })).toThrow(/sandbox or live/);
   });
 
   it("rejects an unknown DHL_MODE instead of guessing", () => {

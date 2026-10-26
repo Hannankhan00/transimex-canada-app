@@ -5,7 +5,7 @@ vi.mock("@/lib/mongoose", () => ({ default: async () => undefined }));
 
 import { isFinalTracking, planTrackingUpdate } from "../trackingService";
 import { attentionReasons, toAdminShipmentDTO, toClientShipmentDTO } from "../shipmentDto";
-import { MockDhlAdapter } from "@/lib/shipping/carriers/dhl/mock";
+import { MockDhlAdapter } from "@/lib/shipping/__tests__/support/fakeDhl";
 import type { TrackingResult } from "@/lib/shipping/core/types";
 
 const HOUR = 3_600_000;

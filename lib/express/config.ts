@@ -5,7 +5,7 @@ export function isExpressEnabled(): boolean {
   return process.env.EXPRESS_ENABLED === "true";
 }
 
-export type DhlMode = "mock" | "sandbox" | "live";
+export type DhlMode = "sandbox" | "live";
 
 export interface DhlConfig {
   mode: DhlMode;
@@ -15,27 +15,21 @@ export interface DhlConfig {
   accountNumber: string;
 }
 
-const DEFAULT_BASE_URLS: Record<Exclude<DhlMode, "mock">, string> = {
+const DEFAULT_BASE_URLS: Record<DhlMode, string> = {
   sandbox: "https://express.api.dhl.com/mydhlapi/test",
   live: "https://express.api.dhl.com/mydhlapi",
 };
 
 export function getDhlMode(env: Record<string, string | undefined> = process.env): DhlMode {
-  const raw = (env.DHL_MODE || "mock").trim().toLowerCase();
-  if (raw === "mock" || raw === "sandbox" || raw === "live") return raw;
-  // A typo must never silently fall back to mock (or to live).
-  throw new CarrierError("config", `DHL_MODE must be mock, sandbox or live (got "${raw}").`);
+  const raw = (env.DHL_MODE || "").trim().toLowerCase();
+  if (raw === "sandbox" || raw === "live") return raw;
+  // No guessing: a missing or mistyped mode must stop shipping, never fall back to anything made up.
+  throw new CarrierError("config", raw ? `DHL_MODE must be sandbox or live (got "${raw}").` : "DHL_MODE is not set. Set it to sandbox or live.");
 }
 
-/**
- * Reads DHL settings from the environment. Credentials are only required for
- * sandbox and live; mock mode needs none.
- */
+/** Reads DHL settings from the environment. Both modes need the API key, secret and account number. */
 export function getDhlConfig(env: Record<string, string | undefined> = process.env): DhlConfig {
   const mode = getDhlMode(env);
-  if (mode === "mock") {
-    return { mode, baseUrl: "", apiKey: "", apiSecret: "", accountNumber: "" };
-  }
 
   const apiKey = env.DHL_API_KEY?.trim() || "";
   const apiSecret = env.DHL_API_SECRET?.trim() || "";

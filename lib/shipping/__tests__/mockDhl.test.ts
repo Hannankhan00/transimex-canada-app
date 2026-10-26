@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { MockDhlAdapter } from "../carriers/dhl/mock";
+import { MockDhlAdapter } from "./support/fakeDhl";
 import type { RateRequest, ShipmentRequest } from "../core/types";
 
 const baseRate: RateRequest = {

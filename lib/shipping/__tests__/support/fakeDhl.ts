@@ -18,7 +18,8 @@ import type {
 } from "../../core/types";
 
 /**
- * Stand-in for DHL until API access is approved. It returns believable,
+ * TEST HELPER ONLY. Not part of the app: the running site can never produce a fake label or fake rates.
+ * Stand-in for DHL for the unit tests. It returns believable,
  * deterministic data in the same neutral shapes as the live adapter, so
  * everything built on top (pricing, booking, Stripe) works unchanged when the
  * real adapter replaces it. The numbers are illustrative, not DHL's.

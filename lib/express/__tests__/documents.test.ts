@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/mongoose", () => ({ default: async () => undefined }));
 
-import { MockDhlAdapter } from "@/lib/shipping/carriers/dhl/mock";
+import { MockDhlAdapter } from "@/lib/shipping/__tests__/support/fakeDhl";
 import { DhlApiAdapter } from "@/lib/shipping/carriers/dhl/live";
 import { DhlHttpClient } from "@/lib/shipping/carriers/dhl/client";
 import type { DhlConfig } from "@/lib/express/config";

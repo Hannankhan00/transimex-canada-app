@@ -34,7 +34,7 @@ export interface CarrierAdapter {
   bookPickup(request: PickupRequest): Promise<PickupResult>;
 
   /**
-   * Current status and events. `bookedAt` (ISO) lets the mock carrier age a
+   * Current status and events. `bookedAt` (ISO) is a hint for test doubles that age a
    * parcel across server restarts; a real carrier ignores it. A parcel DHL has
    * not scanned yet throws CarrierError "not_found".
    */

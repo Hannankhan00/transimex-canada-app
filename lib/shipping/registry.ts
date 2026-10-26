@@ -8,7 +8,7 @@ let dhlAdapter: CarrierAdapter | null = null;
 export function getCarrierAdapter(carrier: CarrierId = "dhl"): CarrierAdapter {
   switch (carrier) {
     case "dhl":
-      // Cached so the mock keeps its in-memory tracking state between calls.
+      // Built once and reused.
       dhlAdapter ??= createDhlAdapter();
       return dhlAdapter;
   }
