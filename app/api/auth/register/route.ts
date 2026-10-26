@@ -5,9 +5,26 @@ import crypto from "crypto";
 import { hashPassword, signToken } from "@/lib/auth";
 import { createUserSession } from "@/lib/authSession";
 import { sendVerificationEmail } from "@/lib/email";
+import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 
 export async function POST(req: Request) {
   try {
+    // Rate limit registration: max 5 registrations per IP per hour (HIGH-05)
+    const ip = getClientIp(req);
+    const { isRateLimited, retryAfterSeconds } = checkRateLimit("auth:register", ip, {
+      windowMs: 60 * 60 * 1000,
+      max: 5,
+    });
+    if (isRateLimited) {
+      return NextResponse.json(
+        {
+          error: "Too many accounts created from this IP. Please try again later.",
+          retryAfterSeconds,
+        },
+        { status: 429, headers: { "Retry-After": String(retryAfterSeconds) } }
+      );
+    }
+
     const body = await req.json();
     const {
       fullName,

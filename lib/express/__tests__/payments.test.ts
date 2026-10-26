@@ -4,8 +4,8 @@ import Stripe from "stripe";
 // These tests never touch a database; the real helper refuses to load without a connection string.
 vi.mock("@/lib/mongoose", () => ({ default: async () => undefined }));
 
-import { getPaymentsMode, getStripeConfig, MOCK_WEBHOOK_SECRET } from "../payments/config";
-import { MockPaymentProvider, buildMockWebhook, mockPaymentIntentId } from "../payments/mock";
+import { getPaymentsMode, getStripeConfig } from "../payments/config";
+import { MOCK_WEBHOOK_SECRET, MockPaymentProvider, buildMockWebhook, mockPaymentIntentId } from "./support/fakeStripe";
 import { StripePaymentProvider, normalizeStripeEvent } from "../payments/stripe";
 import { PaymentError } from "../payments/types";
 import { buildShipmentRequest } from "../fulfilment";
@@ -20,9 +20,9 @@ describe("payments configuration", () => {
     expect(() => getPaymentsMode({ PAYMENTS_MODE: "strip" })).toThrow(PaymentError);
   });
 
-  it("refuses the test-mode stand-in in production", () => {
-    expect(getPaymentsMode({ PAYMENTS_MODE: "mock", NODE_ENV: "development" })).toBe("mock");
-    expect(() => getPaymentsMode({ PAYMENTS_MODE: "mock", NODE_ENV: "production" })).toThrow(/production/);
+  it("has no simulated payment mode: the old mock value is rejected everywhere", () => {
+    expect(() => getPaymentsMode({ PAYMENTS_MODE: "mock", NODE_ENV: "development" })).toThrow(PaymentError);
+    expect(() => getPaymentsMode({ PAYMENTS_MODE: "mock", NODE_ENV: "production" })).toThrow(PaymentError);
   });
 
   it("real Stripe needs both keys, from the environment only", () => {
@@ -144,6 +144,37 @@ describe("test-mode provider", () => {
 
   it("uses a clearly dev-only default secret", () => {
     expect(MOCK_WEBHOOK_SECRET).toContain("mock_dev_only");
+  });
+});
+
+describe("checking a payment with Stripe directly", () => {
+  const session = (over: Record<string, unknown> = {}) => ({
+    id: "cs_test_1",
+    status: "complete",
+    payment_status: "paid",
+    payment_intent: "pi_1",
+    amount_total: 123708,
+    currency: "cad",
+    client_reference_id: "ship1",
+    metadata: { shipmentId: "ship1", reference: "EX-1" },
+    ...over,
+  });
+  const providerFor = (s: unknown) => new StripePaymentProvider("sk_test_x", "whsec_x", { checkout: { sessions: { retrieve: async () => s } } } as unknown as Stripe);
+
+  it("turns a paid session into the same completed event the webhook would send", async () => {
+    const event = await providerFor(session()).retrieveCheckout("cs_test_1");
+    expect(event).toMatchObject({ type: "checkout.session.completed", sessionId: "cs_test_1", paymentIntentId: "pi_1", amountTotalCents: 123708, currency: "cad", paymentStatus: "paid", shipmentId: "ship1" });
+  });
+
+  it("returns nothing for a session that is unpaid or still open", async () => {
+    expect(await providerFor(session({ payment_status: "unpaid" })).retrieveCheckout("cs_test_1")).toBeNull();
+    expect(await providerFor(session({ status: "open", payment_status: "unpaid" })).retrieveCheckout("cs_test_1")).toBeNull();
+    expect(await providerFor(session({ status: "expired", payment_status: "unpaid" })).retrieveCheckout("cs_test_1")).toBeNull();
+  });
+
+  it("reports a Stripe failure as a provider error", async () => {
+    const broken = new StripePaymentProvider("sk_test_x", "whsec_x", { checkout: { sessions: { retrieve: async () => { throw new Error("network"); } } } } as unknown as Stripe);
+    await expect(broken.retrieveCheckout("cs_x")).rejects.toThrow(PaymentError);
   });
 });
 

@@ -1,7 +1,6 @@
 import { createHash } from "node:crypto";
 import Stripe from "stripe";
-import { MOCK_WEBHOOK_SECRET } from "./config";
-import { normalizeStripeEvent } from "./stripe";
+import { normalizeStripeEvent } from "../../payments/stripe";
 import {
   PaymentError,
   type CheckoutParams,
@@ -10,14 +9,15 @@ import {
   type PaymentProvider,
   type RefundParams,
   type RefundResult,
-} from "./types";
+} from "../../payments/types";
 
 /**
- * TEST MODE ONLY. A stand-in for Stripe while there are no Stripe keys: no real
- * money moves. It sends events signed in Stripe's exact format and verifies
- * them with Stripe's own library, so the real webhook route and signature
- * checking are exercised. Disabled in production (see getPaymentsMode).
+ * TEST HELPER ONLY. Not part of the app: nothing in the running site can use it. A fake Stripe for the unit tests:
+ * it builds events signed in Stripe's exact format and verifies them with Stripe's own library, so the real
+ * signature checking and webhook handling are exercised without a Stripe account.
  */
+export const MOCK_WEBHOOK_SECRET = "whsec_mock_dev_only";
+
 
 const hash = (value: string, length = 24) => createHash("sha256").update(value).digest("hex").slice(0, length);
 
@@ -29,7 +29,7 @@ export const mockWebhookSecret = () => process.env.STRIPE_WEBHOOK_SECRET?.trim()
 export const mockPaymentIntentId = (sessionId: string) => `pi_mock_${hash(sessionId)}`;
 
 export class MockPaymentProvider implements PaymentProvider {
-  readonly name = "mock" as const;
+  readonly name = "stripe" as const;
 
   async createCheckoutSession(p: CheckoutParams): Promise<CheckoutSession> {
     // Same key => same session id, like Stripe's idempotency.
@@ -50,6 +50,13 @@ export class MockPaymentProvider implements PaymentProvider {
     // Test hook: a payment intent ending in _refundfail simulates a provider that rejects the refund.
     if (p.paymentIntentId.endsWith("_refundfail")) throw new PaymentError("provider", "Refund failed", "Mock refund failure");
     return { refundId: `re_mock_${hash(p.idempotencyKey)}`, amountCents: p.amountCents ?? 0, status: "succeeded" };
+  }
+
+  /** Sessions the fake has been told are paid (tests set this). */
+  paid = new Map<string, PaymentEvent>();
+
+  async retrieveCheckout(sessionId: string): Promise<PaymentEvent | null> {
+    return this.paid.get(sessionId) ?? null;
   }
 
   verifyWebhook(rawBody: string, signatureHeader: string | null): PaymentEvent {

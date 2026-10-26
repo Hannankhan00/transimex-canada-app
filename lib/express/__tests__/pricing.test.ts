@@ -169,6 +169,21 @@ describe("input validation", () => {
     expect(() => priceShipment({ account, publicList, clientDiscountPct: 0, pickupFeeCents: -1 })).toThrow(PricingError);
   });
 
+  it("passes a DHL credit (negative surcharge) on to the client and leaves Transimex's margin unchanged", () => {
+    const withCredit = (p: RatePrice, credit: number): RatePrice => ({ ...p, surcharges: [...p.surcharges, { code: "ZF", name: "DHL credit", amountCents: credit }], totalCents: p.totalCents + credit });
+    const plain = priceShipment({ account, publicList, clientDiscountPct: 30 });
+    const credited = priceShipment({ account: withCredit(account, -500), publicList: withCredit(publicList, -500), clientDiscountPct: 30 });
+    expect(credited.client.totalCents).toBe(plain.client.totalCents - 500); // the client pays $5 less
+    expect(credited.client.surcharges.find((s) => s.code === "ZF")?.amountCents).toBe(-500);
+    expect(credited.account.totalCents).toBe(plain.account.totalCents - 500); // and DHL bills Transimex $5 less
+    expect(credited.profitCents).toBe(plain.profitCents); // so Transimex earns the same
+  });
+
+  it("still rejects fractional surcharges", () => {
+    const bad: RatePrice = { ...account, surcharges: [...account.surcharges, { code: "X", name: "X", amountCents: -1.5 }], totalCents: account.totalCents - 1.5 };
+    expect(() => priceShipment({ account: bad, publicList, clientDiscountPct: 0 })).toThrow(PricingError);
+  });
+
   it("rejects a price whose total does not match its lines", () => {
     expect(() => priceShipment({ account: { ...account, totalCents: 1 }, publicList, clientDiscountPct: 0 })).toThrow(PricingError);
   });

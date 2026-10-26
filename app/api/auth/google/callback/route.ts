@@ -1,4 +1,5 @@
 import { NextResponse, after } from "next/server";
+import { cookies } from "next/headers";
 import connectDB from "@/lib/mongoose";
 import User from "@/models/User";
 import { signToken } from "@/lib/auth";
@@ -10,32 +11,51 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const code = url.searchParams.get("code");
   const errorParam = url.searchParams.get("error");
+  const stateParam = url.searchParams.get("state");
 
   const origin = url.origin;
   const redirectUri = `${origin}/api/auth/google/callback`;
 
+  // Verify OAuth CSRF state parameter (HIGH-04)
+  const cookieStore = await cookies();
+  const savedState = cookieStore.get("oauth_state")?.value;
+
+  if (!stateParam || !savedState || stateParam !== savedState) {
+    const errorRes = NextResponse.redirect(
+      new URL("/login?error=Invalid+or+expired+OAuth+session+(CSRF+protection)", req.url)
+    );
+    errorRes.cookies.delete("oauth_state");
+    return errorRes;
+  }
+
   if (errorParam) {
-    return NextResponse.redirect(
+    const errorRes = NextResponse.redirect(
       new URL(`/login?error=${encodeURIComponent(errorParam)}`, req.url)
     );
+    errorRes.cookies.delete("oauth_state");
+    return errorRes;
   }
 
   if (!code) {
-    return NextResponse.redirect(
+    const errorRes = NextResponse.redirect(
       new URL("/login?error=Authorization+code+missing", req.url)
     );
+    errorRes.cookies.delete("oauth_state");
+    return errorRes;
   }
 
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
 
   if (!clientId || !clientSecret) {
-    return NextResponse.redirect(
+    const errorRes = NextResponse.redirect(
       new URL(
         "/login?error=Google+Client+Secret+not+configured+in+.env.local",
         req.url
       )
     );
+    errorRes.cookies.delete("oauth_state");
+    return errorRes;
   }
 
   try {
@@ -162,6 +182,7 @@ export async function GET(req: Request) {
       path: "/",
     });
 
+    response.cookies.delete("oauth_state");
     return response;
   } catch (err: any) {
     console.error("Google Auth Callback Exception:", err);

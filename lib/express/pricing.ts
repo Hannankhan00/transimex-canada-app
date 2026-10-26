@@ -81,7 +81,10 @@ function assertCents(value: number, label: string): void {
 
 function assertPrice(price: RatePrice, label: string): void {
   assertCents(price.baseFreightCents, `${label} base freight`);
-  for (const s of price.surcharges) assertCents(s.amountCents, `${label} surcharge ${s.code}`);
+  // A surcharge can be negative: a credit DHL gives on the shipment. It must still be a whole number of cents.
+  for (const s of price.surcharges) {
+    if (!Number.isSafeInteger(s.amountCents)) throw new PricingError(`${label} surcharge ${s.code} must be a whole number of cents (got ${s.amountCents}).`);
+  }
   const total = price.surcharges.reduce((sum, s) => sum + s.amountCents, price.baseFreightCents);
   if (total !== price.totalCents) {
     throw new PricingError(`${label} total does not equal base freight plus surcharges.`);

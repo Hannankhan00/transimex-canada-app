@@ -19,7 +19,7 @@ export async function GET() {
     return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
   }
 
-  let payments: "off" | "mock" | "stripe" = "off";
+  let payments: "off" | "stripe" = "off";
   try {
     payments = getPaymentsMode();
   } catch {

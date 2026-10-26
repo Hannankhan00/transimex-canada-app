@@ -3,11 +3,25 @@ import connectDB from "@/lib/mongoose";
 import User from "@/models/User";
 import crypto from "crypto";
 import { sendVerificationEmail } from "@/lib/email";
+import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
+
 const VERIFICATION_LINK_TTL_MS = 86400000; // 24 hours
 const RESEND_COOLDOWN_MS = 60 * 1000;
 
 export async function POST(req: Request) {
   try {
+    const ip = getClientIp(req);
+    const { isRateLimited, retryAfterSeconds } = checkRateLimit("auth:resend-verification", ip, {
+      windowMs: 15 * 60 * 1000,
+      max: 5,
+    });
+    if (isRateLimited) {
+      return NextResponse.json(
+        { error: "Too many requests. Please wait before trying again.", retryAfterSeconds },
+        { status: 429, headers: { "Retry-After": String(retryAfterSeconds) } }
+      );
+    }
+
     const { email } = await req.json();
 
     if (!email) {

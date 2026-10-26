@@ -14,8 +14,6 @@ interface ExpressShellProps {
 
 export default function ExpressShell({ children, userName }: ExpressShellProps) {
   const pathname = usePathname();
-  // The payment page stands in for the payment provider's own hosted page, so it has no portal chrome.
-  if (pathname.startsWith("/express/mock-pay")) return <>{children}</>;
   return (
     <ExpressAccountProvider>
       <ShellFrame userName={userName}>{children}</ShellFrame>

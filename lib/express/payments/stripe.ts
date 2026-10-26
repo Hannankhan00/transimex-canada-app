@@ -111,6 +111,17 @@ export class StripePaymentProvider implements PaymentProvider {
     }
   }
 
+  async retrieveCheckout(sessionId: string): Promise<PaymentEvent | null> {
+    try {
+      const session = await this.stripe.checkout.sessions.retrieve(sessionId);
+      if (session.status !== "complete" || session.payment_status !== "paid") return null;
+      // Shaped like the webhook event so one code path handles both.
+      return normalizeStripeEvent({ id: `sync_${session.id}`, type: "checkout.session.completed", data: { object: session } } as unknown as Stripe.Event);
+    } catch (error: any) {
+      throw new PaymentError("provider", "Could not check the payment.", error?.message);
+    }
+  }
+
   verifyWebhook(rawBody: string, signatureHeader: string | null): PaymentEvent {
     if (!signatureHeader) throw new PaymentError("signature", "Missing signature header.");
     try {

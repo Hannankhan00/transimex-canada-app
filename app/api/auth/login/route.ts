@@ -4,10 +4,24 @@ import User from "@/models/User";
 import { comparePassword, signToken } from "@/lib/auth";
 import { createUserSession } from "@/lib/authSession";
 import { recordLoginDevice } from "@/lib/accountSecurity";
+import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 
 export async function POST(req: Request) {
   try {
     const { email, password, rememberMe } = await req.json();
+
+    // Rate-limit before any DB work: max 10 attempts per 15 mins (HIGH-05)
+    const ip = getClientIp(req);
+    const { isRateLimited, retryAfterSeconds } = checkRateLimit("auth:login", ip, {
+      windowMs: 15 * 60 * 1000,
+      max: 10,
+    });
+    if (isRateLimited) {
+      return NextResponse.json(
+        { error: "Too many login attempts. Please wait before trying again.", retryAfterSeconds },
+        { status: 429, headers: { "Retry-After": String(retryAfterSeconds) } }
+      );
+    }
 
     if (!email || !password) {
       return NextResponse.json(
@@ -78,8 +92,10 @@ export async function POST(req: Request) {
       tokenVersion: user.tokenVersion || 0,
     };
 
-    const maxAge = rememberMe ? 60 * 60 * 24 * 30 : 60 * 60 * 24 * 7; // 30 days vs 7 days
-    const token = signToken(tokenPayload);
+    // Cookie and JWT lifetime are kept in sync — rememberMe = 30 days, else 7 days
+    const maxAge = rememberMe ? 60 * 60 * 24 * 30 : 60 * 60 * 24 * 7;
+    const jwtExpiry = rememberMe ? "30d" : "7d";
+    const token = signToken(tokenPayload, jwtExpiry);
 
     const response = NextResponse.json({
       success: true,

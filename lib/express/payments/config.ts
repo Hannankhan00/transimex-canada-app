@@ -4,24 +4,17 @@ type Env = Record<string, string | undefined>;
 
 /**
  *   off    - payments unavailable (default). Clients can book but not pay.
- *   mock   - built-in test-mode stand-in. No real money. Refuses to run in production.
- *   stripe - real Stripe Checkout (use test keys until launch).
+ *   stripe - real Stripe Checkout (use Stripe test keys until launch). There is no simulated payment.
  */
-export type PaymentsMode = "off" | "mock" | "stripe";
+export type PaymentsMode = "off" | "stripe";
 
 export function getPaymentsMode(env: Env = process.env): PaymentsMode {
   const raw = (env.PAYMENTS_MODE || "off").trim().toLowerCase();
-  if (raw !== "off" && raw !== "mock" && raw !== "stripe") {
-    throw new PaymentError("config", `PAYMENTS_MODE must be off, mock or stripe (got "${raw}").`);
-  }
-  if (raw === "mock" && env.NODE_ENV === "production") {
-    throw new PaymentError("config", "PAYMENTS_MODE=mock is not allowed in production.");
+  if (raw !== "off" && raw !== "stripe") {
+    throw new PaymentError("config", `PAYMENTS_MODE must be off or stripe (got "${raw}").`);
   }
   return raw;
 }
-
-/** The mock signs its own webhooks with this when STRIPE_WEBHOOK_SECRET is not set. Dev only. */
-export const MOCK_WEBHOOK_SECRET = "whsec_mock_dev_only";
 
 export function getStripeConfig(env: Env = process.env): { secretKey: string; webhookSecret: string } {
   const secretKey = env.STRIPE_SECRET_KEY?.trim() || "";

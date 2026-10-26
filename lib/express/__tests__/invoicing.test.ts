@@ -9,8 +9,7 @@ import { refundableCents } from "../cancelService";
 import { toClientShipmentDTO, toCustomerShipmentDTO } from "../shipmentDto";
 import { bookingSchema } from "../shipmentSchemas";
 import { normalizeStripeEvent } from "../payments/stripe";
-import { buildMockWebhook } from "../payments/mock";
-import { MockPaymentProvider } from "../payments/mock";
+import { MockPaymentProvider, buildMockWebhook } from "./support/fakeStripe";
 
 const okInput = { billingModes: ["pay_at_booking", "invoice"] as ("pay_at_booking" | "invoice")[], creditLimitCents: 100_000, usedCents: 20_000, overdueCount: 0, totalCents: 10_000 };
 

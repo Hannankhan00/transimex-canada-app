@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { AlertTriangle, ArrowLeft, CheckCircle2, Download, ExternalLink, Loader2, RefreshCw } from "lucide-react";
@@ -68,17 +68,38 @@ function Detail() {
     load();
   }, [load]);
 
-  // Coming back from the payment page: the webhook, not this redirect, confirms payment, so keep checking.
+  // Asks the server to check with the payment provider whether this booking was paid. The redirect alone proves
+  // nothing; the server confirms with Stripe itself, so a late or missing webhook cannot strand a paid booking.
+  const syncPayment = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/express/shipments/${id}/sync-payment`, { method: "POST" });
+      const data = await res.json().catch(() => ({}));
+      if (data.paid) await load();
+    } catch {
+      /* the webhook can still confirm it */
+    }
+  }, [id, load]);
+
+  // Opening a booking that still says "awaiting payment" checks once, so an earlier payment is picked up.
   const status = shipment?.status;
+  const checkedOnce = useRef(false);
+  useEffect(() => {
+    if (status !== "awaiting_payment" || checkedOnce.current) return;
+    checkedOnce.current = true;
+    syncPayment();
+  }, [status, syncPayment]);
+
+  // Coming back from the payment page: keep checking for a short while.
   const waiting = returnedPaid && (status === "awaiting_payment" || status === "paid");
   useEffect(() => {
     if (!waiting || polls >= POLL_MAX) return;
-    const timer = setTimeout(() => {
+    const timer = setTimeout(async () => {
       setPolls((n) => n + 1);
+      if (status === "awaiting_payment") await syncPayment();
       load();
     }, POLL_MS);
     return () => clearTimeout(timer);
-  }, [waiting, polls, load]);
+  }, [waiting, polls, load, status, syncPayment]);
 
   const pay = async () => {
     setAction("pay");

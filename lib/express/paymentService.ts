@@ -95,6 +95,28 @@ export async function startCheckout(params: {
   return { ok: true, url: session.url, reused: false };
 }
 
+/**
+ * Confirms a booking's payment by asking the provider, instead of waiting for its webhook. Used when the client
+ * comes back from the payment page (and when they open a booking that still says "awaiting payment"), so a late
+ * or missing webhook never leaves a paid booking without its label. Only a payment the provider itself reports as
+ * paid, for this booking's own payment page and the right amount, is acted on; the same rules as the webhook apply.
+ */
+export async function syncShipmentPayment(params: { shipmentId: string; userId: string; provider: PaymentProvider }): Promise<{ paid: boolean }> {
+  await connectDB();
+  const sh = await ExpressShipment.findOne({ _id: params.shipmentId, userId: params.userId }).lean<IExpressShipment>();
+  if (!sh) return { paid: false };
+  if (sh.status !== "awaiting_payment") return { paid: sh.status !== "cancelled" };
+  const sessionId = sh.payment?.sessionId;
+  if (!sessionId || sh.payment?.provider !== params.provider.name) return { paid: false };
+
+  const event = await params.provider.retrieveCheckout(sessionId);
+  // The payment page must belong to this booking.
+  if (!event || event.sessionId !== sessionId || (event.shipmentId && event.shipmentId !== String(sh._id))) return { paid: false };
+
+  const outcome = await handlePaymentEvent(event, params.provider);
+  return { paid: outcome === "paid" || outcome === "already_processed" };
+}
+
 const centsMatch = (event: PaymentEvent, sh: IExpressShipment) => event.amountTotalCents === sh.totalCents && event.currency?.toLowerCase() === "cad";
 
 /**

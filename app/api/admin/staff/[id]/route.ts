@@ -108,9 +108,9 @@ export async function PATCH(
     }
 
     if (newPassword) {
-      if (newPassword.length < 6) {
+      if (newPassword.length < 10) {
         return NextResponse.json(
-          { error: "New password must be at least 6 characters in length." },
+          { error: "New password must be at least 10 characters in length for staff accounts." },
           { status: 400 }
         );
       }

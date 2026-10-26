@@ -168,9 +168,9 @@ export async function POST(req: Request) {
       );
     }
 
-    if (password.length < 6) {
+    if (password.length < 10) {
       return NextResponse.json(
-        { error: "Password must be at least 6 characters in length." },
+        { error: "Staff passwords must be at least 10 characters in length for administrative security." },
         { status: 400 }
       );
     }

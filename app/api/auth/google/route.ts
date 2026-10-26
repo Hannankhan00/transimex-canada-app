@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import crypto from "crypto";
 
 export async function GET(req: Request) {
   const googleClientId = process.env.GOOGLE_CLIENT_ID;
@@ -17,6 +18,9 @@ export async function GET(req: Request) {
     );
   }
 
+  // Generate cryptographically secure state parameter to prevent OAuth CSRF (HIGH-04)
+  const state = crypto.randomBytes(32).toString("hex");
+
   const googleAuthUrl = new URL("https://accounts.google.com/o/oauth2/v2/auth");
   googleAuthUrl.searchParams.set("client_id", googleClientId);
   googleAuthUrl.searchParams.set("redirect_uri", redirectUri);
@@ -24,6 +28,17 @@ export async function GET(req: Request) {
   googleAuthUrl.searchParams.set("scope", "openid email profile");
   googleAuthUrl.searchParams.set("access_type", "offline");
   googleAuthUrl.searchParams.set("prompt", "select_account");
+  googleAuthUrl.searchParams.set("state", state);
 
-  return NextResponse.redirect(googleAuthUrl.toString());
+  const response = NextResponse.redirect(googleAuthUrl.toString());
+  response.cookies.set("oauth_state", state, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: 60 * 10, // 10 minutes
+    path: "/",
+  });
+
+  return response;
 }
+

@@ -214,7 +214,10 @@ export function splitBreakdown(
     if (i === baseIndex) {
       baseFreightCents = amountCents;
     } else if (amountCents !== 0) {
-      surcharges.push({ code: line.serviceCode || line.name, name: line.name, amountCents });
+      // A negative line (ZF "CHARGE", a 20% credit DHL gives on shipments to or from Canada) is kept as a
+      // negative surcharge. Like every surcharge it passes through to the client at DHL's amount, so the
+      // client gets the credit. DHL calls it only "CHARGE", so it is named here.
+      surcharges.push({ code: line.serviceCode || line.name, name: amountCents < 0 ? "DHL credit" : line.name, amountCents });
     }
   });
   return { baseFreightCents, surcharges };

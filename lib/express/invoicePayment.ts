@@ -155,3 +155,22 @@ export async function handleInvoicePaymentEvent(event: PaymentEvent, provider: P
   await ExpressInvoice.updateOne({ _id: inv._id }, { $push: { "payment.duplicatePayments": { paymentIntentId: event.paymentIntentId, refundId, at: new Date() } } });
   return "duplicate_payment_refunded";
 }
+
+/**
+ * Confirms an invoice payment by asking the provider, so the invoice does not depend on the webhook arriving.
+ * Same rules as syncShipmentPayment in paymentService.
+ */
+export async function syncInvoicePayment(params: { invoiceId: string; userId: string; provider: PaymentProvider }): Promise<{ paid: boolean }> {
+  await connectDB();
+  const inv = await ExpressInvoice.findOne({ _id: params.invoiceId, userId: params.userId }).lean<IExpressInvoice>();
+  if (!inv) return { paid: false };
+  if (inv.status !== "issued") return { paid: inv.status === "paid" };
+  const sessionId = inv.payment?.sessionId;
+  if (!sessionId || inv.payment?.provider !== params.provider.name) return { paid: false };
+
+  const event = await params.provider.retrieveCheckout(sessionId);
+  if (!event || event.sessionId !== sessionId || (event.invoiceId && event.invoiceId !== String(inv._id))) return { paid: false };
+
+  const outcome = await handleInvoicePaymentEvent(event, params.provider);
+  return { paid: outcome === "paid" || outcome === "already_processed" };
+}

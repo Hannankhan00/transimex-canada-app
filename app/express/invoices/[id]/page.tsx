@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { AlertTriangle, ArrowLeft, CheckCircle2, Loader2, Printer, RefreshCw } from "lucide-react";
@@ -49,16 +49,34 @@ function Detail() {
     load();
   }, [load]);
 
-  // Back from the payment page: the webhook, not the redirect, marks the invoice paid, so keep checking.
+  // Asks the server to check with the payment provider whether this invoice was paid, so it does not depend on the webhook.
+  const syncPayment = useCallback(async () => {
+    try {
+      await fetch(`/api/express/invoices/${id}/sync-payment`, { method: "POST" });
+    } catch {
+      /* the webhook can still confirm it */
+    }
+  }, [id]);
+
+  // Opening an invoice that still says unpaid checks once, so an earlier payment is picked up.
+  const checkedOnce = useRef(false);
+  useEffect(() => {
+    if (!invoice?.canPay || checkedOnce.current) return;
+    checkedOnce.current = true;
+    syncPayment().then(load);
+  }, [invoice?.canPay, syncPayment, load]);
+
+  // Back from the payment page: keep checking for a short while.
   const waiting = returnedPaid && invoice?.canPay === true && polls < POLL_MAX;
   useEffect(() => {
     if (!waiting) return;
-    const timer = setTimeout(() => {
+    const timer = setTimeout(async () => {
       setPolls((n) => n + 1);
+      await syncPayment();
       load();
     }, POLL_MS);
     return () => clearTimeout(timer);
-  }, [waiting, polls, load]);
+  }, [waiting, polls, load, syncPayment]);
 
   const pay = async () => {
     setPaying(true);

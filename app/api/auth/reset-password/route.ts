@@ -2,9 +2,22 @@ import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongoose";
 import User from "@/models/User";
 import { hashPassword } from "@/lib/auth";
+import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 
 export async function POST(req: Request) {
   try {
+    const ip = getClientIp(req);
+    const { isRateLimited, retryAfterSeconds } = checkRateLimit("auth:reset-password", ip, {
+      windowMs: 15 * 60 * 1000,
+      max: 10,
+    });
+    if (isRateLimited) {
+      return NextResponse.json(
+        { error: "Too many attempts. Please wait before trying again.", retryAfterSeconds },
+        { status: 429, headers: { "Retry-After": String(retryAfterSeconds) } }
+      );
+    }
+
     const { token, password } = await req.json();
 
     if (!token || !password) {

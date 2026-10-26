@@ -59,11 +59,17 @@ export interface PaymentEvent {
 }
 
 export interface PaymentProvider {
-  readonly name: "stripe" | "mock";
+  readonly name: "stripe";
   createCheckoutSession(params: CheckoutParams): Promise<CheckoutSession>;
   /** Best effort: an old session must not stay payable once a new one replaces it. */
   expireSession(sessionId: string): Promise<void>;
   refund(params: RefundParams): Promise<RefundResult>;
+  /**
+   * Asks the provider directly whether a payment page was paid. Returns a "completed" event when it was, or null
+   * when it was not (yet). This is a second route to the same fact the webhook reports, for when the webhook is late
+   * or never arrives. Acting on the result is idempotent, exactly like the webhook.
+   */
+  retrieveCheckout(sessionId: string): Promise<PaymentEvent | null>;
   /** Verifies the signature and returns the event. Throws PaymentError("signature") when invalid. */
   verifyWebhook(rawBody: string, signatureHeader: string | null): PaymentEvent;
 }
