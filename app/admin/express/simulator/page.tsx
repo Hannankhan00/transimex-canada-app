@@ -347,7 +347,7 @@ export default function AdminExpressSimulatorPage() {
                       ],
                       [tr("DHL charges Transimex (base freight)", "DHL facture à Transimex (fret de base)"), m(result.pricing.account.baseFreightCents)],
                       [tr("DHL charges Transimex (total with surcharges)", "DHL facture à Transimex (total avec suppléments)"), m(result.pricing.account.totalCents)],
-                      [tr("Client discount", "Rabais client"), `${result.pricing.clientDiscountPct}% = −${m(result.pricing.discountCents)} ${tr("on base freight", "sur le fret de base")}`],
+                      [tr("Client discount", "Rabais client"), result.pricing.discountWaived ? tr("Not applied: neither the sender nor the recipient is in Canada", "Non appliqué : ni l'expéditeur ni le destinataire n'est au Canada") : `${result.pricing.clientDiscountPct}% = −${m(result.pricing.discountCents)} ${tr("on base freight", "sur le fret de base")}`],
                       [
                         tr("Public price source", "Source du prix public"),
                         result.pricing.publicSource === "carrier"

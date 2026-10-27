@@ -101,6 +101,28 @@ describe("pricing a request with the mock carrier (hand-calculated)", () => {
     expect(r.breakdown.client.totalCents).toBe(14976 + 2800);
   });
 
+  it("gives no client discount when neither the sender nor the recipient is in Canada, for any account", async () => {
+    const abroad = quoteRequestSchema.parse({ ...validRequest, origin: { countryCode: "FR", postalCode: "75001", city: "Paris" }, destination: { countryCode: "NG", postalCode: "100001", city: "Lagos" } });
+    const r = await priceRequest({ input: abroad, adapter, clientDiscountPct: 30, settings });
+    expect(r.breakdown.clientDiscountPct).toBe(0);
+    expect(r.breakdown.discountCents).toBe(0);
+    expect(r.breakdown.discountWaived).toBe("no_canada");
+    // The price is the public price plus surcharges.
+    expect(r.breakdown.client.baseFreightCents).toBe(r.breakdown.publicList.baseFreightCents);
+  });
+
+  it("still gives the discount to or from Canada", async () => {
+    const out = await priceRequest({ input: input(), adapter, clientDiscountPct: 30, settings });
+    expect(out.breakdown.clientDiscountPct).toBe(30);
+    expect(out.breakdown.discountWaived).toBeUndefined();
+    const into = quoteRequestSchema.parse({ ...validRequest, origin: { countryCode: "CM", postalCode: "00237", city: "Douala" }, destination: { countryCode: "CA", postalCode: "M5V 2T6", city: "Toronto" } });
+    // The test carrier only knows African lanes; the real DHL serves Canada, so accept the address check here.
+    const anywhere = { carrier: "dhl", getRates: adapter.getRates.bind(adapter), validateAddress: async () => ({ valid: true, serviceable: true, suggestions: [], warnings: [] }) } as unknown as CarrierAdapter;
+    const back = await priceRequest({ input: into, adapter: anywhere, clientDiscountPct: 30, settings });
+    expect(back.breakdown.clientDiscountPct).toBe(30);
+    expect(back.breakdown.discountWaived).toBeUndefined();
+  });
+
   it("adds the pickup fee DHL quotes, only when DHL pickup is requested", async () => {
     const dropOff = await priceRequest({ input: input(), adapter, clientDiscountPct: 5, settings });
     const pickup = await priceRequest({ input: input({ pickupRequested: true }), adapter, clientDiscountPct: 5, settings });

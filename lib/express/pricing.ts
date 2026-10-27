@@ -62,6 +62,11 @@ export interface PriceBreakdown {
   profitCents: Cents;
   /** True when the client price is below what DHL charges us. STAFF ONLY. */
   belowCost: boolean;
+  /**
+   * Set when the client's discount was not applied: neither the sender nor the recipient is in Canada, so the
+   * Transimex discount does not apply (to B2B and B2C alike).
+   */
+  discountWaived?: "no_canada";
 }
 
 export class PricingError extends Error {

@@ -41,6 +41,8 @@ export function toClientQuoteDTO(doc: QuoteDoc, now: Date = new Date()) {
       publicBaseFreightCents: p.publicList.baseFreightCents,
       discountPct: p.clientDiscountPct,
       discountCents: p.discountCents,
+      // True when no discount was given because neither end of the shipment is in Canada.
+      discountWaived: p.discountWaived === "no_canada",
       baseFreightCents: p.client.baseFreightCents,
       surcharges: surcharges(p.client.surcharges),
       totalCents: p.client.totalCents,

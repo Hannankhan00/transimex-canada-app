@@ -845,16 +845,20 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
                     <span className="text-slate-600">{b.publicPrice}</span>
                     <span className="font-semibold tabular-nums">{m(quote.price.publicBaseFreightCents)}</span>
                   </div>
-                  <div className="flex justify-between px-4 py-2.5 text-emerald-700">
-                    <span>
-                      {b.yourDiscount} ({quote.price.discountPct}%)
-                    </span>
-                    <span className="font-semibold tabular-nums">−{m(quote.price.discountCents)}</span>
-                  </div>
-                  <div className="flex justify-between px-4 py-2.5">
-                    <span className="text-slate-600">{b.baseAfterDiscount}</span>
-                    <span className="font-semibold tabular-nums">{m(quote.price.baseFreightCents)}</span>
-                  </div>
+                  {!quote.price.discountWaived && (
+                    <>
+                      <div className="flex justify-between px-4 py-2.5 text-emerald-700">
+                        <span>
+                          {b.yourDiscount} ({quote.price.discountPct}%)
+                        </span>
+                        <span className="font-semibold tabular-nums">−{m(quote.price.discountCents)}</span>
+                      </div>
+                      <div className="flex justify-between px-4 py-2.5">
+                        <span className="text-slate-600">{b.baseAfterDiscount}</span>
+                        <span className="font-semibold tabular-nums">{m(quote.price.baseFreightCents)}</span>
+                      </div>
+                    </>
+                  )}
                   {quote.price.surcharges.map((s) => (
                     <div key={s.code} className="flex justify-between px-4 py-2.5">
                       <span className="text-slate-600">{s.name}</span>
@@ -886,6 +890,7 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
                     </div>
                   </div>
                 )}
+                {quote.price.discountWaived && <p className="text-xs font-semibold text-slate-600">{b.discountCanadaOnly}</p>}
                 <p className="text-xs text-slate-500">{b.surchargesNote}</p>
                 <p className="text-xs text-slate-500">
                   {b.validUntil}: {new Intl.DateTimeFormat(language === "fr" ? "fr-CA" : "en-CA", { timeStyle: "short" }).format(new Date(quote.expiresAt!))}

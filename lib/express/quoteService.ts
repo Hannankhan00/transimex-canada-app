@@ -131,17 +131,21 @@ export async function priceRequest(params: {
   // One quote per request: the cheapest service by what DHL charges us.
   const option = matching.reduce((best, o) => (o.account.totalCents < best.account.totalCents ? o : best));
 
+  // The client discount only applies to shipments to or from Canada, for every kind of account. A shipment between
+  // two other countries is priced without it.
+  const involvesCanada = request.origin.countryCode.toUpperCase() === "CA" || request.destination.countryCode.toUpperCase() === "CA";
+
   try {
     const breakdown = priceShipment({
       account: option.account,
       publicList: option.publicList,
       dhlContractDiscountPct: params.settings.dhlContractDiscountPct,
-      clientDiscountPct: params.clientDiscountPct,
+      clientDiscountPct: involvesCanada ? params.clientDiscountPct : 0,
       // The pickup fee is whatever DHL's rate includes (the live API returns none, so pickups are not charged separately).
       pickupFeeCents: request.pickupRequested ? (option.pickupFeeCents ?? 0) : 0,
       markup: params.markup,
     });
-    return { option, breakdown, request };
+    return { option, breakdown: involvesCanada ? breakdown : { ...breakdown, discountWaived: "no_canada" as const }, request };
   } catch (error) {
     if (error instanceof PricingError) {
       console.error("[Express] Pricing error:", error.message);
