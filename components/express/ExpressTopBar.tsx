@@ -139,6 +139,8 @@ export default function ExpressTopBar({ onOpenMenu, userName }: Props) {
       ? e.navOverview
       : pathname.startsWith("/express/apply")
         ? e.pageApply
+        : pathname.startsWith("/express/payments")
+        ? e.payments.title
         : pathname.startsWith("/express/notifications")
           ? e.notif.title
           : pathname.startsWith("/express/book")
