@@ -11,9 +11,10 @@ import { EMPTY_STATS, toPartnerCustomerDTO, type CustomerStats } from "@/lib/exp
 /** Bookings that count towards a partner's earnings: paid, and not cancelled. */
 const COUNTED = ["paid", "label_ready"];
 
-async function statsBy(userId: string, since?: Date): Promise<Map<string, CustomerStats>> {
+/** Counts both what the partner booked for a customer and what the customer booked and paid for themselves. */
+async function statsBy(customerIds: string[], since?: Date): Promise<Map<string, CustomerStats>> {
   const rows = await ExpressShipment.aggregate([
-    { $match: { userId, partnerCustomerId: { $exists: true, $ne: null }, status: { $in: COUNTED }, ...(since ? { createdAt: { $gte: since } } : {}) } },
+    { $match: { partnerCustomerId: { $in: customerIds }, status: { $in: COUNTED }, ...(since ? { createdAt: { $gte: since } } : {}) } },
     { $group: { _id: "$partnerCustomerId", shipments: { $sum: 1 }, partnerCents: { $sum: "$totalCents" }, customerCents: { $sum: "$customerTotalCents" }, markupCents: { $sum: "$markupCents" } } },
   ]);
   return new Map(rows.map((r) => [String(r._id), { shipments: r.shipments, partnerCents: r.partnerCents, customerCents: r.customerCents, markupCents: r.markupCents }]));
@@ -39,11 +40,9 @@ export async function GET() {
 
     const now = new Date();
     const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
-    const [docs, allTime, thisMonth] = await Promise.all([
-      ExpressPartnerCustomer.find({ partnerAccountId: String(account._id) }).sort({ archived: 1, createdAt: -1 }).limit(500).lean(),
-      statsBy(actor.userId),
-      statsBy(actor.userId, monthStart),
-    ]);
+    const docs = await ExpressPartnerCustomer.find({ partnerAccountId: String(account._id) }).sort({ archived: 1, createdAt: -1 }).limit(500).lean();
+    const ids = docs.map((d) => String(d._id));
+    const [allTime, thisMonth] = await Promise.all([statsBy(ids), statsBy(ids, monthStart)]);
 
     return NextResponse.json({
       success: true,

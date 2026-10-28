@@ -24,8 +24,12 @@ export interface ProfitRow {
   payMethod: "card" | "invoice";
   /** What the client paid, after refunds or credits. */
   revenueCents: number;
-  /** What DHL's rate said it would charge Transimex. */
+  /** What DHL charges Transimex: its real charge once recorded, else the rate quoted at booking. */
   dhlCostCents: number;
+  /** What the rate said at booking time. */
+  quotedCostCents: number;
+  /** "actual" when DHL's real charge is recorded, "quoted" while it is only the estimate. */
+  costSource: "actual" | "quoted";
   /** A pickup fee passed through from DHL, paid back out of the revenue. */
   pickupFeeCents: number;
   /** revenue - pickup fee - DHL cost, before card fees. */
@@ -50,7 +54,7 @@ export interface Bucket {
 }
 
 export interface ProfitReport {
-  totals: Bucket & { marginPct: number; cardFeeCents: number; belowCostCount: number; waivedCount: number };
+  totals: Bucket & { marginPct: number; cardFeeCents: number; belowCostCount: number; waivedCount: number; actualCount: number; varianceCents: number };
   byMonth: Bucket[];
   byType: Bucket[];
   byRoute: Bucket[];
@@ -69,7 +73,8 @@ interface ShipmentLike {
   trackingNumber?: string;
   label?: { uploadedAt?: Date | string };
   statusHistory?: { status: string; at: Date | string }[];
-  payment?: { provider?: string; amountCents?: number; refundedCents?: number };
+  payment?: { provider?: string; amountCents?: number; refundedCents?: number; connect?: { chargeCents?: number; applicationFeeCents?: number } };
+  dhlActual?: { chargeCents?: number };
   billing?: { mode?: string; creditedCents?: number };
   recipient?: { countryCode?: string };
   shipper?: { countryCode?: string };
@@ -101,7 +106,9 @@ export function buildProfitRows(shipments: ShipmentLike[], quotes: Map<string, Q
   for (const sh of shipments) {
     if (!sh.trackingNumber) continue;
     const quote = sh.quoteId ? quotes.get(sh.quoteId) : undefined;
-    const cost = quote?.pricing?.account?.totalCents;
+    const quoted = quote?.pricing?.account?.totalCents;
+    const actual = sh.dhlActual?.chargeCents;
+    const cost = actual ?? quoted;
     const date = iso(sh.label?.uploadedAt) || iso(sh.statusHistory?.find((h) => h.status === "label_ready")?.at);
     if (cost === undefined || !date) {
       skipped++;
@@ -110,10 +117,15 @@ export function buildProfitRows(shipments: ShipmentLike[], quotes: Map<string, Q
 
     const onCredit = sh.billing?.mode === "invoice";
     const total = sh.totalCents ?? 0;
-    const revenueCents = Math.max(0, total - (onCredit ? sh.billing?.creditedCents ?? 0 : sh.payment?.refundedCents ?? 0));
+    // A partner's customer pays the partner's Stripe account; Transimex only receives its share (the application
+    // fee = totalCents) and a refund gives back the same share of it. The partner, not Transimex, bears the card fee.
+    const connect = sh.payment?.connect;
+    const refunded = onCredit ? sh.billing?.creditedCents ?? 0 : sh.payment?.refundedCents ?? 0;
+    const refundedOurShare = connect?.chargeCents ? Math.round((refunded * (connect.applicationFeeCents ?? total)) / connect.chargeCents) : refunded;
+    const revenueCents = Math.max(0, total - refundedOurShare);
     const pickupFeeCents = quote?.pricing?.pickupFeeCents ?? 0;
     const profitCents = revenueCents - pickupFeeCents - cost;
-    const cardFeeCents = !onCredit && sh.payment?.provider === "stripe" ? estimateCardFeeCents(sh.payment?.amountCents ?? total) : 0;
+    const cardFeeCents = !onCredit && !connect && sh.payment?.provider === "stripe" ? estimateCardFeeCents(sh.payment?.amountCents ?? total) : 0;
 
     rows.push({
       id: String(sh._id),
@@ -126,6 +138,8 @@ export function buildProfitRows(shipments: ShipmentLike[], quotes: Map<string, Q
       payMethod: onCredit ? "invoice" : "card",
       revenueCents,
       dhlCostCents: cost,
+      quotedCostCents: quoted ?? cost,
+      costSource: actual !== undefined ? "actual" : "quoted",
       pickupFeeCents,
       profitCents,
       cardFeeCents,
@@ -163,6 +177,9 @@ export function summariseProfit(rows: ProfitRow[]): ProfitReport {
       cardFeeCents: rows.reduce((s, r) => s + r.cardFeeCents, 0),
       belowCostCount: rows.filter((r) => r.profitCents < 0).length,
       waivedCount: rows.filter((r) => r.discountWaived).length,
+      actualCount: rows.filter((r) => r.costSource === "actual").length,
+      // Real minus quoted, over the shipments where the real charge is known: positive means DHL charged more than quoted.
+      varianceCents: rows.filter((r) => r.costSource === "actual").reduce((s, r) => s + r.dhlCostCents - r.quotedCostCents, 0),
     },
     byMonth: group(rows, (r) => r.date.slice(0, 7)).sort((a, b) => b.key.localeCompare(a.key)),
     byType: group(rows, (r) => r.accountType).sort((a, b) => b.profitCents - a.profitCents),

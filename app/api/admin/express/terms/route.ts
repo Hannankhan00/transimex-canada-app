@@ -3,6 +3,7 @@ import { logAudit } from "@/lib/audit";
 import { requireExpressStaff, validationError } from "@/lib/express/access";
 import { termsContentSchema } from "@/lib/express/validation";
 import { listTermsVersions, publishTerms } from "@/lib/express/termsStore";
+import { notifyTermsPublished } from "@/lib/express/termsNotify";
 
 export async function GET() {
   try {
@@ -36,7 +37,10 @@ export async function POST(req: Request) {
       details: `Published Express terms ${published.version}`,
     });
 
-    return NextResponse.json({ success: true, current: published, versions: await listTermsVersions() }, { status: 201 });
+    // Every active client is told automatically; they must still accept the new version at their next booking.
+    const notified = await notifyTermsPublished(published.version);
+
+    return NextResponse.json({ success: true, current: published, versions: await listTermsVersions(), notified }, { status: 201 });
   } catch (error) {
     console.error("Error publishing Express terms:", error);
     return NextResponse.json({ error: "Failed to publish Express terms" }, { status: 500 });

@@ -60,7 +60,7 @@ function ShellFrame({ children, userName }: ExpressShellProps) {
 
   return (
     <div className="flex min-h-screen bg-[#f5f7fa] text-[#111c2d] antialiased">
-      <ExpressSidebar mobileOpen={menuOpen} onClose={() => setMenuOpen(false)} user={user} fallbackName={userName} onLogout={logout} accountStatus={account?.status ?? null} isPartner={Boolean(account?.partner)} isCustomer={account?.type === "customer"} hasInvoices={account?.type === "b2b" && Boolean(account.billingModes?.includes("invoice"))} />
+      <ExpressSidebar mobileOpen={menuOpen} onClose={() => setMenuOpen(false)} user={user} fallbackName={userName} onLogout={logout} accountStatus={account?.status ?? null} isPartner={Boolean(account?.partner)} isCustomer={account?.type === "customer" && !account.customerCanBook} hasInvoices={account?.type === "b2b" && Boolean(account.billingModes?.includes("invoice"))} />
       <div className="flex min-w-0 flex-1 flex-col md:pl-[260px]">
         <ExpressTopBar onOpenMenu={() => setMenuOpen(true)} userName={user?.name || userName} />
         <main className="flex-1 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">

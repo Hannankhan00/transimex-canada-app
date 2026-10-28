@@ -33,7 +33,7 @@ export async function GET(req: Request) {
     if (from || to) filter["label.uploadedAt"] = range;
 
     const shipments = await ExpressShipment.find(filter)
-      .select("reference accountId accountType status quoteId totalCents trackingNumber label statusHistory payment.provider payment.amountCents payment.refundedCents billing.mode billing.creditedCents shipper.countryCode recipient.countryCode")
+      .select("reference accountId accountType status quoteId totalCents trackingNumber label statusHistory dhlActual.chargeCents payment.provider payment.amountCents payment.refundedCents payment.connect billing.mode billing.creditedCents shipper.countryCode recipient.countryCode")
       .sort({ "label.uploadedAt": -1 })
       .limit(5000)
       .lean();

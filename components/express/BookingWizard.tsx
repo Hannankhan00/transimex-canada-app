@@ -11,7 +11,7 @@ import UnitToggle from "./UnitToggle";
 import { lengthToCm, unitLabel, weightFromKg, weightToKg, weightUnit, type UnitSystem } from "@/lib/express/units";
 import { formatCad } from "@/lib/shipping/core/money";
 import type { TermsContent } from "@/lib/express/terms";
-import type { ClientQuoteDTO } from "@/lib/express/quoteDto";
+import type { ClientQuoteDTO, CustomerQuoteDTO } from "@/lib/express/quoteDto";
 import type { ClientAccountDTO } from "@/lib/express/accountDto";
 import type { PartnerCustomerDTO } from "@/lib/express/partnerDto";
 import type { CreditSummary } from "@/lib/express/credit";
@@ -197,6 +197,8 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
   const [credit, setCredit] = useState<CreditSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // A partner's customer is quoted one final price (no breakdown); the server sends them a different quote shape.
+  const isCustomer = account.type === "customer";
   const [quote, setQuote] = useState<ClientQuoteDTO | null>(null);
   const [quoteKey, setQuoteKey] = useState("");
   const [quoteLoading, setQuoteLoading] = useState(false);
@@ -486,6 +488,8 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
       } else if (data.code === "quote_used") {
         router.replace("/express/shipments");
         return;
+      } else if (data.code === "customer_booking_disabled") {
+        setError(data.error || b.genericError);
       } else if (data.code === "billing_not_available") {
         setError(b.billingBlocked);
       } else if (data.code === "credit_exceeded") {
@@ -512,6 +516,7 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
   const stepNames = [b.steps.addresses, b.steps.parcels, documents ? b.stepContents : b.steps.customs, b.steps.options, b.steps.review];
   const m = (c: number) => formatCad(c, language);
   const termsText = terms?.content[language];
+  const quoteTotalCents = quote ? (isCustomer ? (quote as unknown as CustomerQuoteDTO).totalCents : quote.price.totalCents) : 0;
 
   return (
     <div className="space-y-6">
@@ -829,6 +834,26 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
                   {b.retry}
                 </button>
               </div>
+            ) : quote && isCustomer ? (
+              <div className="space-y-3 text-sm">
+                <div className="text-xs text-slate-500">
+                  {b.service}: <b className="text-slate-800">{quote.service.name}</b>
+                  {quote.service.estimatedDelivery && (
+                    <>
+                      {" · "}
+                      {b.delivery}: <b className="text-slate-800">{new Intl.DateTimeFormat(language === "fr" ? "fr-CA" : "en-CA", { dateStyle: "medium" }).format(new Date(quote.service.estimatedDelivery))}</b>
+                    </>
+                  )}
+                </div>
+                <p className="flex items-baseline justify-between gap-3 rounded-xl bg-slate-50 px-4 py-3 text-[#0B2545]">
+                  <span className="font-bold">{b.total}</span>
+                  <span className="text-2xl font-extrabold tabular-nums">{m(quoteTotalCents)}</span>
+                </p>
+                <p className="text-xs text-slate-500">{b.surchargesNote}</p>
+                <p className="text-xs text-slate-500">
+                  {b.validUntil}: {new Intl.DateTimeFormat(language === "fr" ? "fr-CA" : "en-CA", { timeStyle: "short" }).format(new Date(quote.expiresAt!))}
+                </p>
+              </div>
             ) : quote ? (
               <div className="space-y-3 text-sm">
                 <div className="text-xs text-slate-500">
@@ -1018,7 +1043,7 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
           {quote && (
             <div className="mt-3 flex items-center justify-between rounded-xl bg-[#0B2545] px-4 py-3 text-white">
               <span className="text-xs font-semibold">{b.total}</span>
-              <span className="text-lg font-extrabold tabular-nums">{m(quote.price.totalCents)}</span>
+              <span className="text-lg font-extrabold tabular-nums">{m(quoteTotalCents)}</span>
             </div>
           )}
         </section>

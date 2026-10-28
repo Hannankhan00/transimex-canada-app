@@ -20,6 +20,11 @@ export interface CheckoutParams {
   idempotencyKey: string;
   /** How long the hosted page stays payable. */
   expiresInMinutes: number;
+  /**
+   * Set when a partner's customer pays: the charge is made on the partner's own Stripe account (so the partner bears
+   * Stripe's card fee) and Transimex's share is collected as an application fee.
+   */
+  connect?: { accountId: string; applicationFeeCents: number };
 }
 
 export interface CheckoutSession {
@@ -36,6 +41,8 @@ export interface RefundParams {
   idempotencyKey: string;
   reason: string;
   shipmentId: string;
+  /** The partner's Stripe account when the payment was taken there. Transimex's fee is returned with the refund. */
+  connectedAccountId?: string;
 }
 
 export interface RefundResult {
@@ -56,20 +63,22 @@ export interface PaymentEvent {
   paymentStatus?: string;
   shipmentId?: string;
   invoiceId?: string;
+  /** Set when the event happened on a partner's connected Stripe account. */
+  connectedAccountId?: string;
 }
 
 export interface PaymentProvider {
   readonly name: "stripe";
   createCheckoutSession(params: CheckoutParams): Promise<CheckoutSession>;
   /** Best effort: an old session must not stay payable once a new one replaces it. */
-  expireSession(sessionId: string): Promise<void>;
+  expireSession(sessionId: string, connectedAccountId?: string): Promise<void>;
   refund(params: RefundParams): Promise<RefundResult>;
   /**
    * Asks the provider directly whether a payment page was paid. Returns a "completed" event when it was, or null
    * when it was not (yet). This is a second route to the same fact the webhook reports, for when the webhook is late
    * or never arrives. Acting on the result is idempotent, exactly like the webhook.
    */
-  retrieveCheckout(sessionId: string): Promise<PaymentEvent | null>;
+  retrieveCheckout(sessionId: string, connectedAccountId?: string): Promise<PaymentEvent | null>;
   /** Verifies the signature and returns the event. Throws PaymentError("signature") when invalid. */
   verifyWebhook(rawBody: string, signatureHeader: string | null): PaymentEvent;
 }

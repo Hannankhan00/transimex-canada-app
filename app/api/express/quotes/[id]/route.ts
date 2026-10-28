@@ -3,7 +3,8 @@ import { isValidObjectId } from "mongoose";
 import connectDB from "@/lib/mongoose";
 import ExpressQuote from "@/models/ExpressQuote";
 import { requireExpressClient } from "@/lib/express/access";
-import { toClientQuoteDTO } from "@/lib/express/quoteDto";
+import ExpressAccount from "@/models/ExpressAccount";
+import { toClientQuoteDTO, toCustomerQuoteDTO } from "@/lib/express/quoteDto";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -20,7 +21,9 @@ export async function GET(_req: Request, { params }: Ctx) {
     const doc = await ExpressQuote.findOne({ _id: id, userId: access.actor.userId }).lean();
     if (!doc) return NextResponse.json({ error: "Quote not found" }, { status: 404 });
 
-    return NextResponse.json({ success: true, quote: toClientQuoteDTO(doc as any) });
+    // A partner's customer never receives Transimex's price lines.
+    const account = await ExpressAccount.findOne({ userId: access.actor.userId }).select("type").lean();
+    return NextResponse.json({ success: true, quote: (account?.type === "customer" ? toCustomerQuoteDTO : toClientQuoteDTO)(doc as any) });
   } catch (error) {
     console.error("Express quote fetch error:", error);
     return NextResponse.json({ error: "Failed to load quote" }, { status: 500 });

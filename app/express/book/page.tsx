@@ -53,8 +53,8 @@ export default function ExpressBookPage() {
     );
   }
 
-  // A partner's customer checks prices here; their partner does the booking.
-  if (account.type === "customer") return <CustomerQuote />;
+  // A partner's customer can book once their partner has connected Stripe; until then they only check prices.
+  if (account.type === "customer" && !account.customerCanBook) return <CustomerQuote />;
 
   return <BookingWizard account={account} />;
 }

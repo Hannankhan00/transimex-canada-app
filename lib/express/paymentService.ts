@@ -50,7 +50,8 @@ export async function startCheckout(params: {
     session = await params.provider.createCheckoutSession({
       shipmentId: String(sh._id),
       reference: sh.reference,
-      amountCents: sh.totalCents,
+      amountCents: pay?.connect?.chargeCents ?? sh.totalCents,
+      connect: pay?.connect ? { accountId: pay.connect.accountId, applicationFeeCents: pay.connect.applicationFeeCents } : undefined,
       description: `${sh.shipper.city} to ${sh.recipient.city}, ${sh.recipient.countryCode}`,
       customerEmail: params.customerEmail,
       successUrl: `${params.baseUrl}/express/shipments/${sh._id}?paid=1`,
@@ -90,7 +91,7 @@ export async function startCheckout(params: {
 
   // The previous payment page must not stay payable once this one replaces it.
   if (pay?.sessionId && pay.sessionId !== session.sessionId) {
-    await params.provider.expireSession(pay.sessionId);
+    await params.provider.expireSession(pay.sessionId, pay.connect?.accountId);
   }
   return { ok: true, url: session.url, reused: false };
 }
@@ -109,7 +110,7 @@ export async function syncShipmentPayment(params: { shipmentId: string; userId: 
   const sessionId = sh.payment?.sessionId;
   if (!sessionId || sh.payment?.provider !== params.provider.name) return { paid: false };
 
-  const event = await params.provider.retrieveCheckout(sessionId);
+  const event = await params.provider.retrieveCheckout(sessionId, sh.payment?.connect?.accountId);
   // The payment page must belong to this booking.
   if (!event || event.sessionId !== sessionId || (event.shipmentId && event.shipmentId !== String(sh._id))) return { paid: false };
 
@@ -117,7 +118,11 @@ export async function syncShipmentPayment(params: { shipmentId: string; userId: 
   return { paid: outcome === "paid" || outcome === "already_processed" };
 }
 
-const centsMatch = (event: PaymentEvent, sh: IExpressShipment) => event.amountTotalCents === sh.totalCents && event.currency?.toLowerCase() === "cad";
+/** What the payment must be for: the customer's price when it is taken on a partner's account, else the booking total. */
+export const expectedCents = (sh: Pick<IExpressShipment, "payment" | "totalCents">) => sh.payment?.connect?.chargeCents ?? sh.totalCents;
+export const centsMatch = (event: PaymentEvent, sh: Pick<IExpressShipment, "payment" | "totalCents">) => event.amountTotalCents === expectedCents(sh) && event.currency?.toLowerCase() === "cad";
+/** A payment taken on a partner's account must come from that very account, and a platform payment from none. */
+export const accountMatches = (event: PaymentEvent, sh: Pick<IExpressShipment, "payment">) => (event.connectedAccountId ?? undefined) === (sh.payment?.connect?.accountId ?? undefined);
 
 /**
  * Acts on a verified provider event. Idempotent by construction: marking a
@@ -150,11 +155,16 @@ export async function handlePaymentEvent(event: PaymentEvent, provider: PaymentP
   if (event.paymentStatus !== "paid") return "not_paid";
   if (!event.paymentIntentId) return "no_payment_intent";
 
+  if (!accountMatches(event, sh)) {
+    console.error("[Express] Payment for", sh.reference, "came from an unexpected Stripe account:", event.connectedAccountId);
+    return "wrong_account";
+  }
+
   if (!centsMatch(event, sh)) {
     // Never mark a booking paid for the wrong amount. Staff look at it.
     await ExpressShipment.updateOne(
       { _id: sh._id },
-      { $set: { "payment.state": "mismatch", "payment.mismatchNote": `Expected ${sh.totalCents} CAD cents, provider reported ${event.amountTotalCents} ${event.currency}.` } }
+      { $set: { "payment.state": "mismatch", "payment.mismatchNote": `Expected ${expectedCents(sh)} CAD cents, provider reported ${event.amountTotalCents} ${event.currency}.` } }
     );
     console.error("[Express] Payment amount mismatch for", sh.reference, event.amountTotalCents, event.currency);
     return "amount_mismatch";
@@ -200,6 +210,7 @@ export async function handlePaymentEvent(event: PaymentEvent, provider: PaymentP
       idempotencyKey: `express-dup-${event.paymentIntentId}`,
       reason: "Duplicate or late payment for a booking that was already paid or cancelled",
       shipmentId: String(sh._id),
+      connectedAccountId: event.connectedAccountId,
     });
     refundId = refund.refundId;
   } catch (error) {

@@ -356,3 +356,38 @@ export async function sendExpressInvoiceEmail(params: {
     category: `express-invoice-${params.kind}`,
   });
 }
+
+/** Tells a client that the Express terms changed and must be accepted again at their next booking. */
+export async function sendExpressTermsEmail(params: { to: string; name: string; language: Lang; version: string }) {
+  const lang: Lang = params.language === "fr" ? "fr" : "en";
+  const url = `${appUrl()}/express/book`;
+  const copy =
+    lang === "fr"
+      ? {
+          subject: "Les conditions de Transimex Express ont changé",
+          heading: "Conditions mises à jour",
+          body: "Nous avons mis à jour les conditions d'utilisation de Transimex Express. Veuillez les lire. Vous devrez les accepter à votre prochaine réservation.",
+          cta: "Réserver un envoi",
+          hello: "Bonjour",
+        }
+      : {
+          subject: "Transimex Express terms have changed",
+          heading: "Terms updated",
+          body: "We updated the Transimex Express terms of service. Please review them. You will be asked to accept them when you next book a shipment.",
+          cta: "Book a shipment",
+          hello: "Hello",
+        };
+  const content = `
+    <h1 class="h1">${copy.heading}</h1>
+    <p>${copy.hello} <strong>${escapeHtml(params.name)}</strong>,</p>
+    <p>${copy.body}</p>
+    <div style="text-align:center;"><a href="${url}" class="btn" target="_blank">${copy.cta}</a></div>
+  `;
+  return sendExpressEmail({
+    to: params.to,
+    subject: copy.subject,
+    html: emailTemplateWrapper(content, copy.heading),
+    text: `${copy.heading}. ${copy.body} ${url}`,
+    category: "express-terms-updated",
+  });
+}

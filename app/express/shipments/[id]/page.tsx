@@ -44,6 +44,8 @@ function Detail() {
   const { account } = useExpressAccount();
   const isCustomer = account?.type === "customer";
   const [shipment, setShipment] = useState<ClientShipmentDTO | null>(null);
+  // The one who pays: everyone except a partner's customer looking at a booking their partner made.
+  const payer = !isCustomer || Boolean(shipment?.bookedByViewer);
   const [quote, setQuote] = useState<ClientQuoteDTO | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "missing" | "error">("loading");
   const [action, setAction] = useState<"" | "pay" | "cancel">("");
@@ -205,11 +207,11 @@ function Detail() {
             {t.express.trackingStatus[shipment.tracking.status as keyof typeof t.express.trackingStatus]}
           </span>
         ) : (
-          <span className={`px-2.5 py-0.5 rounded-full border text-xs font-bold ${STATUS_STYLE[shipment.status]}`}>{isCustomer && shipment.status === "paid" ? pt.customerStatusPaid : t.express.shipmentStatus[shipment.status]}</span>
+          <span className={`px-2.5 py-0.5 rounded-full border text-xs font-bold ${STATUS_STYLE[shipment.status]}`}>{isCustomer && !payer && shipment.status === "paid" ? pt.customerStatusPaid : t.express.shipmentStatus[shipment.status]}</span>
         )}
       </div>
 
-      {isCustomer && <p className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">{pt.customerNote}</p>}
+      {isCustomer && !payer && <p className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">{pt.customerNote}</p>}
 
       {shipment.billing && (
         <p className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
@@ -254,19 +256,19 @@ function Detail() {
       )}
 
       {/* Payment state */}
-      {pendingCheck && !isCustomer && (
+      {pendingCheck && payer && (
         <p role="status" className="flex items-center gap-2 rounded-xl bg-blue-50 border border-blue-200 px-4 py-3 text-sm text-blue-900">
           <Loader2 className="w-4 h-4 animate-spin" />
           {s.paymentPendingNote}
         </p>
       )}
-      {shipment.status === "paid" && !isCustomer && (
+      {shipment.status === "paid" && payer && (
         <p role="status" className="flex items-center gap-2 rounded-xl bg-blue-50 border border-blue-200 px-4 py-3 text-sm text-blue-900">
           {returnedPaid && polls < POLL_MAX && <Loader2 className="w-4 h-4 animate-spin" />}
           {returnedPaid && polls < POLL_MAX ? s.paidProcessing : s.paidWaiting}
         </p>
       )}
-      {shipment.status === "awaiting_payment" && !pendingCheck && !isCustomer && (
+      {shipment.status === "awaiting_payment" && !pendingCheck && payer && (
         <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-900 space-y-3">
           <p>{returnedCancelled ? s.paymentNotCompleted : s.awaitingNote}</p>
           <div className="flex flex-wrap items-center gap-3">

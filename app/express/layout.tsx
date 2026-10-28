@@ -6,7 +6,7 @@ import { getCurrentUser } from "@/lib/session";
 
 export const metadata = {
   title: "Transimex Express",
-  description: "International express shipping from Canada to Africa, powered by DHL Express.",
+  description: "International express shipping to and from Canada, powered by DHL Express.",
 };
 
 // The flag and the session are read per request, never at build time.

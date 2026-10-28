@@ -92,7 +92,8 @@ export default function ExpressOverviewPage() {
   }
 
   // ---- Has an account ----
-  const isCustomer = account.type === "customer";
+  // A partner's customer who cannot book yet (their partner has not connected Stripe): prices and tracking only.
+  const isCustomer = account.type === "customer" && !account.customerCanBook;
   const firstName = (account.contactName || "").trim().split(/\s+/)[0];
   const country = findCountry(account.country);
   const countryLabel = country ? (language === "fr" ? country.nameFr : country.name) : account.country;
@@ -185,7 +186,7 @@ export default function ExpressOverviewPage() {
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="font-mono text-sm font-bold text-[#0B2545]">{s.reference}</span>
-                          <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${STATUS_STYLE[s.status]}`}>{s.status === "label_ready" && s.tracking ? t.express.trackingStatus[s.tracking.status as keyof typeof t.express.trackingStatus] : isCustomer && s.status === "paid" ? t.express.partner.customerStatusPaid : t.express.shipmentStatus[s.status]}</span>
+                          <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${STATUS_STYLE[s.status]}`}>{s.status === "label_ready" && s.tracking ? t.express.trackingStatus[s.tracking.status as keyof typeof t.express.trackingStatus] : account.type === "customer" && !s.bookedByViewer && s.status === "paid" ? t.express.partner.customerStatusPaid : t.express.shipmentStatus[s.status]}</span>
                         </div>
                         <p className="mt-0.5 truncate text-xs text-slate-500">
                           {s.recipient.name} · {s.recipient.city}

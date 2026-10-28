@@ -84,6 +84,8 @@ export function toClientShipmentDTO(doc: ShipmentDoc) {
         }
       : null,
     cancelledAt: iso(doc.cancellation?.at),
+    // False when a partner booked this for the viewer (the viewer is a customer who only watches it).
+    bookedByViewer: true,
   };
 }
 
@@ -100,6 +102,7 @@ export function toCustomerShipmentDTO(doc: ShipmentDoc) {
     ...full,
     totalCents: doc.customerTotalCents ?? full.totalCents,
     partner: null,
+    bookedByViewer: false,
     billing: null,
     quoteId: "",
     termsVersion: "",
@@ -111,6 +114,27 @@ export function toCustomerShipmentDTO(doc: ShipmentDoc) {
     // The booking's payment steps are between the partner and Transimex.
     statusHistory: [],
   };
+}
+
+/**
+ * A partner's customer looking at a booking they made themselves: the reduced customer view, plus what they need to
+ * pay for it and see its payment state. Still never the partner price, the markup or the label's source.
+ */
+export function toCustomerOwnShipmentDTO(doc: ShipmentDoc) {
+  const full = toClientShipmentDTO(doc);
+  return {
+    ...toCustomerShipmentDTO(doc),
+    bookedByViewer: true,
+    canPay: doc.status === "awaiting_payment",
+    paidAt: full.paidAt,
+    refundedCents: full.refundedCents,
+    labelReady: full.labelReady,
+  };
+}
+
+/** The view for the person who owns the booking: a partner's customer gets the reduced one. */
+export function toOwnShipmentDTO(doc: ShipmentDoc, accountType: string | undefined): ClientShipmentDTO {
+  return (accountType === "customer" ? toCustomerOwnShipmentDTO(doc) : toClientShipmentDTO(doc)) as ClientShipmentDTO;
 }
 
 export type AttentionReason = "label_failed" | "outcome_unknown" | "label_overdue" | "amount_mismatch" | "refund_failed" | "delivery_exception" | "tracking_failing" | "no_scan";
@@ -176,6 +200,8 @@ export function toAdminShipmentDTO(doc: ShipmentDoc, user?: AccountUserInfo | nu
     label: doc.label ? { source: doc.label.source, uploadedAt: iso(doc.label.uploadedAt), bytes: doc.label.bytes } : null,
     invoice: doc.invoice?.key ? { paperless: Boolean(doc.invoice.paperless), bytes: doc.invoice.bytes } : null,
     pickupConfirmation: doc.pickupConfirmation || "",
+    // What DHL really charged (staff only); null until it is recorded or imported from a DHL invoice.
+    dhlActual: doc.dhlActual ? { chargeCents: doc.dhlActual.chargeCents, source: doc.dhlActual.source, recordedAt: iso(doc.dhlActual.recordedAt), invoiceNumber: doc.dhlActual.invoiceNumber || "", note: doc.dhlActual.note || "" } : null,
     // Invoice-account detail (staff only): the charge, what was credited back, and the invoice it is on.
     billingDetail: doc.billing?.mode === "invoice"
       ? { mode: "invoice" as const, chargeCents: doc.billing.chargeCents, creditedCents: doc.billing.creditedCents ?? 0, invoiceId: doc.billing.invoiceId || null }

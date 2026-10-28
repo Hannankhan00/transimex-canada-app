@@ -3,7 +3,7 @@
 Things nobody has answered yet. Each one says what it is, why it matters, what the system does today, and who has to answer.
 When one is answered, change its status to **Answered** and write the answer under it. Do not delete it.
 
-Last updated: 2026-10-16
+Last updated: 2026-10-28
 
 Status key: **Open** (needs a decision or fact), **Waiting on DHL API docs**, **On hold** (parked on purpose), **Answered**.
 
@@ -96,16 +96,17 @@ These depend on what the DHL API really returns. They cannot be decided by guess
 - **Question:** should the client's discount also apply to fuel, partly or fully, or should fuel always pass through at one fixed amount?
 
 ### 2.2 When a partner's customer books for themselves, who pays Transimex?
-- **Status:** On hold (you will decide)
+- **Status:** **Direction chosen 2026-10-28: Stripe Connect.** The partner connects their own Stripe account. When their customer pays by card, the partner's cut goes to the partner and Transimex's cut comes to Transimex. **Decided 2026-10-28:** Standard accounts (the partner connects their own Stripe account); the partner bears Stripe's card fee; a refund comes out of the partner's balance and gives back Transimex's share of the fee; partners on the weekly invoice keep that, Connect is only for customers paying by card. **Built:** partner "Connect Stripe" card on /express/partner, the charge on the partner's account with Transimex's share (the partner price) as the application fee, refunds, the optional STRIPE_CONNECT_WEBHOOK_SECRET, and the profit report (revenue = Transimex's share, no card fee). **Customer side built 2026-10-28:** once their partner can take charges, a customer gets the normal booking form (one final price, no breakdown), pays on Stripe, and sees only their own price on their bookings; the partner sees what their customers booked (read only) and it counts in their earnings. Until the partner connects Stripe the customer still sees only the price page. Untested against real Stripe: try it with test keys first.
+- **Earlier options (kept for reference):**
 - **Options:** the partner pays through their own billing mode, OR the customer pays by card and the partner's markup is paid out to them later.
 - **Today:** customers with a login can see prices and shipments, but cannot book. Only the partner books.
 
 ### 2.3 Do updated terms force existing clients to accept again?
-- **Status:** Open
+- **Status:** **Answered 2026-10-28:** email every client when the terms change. Anyone who has not accepted the new version must accept it while booking. Email sending is not built yet.
 - **Today:** terms are versioned. Booking asks for the current version. Existing accounts are not asked to re-accept unless they book (the booking form shows the current terms and requires acceptance).
 
 ### 2.4 Is the Express terms wording final, and does it cover extra charges after shipping?
-- **Status:** Open
+- **Status:** **Partly answered 2026-10-28.** The built-in wording now says Express ships to and from Canada (any country DHL serves, not only Africa) and has a Discounts section: discount only on shipments from or to Canada, none between two other countries. It already covers DHL billing extra after shipping (weight, size, duties, returns). Still a draft: it has not been checked against the DHL contract or by a lawyer. The version stored in the database (Admin > Terms) is separate: publish the new wording there.
 - **Today:** version 1 is a draft. It has not been checked against the DHL contract. It should say that DHL can bill extra after a shipment (weight, size, surcharges, duties) and that we may pass it on.
 
 ### 2.5 May we use the DHL name? ("Powered by DHL")
@@ -135,7 +136,7 @@ These depend on what the DHL API really returns. They cannot be decided by guess
 - **Suggestion:** a "dispute" button that pauses collection until staff answer. If DHL credits us for a shipment, the client gets the credit too.
 
 ### 2.9 Do you want to track that you paid DHL, and see quoted cost versus DHL's real cost?
-- **Status:** On hold
+- **Status:** **Answered 2026-10-28: yes, and calculate the profit.** The profit report (Admin > Express > Profit report) already uses the quoted DHL cost. **Built 2026-10-28:** enter DHL's real charge on a shipment by hand, record each DHL invoice and mark it paid (Admin > Express > DHL invoices), and import a DHL invoice CSV (waybill + amount columns, preview before saving). The profit report uses the real charge when it exists and shows quoted versus real. The CSV import is written without a sample of DHL's real file: send one (see 3.2) so the column detection can be checked.
 - **Ideas:** mark each weekly DHL invoice paid, check its total equals the matched lines, show margin per week, export a CSV for your accountant.
 
 ### 2.10 Should client invoices stay on the quoted price, and the weekly invoice day match DHL's?

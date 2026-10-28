@@ -27,7 +27,7 @@ export const DEFAULT_TERMS: TermsContent = {
   en: {
     heading: "Transimex Express Terms of Service",
     intro:
-      "Transimex Express resells DHL Express shipping from Canada to Africa. DHL's own policies apply to every shipment, and we do not hide them. By applying you agree to the following.",
+      "Transimex Express resells DHL Express shipping to and from Canada, to or from any country DHL serves. DHL's own policies apply to every shipment, and we do not hide them. By applying you agree to the following.",
     sections: [
       {
         title: "Weight and size corrections",
@@ -54,6 +54,10 @@ export const DEFAULT_TERMS: TermsContent = {
         body: "You may choose DHL pickup, which carries a fee that you pay, or drop off the parcel at a DHL service point at no extra fee.",
       },
       {
+        title: "Discounts",
+        body: "Our discount applies only to shipments sent from Canada or delivered to Canada. A shipment between two other countries is charged at the full price, without discount.",
+      },
+      {
         title: "Prices and payment",
         body: "Prices are in Canadian dollars. A quote is saved when you confirm it and does not change afterwards, except through a DHL weight or size correction. Surcharges such as fuel and remote-area fees are passed through at DHL's amount.",
       },
@@ -62,7 +66,7 @@ export const DEFAULT_TERMS: TermsContent = {
   fr: {
     heading: "Conditions d'utilisation de Transimex Express",
     intro:
-      "Transimex Express revend les services d'expédition DHL Express du Canada vers l'Afrique. Les politiques de DHL s'appliquent à chaque envoi et nous ne les cachons pas. En faisant une demande, vous acceptez ce qui suit.",
+      "Transimex Express revend les services d'expédition DHL Express à destination et en provenance du Canada, vers ou depuis tout pays desservi par DHL. Les politiques de DHL s'appliquent à chaque envoi et nous ne les cachons pas. En faisant une demande, vous acceptez ce qui suit.",
     sections: [
       {
         title: "Corrections de poids et de dimensions",
@@ -87,6 +91,10 @@ export const DEFAULT_TERMS: TermsContent = {
       {
         title: "Ramassage",
         body: "Vous pouvez choisir le ramassage DHL, qui comporte des frais à votre charge, ou déposer le colis dans un point de service DHL sans frais supplémentaires.",
+      },
+      {
+        title: "Rabais",
+        body: "Notre rabais s'applique seulement aux envois expédiés du Canada ou livrés au Canada. Un envoi entre deux autres pays est facturé au plein prix, sans rabais.",
       },
       {
         title: "Prix et paiement",

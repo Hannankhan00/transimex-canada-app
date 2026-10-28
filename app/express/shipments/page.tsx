@@ -22,8 +22,8 @@ export default function ExpressShipmentsPage() {
   const s = t.express.shipments;
   const { account } = useExpressAccount();
   const isCustomer = account?.type === "customer";
-  // A partner's customer cannot book: their partner does that.
-  const canBook = account?.status === "active" && !isCustomer;
+  // A partner's customer can book once their partner has connected Stripe; until then their partner does it.
+  const canBook = account?.status === "active" && (!isCustomer || Boolean(account.customerCanBook));
   const [shipments, setShipments] = useState<ClientShipmentDTO[] | null>(null);
   const [error, setError] = useState(false);
   const [filter, setFilter] = useState<"all" | "awaiting_payment" | "paid" | "label_ready" | "cancelled">("all");
@@ -138,7 +138,7 @@ export default function ExpressShipmentsPage() {
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="font-mono text-sm font-bold text-[#0B2545]">{sh.reference}</span>
-                        <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${STATUS_STYLE[sh.status]}`}>{sh.status === "label_ready" && sh.tracking ? t.express.trackingStatus[sh.tracking.status as keyof typeof t.express.trackingStatus] : isCustomer && sh.status === "paid" ? t.express.partner.customerStatusPaid : t.express.shipmentStatus[sh.status]}</span>
+                        <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${STATUS_STYLE[sh.status]}`}>{sh.status === "label_ready" && sh.tracking ? t.express.trackingStatus[sh.tracking.status as keyof typeof t.express.trackingStatus] : isCustomer && !sh.bookedByViewer && sh.status === "paid" ? t.express.partner.customerStatusPaid : t.express.shipmentStatus[sh.status]}</span>
                         {sh.contentType === "documents" && <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-800">{t.express.book.typeDocuments}</span>}
                         {sh.partner && <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-bold text-slate-600">{sh.partner.customerName}</span>}
                       </div>

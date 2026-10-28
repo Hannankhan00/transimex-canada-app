@@ -63,8 +63,8 @@ export default function AdminExpressProfitReportPage() {
 
   const exportCsv = () => {
     if (!data) return;
-    const head = ["date", "reference", "account", "type", "from", "to", "paid_by", "revenue", "dhl_cost", "pickup_fee", "profit", "est_card_fee", "net_profit", "client_discount_pct", "discount_not_applied", "cancelled"];
-    const lines = data.rows.map((r: ProfitRow) => [r.date.slice(0, 10), r.reference, data.names[r.accountId] || r.accountId, r.accountType, r.originCountry, r.destinationCountry, r.payMethod, (r.revenueCents / 100).toFixed(2), (r.dhlCostCents / 100).toFixed(2), (r.pickupFeeCents / 100).toFixed(2), (r.profitCents / 100).toFixed(2), (r.cardFeeCents / 100).toFixed(2), (r.netProfitCents / 100).toFixed(2), r.discountPct, r.discountWaived ? "yes" : "no", r.cancelled ? "yes" : "no"]);
+    const head = ["date", "reference", "account", "type", "from", "to", "paid_by", "revenue", "dhl_cost", "dhl_cost_source", "quoted_dhl_cost", "pickup_fee", "profit", "est_card_fee", "net_profit", "client_discount_pct", "discount_not_applied", "cancelled"];
+    const lines = data.rows.map((r: ProfitRow) => [r.date.slice(0, 10), r.reference, data.names[r.accountId] || r.accountId, r.accountType, r.originCountry, r.destinationCountry, r.payMethod, (r.revenueCents / 100).toFixed(2), (r.dhlCostCents / 100).toFixed(2), r.costSource, (r.quotedCostCents / 100).toFixed(2), (r.pickupFeeCents / 100).toFixed(2), (r.profitCents / 100).toFixed(2), (r.cardFeeCents / 100).toFixed(2), (r.netProfitCents / 100).toFixed(2), r.discountPct, r.discountWaived ? "yes" : "no", r.cancelled ? "yes" : "no"]);
     const csv = [head, ...lines].map((l) => l.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\r\n");
     const url = URL.createObjectURL(new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" }));
     const a = document.createElement("a");
@@ -201,8 +201,8 @@ export default function AdminExpressProfitReportPage() {
             <div className="space-y-2 text-xs text-slate-600">
               <p>
                 {tr(
-                  "Revenue is what clients paid after refunds and credits. DHL cost is DHL's rate when the price was quoted, so a weight correction DHL bills later is not included until it is reconciled. A shipment counts on the day its label was created, and stays counted if it was cancelled afterwards, because DHL's charge remains.",
-                  "Les revenus sont ce que les clients ont payé après remboursements et crédits. Le coût DHL est le tarif de DHL au moment de la soumission : une correction de poids facturée plus tard n'y est pas incluse tant qu'elle n'est pas rapprochée. Un envoi compte le jour de la création de son étiquette et reste compté s'il est annulé ensuite, car le coût DHL demeure."
+                  "Revenue is what clients paid after refunds and credits. DHL cost is what DHL really charged once it is recorded on the shipment (or imported from a DHL invoice), and DHL's rate at quote time until then. A shipment counts on the day its label was created, and stays counted if it was cancelled afterwards, because DHL's charge remains.",
+                  "Les revenus sont ce que les clients ont payé après remboursements et crédits. Le coût DHL est ce que DHL a réellement facturé une fois enregistré sur l'envoi (ou importé d'une facture DHL), et le tarif de DHL au moment de la soumission d'ici là. Un envoi compte le jour de la création de son étiquette et reste compté s'il est annulé ensuite, car le coût DHL demeure."
                 )}
               </p>
               {data.awaitingLabel > 0 && (
@@ -211,6 +211,15 @@ export default function AdminExpressProfitReportPage() {
                   {tr(`${data.awaitingLabel} paid booking(s) have no DHL label yet and are not counted.`, `${data.awaitingLabel} réservation(s) payée(s) n'ont pas encore d'étiquette DHL et ne sont pas comptées.`)}
                 </p>
               )}
+              <p className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                {tr(
+                  `DHL's real charge is recorded for ${totals.actualCount} of ${totals.count} shipment(s); the rest still use the quoted rate. ${totals.actualCount > 0 ? `Real charges are ${totals.varianceCents >= 0 ? "above" : "below"} the quoted rate by ${m(Math.abs(totals.varianceCents))} in total.` : ""}`,
+                  `Le coût réel de DHL est enregistré pour ${totals.actualCount} envoi(s) sur ${totals.count} ; les autres utilisent encore le tarif soumis. ${totals.actualCount > 0 ? `Les coûts réels sont ${totals.varianceCents >= 0 ? "supérieurs" : "inférieurs"} au tarif soumis de ${m(Math.abs(totals.varianceCents))} au total.` : ""}`
+                )}{" "}
+                <Link href="/admin/express/dhl-invoices" className="font-bold text-[#0B2545] underline">
+                  {tr("DHL invoices", "Factures DHL")}
+                </Link>
+              </p>
               {data.skipped > 0 && (
                 <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 font-semibold text-amber-800">
                   {tr(`${data.skipped} shipment(s) have no saved quote and are left out.`, `${data.skipped} envoi(s) n'ont pas de soumission enregistrée et sont exclus.`)}
@@ -272,7 +281,10 @@ export default function AdminExpressProfitReportPage() {
                               {r.discountWaived && <span title={tr("No client discount: neither end is in Canada", "Aucun rabais client : aucune extrémité n'est au Canada")} className="ml-1.5 text-[10px] font-bold text-slate-400">0%</span>}
                             </td>
                             <td className="px-3 py-2 text-right tabular-nums">{m(r.revenueCents)}</td>
-                            <td className="px-3 py-2 text-right tabular-nums text-slate-600">{m(r.dhlCostCents)}</td>
+                            <td className="px-3 py-2 text-right tabular-nums text-slate-600" title={r.costSource === "actual" ? tr(`Real DHL charge (quoted ${m(r.quotedCostCents)})`, `Coût réel DHL (soumis ${m(r.quotedCostCents)})`) : tr("Quoted rate, not yet confirmed by DHL", "Tarif soumis, pas encore confirmé par DHL")}>
+                              {m(r.dhlCostCents)}
+                              {r.costSource === "quoted" && <span className="ml-1 text-[10px] font-bold text-amber-600">~</span>}
+                            </td>
                             <td className={`px-5 py-2 text-right font-bold tabular-nums ${r.profitCents < 0 ? "text-red-600" : "text-emerald-700"}`}>{m(r.profitCents)}</td>
                           </tr>
                         ))}

@@ -6,7 +6,8 @@ import ExpressShipment from "@/models/ExpressShipment";
 import { requireExpressClient } from "@/lib/express/access";
 import { toClientQuoteDTO } from "@/lib/express/quoteDto";
 import ExpressAccount from "@/models/ExpressAccount";
-import { toClientShipmentDTO, toCustomerShipmentDTO } from "@/lib/express/shipmentDto";
+import ExpressPartnerCustomer from "@/models/ExpressPartnerCustomer";
+import { toCustomerShipmentDTO, toOwnShipmentDTO } from "@/lib/express/shipmentDto";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -21,23 +22,30 @@ export async function GET(_req: Request, { params }: Ctx) {
 
     await connectDB();
     // The owner sees everything. A partner's customer sees only shipments booked for them, in a reduced view.
+    const caller = await ExpressAccount.findOne({ userId: access.actor.userId }).select("type partnerCustomerId partner").lean();
     let shipment = await ExpressShipment.findOne({ _id: id, userId: access.actor.userId }).lean();
     if (!shipment) {
-      const account = await ExpressAccount.findOne({ userId: access.actor.userId, type: "customer" }).select("partnerCustomerId").lean();
+      const account = caller?.type === "customer" ? caller : null;
       if (account?.partnerCustomerId) {
         const theirs = await ExpressShipment.findOne({ _id: id, partnerCustomerId: account.partnerCustomerId, status: { $ne: "awaiting_payment" } }).lean();
         if (theirs) return NextResponse.json({ success: true, shipment: toCustomerShipmentDTO(theirs as any), quote: null });
       }
-      return NextResponse.json({ error: "Shipment not found" }, { status: 404 });
+      // A partner may look at what their customer booked and paid for themselves (read only).
+      if (caller?.type === "b2b" && caller.partner?.enabled) {
+        const theirs = await ExpressShipment.findOne({ _id: id, status: { $ne: "awaiting_payment" }, partnerCustomerId: { $exists: true, $ne: null } }).lean();
+        if (theirs && (await ExpressPartnerCustomer.exists({ _id: theirs.partnerCustomerId, partnerUserId: access.actor.userId }))) shipment = theirs;
+      }
     }
+    if (!shipment) return NextResponse.json({ error: "Shipment not found" }, { status: 404 });
 
     const quote = isValidObjectId(shipment.quoteId) ? await ExpressQuote.findById(shipment.quoteId).lean() : null;
 
     return NextResponse.json({
       success: true,
-      shipment: toClientShipmentDTO(shipment as any),
-      // The client-safe price lines (public price, discount, surcharges, total). Never the account rate.
-      quote: quote ? toClientQuoteDTO(quote as any) : null,
+      shipment: toOwnShipmentDTO(shipment as any, caller?.type),
+      // The client-safe price lines (public price, discount, surcharges, total). Never the account rate, and a
+      // partner's customer gets none: their price is the single total on the booking.
+      quote: quote && caller?.type !== "customer" ? toClientQuoteDTO(quote as any) : null,
     });
   } catch (error) {
     console.error("Express shipment fetch error:", error);

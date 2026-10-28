@@ -29,6 +29,8 @@ export default function AdminExpressShipmentPage() {
   const [refund, setRefund] = useState("0");
   const [tracking, setTracking] = useState("");
   const [file, setFile] = useState<File | null>(null);
+  const [dhlCharge, setDhlCharge] = useState("");
+  const [dhlInvoiceNo, setDhlInvoiceNo] = useState("");
 
   const flash = useCallback((text: string, isError = false) => {
     setToast({ text, error: isError });
@@ -74,6 +76,19 @@ export default function AdminExpressShipmentPage() {
     } finally {
       setBusy("");
     }
+  };
+
+  const saveDhlCharge = (clear: boolean) => {
+    const cents = clear ? null : dollarsToCents(dhlCharge);
+    if (!clear && cents === null) return flash(tr("Enter the amount DHL charged", "Entrez le montant facturé par DHL"), true);
+    return run(
+      "dhlcost",
+      () => fetch(`/api/admin/express/shipments/${id}/dhl-cost`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ charge: cents === null ? null : cents / 100, invoiceNumber: dhlInvoiceNo }) }),
+      () => {
+        setDhlCharge("");
+        return clear ? tr("DHL charge cleared", "Coût DHL effacé") : tr("DHL charge saved", "Coût DHL enregistré");
+      }
+    );
   };
 
   const retryLabel = () =>
@@ -391,6 +406,59 @@ export default function AdminExpressShipmentPage() {
                 </div>
               )}
             </section>
+
+            {/* What DHL really charged, for the profit report */}
+            {shipment.trackingNumber && p && (
+              <section className="bg-white rounded-2xl border border-slate-200 p-5 space-y-3">
+                <h2 className="font-bold text-[#0B2545] text-sm">{tr("DHL's actual charge", "Coût réel DHL")}</h2>
+                <dl className="text-sm divide-y divide-slate-100">
+                  <div className="py-2 flex justify-between gap-3">
+                    <dt className="text-slate-500">{tr("Quoted (DHL account rate)", "Soumis (tarif de compte DHL)")}</dt>
+                    <dd className="font-semibold text-slate-800">{m(p.account.totalCents)}</dd>
+                  </div>
+                  <div className="py-2 flex justify-between gap-3">
+                    <dt className="text-slate-500">{tr("Actual (from DHL's invoice)", "Réel (facture DHL)")}</dt>
+                    <dd className="font-semibold text-slate-800 text-right">
+                      {shipment.dhlActual ? (
+                        <>
+                          {m(shipment.dhlActual.chargeCents)}
+                          {shipment.dhlActual.chargeCents !== p.account.totalCents && (
+                            <span className={`ml-2 text-xs font-bold ${shipment.dhlActual.chargeCents > p.account.totalCents ? "text-red-600" : "text-emerald-700"}`}>
+                              {shipment.dhlActual.chargeCents > p.account.totalCents ? "+" : "−"}
+                              {m(Math.abs(shipment.dhlActual.chargeCents - p.account.totalCents))}
+                            </span>
+                          )}
+                          <span className="block text-[11px] font-normal text-slate-500">
+                            {shipment.dhlActual.source === "invoice" ? tr("imported", "importé") : tr("entered by hand", "saisi à la main")}
+                            {shipment.dhlActual.invoiceNumber ? ` · ${shipment.dhlActual.invoiceNumber}` : ""}
+                          </span>
+                        </>
+                      ) : (
+                        <span className="text-slate-400">{tr("not recorded yet", "pas encore enregistré")}</span>
+                      )}
+                    </dd>
+                  </div>
+                </dl>
+                <div className="flex flex-wrap items-end gap-2">
+                  <label className="space-y-1">
+                    <span className="block text-xs font-bold text-slate-600">{tr("DHL charge (CAD)", "Coût DHL (CAD)")}</span>
+                    <input className={`${adminInput} !w-32`} inputMode="decimal" value={dhlCharge} onChange={(e) => setDhlCharge(e.target.value)} placeholder="0.00" />
+                  </label>
+                  <label className="space-y-1">
+                    <span className="block text-xs font-bold text-slate-600">{tr("DHL invoice no. (optional)", "No de facture DHL (facultatif)")}</span>
+                    <input className={`${adminInput} !w-44`} value={dhlInvoiceNo} onChange={(e) => setDhlInvoiceNo(e.target.value)} />
+                  </label>
+                  <button type="button" disabled={busy !== ""} onClick={() => saveDhlCharge(false)} className="px-3 py-2 rounded-lg bg-[#0B2545] text-white text-xs font-bold disabled:opacity-50 cursor-pointer">
+                    {tr("Save", "Enregistrer")}
+                  </button>
+                  {shipment.dhlActual && (
+                    <button type="button" disabled={busy !== ""} onClick={() => saveDhlCharge(true)} className="px-3 py-2 rounded-lg border border-slate-300 text-xs font-bold text-slate-700 disabled:opacity-50 cursor-pointer">
+                      {tr("Clear", "Effacer")}
+                    </button>
+                  )}
+                </div>
+              </section>
+            )}
 
             {/* Cancel / refund */}
             {(canCancel || canRetryRefund) && (

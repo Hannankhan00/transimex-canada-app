@@ -50,6 +50,7 @@ async function issueRefund(sh: IExpressShipment, amountCents: number, reason: st
       idempotencyKey: `express-refund-${sh._id}-${sh.payment.refunds?.length ?? 0}-${amountCents}`,
       reason,
       shipmentId: String(sh._id),
+      connectedAccountId: sh.payment.connect?.accountId,
     });
     if (refund.status === "failed") throw new PaymentError("provider", "Refund failed");
     await ExpressShipment.updateOne(

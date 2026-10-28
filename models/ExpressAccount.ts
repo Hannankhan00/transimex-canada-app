@@ -16,6 +16,15 @@ export type ExpressAccountStatus = "pending" | "active" | "rejected" | "suspende
 export type ExpressBillingMode = "pay_at_booking" | "invoice";
 export type ExpressLanguage = "en" | "fr";
 
+/** A partner's connected Stripe account, as last reported by Stripe. */
+export interface IExpressPartnerStripe {
+  accountId: string;
+  chargesEnabled: boolean;
+  payoutsEnabled: boolean;
+  detailsSubmitted: boolean;
+  updatedAt?: Date;
+}
+
 export interface IExpressAccount extends Document {
   /** The CRM user this Express account belongs to. One account per user. */
   userId: string;
@@ -51,7 +60,7 @@ export interface IExpressAccount extends Document {
   paymentTermsDays: number | null;
 
   /** B2B only. Set by staff: this business resells to its own customers and adds a markup. */
-  partner?: { enabled: boolean; defaultMarkupPct: number; enabledAt?: Date; enabledBy?: string };
+  partner?: { enabled: boolean; defaultMarkupPct: number; enabledAt?: Date; enabledBy?: string; stripe?: IExpressPartnerStripe };
   /** Customer logins only: the partner's account and the customer record this login belongs to. */
   partnerId?: string;
   partnerCustomerId?: string;
@@ -132,6 +141,20 @@ const ExpressAccountSchema = new Schema<IExpressAccount>(
           defaultMarkupPct: { type: Number, default: 0, min: 0, max: 99.99 },
           enabledAt: { type: Date },
           enabledBy: { type: String },
+          // The partner's own Stripe account (Standard Connect). Their customers' card payments go to it.
+          stripe: {
+            type: new Schema(
+              {
+                accountId: { type: String, required: true },
+                chargesEnabled: { type: Boolean, default: false },
+                payoutsEnabled: { type: Boolean, default: false },
+                detailsSubmitted: { type: Boolean, default: false },
+                updatedAt: { type: Date },
+              },
+              { _id: false }
+            ),
+            default: undefined,
+          },
         },
         { _id: false }
       ),

@@ -6,8 +6,9 @@ import type { PaymentProvider } from "./types";
 export function getPaymentProvider(): PaymentProvider | null {
   const mode = getPaymentsMode();
   if (mode === "off") return null;
-  const { secretKey, webhookSecret } = getStripeConfig();
-  return new StripePaymentProvider(secretKey, webhookSecret);
+  const { secretKey, webhookSecret, connectWebhookSecret } = getStripeConfig();
+  return new StripePaymentProvider(secretKey, webhookSecret, undefined, connectWebhookSecret);
 }
 
+export { getConnectClient } from "./connect";
 export * from "./types";

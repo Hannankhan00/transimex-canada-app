@@ -44,6 +44,16 @@ describe("profit report", () => {
     expect(rows[0]).toMatchObject({ payMethod: "invoice", revenueCents: 8000, cardFeeCents: 0, profitCents: 4000 });
   });
 
+  it("uses DHL's real charge once recorded and shows the difference from the quote", () => {
+    const { rows } = buildProfitRows([ship("1", { dhlActual: { chargeCents: 4500 } }), ship("2")], new Map([["q1", quote(4000)], ["q2", quote(4000)]]));
+    const actual = rows.find((r) => r.id === "1")!;
+    expect(actual).toMatchObject({ costSource: "actual", dhlCostCents: 4500, quotedCostCents: 4000, profitCents: 5500 });
+    expect(rows.find((r) => r.id === "2")).toMatchObject({ costSource: "quoted", dhlCostCents: 4000 });
+    const t = summariseProfit(rows).totals;
+    expect(t.actualCount).toBe(1);
+    expect(t.varianceCents).toBe(500);
+  });
+
   it("a pass-through pickup fee is not profit", () => {
     const { rows } = buildProfitRows([ship("1")], new Map([["q1", quote(4000, { pickupFeeCents: 1500 })]]));
     expect(rows[0].profitCents).toBe(10000 - 1500 - 4000);

@@ -44,6 +44,12 @@ export interface IExpressShipmentPayment {
   /** Payments that arrived after the booking was already paid or cancelled, refunded automatically. */
   duplicatePayments: { paymentIntentId: string; refundId?: string; at: Date }[];
   mismatchNote?: string;
+  /**
+   * Set when a partner's customer pays by card: the charge is taken on the partner's Stripe account for
+   * chargeCents (the customer's price), and Transimex's share, applicationFeeCents (the partner price), is collected
+   * as an application fee. The partner keeps the rest and bears Stripe's fee.
+   */
+  connect?: { accountId: string; chargeCents: number; applicationFeeCents: number };
 }
 
 export interface IExpressShipmentFulfilment {
@@ -155,6 +161,8 @@ export interface IExpressShipment extends Document {
   fulfilment: IExpressShipmentFulfilment;
   label?: IExpressShipmentLabel;
   invoice?: IExpressShipmentInvoice;
+  /** What DHL really charged Transimex for this shipment (from its invoice). Replaces the quoted cost in the profit report. */
+  dhlActual?: { chargeCents: number; source: "manual" | "invoice"; recordedAt: Date; recordedBy: string; note?: string; invoiceNumber?: string };
 
   /** Set when DHL books the shipment (or staff enter it by hand). */
   trackingNumber?: string;
@@ -249,6 +257,10 @@ const PaymentSchema = new Schema(
       default: [],
     },
     mismatchNote: { type: String },
+    connect: {
+      type: new Schema({ accountId: { type: String, required: true }, chargeCents: { type: Number, required: true, min: 1 }, applicationFeeCents: { type: Number, required: true, min: 0 } }, { _id: false }),
+      default: undefined,
+    },
   },
   { _id: false }
 );
@@ -354,6 +366,19 @@ const ExpressShipmentSchema = new Schema<IExpressShipment>(
     billing: { type: BillingSchema },
     fulfilment: { type: FulfilmentSchema, default: () => ({}) },
     label: { type: LabelSchema },
+    dhlActual: {
+      type: new Schema(
+        {
+          chargeCents: { type: Number, required: true, min: 0 },
+          source: { type: String, enum: ["manual", "invoice"], required: true },
+          recordedAt: { type: Date, required: true },
+          recordedBy: { type: String, required: true },
+          note: { type: String, maxlength: 300 },
+          invoiceNumber: { type: String, maxlength: 60 },
+        },
+        { _id: false }
+      ),
+    },
     invoice: { type: new Schema({ key: { type: String, required: true }, bytes: { type: Number, required: true }, paperless: { type: Boolean, default: false } }, { _id: false }) },
 
     trackingNumber: { type: String },

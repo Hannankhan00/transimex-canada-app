@@ -40,6 +40,8 @@ export function toClientAccountDTO(doc: Doc) {
     termsVersion: doc.terms?.version || "",
     termsAcceptedAt: iso(doc.terms?.acceptedAt),
     createdAt: iso(doc.createdAt),
+    // A partner's customer can book once their partner can take card payments. Set by the account route.
+    customerCanBook: false,
   };
 }
 

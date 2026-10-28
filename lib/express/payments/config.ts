@@ -16,12 +16,12 @@ export function getPaymentsMode(env: Env = process.env): PaymentsMode {
   return raw;
 }
 
-export function getStripeConfig(env: Env = process.env): { secretKey: string; webhookSecret: string } {
+export function getStripeConfig(env: Env = process.env): { secretKey: string; webhookSecret: string; connectWebhookSecret?: string } {
   const secretKey = env.STRIPE_SECRET_KEY?.trim() || "";
   const webhookSecret = env.STRIPE_WEBHOOK_SECRET?.trim() || "";
   const missing = [!secretKey && "STRIPE_SECRET_KEY", !webhookSecret && "STRIPE_WEBHOOK_SECRET"].filter(Boolean);
   if (missing.length > 0) throw new PaymentError("config", `PAYMENTS_MODE=stripe requires ${missing.join(" and ")}.`);
-  return { secretKey, webhookSecret };
+  return { secretKey, webhookSecret, connectWebhookSecret: env.STRIPE_CONNECT_WEBHOOK_SECRET?.trim() || undefined };
 }
 
 /** How long a hosted payment page stays open. Stripe allows 30 minutes to 24 hours. */
