@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
-import connectDB from "@/lib/mongoose";
-import BlogMedia from "@/models/BlogMedia";
-import { isR2Configured, uploadToR2 } from "@/lib/r2";
+import { uploadToR2 } from "@/lib/r2";
+import { BlogImageError, processBlogImage } from "@/lib/blogImage";
+
+// sharp needs the Node.js runtime.
+export const runtime = "nodejs";
 
 export async function POST(req: Request) {
   try {
@@ -27,54 +29,61 @@ export async function POST(req: Request) {
       );
     }
 
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-    const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9_.-]/g, "_");
-    const r2Key = `blog/${Date.now()}-${sanitizedFileName}`;
-
-    if (isR2Configured()) {
-      try {
-        const r2Result = await uploadToR2({
-          key: r2Key,
-          buffer,
-          mimeType: file.type || "image/jpeg",
-          metadata: {
-            originalName: file.name,
-            uploadedAt: new Date().toISOString(),
-          },
-        });
-
-        if (r2Result.url) {
-          return NextResponse.json({
-            success: true,
-            url: r2Result.url,
-            fileName: file.name,
-            storageProvider: "r2",
-          });
-        }
-      } catch (r2Err: any) {
-        console.warn("[Cloudflare R2] Blog image upload failed, falling back to database storage:", r2Err.message);
+    let image;
+    try {
+      image = await processBlogImage(Buffer.from(await file.arrayBuffer()), file.type);
+    } catch (err) {
+      if (err instanceof BlogImageError) {
+        return NextResponse.json({ error: err.message }, { status: 415 });
       }
+      throw err;
     }
 
-    // Database fallback (works on any deployment environment including Vercel)
-    await connectDB();
-    const media = await BlogMedia.create({
-      fileName: file.name,
-      mimeType: file.type || "image/jpeg",
-      fileSize: file.size,
-      fileData: buffer,
-      storageProvider: "mongodb",
-    });
+    const baseName = file.name.replace(/\.[^.]*$/, "").replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 80) || "image";
+    const r2Key = `blog/${Date.now()}-${baseName}.${image.extension}`;
 
-    const fileUrl = `/api/admin/blog/media/${media._id.toString()}`;
+    const blogBucket = process.env.BLOG_R2_BUCKET_NAME?.trim();
+    const blogPublicUrl = process.env.BLOG_R2_PUBLIC_URL?.trim();
 
-    return NextResponse.json({
-      success: true,
-      url: fileUrl,
-      fileName: file.name,
-      storageProvider: "mongodb",
-    });
+    // Blog images must be publicly reachable by the website, so they live in their own public bucket,
+    // never in the private vault used for documents and invoices.
+    const blogAccessKeyId = process.env.BLOG_R2_ACCESS_KEY_ID?.trim();
+    const blogSecretAccessKey = process.env.BLOG_R2_SECRET_ACCESS_KEY?.trim();
+
+    if (!blogBucket || !blogPublicUrl || !blogAccessKeyId || !blogSecretAccessKey) {
+      return NextResponse.json(
+        {
+          error:
+            "Blog image storage is not configured (BLOG_R2_BUCKET_NAME, BLOG_R2_PUBLIC_URL, BLOG_R2_ACCESS_KEY_ID, BLOG_R2_SECRET_ACCESS_KEY).",
+        },
+        { status: 503 }
+      );
+    }
+
+    try {
+      const r2Result = await uploadToR2({
+        bucket: blogBucket,
+        publicUrl: blogPublicUrl,
+        credentials: { accessKeyId: blogAccessKeyId, secretAccessKey: blogSecretAccessKey },
+        key: r2Key,
+        buffer: image.buffer,
+        mimeType: image.mimeType,
+        metadata: {
+          originalName: file.name,
+          uploadedAt: new Date().toISOString(),
+        },
+      });
+
+      return NextResponse.json({
+        success: true,
+        url: r2Result.url,
+        fileName: file.name,
+        storageProvider: "r2",
+      });
+    } catch (r2Err: any) {
+      console.error("[Cloudflare R2] Blog image upload failed:", r2Err.message);
+      return NextResponse.json({ error: "Failed to upload image to storage." }, { status: 502 });
+    }
   } catch (error: any) {
     console.error("Error uploading blog image:", error);
     return NextResponse.json(

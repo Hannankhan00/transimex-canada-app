@@ -16,9 +16,9 @@ const MAX_EMAIL = 120;
 const MAX_CONTENT = 2000;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
-// New comments go live immediately (admins can hide or delete them afterwards).
-// Set BLOG_COMMENTS_AUTO_APPROVE=false to hold them for moderation instead.
-const autoApprove = () => process.env.BLOG_COMMENTS_AUTO_APPROVE !== "false";
+// New comments are held as Pending until an admin approves them.
+// Set BLOG_COMMENTS_AUTO_APPROVE=true to publish them immediately instead.
+const autoApprove = () => process.env.BLOG_COMMENTS_AUTO_APPROVE === "true";
 
 async function findPost(slug: string) {
   return BlogPost.findOne({ $and: [{ slug } as Record<string, any>, publishedFilter()] }).select(
@@ -73,7 +73,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
 
 // POST /api/public/blog/posts/:slug/comments  { authorName, authorEmail?, content, website? }
 export async function POST(req: Request, { params }: { params: Promise<{ slug: string }> }) {
-  const denied = guardRequest(req) ?? guardWrite(req, "comment");
+  const denied = guardRequest(req, "write") ?? guardWrite(req, "comment");
   if (denied) return denied;
 
   try {

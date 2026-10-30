@@ -5,7 +5,7 @@ import { checkRateLimit, errorResponse, READ_LIMIT_PER_MINUTE } from "@/lib/blog
 /**
  * Auth for /api/public/promotions. Server-to-server only, same scheme as the Blog API:
  * `x-api-key: <key>` or `Authorization: Bearer <key>`.
- * Uses the same BLOG_PUBLIC_API_KEY as the Blog API.
+ * Uses its own PROMOTIONS_PUBLIC_API_KEY (separate from the Blog API keys).
  */
 const sha256 = (value: string) => createHash("sha256").update(value).digest();
 
@@ -17,9 +17,9 @@ function extractKey(req: Request): string | null {
 }
 
 export function guardPromotionsRequest(req: Request): NextResponse | null {
-  const expected = process.env.BLOG_PUBLIC_API_KEY;
+  const expected = process.env.PROMOTIONS_PUBLIC_API_KEY;
   if (!expected) {
-    console.error("BLOG_PUBLIC_API_KEY is not configured; public promotions API is disabled.");
+    console.error("PROMOTIONS_PUBLIC_API_KEY is not configured; public promotions API is disabled.");
     return errorResponse(503, "API_DISABLED", "The promotions API is not configured on this server.");
   }
 

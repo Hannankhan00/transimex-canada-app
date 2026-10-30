@@ -20,7 +20,7 @@ or
 Authorization: Bearer <key>
 ```
 
-It is the same key as the Blog API (`BLOG_PUBLIC_API_KEY`).
+This is a **dedicated promotions key** (`PROMOTIONS_PUBLIC_API_KEY`). It is different from the Blog API keys and is not accepted by the Blog API, and the blog keys are not accepted here.
 
 > **Server-side only.** Call this from the website's backend (Next.js server component / route handler, etc.) and pass the result to the page. Never put the key in browser JavaScript or a `NEXT_PUBLIC_*` variable.
 
@@ -119,7 +119,7 @@ Uploads in the admin are converted to **WebP** automatically:
 
 ## 6. Setup checklist (our side)
 
-- `BLOG_PUBLIC_API_KEY` (shared with the Blog API).
+- `PROMOTIONS_PUBLIC_API_KEY` (its own key, separate from the Blog API keys).
 - Cloudflare R2 credentials (`CLOUDFLARE_R2_*`). Images are stored only in R2. Optionally set `CLOUDFLARE_R2_PUBLIC_URL` to serve them straight from a public R2 domain; otherwise this app streams them from R2.
 - `APP_URL` should be the public base URL of this app; it is used to build absolute image and flag URLs (falls back to the request origin).
 - Staff need the **Promotions & Popups** permission (Super Admin has it by default; grant it to others in Staff & Access).

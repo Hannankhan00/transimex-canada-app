@@ -4,7 +4,7 @@ import { errorResponse, guardRequest, guardWrite, ok, publishedFilter } from "@/
 
 // POST /api/public/blog/posts/:slug/views — call once per article page view from the website backend.
 export async function POST(req: Request, { params }: { params: Promise<{ slug: string }> }) {
-  const denied = guardRequest(req) ?? guardWrite(req, "view");
+  const denied = guardRequest(req, "write") ?? guardWrite(req, "view");
   if (denied) return denied;
 
   try {

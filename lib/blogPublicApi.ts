@@ -6,8 +6,9 @@ import BlogComment from "@/models/BlogComment";
  * Shared helpers for the public Blog API (/api/public/blog/*).
  *
  * Authentication is server-to-server only: every request must carry the
- * BLOG_PUBLIC_API_KEY, either as `x-api-key: <key>` or `Authorization: Bearer <key>`.
- * The key must never be shipped to a browser; the website calls this API from its backend.
+ * BLOG_PUBLIC_API_KEY (read + write) or BLOG_PUBLIC_API_KEY_READONLY (read only, cannot post comments
+ * or record views), sent as `x-api-key: <key>` or `Authorization: Bearer <key>`.
+ * Keys must never be shipped to a browser; the website calls this API from its backend.
  */
 
 export type Lang = "en" | "fr";
@@ -16,6 +17,7 @@ const RATE_LIMIT_WINDOW_MS = 60 * 1000;
 const RATE_LIMIT_MAX_ENTRIES = 5000;
 export const READ_LIMIT_PER_MINUTE = 300; // per API key
 export const WRITE_LIMIT_PER_MINUTE = 10; // per end-user (X-Client-IP) per API key
+export const WRITE_LIMIT_PER_KEY_PER_MINUTE = 100; // all visitors combined, so a spoofed X-Client-IP can't bypass the limit
 
 const rateLimitMap = new Map<string, { count: number; expiresAt: number }>();
 
@@ -39,9 +41,9 @@ export function checkRateLimit(bucket: string, max: number): number {
   return 0;
 }
 
-const sha256 = (value: string) => createHash("sha256").update(value).digest();
+export const sha256 = (value: string) => createHash("sha256").update(value).digest();
 
-function extractKey(req: Request): string | null {
+export function extractKey(req: Request): string | null {
   const direct = req.headers.get("x-api-key");
   if (direct) return direct;
   const auth = req.headers.get("authorization");
@@ -60,20 +62,32 @@ export function errorResponse(
   return res;
 }
 
+export type KeyScope = "read" | "write";
+
+const keyMatches = (provided: string, expected: string | undefined) =>
+  !!expected && timingSafeEqual(sha256(provided), sha256(expected));
+
 /**
  * Validates the API key and applies the per-key read rate limit.
+ * `scope: "write"` additionally rejects the read-only key.
  * Returns a ready-made error response when the request must be rejected, otherwise null.
  */
-export function guardRequest(req: Request): NextResponse | null {
-  const expected = process.env.BLOG_PUBLIC_API_KEY;
-  if (!expected) {
+export function guardRequest(req: Request, scope: KeyScope = "read"): NextResponse | null {
+  const fullKey = process.env.BLOG_PUBLIC_API_KEY;
+  const readOnlyKey = process.env.BLOG_PUBLIC_API_KEY_READONLY;
+  if (!fullKey && !readOnlyKey) {
     console.error("BLOG_PUBLIC_API_KEY is not configured; public blog API is disabled.");
     return errorResponse(503, "API_DISABLED", "The blog API is not configured on this server.");
   }
 
   const provided = extractKey(req);
-  if (!provided || !timingSafeEqual(sha256(provided), sha256(expected))) {
+  const isFull = !!provided && keyMatches(provided, fullKey);
+  const isReadOnly = !!provided && !isFull && keyMatches(provided, readOnlyKey);
+  if (!provided || (!isFull && !isReadOnly)) {
     return errorResponse(401, "UNAUTHORIZED", "Missing or invalid API key.");
+  }
+  if (scope === "write" && !isFull) {
+    return errorResponse(403, "FORBIDDEN", "This API key is read-only.");
   }
 
   const retryAfter = checkRateLimit(`blog:key:${sha256(provided).toString("hex")}`, READ_LIMIT_PER_MINUTE);
@@ -87,10 +101,16 @@ export function guardRequest(req: Request): NextResponse | null {
   return null;
 }
 
-/** Per end-user write limit. The website should forward the visitor's IP in `X-Client-IP`. */
+/**
+ * Write limits: per end-user (`X-Client-IP`) and per API key overall.
+ * The website should forward the visitor's IP in `X-Client-IP`. Call after guardRequest(req, "write").
+ */
 export function guardWrite(req: Request, action: string): NextResponse | null {
   const client = (req.headers.get("x-client-ip") || "unknown").trim().slice(0, 64);
-  const retryAfter = checkRateLimit(`blog:${action}:${client}`, WRITE_LIMIT_PER_MINUTE);
+  const keyHash = sha256(extractKey(req) ?? "").toString("hex");
+  const retryAfter =
+    checkRateLimit(`blog:${action}:key:${keyHash}`, WRITE_LIMIT_PER_KEY_PER_MINUTE) ||
+    checkRateLimit(`blog:${action}:${client}`, WRITE_LIMIT_PER_MINUTE);
   if (retryAfter > 0) {
     const res = errorResponse(429, "RATE_LIMITED", "Too many submissions. Please wait a moment.", {
       retryAfterSeconds: retryAfter,

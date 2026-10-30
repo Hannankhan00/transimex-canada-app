@@ -74,12 +74,35 @@ export function getR2Client(): S3Client | null {
   return cachedClient;
 }
 
+/** Client for a dedicated token (e.g. the blog-only token), cached per access key. */
+const customClients = new Map<string, S3Client>();
+function getCustomR2Client(accessKeyId: string, secretAccessKey: string): S3Client | null {
+  const { accountId } = getR2Env();
+  if (!accountId) return null;
+  let client = customClients.get(accessKeyId);
+  if (!client) {
+    client = new S3Client({
+      region: "auto",
+      endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
+      credentials: { accessKeyId, secretAccessKey },
+    });
+    customClients.set(accessKeyId, client);
+  }
+  return client;
+}
+
 export interface UploadR2Params {
   key: string;
   buffer: Buffer | Uint8Array;
   mimeType?: string;
   metadata?: Record<string, string>;
   cacheControl?: string;
+  /** Upload to this bucket instead of the default private vault. */
+  bucket?: string;
+  /** Public base URL for `bucket`. When set, the returned `url` is built from it. */
+  publicUrl?: string;
+  /** Use a dedicated access token instead of the default vault credentials. */
+  credentials?: { accessKeyId: string; secretAccessKey: string };
 }
 
 export interface UploadR2Result {
@@ -98,9 +121,14 @@ export async function uploadToR2({
   mimeType = "application/octet-stream",
   metadata = {},
   cacheControl = "public, max-age=31536000, immutable",
+  bucket,
+  publicUrl: publicUrlOverride,
 }: UploadR2Params): Promise<UploadR2Result> {
   const client = getR2Client();
-  const { bucketName, publicUrl } = getR2Env();
+  const env = getR2Env();
+  // A custom bucket never inherits the vault's public URL.
+  const bucketName = bucket || env.bucketName;
+  const publicUrl = bucket ? publicUrlOverride || "" : publicUrlOverride || env.publicUrl;
 
   if (!client) {
     throw new Error(
@@ -119,9 +147,9 @@ export async function uploadToR2({
 
   await client.send(command);
 
-  const fileUrl = publicUrl
-    ? `${publicUrl.replace(/\/$/, "")}/${encodeURIComponent(key)}`
-    : undefined;
+  // Custom public buckets keep "/" in the key readable; the default vault keeps its existing encoding.
+  const encodedKey = bucket ? key.split("/").map(encodeURIComponent).join("/") : encodeURIComponent(key);
+  const fileUrl = publicUrl ? `${publicUrl.replace(/\/$/, "")}/${encodedKey}` : undefined;
 
   return {
     key,

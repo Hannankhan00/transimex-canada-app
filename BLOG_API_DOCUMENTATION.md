@@ -11,7 +11,7 @@ All content is managed from the Transimex admin panel; this API is read-only for
 
 ## 1. Authentication
 
-Every request needs the API key we give you, sent in **one** of these headers:
+Every request needs an API key we give you, sent in **one** of these headers:
 
 ```
 x-api-key: <BLOG_PUBLIC_API_KEY>
@@ -23,7 +23,18 @@ Authorization: Bearer <BLOG_PUBLIC_API_KEY>
 
 > **Server-side only.** Call this API from the website's backend (Next.js server components / route handlers / API routes, PHP, Node, etc.). **Never put the key in browser JavaScript or a `NEXT_PUBLIC_*` variable** — anyone could copy it and post comments as your site. Cache responses on your side where you can and proxy comment submissions through your own backend.
 
-Missing/invalid key → `401`. If the key is not configured on our server → `503`.
+Missing/invalid key → `401`. If no key is configured on our server → `503`.
+
+### Keys and scopes
+
+| Key | Can do |
+|---|---|
+| Full key (`BLOG_PUBLIC_API_KEY`) | Read everything, submit comments, record views |
+| Read-only key (`BLOG_PUBLIC_API_KEY_READONLY`, optional) | Read only. `POST` comments/views return `403 FORBIDDEN` |
+
+The Blog API keys are separate from the Promotions API key; neither works on the other API. To rotate or revoke a key, we replace the value on our server and redeploy (a few minutes); the old key stops working immediately. Keys are not restricted by IP address, so keep them server-side and tell us at once if one leaks.
+
+The API is server-to-server only. CORS is not enabled, and browser requests from other origins will be blocked.
 
 ### Optional headers
 
@@ -52,6 +63,7 @@ Missing/invalid key → `401`. If the key is not configured on our server → `5
 |---|---|---|
 | 400 | `INVALID_PARAM` / `INVALID_JSON` | Bad query parameter or malformed body |
 | 401 | `UNAUTHORIZED` | Missing/invalid API key |
+| 403 | `FORBIDDEN` | The key is read-only and cannot write |
 | 403 | `COMMENTS_DISABLED` | Commenting is turned off for that article |
 | 404 | `NOT_FOUND` | Article doesn't exist, is a draft, or is scheduled for the future |
 | 422 | `VALIDATION_FAILED` | Comment fields invalid (`error.fields` lists them) |
@@ -59,9 +71,16 @@ Missing/invalid key → `401`. If the key is not configured on our server → `5
 | 500 | `INTERNAL_ERROR` | Unexpected server error |
 | 503 | `API_DISABLED` | API key not configured on the server |
 
+### Size limits
+| Field | Limit |
+|---|---|
+| Comment `authorName` / `authorEmail` / `content` | 80 / 120 / 2000 characters |
+| Article search `q` | 100 characters |
+| `limit` | articles 1-50, comments 1-100 (values outside the range are clamped) |
+
 ### Rate limits
 - Reads: **300 requests / minute** per API key.
-- Writes (comments, views): **10 / minute** per visitor (`X-Client-IP`).
+- Writes (comments, views): **10 / minute** per visitor (`X-Client-IP`), and **100 / minute** per API key across all visitors (so a spoofed or rotating `X-Client-IP` cannot bypass the limit).
 
 ### Language handling
 Most endpoints accept `?lang=en` or `?lang=fr`.
@@ -100,7 +119,8 @@ All timestamps are ISO-8601 UTC strings (`2026-09-30T14:05:00.000Z`). Format the
 ```
 
 Notes
-- `content` is **HTML** written in the admin editor. It appears **only** on the single-article endpoint, not in lists. Render it as HTML (it is authored by Transimex staff). If you want belt and braces, sanitize it on your side.
+- `content` is **HTML** written in the admin editor. It appears **only** on the single-article endpoint, not in lists. Render it as HTML (it is authored by Transimex staff). We do **not** sanitize it: it is returned exactly as the editor produced it. Sanitize it on your side.
+- **Images:** `featuredImage` and images inside `content` are served from `https://pub-daa4dd97a13c48bd95cc3385d6c16903.r2.dev` (Cloudflare R2, public, blog images only). Allow that host in your Next.js image config. Uploaded images are optimized to WebP, at most 1600 px on the longest edge (SVG and animated GIFs are kept as they are). The host may change to a custom domain later; we will tell you in advance.
 - `commentsCount` counts only **approved** (publicly visible) comments.
 - Without `?lang=`, `title`, `excerpt`, `metaTitle`, `metaDescription` and `content` are `{ "en", "fr" }` objects and `readingTimeMinutes` is `{ "en": 5, "fr": 5 }`.
 - Only **published** articles are ever returned. Drafts and articles scheduled for a future date are invisible (404).
@@ -222,8 +242,8 @@ curl -X POST -H "x-api-key: $BLOG_KEY" -H "Content-Type: application/json" \
 ```json
 {
   "success": true,
-  "status": "Approved",
-  "message": "Comment published.",
+  "status": "Pending",
+  "message": "Thank you! Your comment is awaiting moderation.",
   "comment": {
     "id": "6651aa…", "postSlug": "ocean-freight-trends-2026",
     "authorName": "Jane D.", "content": "Great article!",
@@ -232,7 +252,9 @@ curl -X POST -H "x-api-key: $BLOG_KEY" -H "Content-Type: application/json" \
 }
 ```
 
-- **Published immediately:** the comment is saved with `status: "Approved"` and appears in the comments list right away, so you can show it to the visitor straight after a `201`. Transimex admins can hide or delete any comment from the admin panel; deleted comments simply disappear from the list on your next fetch. (If Transimex switches to moderation mode, `status` is `"Pending"` and `message` is `"Thank you! Your comment is awaiting moderation."` — in that case don't display it yet.)
+- **Moderated by default:** the comment is saved with `status: "Pending"` and `message` is `"Thank you! Your comment is awaiting moderation."`. It does **not** appear in the comments list until a Transimex admin approves it, so don't display it to the visitor as published. Admins can also hide or delete any comment; those disappear from the list on your next fetch (there is no webhook, so allow for your cache delay). (If Transimex later turns moderation off, `status` is `"Approved"` and `message` is `"Comment published."`; always check `status`.)
+- **Duplicates:** identical repeated comments are not blocked beyond the rate limits.
+- **Email handling:** `authorEmail` is stored in our database for the editorial team only, is never returned by the API, and is kept until an admin deletes the comment. Deletion on request is handled manually by our team.
 - **Render comment text as plain text (escape it).** Never inject `content` / `authorName` as HTML.
 - Validation failure → `422`:
 ```json
