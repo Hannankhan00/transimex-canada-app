@@ -32,6 +32,17 @@ export default function AdminBlogPage() {
   // Main Tab: "articles" | "comments"
   const [activeMainTab, setActiveMainTab] = useState<"articles" | "comments">("articles");
   const [commentFilterSlug, setCommentFilterSlug] = useState<string | null>(null);
+  const [pendingComments, setPendingComments] = useState(0);
+
+  // Comments waiting for approval, shown on the Comments tab so new ones are noticed
+  useEffect(() => {
+    fetch("/api/admin/blog/comments?status=Pending")
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data.comments)) setPendingComments(data.comments.length);
+      })
+      .catch(() => {});
+  }, []);
 
   const fetchPosts = useCallback(async () => {
     try {
@@ -277,6 +288,15 @@ export default function AdminBlogPage() {
               <span className="px-1.5 py-0.2 bg-blue-100 text-[#0B2545] rounded-full text-[10px] font-bold">
                 {totalComments}
               </span>
+              {pendingComments > 0 && (
+                <span
+                  className="px-1.5 py-0.2 bg-[#d21f27] text-white rounded-full text-[10px] font-bold"
+                  title={language === "fr" ? "Commentaires en attente d'approbation" : "Comments awaiting approval"}
+                >
+                  {pendingComments}{" "}
+                  {language === "fr" ? "en attente" : "pending"}
+                </span>
+              )}
             </button>
           </div>
 
@@ -285,6 +305,7 @@ export default function AdminBlogPage() {
             <BlogCommentsManager
               posts={posts}
               initialPostFilter={commentFilterSlug}
+              onPendingCountChange={setPendingComments}
             />
           ) : (
             /* ARTICLES DIRECTORY VIEW */

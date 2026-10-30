@@ -123,8 +123,11 @@ export async function uploadToR2({
   cacheControl = "public, max-age=31536000, immutable",
   bucket,
   publicUrl: publicUrlOverride,
+  credentials,
 }: UploadR2Params): Promise<UploadR2Result> {
-  const client = getR2Client();
+  const client = credentials
+    ? getCustomR2Client(credentials.accessKeyId, credentials.secretAccessKey)
+    : getR2Client();
   const env = getR2Env();
   // A custom bucket never inherits the vault's public URL.
   const bucketName = bucket || env.bucketName;

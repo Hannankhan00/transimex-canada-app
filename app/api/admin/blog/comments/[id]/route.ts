@@ -17,11 +17,22 @@ export async function PUT(
       return NextResponse.json({ error: "Comment not found" }, { status: 404 });
     }
 
+    const wasApproved = comment.status === "Approved";
     if (body.status && ["Approved", "Pending", "Hidden"].includes(body.status)) {
       comment.status = body.status;
     }
 
     await comment.save();
+
+    // The post's commentsCount only counts Approved comments.
+    const isApproved = comment.status === "Approved";
+    if (comment.postId && wasApproved !== isApproved) {
+      await BlogPost.updateOne(
+        { _id: comment.postId },
+        { $inc: { commentsCount: isApproved ? 1 : -1 } },
+        { timestamps: false }
+      );
+    }
 
     return NextResponse.json({
       success: true,
@@ -53,11 +64,13 @@ export async function DELETE(
       return NextResponse.json({ error: "Comment not found" }, { status: 404 });
     }
 
-    // Decrement comments count on post
-    if (deleted.postId) {
-      await BlogPost.findByIdAndUpdate(deleted.postId, {
-        $inc: { commentsCount: -1 },
-      });
+    // The post's commentsCount only counts Approved comments.
+    if (deleted.postId && deleted.status === "Approved") {
+      await BlogPost.updateOne(
+        { _id: deleted.postId },
+        { $inc: { commentsCount: -1 } },
+        { timestamps: false }
+      );
     }
 
     return NextResponse.json({
