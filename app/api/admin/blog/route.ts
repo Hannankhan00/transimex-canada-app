@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { cleanBlogHtml } from "@/lib/blogHtml";
 import connectDB from "@/lib/mongoose";
 import BlogPost from "@/models/BlogPost";
 
@@ -129,7 +130,7 @@ export async function POST(req: Request) {
       slug: generatedSlug,
       title: { en: title.en, fr: title.fr },
       excerpt: { en: excerpt?.en || "", fr: excerpt?.fr || "" },
-      content: { en: content?.en || "", fr: content?.fr || "" },
+      content: { en: cleanBlogHtml(content?.en), fr: cleanBlogHtml(content?.fr) },
       metaTitle: { en: metaTitle?.en || "", fr: metaTitle?.fr || "" },
       metaDescription: { en: metaDescription?.en || "", fr: metaDescription?.fr || "" },
       author: author || "Transimex Logistics Editorial",

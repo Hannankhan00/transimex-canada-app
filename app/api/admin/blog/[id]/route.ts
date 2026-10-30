@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { cleanBlogHtml } from "@/lib/blogHtml";
 import connectDB from "@/lib/mongoose";
 import BlogPost from "@/models/BlogPost";
 import BlogComment from "@/models/BlogComment";
@@ -22,7 +23,9 @@ export async function PUT(
 
     if (body.title) dbPost.title = body.title;
     if (body.excerpt) dbPost.excerpt = body.excerpt;
-    if (body.content) dbPost.content = body.content;
+    if (body.content) {
+      dbPost.content = { en: cleanBlogHtml(body.content.en), fr: cleanBlogHtml(body.content.fr) };
+    }
     if (body.metaTitle) dbPost.metaTitle = body.metaTitle;
     if (body.metaDescription) dbPost.metaDescription = body.metaDescription;
     if (body.author) dbPost.author = body.author;

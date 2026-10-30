@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import { cleanPastedHtml } from "@/lib/blogPasteClean";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { BlogPostItem } from "@/lib/blogTypes";
 import {
@@ -231,6 +232,15 @@ export default function BlogFullPageEditor({
         setContentFr(html);
       }
     }
+  };
+
+  // Strip styles, fonts and wrapper markup from pasted content so copied web pages don't corrupt the article
+  const handleEditorPaste = (e: React.ClipboardEvent<HTMLDivElement>) => {
+    const html = e.clipboardData.getData("text/html");
+    if (!html) return; // plain text paste: let the browser handle it
+    e.preventDefault();
+    document.execCommand("insertHTML", false, cleanPastedHtml(html));
+    handleEditorInput();
   };
 
   // Execute standard formatting command
@@ -1122,6 +1132,7 @@ export default function BlogFullPageEditor({
                 ref={editorRef}
                 contentEditable
                 onInput={handleEditorInput}
+                onPaste={handleEditorPaste}
                 className="blog-rich-editor p-5 min-h-[380px] max-h-[650px] overflow-y-auto text-sm text-slate-800 leading-relaxed outline-none focus:outline-none bg-white"
                 style={{
                   minHeight: "360px",
