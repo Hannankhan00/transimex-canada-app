@@ -190,6 +190,9 @@ export function mapTrackingStatus(typeCode: string): TrackingStatus {
   return "in_transit";
 }
 
+/** Products DHL told us not to offer (2026-11-02), matched on name so every product code for them is covered. */
+const NOT_OFFERED_PRODUCTS = /domestic\s+express|economy\s+select|express\s+easy|medical\s+express/i;
+
 /**
  * Splits one product's billing-currency breakdown into base freight and
  * surcharges. VERIFY in sandbox: we assume the line whose serviceCode equals
@@ -331,6 +334,8 @@ export class DhlApiAdapter implements CarrierAdapter {
 
     const options: RateOption[] = [];
     for (const product of response.products ?? []) {
+      // DHL (2026-11-02): these services must never be shown or sold; they are not available in Canada or need approvals.
+      if (NOT_OFFERED_PRODUCTS.test(product.productName ?? "")) continue;
       // VERIFY: BILLC is the billing-currency entry. We convert nothing.
       const total = product.totalPrice?.find((p) => p.currencyType === "BILLC");
       const detailed = product.detailedPriceBreakdown?.find((d) => d.currencyType === "BILLC");
