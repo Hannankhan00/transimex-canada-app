@@ -29,6 +29,38 @@ export function normalizeStripeEvent(event: Stripe.Event): PaymentEvent {
       connectedAccountId: event.account || undefined,
     };
   }
+  // A refund made anywhere (this app, the Stripe dashboard, a support agent). Matched to a booking by its payment intent.
+  if (event.type === "refund.created" || event.type === "refund.updated") {
+    const r = event.data.object as Stripe.Refund;
+    const intent = typeof r.payment_intent === "string" ? r.payment_intent : r.payment_intent?.id;
+    if (!intent || r.currency?.toLowerCase() !== "cad") return { id: event.id, type: "other", rawType: event.type };
+    return {
+      id: event.id,
+      type: event.type,
+      rawType: event.type,
+      paymentIntentId: intent,
+      refundId: r.id,
+      refundAmountCents: r.amount,
+      refundStatus: r.status ?? undefined,
+      connectedAccountId: event.account || undefined,
+    };
+  }
+  // A customer's bank took the money back.
+  if (event.type === "charge.dispute.created") {
+    const d = event.data.object as Stripe.Dispute;
+    const intent = typeof d.payment_intent === "string" ? d.payment_intent : d.payment_intent?.id;
+    if (!intent) return { id: event.id, type: "other", rawType: event.type };
+    return {
+      id: event.id,
+      type: "charge.dispute.created",
+      rawType: event.type,
+      paymentIntentId: intent,
+      disputeId: d.id,
+      disputeAmountCents: d.amount,
+      currency: d.currency,
+      connectedAccountId: event.account || undefined,
+    };
+  }
   return { id: event.id, type: "other", rawType: event.type };
 }
 
@@ -125,6 +157,20 @@ export class StripePaymentProvider implements PaymentProvider {
       return normalizeStripeEvent({ id: `sync_${session.id}`, type: "checkout.session.completed", data: { object: session }, ...(connectedAccountId ? { account: connectedAccountId } : {}) } as unknown as Stripe.Event);
     } catch (error: any) {
       throw new PaymentError("provider", "Could not check the payment.", error?.message);
+    }
+  }
+
+  async getPaymentFeeCents(paymentIntentId: string): Promise<number | null> {
+    try {
+      const intent = await this.stripe.paymentIntents.retrieve(paymentIntentId, { expand: ["latest_charge.balance_transaction"] });
+      const charge = intent.latest_charge;
+      const txn = charge && typeof charge !== "string" ? charge.balance_transaction : null;
+      // Only a fee already settled in Canadian dollars is used as is; anything else falls back to the estimate.
+      if (txn && typeof txn !== "string" && txn.currency === "cad" && Number.isSafeInteger(txn.fee)) return txn.fee;
+      return null;
+    } catch (error: any) {
+      console.warn("[Express] Could not read the Stripe fee for", paymentIntentId, error?.message);
+      return null;
     }
   }
 

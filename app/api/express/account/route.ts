@@ -3,7 +3,7 @@ import connectDB from "@/lib/mongoose";
 import { isValidObjectId } from "mongoose";
 import ExpressAccount from "@/models/ExpressAccount";
 import { isActivePartner } from "@/lib/express/partner";
-import { partnerCanCharge } from "@/lib/express/partnerStripe";
+import { customerBookingMode } from "@/lib/express/partnerStripe";
 import { requireExpressClient } from "@/lib/express/access";
 import { toClientAccountDTO } from "@/lib/express/accountDto";
 
@@ -19,7 +19,7 @@ export async function GET() {
     // A partner's customer can book only while their partner can take card payments and is still an active partner.
     if (account && doc?.type === "customer" && doc.partnerId && isValidObjectId(doc.partnerId)) {
       const partner = await ExpressAccount.findById(doc.partnerId).select("type status partner").lean();
-      account.customerCanBook = Boolean(partner && isActivePartner(partner as any) && partnerCanCharge(partner.partner?.stripe));
+      account.customerCanBook = Boolean(partner && isActivePartner(partner as any) && customerBookingMode(partner as any));
     }
     return NextResponse.json({ success: true, account });
   } catch (error) {

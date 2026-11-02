@@ -73,7 +73,7 @@ interface ShipmentLike {
   trackingNumber?: string;
   label?: { uploadedAt?: Date | string };
   statusHistory?: { status: string; at: Date | string }[];
-  payment?: { provider?: string; amountCents?: number; refundedCents?: number; connect?: { chargeCents?: number; applicationFeeCents?: number } };
+  payment?: { provider?: string; amountCents?: number; refundedCents?: number; connect?: { chargeCents?: number; applicationFeeCents?: number }; partnerShare?: { chargeCents?: number; markupCents?: number } };
   dhlActual?: { chargeCents?: number };
   billing?: { mode?: string; creditedCents?: number };
   recipient?: { countryCode?: string };
@@ -119,7 +119,10 @@ export function buildProfitRows(shipments: ShipmentLike[], quotes: Map<string, Q
     const total = sh.totalCents ?? 0;
     // A partner's customer pays the partner's Stripe account; Transimex only receives its share (the application
     // fee = totalCents) and a refund gives back the same share of it. The partner, not Transimex, bears the card fee.
-    const connect = sh.payment?.connect;
+    // A partner paid by Transimex (customer pays Transimex): Transimex receives the whole payment but passes the markup
+    // on to the partner, so its own revenue is the same Transimex share, and the card fee comes out of the partner's
+    // earnings, not out of Transimex's profit.
+    const connect = sh.payment?.connect ?? (sh.payment?.partnerShare ? { chargeCents: sh.payment.partnerShare.chargeCents, applicationFeeCents: total } : undefined);
     const refunded = onCredit ? sh.billing?.creditedCents ?? 0 : sh.payment?.refundedCents ?? 0;
     const refundedOurShare = connect?.chargeCents ? Math.round((refunded * (connect.applicationFeeCents ?? total)) / connect.chargeCents) : refunded;
     const revenueCents = Math.max(0, total - refundedOurShare);

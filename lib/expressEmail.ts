@@ -391,3 +391,65 @@ export async function sendExpressTermsEmail(params: { to: string; name: string; 
     category: "express-terms-updated",
   });
 }
+
+export type ExpressPayoutEmailKind = "requested" | "paid" | "rejected" | "details_changed";
+
+const PAYOUT_COPY: Record<Lang, Record<ExpressPayoutEmailKind, { subject: string; heading: string; body: string }>> = {
+  en: {
+    requested: { subject: "We received your payout request", heading: "Payout requested", body: "We received your payout request and will send it to the details on file." },
+    paid: { subject: "Your payout was sent", heading: "Payout sent", body: "Your payout was sent. It can take a business day or two to arrive." },
+    rejected: { subject: "Your payout request was not sent", heading: "Payout not sent", body: "Your payout request was not sent." },
+    details_changed: { subject: "Your payout details were changed", heading: "Payout details changed", body: "Your payout details were changed. If this was not you, contact us right away. Payout requests are paused for 24 hours for your security." },
+  },
+  fr: {
+    requested: { subject: "Nous avons reçu votre demande de versement", heading: "Versement demandé", body: "Nous avons reçu votre demande de versement et l'enverrons aux coordonnées au dossier." },
+    paid: { subject: "Votre versement a été envoyé", heading: "Versement envoyé", body: "Votre versement a été envoyé. Il peut prendre un ou deux jours ouvrables à arriver." },
+    rejected: { subject: "Votre demande de versement n'a pas été envoyée", heading: "Versement non envoyé", body: "Votre demande de versement n'a pas été envoyée." },
+    details_changed: { subject: "Vos coordonnées de versement ont été modifiées", heading: "Coordonnées de versement modifiées", body: "Vos coordonnées de versement ont été modifiées. Si ce n'était pas vous, contactez-nous immédiatement. Les demandes de versement sont suspendues pendant 24 heures pour votre sécurité." },
+  },
+};
+
+/** Tells a partner about their payout, in their language. Never includes bank details. */
+export async function sendExpressPayoutEmail(params: { to: string; name: string; language: Lang; kind: ExpressPayoutEmailKind; amountCents?: number; reference?: string; reason?: string }) {
+  const lang: Lang = params.language === "fr" ? "fr" : "en";
+  const copy = PAYOUT_COPY[lang][params.kind];
+  const money = (c: number) => new Intl.NumberFormat(lang === "fr" ? "fr-CA" : "en-CA", { style: "currency", currency: "CAD" }).format(c / 100);
+  const url = `${appUrl()}/express/partner/earnings`;
+  const lines = [
+    params.amountCents ? `<strong>${lang === "fr" ? "Montant" : "Amount"}:</strong> ${money(params.amountCents)}` : "",
+    params.reference ? `<strong>${lang === "fr" ? "Référence" : "Reference"}:</strong> ${escapeHtml(params.reference)}` : "",
+    params.reason ? `<strong>${lang === "fr" ? "Raison" : "Reason"}:</strong> ${escapeHtml(params.reason)}` : "",
+  ].filter(Boolean);
+  const content = `
+    <h1 class="h1">${copy.heading}</h1>
+    <p>${lang === "fr" ? "Bonjour" : "Hello"} <strong>${escapeHtml(params.name)}</strong>,</p>
+    <p>${copy.body}</p>
+    ${lines.length ? `<div class="cred-box">${lines.join("<br/>")}</div>` : ""}
+    <div style="text-align:center;"><a href="${url}" class="btn" target="_blank">${lang === "fr" ? "Voir mes revenus" : "View my earnings"}</a></div>
+  `;
+  return sendExpressEmail({
+    to: params.to,
+    subject: copy.subject,
+    html: emailTemplateWrapper(content, copy.heading),
+    text: `${copy.heading}. ${copy.body} ${params.amountCents ? money(params.amountCents) : ""} ${url}`,
+    category: `express-payout-${params.kind}`,
+  });
+}
+
+/** Alerts staff that a partner asked to be paid. */
+export async function sendExpressPayoutAdminAlert(params: { partnerName: string; amountCents: number }) {
+  const money = new Intl.NumberFormat("en-CA", { style: "currency", currency: "CAD" }).format(params.amountCents / 100);
+  const url = `${appUrl()}/admin/express/payouts`;
+  const content = `
+    <h1 class="h1">Partner payout requested</h1>
+    <p><strong>${escapeHtml(params.partnerName)}</strong> asked to be paid <strong>${money}</strong>.</p>
+    <div style="text-align:center;"><a href="${url}" class="btn" target="_blank">Review payout requests</a></div>
+  `;
+  return sendExpressEmail({
+    to: getAdminNotificationEmail(),
+    subject: `Express partner payout requested: ${params.partnerName} (${money})`,
+    html: emailTemplateWrapper(content, "Partner payout requested"),
+    text: `${params.partnerName} asked to be paid ${money}. ${url}`,
+    category: "express-payout-admin",
+  });
+}

@@ -262,7 +262,15 @@ function Detail() {
           {s.paymentPendingNote}
         </p>
       )}
-      {shipment.status === "paid" && payer && (
+      {shipment.status === "paid" && payer && shipment.labelIssue && (
+        <div role="status" className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-900 space-y-1.5">
+          <p className="font-semibold">{s.labelIssueBase}</p>
+          {shipment.labelIssue !== "other" && (
+            <p>{{ pickup: s.labelIssuePickup, address: s.labelIssueAddress, customs: s.labelIssueCustoms }[shipment.labelIssue]}</p>
+          )}
+        </div>
+      )}
+      {shipment.status === "paid" && payer && !shipment.labelIssue && (
         <p role="status" className="flex items-center gap-2 rounded-xl bg-blue-50 border border-blue-200 px-4 py-3 text-sm text-blue-900">
           {returnedPaid && polls < POLL_MAX && <Loader2 className="w-4 h-4 animate-spin" />}
           {returnedPaid && polls < POLL_MAX ? s.paidProcessing : s.paidWaiting}

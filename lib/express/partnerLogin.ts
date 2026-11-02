@@ -20,7 +20,7 @@ export async function createOrResetCustomerLogin(partner: Pick<IExpressAccount, 
   const hashed = await hashPassword(password);
 
   if (customer.loginUserId) {
-    const res = await User.updateOne({ _id: customer.loginUserId }, { $set: { password: hashed }, $inc: { tokenVersion: 1 } });
+    const res = await User.updateOne({ _id: customer.loginUserId }, { $set: { password: hashed, mustChangePassword: true }, $inc: { tokenVersion: 1 } });
     if (res.matchedCount === 0) return { ok: false, code: "login_missing", error: "This customer's login no longer exists." };
     return { ok: true, created: false, email: customer.email, password };
   }
@@ -41,6 +41,8 @@ export async function createOrResetCustomerLogin(partner: Pick<IExpressAccount, 
       // The partner vouches for this person, so there is no email verification step.
       isVerified: true,
       isProfileComplete: true,
+      // The partner chose this password, so the customer must pick their own at the first sign-in.
+      mustChangePassword: true,
     });
     userId = String(user._id);
   } catch (error: any) {

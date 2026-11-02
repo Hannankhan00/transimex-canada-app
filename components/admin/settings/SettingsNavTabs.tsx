@@ -4,7 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
-import { Users, Mail, ShieldAlert, Landmark } from "lucide-react";
+import { Users, Mail, ShieldAlert, Landmark, ShieldCheck } from "lucide-react";
 
 export default function SettingsNavTabs() {
   const pathname = usePathname();
@@ -28,6 +28,12 @@ export default function SettingsNavTabs() {
       nameFr: "Comptes Bancaires",
       href: "/admin/settings/banks",
       icon: Landmark,
+    },
+    {
+      nameEn: "My Security (2FA)",
+      nameFr: "Ma Sécurité (2FA)",
+      href: "/admin/settings/security",
+      icon: ShieldCheck,
     },
     {
       nameEn: "Activity Audit Log",

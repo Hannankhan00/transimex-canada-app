@@ -1,9 +1,10 @@
-import { NextResponse, after } from "next/server";
+import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongoose";
 import User from "@/models/User";
-import { comparePassword, signToken } from "@/lib/auth";
-import { createUserSession } from "@/lib/authSession";
-import { recordLoginDevice } from "@/lib/accountSecurity";
+import { comparePassword } from "@/lib/auth";
+import { isStaffRole } from "@/lib/rbac";
+import { signChallenge } from "@/lib/twoFactor";
+import { completeLogin } from "@/lib/authSession";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 
 export async function POST(req: Request) {
@@ -78,40 +79,21 @@ export async function POST(req: Request) {
       );
     }
 
-    const sessionId = await createUserSession(user._id.toString(), req);
-    after(() => recordLoginDevice(user, req));
+    // Two-factor: users who enabled it must enter a code; staff without it must enrol before getting a session.
+    if (user.twoFactorEnabled) {
+      return NextResponse.json({
+        requires2FA: true,
+        challengeToken: signChallenge(user._id.toString(), "2fa-login", !!rememberMe),
+      });
+    }
+    if (isStaffRole(user.role)) {
+      return NextResponse.json({
+        requires2FASetup: true,
+        challengeToken: signChallenge(user._id.toString(), "2fa-setup", !!rememberMe),
+      });
+    }
 
-    const tokenPayload = {
-      userId: user._id.toString(),
-      email: user.email,
-      name: user.name,
-      companyName: user.companyName,
-      role: user.role || "client",
-      permissions: user.permissions || [],
-      sessionId,
-      tokenVersion: user.tokenVersion || 0,
-    };
-
-    // Cookie and JWT lifetime are kept in sync — rememberMe = 30 days, else 7 days
-    const maxAge = rememberMe ? 60 * 60 * 24 * 30 : 60 * 60 * 24 * 7;
-    const jwtExpiry = rememberMe ? "30d" : "7d";
-    const token = signToken(tokenPayload, jwtExpiry);
-
-    const response = NextResponse.json({
-      success: true,
-      message: "Login successful",
-      user: tokenPayload,
-    });
-
-    response.cookies.set("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge,
-      path: "/",
-    });
-
-    return response;
+    return await completeLogin(user, req, !!rememberMe);
   } catch (error: any) {
     console.error("Login error:", error);
     return NextResponse.json(

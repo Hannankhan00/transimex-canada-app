@@ -5,7 +5,7 @@ import { getCurrentUser } from "@/lib/session";
 
 export async function POST() {
   try {
-    const currentUser = await getCurrentUser();
+    const currentUser = await getCurrentUser({ allowPasswordChange: true });
     if (currentUser?.sessionId) {
       await connectDB();
       await Session.deleteOne({ sessionId: currentUser.sessionId });

@@ -22,6 +22,8 @@ export interface TokenPayload {
   sessionId?: string;
   tokenVersion?: number;
   isProfileComplete?: boolean;
+  /** The password is a temporary one: the person must choose their own before anything else works. */
+  mustChangePassword?: boolean;
 }
 
 export async function hashPassword(password: string): Promise<string> {

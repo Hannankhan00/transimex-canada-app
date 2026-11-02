@@ -19,7 +19,7 @@ import { authorizeOnAccount } from "@/lib/express/invoiceBooking";
 import { getCurrentTerms } from "@/lib/express/termsStore";
 import { canUseExpress } from "@/lib/express/transitions";
 import { isActivePartner } from "@/lib/express/partner";
-import { partnerCanCharge } from "@/lib/express/partnerStripe";
+import { customerBookingMode } from "@/lib/express/partnerStripe";
 
 export async function GET() {
   try {
@@ -87,15 +87,19 @@ export async function POST(req: Request) {
     // A partner's customer pays by card on the partner's own Stripe account (Transimex's share is collected as a
     // fee), so they can only book once their partner has finished connecting Stripe.
     let partnerStripeId: string | null = null;
+    let partnerPaidByTransimex: string | null = null;
     if (account.type === "customer") {
       const partner = account.partnerId && isValidObjectId(account.partnerId) ? await ExpressAccount.findById(account.partnerId).lean() : null;
-      if (!partner || !isActivePartner(partner) || !partnerCanCharge(partner.partner?.stripe)) {
+      const mode = partner && isActivePartner(partner) ? customerBookingMode(partner) : null;
+      if (!partner || !mode) {
         return NextResponse.json(
           { error: "Your shipping partner has not set up card payments yet. Contact them to book.", code: "customer_booking_disabled" },
           { status: 403 }
         );
       }
-      partnerStripeId = partner.partner!.stripe!.accountId;
+      // The customer pays on the partner's Stripe account, or pays Transimex, which tracks what it owes the partner.
+      if (mode === "stripe") partnerStripeId = partner.partner!.stripe!.accountId;
+      else partnerPaidByTransimex = String(partner._id);
     }
     const currentTerms = await getCurrentTerms();
     if (input.termsVersion !== currentTerms.version) {
@@ -136,7 +140,7 @@ export async function POST(req: Request) {
     }
 
     // A customer's price is what they are charged on the partner's account; without it the charge cannot be split.
-    if (partnerStripeId && !(quote.pricing.customerTotalCents > 0)) {
+    if ((partnerStripeId || partnerPaidByTransimex) && !(quote.pricing.customerTotalCents > 0)) {
       console.error("[Express] Customer quote has no customer price:", String(quote._id));
       return NextResponse.json({ error: "This quote cannot be booked. Please get a new price.", code: "quote_expired" }, { status: 409 });
     }
@@ -194,6 +198,10 @@ export async function POST(req: Request) {
       // A customer pays their price on the partner's account; Transimex's share (totalCents) is the application fee.
       ...(partnerStripeId && quote.pricing.customerTotalCents
         ? { payment: { connect: { accountId: partnerStripeId, chargeCents: quote.pricing.customerTotalCents, applicationFeeCents: quote.pricing.client.totalCents } } }
+        : {}),
+      // Paid to Transimex: the customer is charged their price and the partner's markup goes to the partner's ledger.
+      ...(partnerPaidByTransimex && quote.pricing.customerTotalCents
+        ? { payment: { partnerShare: { partnerAccountId: partnerPaidByTransimex, chargeCents: quote.pricing.customerTotalCents, markupCents: quote.pricing.markupCents ?? 0 } } }
         : {}),
       ...(method === "invoice" ? { billing: { mode: "invoice" as const, chargeCents: quote.pricing.client.totalCents, creditedCents: 0 } } : {}),
       currency: "CAD" as const,

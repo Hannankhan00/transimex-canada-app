@@ -8,6 +8,7 @@ interface DecodedToken {
   companyName?: string;
   role?: string;
   isProfileComplete?: boolean;
+  mustChangePassword?: boolean;
   exp?: number;
 }
 
@@ -61,9 +62,22 @@ export function proxy(request: NextRequest) {
     pathname === "/reset-password";
 
   const isCompleteProfileRoute = pathname === "/complete-profile";
+  const isChangePasswordRoute = pathname === "/change-password";
+  const mustChangePassword = isAuthenticated && decoded?.mustChangePassword === true;
   const isDashboardRoute = pathname === "/dashboard" || pathname.startsWith("/dashboard/");
   const isAdminRoute = pathname === "/admin" || pathname.startsWith("/admin/");
   const isExpressRoute = pathname === "/express" || pathname.startsWith("/express/");
+
+  // 0. Temporary password: the only page open to this person is the one where they choose their own.
+  const isAppRoute = isAuthRoute || isCompleteProfileRoute || pathname === "/dashboard" || pathname.startsWith("/dashboard/") || pathname === "/admin" || pathname.startsWith("/admin/") || pathname === "/express" || pathname.startsWith("/express/");
+  if (isChangePasswordRoute) {
+    if (!isAuthenticated) return NextResponse.redirect(new URL("/login", request.url));
+    if (!mustChangePassword) return NextResponse.redirect(new URL("/dashboard", request.url));
+    return NextResponse.next();
+  }
+  if (mustChangePassword && isAppRoute) {
+    return NextResponse.redirect(new URL("/change-password", request.url));
+  }
 
   // 1. Profile Completion Route (/complete-profile)
   if (isCompleteProfileRoute) {
@@ -160,5 +174,6 @@ export const config = {
     "/forgot-password",
     "/reset-password",
     "/complete-profile",
+    "/change-password",
   ],
 };

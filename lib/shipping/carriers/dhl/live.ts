@@ -215,8 +215,8 @@ export function splitBreakdown(
       baseFreightCents = amountCents;
     } else if (amountCents !== 0) {
       // A negative line (ZF "CHARGE", a 20% credit DHL gives on shipments to or from Canada) is kept as a
-      // negative surcharge. Like every surcharge it passes through to the client at DHL's amount, so the
-      // client gets the credit. DHL calls it only "CHARGE", so it is named here.
+      // negative surcharge so our DHL cost is exact. It is NOT passed on to the client (see priceShipment): the only
+      // discount a client gets is Transimex's own. DHL calls it only "CHARGE", so it is named here.
       surcharges.push({ code: line.serviceCode || line.name, name: amountCents < 0 ? "DHL credit" : line.name, amountCents });
     }
   });
@@ -271,6 +271,21 @@ export class DhlApiAdapter implements CarrierAdapter {
     return this.config.importAccountNumber;
   }
 
+  /**
+   * The accounts DHL is given for a shipment starting in this country.
+   *  - From Canada: the main (export) account.
+   *  - From anywhere else on LIVE: the main account identifies the shipper and the import account pays the transport,
+   *    exactly as DHL's own shipping portal does ("shipper account 973995169 - export", "pay transportation with
+   *    974044956 - import"). Live DHL refuses the import account as the shipper (8003 "account not allowed").
+   *  - From anywhere else in the sandbox: the import account alone, which is what the sandbox accepted.
+   */
+  private accountsFor(originCountryCode: string): { typeCode: string; number: string }[] {
+    const charges = this.accountFor(originCountryCode);
+    if (originCountryCode.toUpperCase() === "CA") return [{ typeCode: "shipper", number: charges }];
+    if (this.config.mode === "live") return [{ typeCode: "shipper", number: this.config.accountNumber }, { typeCode: "payer", number: charges }];
+    return [{ typeCode: "shipper", number: charges }];
+  }
+
   async getRates(request: RateRequest): Promise<RateOption[]> {
     let response: DhlRatesResponse;
     try {
@@ -291,7 +306,7 @@ export class DhlApiAdapter implements CarrierAdapter {
             },
           },
           // The schema has no top-level accountNumber and rejects unknown keys.
-          accounts: [{ typeCode: "shipper", number: this.accountFor(request.origin.countryCode) }],
+          accounts: this.accountsFor(request.origin.countryCode),
           plannedShippingDateAndTime: dhlDateTime(request.plannedShipDate, "10:00:00"),
           unitOfMeasurement: "metric",
           isCustomsDeclarable: request.isCustomsDeclarable,
@@ -341,8 +356,7 @@ export class DhlApiAdapter implements CarrierAdapter {
         account,
         // DHL's own list price when it shows the discount it applied; see publicListPrice.
         publicList,
-        // VERIFY: whether DHL returns a pickup fee in the rate response. Until confirmed it is left
-        // undefined and Transimex falls back to the pickup fee set in Express settings.
+        // DHL confirmed (2026-10-31) that its pickup service carries no extra charge, so the rate has no pickup fee.
         pickupFeeCents: undefined,
         estimatedDelivery: product.deliveryCapabilities?.estimatedDeliveryDateAndTime,
       });
@@ -359,7 +373,8 @@ export class DhlApiAdapter implements CarrierAdapter {
         query: {
           type: "delivery",
           countryCode: address.countryCode.toUpperCase(),
-          postalCode: address.postalCode,
+          // Places without postal codes (for example Douala): live DHL rejects an empty value, so leave it out.
+          ...(address.postalCode ? { postalCode: address.postalCode } : {}),
           cityName: address.city,
           strictValidation: "false",
         },
@@ -433,7 +448,7 @@ export class DhlApiAdapter implements CarrierAdapter {
         pickup: { isRequested: request.pickupRequested },
         productCode: request.serviceCode,
         accounts: [
-          { typeCode: "shipper", number: this.accountFor(request.shipper.countryCode) },
+          ...this.accountsFor(request.shipper.countryCode),
           // The sender pays duties and taxes on the same account.
           ...(senderPays ? [{ typeCode: "duties-taxes", number: this.accountFor(request.shipper.countryCode) }] : []),
         ],
@@ -477,7 +492,7 @@ export class DhlApiAdapter implements CarrierAdapter {
         closeTime: closeAt.toISOString().slice(11, 16),
         location: request.instructions || "reception",
         locationType: "residence",
-        accounts: [{ typeCode: "shipper", number: this.accountFor(request.address.countryCode) }],
+        accounts: this.accountsFor(request.address.countryCode),
         customerDetails: {
           shipperDetails: {
             postalAddress: postalAddress(request.address),
@@ -491,7 +506,7 @@ export class DhlApiAdapter implements CarrierAdapter {
         shipmentDetails: [
           {
             productCode: request.contentType === "documents" ? "D" : "P",
-            accounts: [{ typeCode: "shipper", number: this.accountFor(request.address.countryCode) }],
+            accounts: this.accountsFor(request.address.countryCode),
             isCustomsDeclarable: request.contentType !== "documents",
             // DHL requires the declared value on a pickup for goods.
             ...(request.contentType !== "documents" ? { declaredValue: fromCents(request.declaredValueCents ?? 0), declaredValueCurrency: "CAD" } : {}),

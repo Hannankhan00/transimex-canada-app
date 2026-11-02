@@ -139,6 +139,10 @@ export default function ExpressTopBar({ onOpenMenu, userName }: Props) {
       ? e.navOverview
       : pathname.startsWith("/express/apply")
         ? e.pageApply
+        : pathname.startsWith("/express/partner/earnings")
+        ? language === "fr"
+          ? "Mes revenus"
+          : "My earnings"
         : pathname.startsWith("/express/payments")
         ? e.payments.title
         : pathname.startsWith("/express/notifications")

@@ -60,7 +60,20 @@ export interface IExpressAccount extends Document {
   paymentTermsDays: number | null;
 
   /** B2B only. Set by staff: this business resells to its own customers and adds a markup. */
-  partner?: { enabled: boolean; defaultMarkupPct: number; enabledAt?: Date; enabledBy?: string; stripe?: IExpressPartnerStripe };
+  partner?: {
+    enabled: boolean;
+    defaultMarkupPct: number;
+    enabledAt?: Date;
+    enabledBy?: string;
+    stripe?: IExpressPartnerStripe;
+    /**
+     * How the partner's customers pay: "stripe" = on the partner's own Stripe account; "transimex" = to Transimex, which
+     * keeps the partner's earnings in a ledger and pays them out on request. Unset behaves like "stripe".
+     */
+    customerPayments?: "stripe" | "transimex";
+    /** Where payouts go. The real details are encrypted; `masked` is what screens show. */
+    payoutDetails?: { method: "etransfer" | "bank"; cipher: string; masked: string; updatedAt: Date };
+  };
   /** Customer logins only: the partner's account and the customer record this login belongs to. */
   partnerId?: string;
   partnerCustomerId?: string;
@@ -142,6 +155,19 @@ const ExpressAccountSchema = new Schema<IExpressAccount>(
           enabledAt: { type: Date },
           enabledBy: { type: String },
           // The partner's own Stripe account (Standard Connect). Their customers' card payments go to it.
+          customerPayments: { type: String, enum: ["stripe", "transimex"] },
+          payoutDetails: {
+            type: new Schema(
+              {
+                method: { type: String, enum: ["etransfer", "bank"], required: true },
+                cipher: { type: String, required: true },
+                masked: { type: String, required: true, maxlength: 200 },
+                updatedAt: { type: Date, required: true },
+              },
+              { _id: false }
+            ),
+            default: undefined,
+          },
           stripe: {
             type: new Schema(
               {

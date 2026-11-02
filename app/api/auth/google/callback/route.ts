@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import connectDB from "@/lib/mongoose";
 import User from "@/models/User";
 import { signToken } from "@/lib/auth";
+import { isStaffRole } from "@/lib/rbac";
 import { createUserSession } from "@/lib/authSession";
 import { recordLoginDevice } from "@/lib/accountSecurity";
 import { sendWelcomeEmail } from "@/lib/email";
@@ -132,6 +133,18 @@ export async function GET(req: Request) {
         )
       );
     } else {
+      // Staff must sign in with email + password + 2FA, and users who turned on 2FA can't skip it through Google.
+      if (isStaffRole(user.role) || user.twoFactorEnabled) {
+        return NextResponse.redirect(
+          new URL(
+            "/login?error=" +
+              encodeURIComponent(
+                "This account must sign in with email, password and a two-factor code. Google sign-in is not available for it."
+              ),
+            req.url
+          )
+        );
+      }
       // Update Google ID and avatar if needed
       if (!user.googleId) user.googleId = googleUser.sub;
       if (googleUser.picture && !user.avatar) user.avatar = googleUser.picture;

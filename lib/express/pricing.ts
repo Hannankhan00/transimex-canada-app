@@ -148,11 +148,13 @@ export function priceShipment(input: PricingInput): PriceBreakdown {
     contractPct = input.dhlContractDiscountPct;
   }
 
-  // 2. Client price: discount on base freight only; surcharges and pickup pass through.
+  // 2. Client price: discount on base freight only; surcharges and pickup pass through. The only discount a client
+  // ever gets is the one Transimex sets. A credit DHL gives Transimex (a negative line, for example the extra 20% on
+  // shipments to or from Canada) is NOT passed on: it lowers what DHL bills us, so it stays in Transimex's profit.
   const discountCents = mulDiv(publicList.baseFreightCents, clientBp, PCT_SCALE);
   const clientBase = publicList.baseFreightCents - discountCents;
   const clientSurcharges: Surcharge[] = [
-    ...publicList.surcharges,
+    ...publicList.surcharges.filter((s) => s.amountCents > 0),
     ...(pickupFeeCents > 0 ? [{ code: "PICKUP", name: "DHL pickup fee", amountCents: pickupFeeCents }] : []),
   ];
   const client = withTotal(clientBase, clientSurcharges);

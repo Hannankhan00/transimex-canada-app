@@ -22,8 +22,8 @@ export const quoteRequestSchema = z.object({
       .default("CA")
       .transform((v) => v.toUpperCase())
       .refine(isDhlCountry, "Choose a country DHL ships from"),
-    // Some countries have no postal codes. DHL accepts an empty one and says if a country needs it.
-    postalCode: z.string().trim().max(80).default(""),
+    // The pickup address is always needed to book (the booking must match the quote), so a quote without it could never be booked.
+    postalCode: z.string().trim().min(1, "Enter the pickup postal code").max(80),
     city: place("Origin city"),
   }),
   destination: z.object({
@@ -48,6 +48,11 @@ export const quoteRequestSchema = z.object({
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD")
     .refine((d) => d >= today() && d <= addDays(30), "Ship date must be within the next 30 days")
+    // DHL Express does not collect on a Saturday or Sunday (answers 996), so say so before asking DHL.
+    .refine((d) => {
+      const day = new Date(`${d}T12:00:00Z`).getUTCDay();
+      return day !== 0 && day !== 6;
+    }, "Choose a weekday: DHL does not collect on weekends")
     .optional(),
 });
 

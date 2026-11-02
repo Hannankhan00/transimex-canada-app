@@ -8,6 +8,7 @@ import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { COUNTRIES } from "@/lib/data/countries";
 import CountrySelect from "./CountrySelect";
 import UnitToggle from "./UnitToggle";
+import { quoteErrorText } from "@/lib/express/quoteErrorText";
 import { lengthToCm, unitLabel, weightFromKg, weightToKg, weightUnit, type UnitSystem } from "@/lib/express/units";
 import { formatCad } from "@/lib/shipping/core/money";
 import type { TermsContent } from "@/lib/express/terms";
@@ -382,7 +383,7 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
         if (data.code === "documents_unavailable") throw new Error(b.docsUnavailable);
         if (data.code === "documents_too_heavy") throw new Error(b.docsTooHeavy.replace("{kg} kg", docMaxText));
         if (data.code === "account_pending" || data.code?.startsWith("account_")) throw new Error(b.accountBlocked);
-        throw new Error(data.error || b.priceError);
+        throw new Error(quoteErrorText(data.code, b as unknown as Record<string, string>, data.error || b.priceError));
       }
       setQuote(data.quote);
       setQuoteKey(inputsKey);

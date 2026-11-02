@@ -54,7 +54,13 @@ export type AuditActionType =
   | "EXPRESS_DHL_INVOICE_ADDED"
   | "EXPRESS_DHL_INVOICE_STATUS"
   | "EXPRESS_DHL_INVOICE_IMPORTED"
-  | "EXPRESS_INVOICE_PAID";
+  | "EXPRESS_INVOICE_PAID"
+  | "EXPRESS_PARTNER_COLLECTION_CHANGED"
+  | "EXPRESS_PARTNER_PAYOUT_DETAILS_CHANGED"
+  | "EXPRESS_PARTNER_PAYOUT_REQUESTED"
+  | "EXPRESS_PARTNER_PAYOUT_PAID"
+  | "EXPRESS_PARTNER_PAYOUT_REJECTED"
+  | "EXPRESS_PARTNER_PAYOUT_DETAILS_VIEWED";
 
 export type AuditResourceType =
   | "Shipment"
@@ -72,7 +78,8 @@ export type AuditResourceType =
   | "ExpressShipment"
   | "ExpressTerms"
   | "ExpressInvoice"
-  | "ExpressDhlInvoice";
+  | "ExpressDhlInvoice"
+  | "ExpressPartnerPayout";
 
 export interface IAuditLog extends Document {
   actorId?: string;

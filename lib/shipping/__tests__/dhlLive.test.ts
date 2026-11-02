@@ -106,6 +106,36 @@ describe("DHL rate mapping", () => {
     expect((init.headers as Record<string, string>)["x-version"]).toBe("3.3.4");
   });
 
+  describe("which accounts DHL is given", () => {
+    const accountsSent = async (cfg: DhlConfig, origin: string) => {
+      const fetchImpl = vi.fn(async () => json({ products: [] }));
+      const adapter = new DhlApiAdapter(cfg, new DhlHttpClient(cfg, fetchImpl as unknown as typeof fetch, noSleep));
+      await adapter.getRates({ ...rateRequest, origin: { ...rateRequest.origin, countryCode: origin } });
+      const [, init] = fetchImpl.mock.calls[0] as unknown as [URL, RequestInit];
+      return JSON.parse(String(init.body)).accounts;
+    };
+    const live: DhlConfig = { ...config, mode: "live" };
+
+    it("live, from Canada: the main account only", async () => {
+      expect(await accountsSent(live, "CA")).toEqual([{ typeCode: "shipper", number: "123456789" }]);
+    });
+
+    it("live, from abroad: the main account is the shipper and the import account pays (live DHL refuses the import account as shipper)", async () => {
+      expect(await accountsSent(live, "FR")).toEqual([
+        { typeCode: "shipper", number: "123456789" },
+        { typeCode: "payer", number: "987654321" },
+      ]);
+    });
+
+    it("sandbox, from abroad: the import account alone, as the sandbox accepted", async () => {
+      expect(await accountsSent(config, "FR")).toEqual([{ typeCode: "shipper", number: "987654321" }]);
+    });
+
+    it("from abroad with no import account configured is a clear setup error, not a guess", async () => {
+      await expect(accountsSent({ ...live, importAccountNumber: "" }, "FR")).rejects.toMatchObject({ code: "config" });
+    });
+  });
+
   it("refuses a non-CAD billing currency rather than converting", async () => {
     await expect(adapterWith(vi.fn(async () => json(ratesBody("USD", 10, 10)))).getRates(rateRequest)).rejects.toMatchObject({
       code: "config",

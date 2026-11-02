@@ -1,3 +1,4 @@
+import { QUOTE_PROBLEM, classifyCarrierError } from "./carrierMessages";
 import type { CarrierAdapter } from "@/lib/shipping/core/adapter";
 import { CarrierError } from "@/lib/shipping/core/errors";
 import type { RateOption } from "@/lib/shipping/core/types";
@@ -9,7 +10,19 @@ import { DEFAULT_DOCUMENT_MAX_KG, productCodeFor, type ContentType } from "./con
 /** How long a saved quote can be used to book. */
 export const QUOTE_TTL_MINUTES = 60;
 
-export type QuoteErrorCode = "not_serviced" | "carrier_unavailable" | "pricing_unavailable" | "invalid_account" | "documents_too_heavy" | "documents_unavailable";
+export type QuoteErrorCode =
+  | "not_serviced"
+  | "carrier_unavailable"
+  | "pricing_unavailable"
+  | "invalid_account"
+  | "documents_too_heavy"
+  | "documents_unavailable"
+  | "bad_postal_code"
+  | "bad_city"
+  | "parcel_limits"
+  | "date_unavailable"
+  | "customs_info"
+  | "quote_rejected";
 
 export class QuoteError extends Error {
   constructor(
@@ -39,7 +52,12 @@ export interface PricedRequest {
   request: NormalizedQuoteRequest;
 }
 
-const tomorrow = (now: Date) => new Date(now.getTime() + 86_400_000).toISOString().slice(0, 10);
+/** The next weekday after today. DHL has no Express service for a Saturday or Sunday ship date (error 996). */
+export function nextBusinessDay(now: Date): string {
+  const d = new Date(now.getTime() + 86_400_000);
+  while (d.getUTCDay() === 0 || d.getUTCDay() === 6) d.setUTCDate(d.getUTCDate() + 1);
+  return d.toISOString().slice(0, 10);
+}
 
 export function normalizeRequest(input: QuoteRequestInput, now: Date = new Date()): NormalizedQuoteRequest {
   // Documents have no commercial value and need no customs declaration, whatever else was sent.
@@ -52,7 +70,7 @@ export function normalizeRequest(input: QuoteRequestInput, now: Date = new Date(
     declaredValueCents: documents ? 0 : input.declaredValueCents,
     isCustomsDeclarable: !documents,
     pickupRequested: input.pickupRequested,
-    plannedShipDate: input.plannedShipDate ?? tomorrow(now),
+    plannedShipDate: input.plannedShipDate ?? nextBusinessDay(now),
   };
 }
 
@@ -105,11 +123,11 @@ export async function priceRequest(params: {
   } catch (error) {
     if (error instanceof QuoteError) throw error;
     if (error instanceof CarrierError) {
-      if (error.code === "not_serviced") {
-        throw new QuoteError("not_serviced", "DHL does not serve this destination.", 422);
-      }
-      console.error("[Express] Carrier error while quoting:", error.code, error.detail || error.message);
-      throw new QuoteError("carrier_unavailable", "Shipping rates are temporarily unavailable. Please try again shortly.", 503);
+      // Say what DHL's answer means in plain words; DHL's own text only goes to the log.
+      const problem = classifyCarrierError(error);
+      const known = QUOTE_PROBLEM[problem];
+      if (problem === "our_setup" || problem === "rejected") console.error("[Express] Carrier error while quoting:", error.code, error.status, error.detail || error.message);
+      throw new QuoteError(known.code as QuoteErrorCode, known.message, known.status);
     }
     throw error;
   }

@@ -6,6 +6,18 @@ import type { ConnectClient } from "./payments/connect";
 /** A partner can take their customers' card payments once Stripe says the account can accept charges. */
 export const partnerCanCharge = (stripe: IExpressPartnerStripe | null | undefined): stripe is IExpressPartnerStripe => Boolean(stripe?.accountId && stripe.chargesEnabled);
 
+/**
+ * How a partner's customers can pay, or null when they cannot book yet.
+ *  - "stripe": on the partner's own Stripe account (needs Stripe to allow charges).
+ *  - "transimex": to Transimex, which tracks and pays out the partner's earnings (needs nothing more).
+ * A partner who has not chosen yet is treated as "stripe", so nobody is switched into payouts by accident.
+ */
+export function customerBookingMode(partner: Pick<IExpressAccount, "partner"> | null | undefined): "stripe" | "transimex" | null {
+  const mode = partner?.partner?.customerPayments ?? "stripe";
+  if (mode === "transimex") return "transimex";
+  return partnerCanCharge(partner?.partner?.stripe) ? "stripe" : null;
+}
+
 export interface PartnerStripeStatus {
   connected: boolean;
   chargesEnabled: boolean;

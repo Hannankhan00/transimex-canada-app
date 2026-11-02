@@ -11,7 +11,8 @@ interface LogAuditParams {
   ipAddress?: string;
 }
 
-export async function logAudit({
+/** Writes an audit entry and THROWS if it cannot be written. For actions that must not happen unrecorded. */
+export async function logAuditStrict({
   actor,
   action,
   resourceType,
@@ -19,19 +20,24 @@ export async function logAudit({
   details = "",
   ipAddress = "",
 }: LogAuditParams): Promise<void> {
+  await connectDB();
+  await AuditLog.create({
+    actorId: actor.userId,
+    staffName: actor.name,
+    staffEmail: actor.email,
+    staffRole: actor.role,
+    action,
+    resourceType,
+    resourceId,
+    details,
+    ipAddress,
+  });
+}
+
+/** Best effort: a failure is logged and never blocks the action. */
+export async function logAudit(params: LogAuditParams): Promise<void> {
   try {
-    await connectDB();
-    await AuditLog.create({
-      actorId: actor.userId,
-      staffName: actor.name,
-      staffEmail: actor.email,
-      staffRole: actor.role,
-      action,
-      resourceType,
-      resourceId,
-      details,
-      ipAddress,
-    });
+    await logAuditStrict(params);
   } catch (error) {
     console.error("Failed to write audit log entry:", error);
   }

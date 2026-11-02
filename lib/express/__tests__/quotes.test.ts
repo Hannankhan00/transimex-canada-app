@@ -4,7 +4,7 @@ import { CarrierError } from "@/lib/shipping/core/errors";
 import type { CarrierAdapter } from "@/lib/shipping/core/adapter";
 import type { RateOption } from "@/lib/shipping/core/types";
 import { quoteRequestSchema, simulateSchema } from "../quoteSchemas";
-import { QuoteError, normalizeRequest, priceRequest } from "../quoteService";
+import { QuoteError, nextBusinessDay, normalizeRequest, priceRequest } from "../quoteService";
 import { toAdminQuoteDTO, toClientQuoteDTO } from "../quoteDto";
 import { settingsSchema } from "../validation";
 import { isDhlCountry } from "@/lib/data/dhlCountries";
@@ -260,5 +260,14 @@ describe("settings validation", () => {
     expect(settingsSchema.safeParse({ b2cDiscountPct: 5 }).success).toBe(true);
     expect(settingsSchema.safeParse({ b2cDiscountPct: 5, dhlContractDiscountPct: 100 }).success).toBe(false);
     expect(settingsSchema.safeParse({ b2cDiscountPct: 5, dhlContractDiscountPct: -1 }).success).toBe(false);
+  });
+});
+
+describe("default ship date", () => {
+  it("is the next weekday, never a Saturday or Sunday (DHL has no service on those days)", () => {
+    expect(nextBusinessDay(new Date("2026-10-29T15:00:00Z"))).toBe("2026-10-30"); // Thursday -> Friday
+    expect(nextBusinessDay(new Date("2026-10-30T15:00:00Z"))).toBe("2026-11-02"); // Friday -> Monday
+    expect(nextBusinessDay(new Date("2026-10-31T15:00:00Z"))).toBe("2026-11-02"); // Saturday -> Monday
+    expect(nextBusinessDay(new Date("2026-11-01T15:00:00Z"))).toBe("2026-11-02"); // Sunday -> Monday
   });
 });

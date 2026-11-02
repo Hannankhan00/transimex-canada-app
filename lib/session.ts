@@ -4,7 +4,12 @@ import connectDB from "./mongoose";
 import User from "@/models/User";
 import Session from "@/models/Session";
 
-export async function getCurrentUser(): Promise<TokenPayload | null> {
+/**
+ * The signed-in user from the cookie, or null. While the person still has a temporary password they are NOT treated as
+ * signed in (null), so no API works for them except the few that pass `allowPasswordChange: true` (changing the
+ * password, and signing out). The page redirect in proxy.ts is only the friendly half; this is the enforcement.
+ */
+export async function getCurrentUser(options: { allowPasswordChange?: boolean } = {}): Promise<TokenPayload | null> {
   const cookieStore = await cookies();
   const token = cookieStore.get("token")?.value;
   if (!token) return null;
@@ -39,5 +44,6 @@ export async function getCurrentUser(): Promise<TokenPayload | null> {
     }
   }
 
+  if (payload.mustChangePassword && !options.allowPasswordChange) return null;
   return payload;
 }

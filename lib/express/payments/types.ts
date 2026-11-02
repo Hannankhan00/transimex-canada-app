@@ -54,8 +54,15 @@ export interface RefundResult {
 /** A provider webhook, reduced to what we act on. Anything else is "other". */
 export interface PaymentEvent {
   id: string;
-  type: "checkout.session.completed" | "checkout.session.expired" | "other";
+  type: "checkout.session.completed" | "checkout.session.expired" | "refund.created" | "refund.updated" | "charge.dispute.created" | "other";
   rawType: string;
+  /** refund.* events: the provider's refund, its amount (cents) and state. Covers refunds made outside this app. */
+  refundId?: string;
+  refundAmountCents?: number;
+  refundStatus?: string;
+  /** charge.dispute.created: the chargeback and the amount in dispute (cents). */
+  disputeId?: string;
+  disputeAmountCents?: number;
   sessionId?: string;
   paymentIntentId?: string;
   amountTotalCents?: number;
@@ -81,6 +88,11 @@ export interface PaymentProvider {
   retrieveCheckout(sessionId: string, connectedAccountId?: string): Promise<PaymentEvent | null>;
   /** Verifies the signature and returns the event. Throws PaymentError("signature") when invalid. */
   verifyWebhook(rawBody: string, signatureHeader: string | null): PaymentEvent;
+  /**
+   * Stripe's real fee for a payment, in cents (null when it cannot be read yet). Used to work out a partner's earning
+   * when Transimex collected the payment. Optional: without it the standard rate is used as an estimate.
+   */
+  getPaymentFeeCents?(paymentIntentId: string): Promise<number | null>;
 }
 
 export type PaymentErrorCode = "config" | "signature" | "provider";

@@ -1,6 +1,7 @@
 import type { IExpressShipment } from "@/models/ExpressShipment";
 import type { AccountUserInfo } from "./accountDto";
 import { contentTypeOf } from "./contentType";
+import { classifyLabelIssue, type LabelIssueKind } from "./carrierMessages";
 
 type ShipmentDoc = Omit<Partial<IExpressShipment>, "_id"> & { _id: unknown };
 
@@ -24,6 +25,18 @@ const address = (a: any) => ({
   phone: a?.phone || "",
   email: a?.email || "",
 });
+
+const LABEL_STUCK_MINUTES = 10;
+
+/** Why a paid booking has no label yet, in terms a client can act on or wait for. Null when nothing is wrong. */
+function labelIssueOf(doc: ShipmentDoc, now: Date = new Date()): LabelIssueKind | null {
+  if (doc.status !== "paid") return null;
+  const state = doc.fulfilment?.state;
+  const paidAt = doc.payment?.paidAt ? new Date(doc.payment.paidAt).getTime() : 0;
+  const stuck = (state === "none" || state === undefined) && paidAt > 0 && now.getTime() - paidAt > LABEL_STUCK_MINUTES * 60_000;
+  if (state !== "failed" && state !== "unknown" && !stuck) return null;
+  return classifyLabelIssue(doc.fulfilment?.lastError, Boolean(doc.pickupRequested));
+}
 
 /**
  * What the OWNER sees. Built field by field. No staff identifiers and no
@@ -84,6 +97,9 @@ export function toClientShipmentDTO(doc: ShipmentDoc) {
         }
       : null,
     cancelledAt: iso(doc.cancellation?.at),
+    // A paid booking whose DHL label could not be created automatically. Staff are on it; the client is told why in
+    // plain words (never DHL's own message). Null while everything is on track.
+    labelIssue: labelIssueOf(doc),
     // False when a partner booked this for the viewer (the viewer is a customer who only watches it).
     bookedByViewer: true,
   };
@@ -100,7 +116,8 @@ export function toCustomerShipmentDTO(doc: ShipmentDoc) {
   const full = toClientShipmentDTO(doc);
   return {
     ...full,
-    totalCents: doc.customerTotalCents ?? full.totalCents,
+    // Never fall back to the partner's price when a markup exists but the customer price is missing.
+    totalCents: doc.customerTotalCents ?? (doc.markupCents ? 0 : full.totalCents),
     partner: null,
     bookedByViewer: false,
     billing: null,
@@ -137,7 +154,7 @@ export function toOwnShipmentDTO(doc: ShipmentDoc, accountType: string | undefin
   return (accountType === "customer" ? toCustomerOwnShipmentDTO(doc) : toClientShipmentDTO(doc)) as ClientShipmentDTO;
 }
 
-export type AttentionReason = "label_failed" | "outcome_unknown" | "label_overdue" | "amount_mismatch" | "refund_failed" | "delivery_exception" | "tracking_failing" | "no_scan";
+export type AttentionReason = "label_failed" | "outcome_unknown" | "label_overdue" | "amount_mismatch" | "refund_failed" | "dispute" | "delivery_exception" | "tracking_failing" | "no_scan";
 
 /** Consecutive failed DHL tracking checks before staff are told. */
 export const TRACKING_FAILURE_ALERT = 5;
@@ -157,6 +174,7 @@ export function attentionReasons(doc: ShipmentDoc, now: Date = new Date()): Atte
   if (doc.status === "paid" && (f === "none" || f === undefined) && paidAt && now.getTime() - paidAt > LABEL_OVERDUE_MINUTES * 60_000) reasons.push("label_overdue");
   if (doc.payment?.state === "mismatch") reasons.push("amount_mismatch");
   if (doc.payment?.refundState === "failed") reasons.push("refund_failed");
+  if (doc.payment?.dispute) reasons.push("dispute");
   if (doc.status === "label_ready") {
     if (doc.tracking?.status === "exception") reasons.push("delivery_exception");
     if ((doc.tracking?.failures ?? 0) >= TRACKING_FAILURE_ALERT) reasons.push("tracking_failing");

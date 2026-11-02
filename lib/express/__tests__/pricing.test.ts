@@ -169,14 +169,14 @@ describe("input validation", () => {
     expect(() => priceShipment({ account, publicList, clientDiscountPct: 0, pickupFeeCents: -1 })).toThrow(PricingError);
   });
 
-  it("passes a DHL credit (negative surcharge) on to the client and leaves Transimex's margin unchanged", () => {
+  it("keeps a DHL credit (negative surcharge) for Transimex: the client price does not change, the profit grows", () => {
     const withCredit = (p: RatePrice, credit: number): RatePrice => ({ ...p, surcharges: [...p.surcharges, { code: "ZF", name: "DHL credit", amountCents: credit }], totalCents: p.totalCents + credit });
     const plain = priceShipment({ account, publicList, clientDiscountPct: 30 });
     const credited = priceShipment({ account: withCredit(account, -500), publicList: withCredit(publicList, -500), clientDiscountPct: 30 });
-    expect(credited.client.totalCents).toBe(plain.client.totalCents - 500); // the client pays $5 less
-    expect(credited.client.surcharges.find((s) => s.code === "ZF")?.amountCents).toBe(-500);
-    expect(credited.account.totalCents).toBe(plain.account.totalCents - 500); // and DHL bills Transimex $5 less
-    expect(credited.profitCents).toBe(plain.profitCents); // so Transimex earns the same
+    expect(credited.client.totalCents).toBe(plain.client.totalCents); // the client pays the same
+    expect(credited.client.surcharges.some((s) => s.amountCents < 0)).toBe(false); // and never sees a credit line
+    expect(credited.account.totalCents).toBe(plain.account.totalCents - 500); // DHL bills Transimex $5 less
+    expect(credited.profitCents).toBe(plain.profitCents + 500); // so the $5 is Transimex's
   });
 
   it("still rejects fractional surcharges", () => {

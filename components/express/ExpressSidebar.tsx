@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ArrowLeft, Bell, CreditCard, FileText, LayoutDashboard, Lock, LogOut, Package, PackagePlus, Users, X } from "lucide-react";
+import { ArrowLeft, Bell, CreditCard, FileText, LayoutDashboard, Lock, LogOut, Package, PackagePlus, Users, Wallet, X } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import TransimexLogo from "@/components/TransimexLogo";
 
@@ -41,7 +41,7 @@ interface NavItem {
 
 export default function ExpressSidebar({ mobileOpen, onClose, user, fallbackName, onLogout, accountStatus = null, isPartner = false, isCustomer = false, hasInvoices = false }: Props) {
   const pathname = usePathname();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const e = t.express;
 
   const overview: NavItem = {
@@ -126,7 +126,8 @@ export default function ExpressSidebar({ mobileOpen, onClose, user, fallbackName
           <>
             {sectionLabel(e.partner.navSection)}
             <div className="space-y-0.5">
-              {renderItem({ href: "/express/partner", label: e.partner.navCustomers, icon: Users, match: (p) => p.startsWith("/express/partner") })}
+              {renderItem({ href: "/express/partner", label: e.partner.navCustomers, icon: Users, match: (p) => p === "/express/partner" })}
+              {renderItem({ href: "/express/partner/earnings", label: language === "fr" ? "Mes revenus" : "My earnings", icon: Wallet, match: (p) => p.startsWith("/express/partner/earnings") })}
             </div>
           </>
         )}

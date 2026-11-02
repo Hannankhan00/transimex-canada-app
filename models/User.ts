@@ -24,9 +24,16 @@ export interface IUser extends Document {
   jobTitle?: string;
   department?: string;
   isProfileComplete?: boolean;
+  mustChangePassword?: boolean;
   accountStatus?: "active" | "pending" | "revoked";
   lastLoginAt?: Date;
   tokenVersion?: number;
+  twoFactorEnabled?: boolean;
+  twoFactorEnabledAt?: Date;
+  twoFactorSecret?: string;
+  twoFactorPendingSecret?: string;
+  twoFactorRecoveryCodes?: string[];
+  twoFactorLastStep?: number;
   emailPreferences?: {
     emailShipmentUpdates: boolean;
     emailCustomsHolds: boolean;
@@ -166,6 +173,19 @@ const UserSchema = new Schema<IUser>(
       type: Number,
       default: 0,
     },
+    // True while the password is a temporary one someone else set (a partner created this customer's login, or reset
+    // it). The person must choose their own at the next sign-in before anything else works.
+    mustChangePassword: {
+      type: Boolean,
+      default: false,
+    },
+    // Two-factor auth (TOTP). Secrets are AES-GCM encrypted; recovery codes are stored as hashes.
+    twoFactorEnabled: { type: Boolean, default: false },
+    twoFactorEnabledAt: { type: Date },
+    twoFactorSecret: { type: String, select: false },
+    twoFactorPendingSecret: { type: String, select: false },
+    twoFactorRecoveryCodes: { type: [String], select: false, default: [] },
+    twoFactorLastStep: { type: Number, select: false },
     emailPreferences: {
       emailShipmentUpdates: { type: Boolean, default: true },
       emailCustomsHolds: { type: Boolean, default: true },

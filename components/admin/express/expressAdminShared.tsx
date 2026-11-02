@@ -45,9 +45,10 @@ export function ExpressAdminTabs() {
   const pathname = usePathname();
   const { tr } = useTr();
   const tabs = [
-    { href: "/admin/express", label: tr("Applications", "Demandes"), active: pathname === "/admin/express" || /^\/admin\/express\/(?!settings|terms|simulator|shipments|invoices|reports|dhl-invoices)/.test(pathname) },
+    { href: "/admin/express", label: tr("Applications", "Demandes"), active: pathname === "/admin/express" || /^\/admin\/express\/(?!settings|terms|simulator|shipments|invoices|reports|dhl-invoices|payouts)/.test(pathname) },
     { href: "/admin/express/shipments", label: tr("Shipments", "Envois"), active: pathname.startsWith("/admin/express/shipments") },
     { href: "/admin/express/invoices", label: tr("Invoices", "Factures"), active: pathname.startsWith("/admin/express/invoices") },
+    { href: "/admin/express/payouts", label: tr("Partner payouts", "Versements partenaires"), active: pathname.startsWith("/admin/express/payouts") },
     { href: "/admin/express/dhl-invoices", label: tr("DHL invoices", "Factures DHL"), active: pathname.startsWith("/admin/express/dhl-invoices") },
     { href: "/admin/express/reports", label: tr("Profit report", "Rapport de profit"), active: pathname.startsWith("/admin/express/reports") },
     { href: "/admin/express/terms", label: tr("Terms", "Conditions"), active: pathname === "/admin/express/terms" },

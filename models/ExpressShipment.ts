@@ -44,12 +44,19 @@ export interface IExpressShipmentPayment {
   /** Payments that arrived after the booking was already paid or cancelled, refunded automatically. */
   duplicatePayments: { paymentIntentId: string; refundId?: string; at: Date }[];
   mismatchNote?: string;
+  /** A chargeback opened by the customer's bank. Staff handle it with the payment provider. */
+  dispute?: { id: string; amountCents: number; at: Date };
   /**
    * Set when a partner's customer pays by card: the charge is taken on the partner's Stripe account for
    * chargeCents (the customer's price), and Transimex's share, applicationFeeCents (the partner price), is collected
    * as an application fee. The partner keeps the rest and bears Stripe's fee.
    */
   connect?: { accountId: string; chargeCents: number; applicationFeeCents: number };
+  /**
+   * Set when a partner's customer pays TRANSIMEX directly (the partner has no Stripe account). The customer is charged
+   * chargeCents (their price); the partner's markupCents, minus Stripe's card fee, is added to the partner's ledger.
+   */
+  partnerShare?: { partnerAccountId: string; chargeCents: number; markupCents: number };
 }
 
 export interface IExpressShipmentFulfilment {
@@ -257,6 +264,14 @@ const PaymentSchema = new Schema(
       default: [],
     },
     mismatchNote: { type: String },
+    dispute: {
+      type: new Schema({ id: { type: String, required: true }, amountCents: { type: Number, required: true }, at: { type: Date, required: true } }, { _id: false }),
+      default: undefined,
+    },
+    partnerShare: {
+      type: new Schema({ partnerAccountId: { type: String, required: true }, chargeCents: { type: Number, required: true, min: 1 }, markupCents: { type: Number, required: true, min: 0 } }, { _id: false }),
+      default: undefined,
+    },
     connect: {
       type: new Schema({ accountId: { type: String, required: true }, chargeCents: { type: Number, required: true, min: 1 }, applicationFeeCents: { type: Number, required: true, min: 0 } }, { _id: false }),
       default: undefined,

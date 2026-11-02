@@ -13,6 +13,7 @@ import {
 } from "@/lib/validations/profile";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { api } from "@/lib/api";
+import TwoFactorCard from "@/components/account/TwoFactorCard";
 import { EmailPreferences } from "@/lib/portalTypes";
 
 const DEFAULT_PREFERENCES: EmailPreferences = {
@@ -657,6 +658,8 @@ export default function AccountSettingsPage() {
             </button>
           </div>
         </form>
+
+        <TwoFactorCard />
 
         {/* Active Sessions Manager */}
         <div className="bg-white rounded-2xl p-6 sm:p-7 border border-slate-200 shadow-xs space-y-4">

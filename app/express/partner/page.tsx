@@ -5,7 +5,7 @@ import Link from "next/link";
 import { AlertTriangle, Check, Copy, Loader2, PackagePlus, Plus, RefreshCw } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { useExpressAccount } from "@/components/express/useExpressAccount";
-import PartnerStripeCard from "@/components/express/PartnerStripeCard";
+import PartnerCollectionCard from "@/components/express/PartnerCollectionCard";
 import { formatCad } from "@/lib/shipping/core/money";
 import type { CustomerStats, PartnerCustomerDTO } from "@/lib/express/partnerDto";
 
@@ -201,7 +201,7 @@ export default function ExpressPartnerPage() {
         </button>
       </div>
 
-      <PartnerStripeCard />
+      <PartnerCollectionCard />
 
       {credentials && (
         <section role="status" className="space-y-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-5">

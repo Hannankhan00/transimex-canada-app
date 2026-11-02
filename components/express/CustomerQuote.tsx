@@ -5,6 +5,7 @@ import { AlertTriangle, Loader2 } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import CountrySelect from "./CountrySelect";
 import UnitToggle from "./UnitToggle";
+import { quoteErrorText } from "@/lib/express/quoteErrorText";
 import { lengthToCm, unitLabel, weightToKg, type UnitSystem } from "@/lib/express/units";
 import { formatCad } from "@/lib/shipping/core/money";
 import type { CustomerQuoteDTO } from "@/lib/express/quoteDto";
@@ -59,7 +60,7 @@ export default function CustomerQuote() {
         }),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.fields?.[0]?.message || data.error || p.customerQuoteError);
+      if (!res.ok) throw new Error(data.fields?.[0]?.message || quoteErrorText(data.code, b as unknown as Record<string, string>, data.error || p.customerQuoteError));
       setQuote(data.quote);
     } catch (err: any) {
       setError(err.message || p.customerQuoteError);

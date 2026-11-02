@@ -1,3 +1,5 @@
+import { recordPartnerReversal } from "./partnerPayouts";
+import { recordRefundOnce } from "./externalRefunds";
 import connectDB from "@/lib/mongoose";
 import ExpressShipment, { type IExpressShipment } from "@/models/ExpressShipment";
 import { PaymentError, type PaymentProvider } from "./payments/types";
@@ -53,15 +55,15 @@ async function issueRefund(sh: IExpressShipment, amountCents: number, reason: st
       connectedAccountId: sh.payment.connect?.accountId,
     });
     if (refund.status === "failed") throw new PaymentError("provider", "Refund failed");
-    await ExpressShipment.updateOne(
-      { _id: sh._id },
-      {
-        $inc: { "payment.refundedCents": amountCents },
-        $push: { "payment.refunds": { refundId: refund.refundId, amountCents, at: new Date(), reason, by } },
-        $set: { "payment.refundState": "done" },
-        $unset: { "payment.refundError": "" },
-      }
-    );
+    // Counted once by refund id: the provider's own webhook for this refund may have recorded it first.
+    await recordRefundOnce({ shipmentId: String(sh._id), refundId: refund.refundId, amountCents, reason, by });
+    await ExpressShipment.updateOne({ _id: sh._id }, { $set: { "payment.refundState": "done" }, $unset: { "payment.refundError": "" } });
+    // A partner paid by Transimex gives back their share of what the customer was refunded.
+    if (sh.payment.partnerShare) {
+      await recordPartnerReversal({ shipmentId: String(sh._id), refundKey: refund.refundId, refundCents: amountCents }).catch((e) =>
+        console.error("[Express] Could not record the partner's refund reversal for", sh.reference, e)
+      );
+    }
     return { ok: true, amountCents };
   } catch (error) {
     const detail = error instanceof PaymentError ? error.detail || error.message : error instanceof Error ? error.message : String(error);

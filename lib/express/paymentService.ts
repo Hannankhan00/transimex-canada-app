@@ -5,6 +5,8 @@ import { PaymentError, type PaymentEvent, type PaymentProvider } from "./payment
 import { fulfilShipment } from "./fulfilment";
 import { notifyShipmentEvent } from "./shipmentNotify";
 import { handleInvoicePaymentEvent } from "./invoicePayment";
+import { recordPartnerEarning } from "./partnerPayouts";
+import { handleDisputeEvent, handleRefundEvent } from "./externalRefunds";
 
 export type CheckoutFailure = {
   ok: false;
@@ -50,7 +52,7 @@ export async function startCheckout(params: {
     session = await params.provider.createCheckoutSession({
       shipmentId: String(sh._id),
       reference: sh.reference,
-      amountCents: pay?.connect?.chargeCents ?? sh.totalCents,
+      amountCents: pay?.connect?.chargeCents ?? pay?.partnerShare?.chargeCents ?? sh.totalCents,
       connect: pay?.connect ? { accountId: pay.connect.accountId, applicationFeeCents: pay.connect.applicationFeeCents } : undefined,
       description: `${sh.shipper.city} to ${sh.recipient.city}, ${sh.recipient.countryCode}`,
       customerEmail: params.customerEmail,
@@ -119,7 +121,7 @@ export async function syncShipmentPayment(params: { shipmentId: string; userId: 
 }
 
 /** What the payment must be for: the customer's price when it is taken on a partner's account, else the booking total. */
-export const expectedCents = (sh: Pick<IExpressShipment, "payment" | "totalCents">) => sh.payment?.connect?.chargeCents ?? sh.totalCents;
+export const expectedCents = (sh: Pick<IExpressShipment, "payment" | "totalCents">) => sh.payment?.connect?.chargeCents ?? sh.payment?.partnerShare?.chargeCents ?? sh.totalCents;
 export const centsMatch = (event: PaymentEvent, sh: Pick<IExpressShipment, "payment" | "totalCents">) => event.amountTotalCents === expectedCents(sh) && event.currency?.toLowerCase() === "cad";
 /** A payment taken on a partner's account must come from that very account, and a platform payment from none. */
 export const accountMatches = (event: PaymentEvent, sh: Pick<IExpressShipment, "payment">) => (event.connectedAccountId ?? undefined) === (sh.payment?.connect?.accountId ?? undefined);
@@ -134,6 +136,8 @@ export async function handlePaymentEvent(event: PaymentEvent, provider: PaymentP
   await connectDB();
 
   if (event.type === "other") return "ignored";
+  if (event.type === "refund.created" || event.type === "refund.updated") return handleRefundEvent(event);
+  if (event.type === "charge.dispute.created") return handleDisputeEvent(event);
   if (event.invoiceId) return handleInvoicePaymentEvent(event, provider);
   if (!event.shipmentId) return "ignored";
   const sh = await ExpressShipment.findById(event.shipmentId).lean<IExpressShipment>().catch(() => null);
@@ -188,6 +192,15 @@ export async function handlePaymentEvent(event: PaymentEvent, provider: PaymentP
   ).lean<IExpressShipment>();
 
   if (paid) {
+    // A partner who is paid by Transimex earns their markup the moment their customer's payment is confirmed. A
+    // problem here is repaired later (see reconcilePartner), so it must not stop the label from being made.
+    if (paid.payment?.partnerShare) {
+      try {
+        await recordPartnerEarning(String(paid._id), provider);
+      } catch (error) {
+        console.error("[Express] Could not record the partner's earning for", paid.reference, error);
+      }
+    }
     await notifyShipmentEvent(String(paid._id), "payment_received");
     // A fulfilment problem is recorded on the booking for staff; it must not make the provider retry the webhook.
     try {

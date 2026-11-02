@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, Suspense, useEffect } from "react";
+import TwoFactorLoginModal from "@/components/auth/TwoFactorLoginModal";
 import Image from "next/image";
 import TransimexLogo from "@/components/TransimexLogo";
 import Link from "next/link";
@@ -47,6 +48,7 @@ function AuthComponent() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(true);
+  const [twoFA, setTwoFA] = useState<{ mode: "verify" | "enroll"; challengeToken: string } | null>(null);
   const [agreeTerms, setAgreeTerms] = useState(true);
 
   useEffect(() => {
@@ -72,6 +74,22 @@ function AuthComponent() {
   const strengthLabels = ["Weak", "Fair", "Good", "Strong"];
   const strengthColors = ["bg-red-500", "bg-amber-500", "bg-blue-500", "bg-emerald-500"];
 
+  // Stores the signed-in user and sends them to the right area (shared by password login and the 2FA step)
+  const finishLogin = (user: any) => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("transimex_user", JSON.stringify(user));
+    }
+    const role = (user.role || "").toLowerCase();
+    const isStaff = ["superadmin", "admin", "subadmin", "dispatcher", "customs_agent", "support", "custom"].includes(role);
+    const fromParam = searchParams.get("from");
+
+    if (isStaff) {
+      router.push(fromParam && fromParam.startsWith("/admin") ? fromParam : "/admin");
+    } else {
+      router.push(fromParam && fromParam.startsWith("/dashboard") ? fromParam : "/dashboard");
+    }
+  };
+
   // Handle Login
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -87,27 +105,14 @@ function AuthComponent() {
         rememberMe,
       });
 
-      if (res.success && res.user) {
-        if (typeof window !== "undefined") {
-          localStorage.setItem("transimex_user", JSON.stringify(res.user));
-        }
-        const role = (res.user.role || "").toLowerCase();
-        const isStaff = ["superadmin", "admin", "subadmin", "dispatcher", "customs_agent", "support", "custom"].includes(role);
-        const fromParam = searchParams.get("from");
-
-        if (isStaff) {
-          if (fromParam && fromParam.startsWith("/admin")) {
-            router.push(fromParam);
-          } else {
-            router.push("/admin");
-          }
-        } else {
-          if (fromParam && fromParam.startsWith("/dashboard")) {
-            router.push(fromParam);
-          } else {
-            router.push("/dashboard");
-          }
-        }
+      const challenge = res as any;
+      if (challenge.requires2FA || challenge.requires2FASetup) {
+        setTwoFA({
+          mode: challenge.requires2FA ? "verify" : "enroll",
+          challengeToken: challenge.challengeToken,
+        });
+      } else if (res.success && res.user) {
+        finishLogin(res.user);
       } else {
         setError(res.error || "Invalid credentials");
       }
@@ -403,6 +408,15 @@ function AuthComponent() {
                       </div>
                     )}
                   </div>
+                )}
+
+                {twoFA && (
+                  <TwoFactorLoginModal
+                    mode={twoFA.mode}
+                    challengeToken={twoFA.challengeToken}
+                    onDone={finishLogin}
+                    onCancel={() => setTwoFA(null)}
+                  />
                 )}
 
                 {/* Form */}
