@@ -96,7 +96,7 @@ export default function AdminExpressTermsPage() {
     <PermissionGuard module="express">
       <div className="space-y-5">
         <div>
-          <h1 className="text-2xl font-extrabold text-[#0B2545]">Transimex Express</h1>
+          <h1 className="text-2xl font-extrabold text-[#0B2545]">{tr("Terms", "Conditions")}</h1>
           <p className="text-sm text-slate-600 mt-0.5">
             {tr("The terms of service every applicant accepts. Each change is published as a new version.", "Les conditions d'utilisation que chaque demandeur accepte. Chaque changement est publié comme nouvelle version.")}
           </p>

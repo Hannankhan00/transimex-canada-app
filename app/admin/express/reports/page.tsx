@@ -122,7 +122,7 @@ export default function AdminExpressProfitReportPage() {
     <PermissionGuard module="express">
       <div className="space-y-5">
         <div>
-          <h1 className="text-2xl font-extrabold text-[#0B2545]">Transimex Express</h1>
+          <h1 className="text-2xl font-extrabold text-[#0B2545]">{tr("Profit report", "Rapport de profit")}</h1>
           <p className="text-sm text-slate-600 mt-0.5">
             {tr("What Express shipments sold for, what DHL's rate said they cost, and what Transimex kept.", "Ce que les envois Express ont rapporté, ce que le tarif de DHL a coûté, et ce que Transimex a gardé.")}
           </p>

@@ -573,7 +573,7 @@ export default function AdminExpressShipmentPage() {
     <PermissionGuard module="express">
       <div className="space-y-5">
         <div>
-          <h1 className="text-2xl font-extrabold text-[#0B2545]">Transimex Express</h1>
+          <h1 className="text-2xl font-extrabold text-[#0B2545]">{tr("Shipments", "Envois")}</h1>
         </div>
         <ExpressAdminTabs />
         <Link href="/admin/express/shipments" className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-slate-900">

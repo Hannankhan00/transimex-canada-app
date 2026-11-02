@@ -65,7 +65,7 @@ export default function AdminExpressApplicationsPage() {
     <PermissionGuard module="express">
       <div className="space-y-5">
         <div>
-          <h1 className="text-2xl font-extrabold text-[#0B2545]">Transimex Express</h1>
+          <h1 className="text-2xl font-extrabold text-[#0B2545]">{tr("Applications", "Demandes")}</h1>
           <p className="text-sm text-slate-600 mt-0.5">
             {tr("Review applications, set discounts and manage Express accounts.", "Examinez les demandes, fixez les rabais et gérez les comptes Express.")}
           </p>

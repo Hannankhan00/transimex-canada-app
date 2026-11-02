@@ -26,7 +26,13 @@ import {
   BookOpen,
   Receipt,
   Megaphone,
-  Plane,
+  ClipboardList,
+  Package,
+  Wallet,
+  TrendingUp,
+  ScrollText,
+  Calculator,
+  SlidersHorizontal,
 } from "lucide-react";
 
 interface AdminSidebarProps {
@@ -80,6 +86,7 @@ export default function AdminSidebar({
     href: string;
     icon: React.ComponentType<{ className?: string }>;
     exact?: boolean;
+    match?: (path: string) => boolean;
     module: PermissionModule | null;
     section: SectionKey | null;
   }> = [
@@ -141,9 +148,66 @@ export default function AdminSidebar({
       section: "clients",
     },
     {
-      name: "Transimex Express",
+      name: language === "fr" ? "Demandes" : "Applications",
       href: "/admin/express",
-      icon: Plane,
+      icon: ClipboardList,
+      match: (p) => p === "/admin/express" || /^\/admin\/express\/(?!settings|terms|simulator|shipments|invoices|reports|dhl-invoices|payouts)/.test(p),
+      module: "express",
+      section: "express",
+    },
+    {
+      name: language === "fr" ? "Envois" : "Shipments",
+      href: "/admin/express/shipments",
+      icon: Package,
+      module: "express",
+      section: "express",
+    },
+    {
+      name: language === "fr" ? "Factures" : "Invoices",
+      href: "/admin/express/invoices",
+      icon: Receipt,
+      module: "express",
+      section: "express",
+    },
+    {
+      name: language === "fr" ? "Versements partenaires" : "Partner Payouts",
+      href: "/admin/express/payouts",
+      icon: Wallet,
+      module: "express",
+      section: "express",
+    },
+    {
+      name: language === "fr" ? "Factures DHL" : "DHL Invoices",
+      href: "/admin/express/dhl-invoices",
+      icon: FileText,
+      module: "express",
+      section: "express",
+    },
+    {
+      name: language === "fr" ? "Rapport de profit" : "Profit Report",
+      href: "/admin/express/reports",
+      icon: TrendingUp,
+      module: "express",
+      section: "express",
+    },
+    {
+      name: language === "fr" ? "Conditions" : "Terms",
+      href: "/admin/express/terms",
+      icon: ScrollText,
+      module: "express",
+      section: "express",
+    },
+    {
+      name: language === "fr" ? "Simulateur" : "Quote Simulator",
+      href: "/admin/express/simulator",
+      icon: Calculator,
+      module: "express",
+      section: "express",
+    },
+    {
+      name: language === "fr" ? "Paramètres Express" : "Express Settings",
+      href: "/admin/express/settings",
+      icon: SlidersHorizontal,
       module: "express",
       section: "express",
     },
@@ -220,7 +284,9 @@ export default function AdminSidebar({
       <div className="flex-1 min-h-0 overflow-y-auto custom-sidebar-scrollbar">
         <nav className="p-3 space-y-0.5">
           {visibleNavItems.map((item, index) => {
-            const isActive = item.exact
+            const isActive = item.match
+              ? item.match(pathname)
+              : item.exact
               ? pathname === item.href
               : pathname === item.href || pathname.startsWith(item.href + "/");
 

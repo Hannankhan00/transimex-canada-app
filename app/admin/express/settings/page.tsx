@@ -103,7 +103,7 @@ export default function AdminExpressSettingsPage() {
     <PermissionGuard module="express">
       <div className="space-y-5">
         <div>
-          <h1 className="text-2xl font-extrabold text-[#0B2545]">Transimex Express</h1>
+          <h1 className="text-2xl font-extrabold text-[#0B2545]">{tr("Express settings", "Paramètres Express")}</h1>
           <p className="text-sm text-slate-600 mt-0.5">{tr("Settings that apply to every Express account.", "Paramètres qui s'appliquent à tous les comptes Express.")}</p>
         </div>
 

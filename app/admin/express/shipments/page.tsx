@@ -58,7 +58,7 @@ export default function AdminExpressShipmentsPage() {
     <PermissionGuard module="express">
       <div className="space-y-5">
         <div>
-          <h1 className="text-2xl font-extrabold text-[#0B2545]">Transimex Express</h1>
+          <h1 className="text-2xl font-extrabold text-[#0B2545]">{tr("Shipments", "Envois")}</h1>
           <p className="text-sm text-slate-600 mt-0.5">{tr("Every Express booking, with its status and price.", "Toutes les réservations Express, avec leur statut et leur prix.")}</p>
         </div>
 

@@ -91,7 +91,7 @@ export default function AdminExpressInvoicesPage() {
       <div className="space-y-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-extrabold text-[#0B2545]">Transimex Express</h1>
+            <h1 className="text-2xl font-extrabold text-[#0B2545]">{tr("Invoices", "Factures")}</h1>
             <p className="text-sm text-slate-600 mt-0.5">{tr("Weekly invoices for accounts that book on credit.", "Factures hebdomadaires des comptes qui réservent à crédit.")}</p>
           </div>
           <button

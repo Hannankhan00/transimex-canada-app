@@ -1,8 +1,6 @@
 "use client";
 
 import React from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 export type AdminStatus = "pending" | "active" | "rejected" | "suspended";
@@ -40,36 +38,9 @@ export function TypeBadge({ type }: { type: "b2c" | "b2b" | "customer" }) {
   );
 }
 
-/** Section tabs shared by the Express admin pages. */
+/** Navigation now lives in the admin sidebar; kept as a no-op so existing pages need no change. */
 export function ExpressAdminTabs() {
-  const pathname = usePathname();
-  const { tr } = useTr();
-  const tabs = [
-    { href: "/admin/express", label: tr("Applications", "Demandes"), active: pathname === "/admin/express" || /^\/admin\/express\/(?!settings|terms|simulator|shipments|invoices|reports|dhl-invoices|payouts)/.test(pathname) },
-    { href: "/admin/express/shipments", label: tr("Shipments", "Envois"), active: pathname.startsWith("/admin/express/shipments") },
-    { href: "/admin/express/invoices", label: tr("Invoices", "Factures"), active: pathname.startsWith("/admin/express/invoices") },
-    { href: "/admin/express/payouts", label: tr("Partner payouts", "Versements partenaires"), active: pathname.startsWith("/admin/express/payouts") },
-    { href: "/admin/express/dhl-invoices", label: tr("DHL invoices", "Factures DHL"), active: pathname.startsWith("/admin/express/dhl-invoices") },
-    { href: "/admin/express/reports", label: tr("Profit report", "Rapport de profit"), active: pathname.startsWith("/admin/express/reports") },
-    { href: "/admin/express/terms", label: tr("Terms", "Conditions"), active: pathname === "/admin/express/terms" },
-    { href: "/admin/express/simulator", label: tr("Quote simulator", "Simulateur de soumission"), active: pathname === "/admin/express/simulator" },
-    { href: "/admin/express/settings", label: tr("Settings", "Paramètres"), active: pathname === "/admin/express/settings" },
-  ];
-  return (
-    <div className="flex gap-1 border-b border-slate-200">
-      {tabs.map((t) => (
-        <Link
-          key={t.href}
-          href={t.href}
-          className={`px-4 py-2.5 text-xs font-bold border-b-2 -mb-px transition ${
-            t.active ? "border-[#D21F27] text-[#0B2545]" : "border-transparent text-slate-500 hover:text-slate-800"
-          }`}
-        >
-          {t.label}
-        </Link>
-      ))}
-    </div>
-  );
+  return null;
 }
 
 export const adminInput =

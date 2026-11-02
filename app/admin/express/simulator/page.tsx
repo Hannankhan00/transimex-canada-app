@@ -157,7 +157,7 @@ export default function AdminExpressSimulatorPage() {
     <PermissionGuard module="express">
       <div className="space-y-5">
         <div>
-          <h1 className="text-2xl font-extrabold text-[#0B2545]">Transimex Express</h1>
+          <h1 className="text-2xl font-extrabold text-[#0B2545]">{tr("Quote simulator", "Simulateur de soumission")}</h1>
           <p className="text-sm text-slate-600 mt-0.5">
             {tr("Price a shipment for any account and see every price level. Nothing is saved.", "Évaluez un envoi pour n'importe quel compte et voyez chaque niveau de prix. Rien n'est enregistré.")}
           </p>
