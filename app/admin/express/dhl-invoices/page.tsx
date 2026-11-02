@@ -111,8 +111,7 @@ export default function AdminExpressDhlInvoicesPage() {
 
   return (
     <PermissionGuard module="express">
-      <div className="max-w-5xl mx-auto space-y-6 px-4 py-6 sm:px-6">
-        <ExpressAdminTabs />
+      <div className="space-y-6">
         <div>
           <h1 className="text-xl font-extrabold text-[#0B2545]">{tr("DHL invoices", "Factures DHL")}</h1>
           <p className="mt-1 text-sm text-slate-600">
@@ -134,20 +133,21 @@ export default function AdminExpressDhlInvoicesPage() {
         )}
         {error && <p role="alert" className="text-sm font-semibold text-red-600">{error}</p>}
 
-        <section className="rounded-2xl border border-slate-200 bg-white p-5 space-y-3">
+        <div className="grid items-start gap-6 xl:grid-cols-3">
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 space-y-3 xl:col-start-3 xl:row-start-1">
           <h2 className="text-sm font-bold text-[#0B2545]">{tr("Record a DHL invoice", "Enregistrer une facture DHL")}</h2>
           <div className="flex flex-wrap items-end gap-3">
-            <label className="space-y-1">
+            <label className="space-y-1 flex-1 min-w-[9rem]">
               <span className="block text-xs font-bold text-slate-600">{tr("DHL invoice number", "Numéro de facture DHL")}</span>
-              <input className={`${adminInput} !w-48`} value={form.number} onChange={(e) => setForm({ ...form, number: e.target.value })} />
+              <input className={`${adminInput} !w-full`} value={form.number} onChange={(e) => setForm({ ...form, number: e.target.value })} />
             </label>
-            <label className="space-y-1">
+            <label className="space-y-1 flex-1 min-w-[9rem]">
               <span className="block text-xs font-bold text-slate-600">{tr("Total (CAD)", "Total (CAD)")}</span>
-              <input className={`${adminInput} !w-32`} inputMode="decimal" value={form.total} onChange={(e) => setForm({ ...form, total: e.target.value })} placeholder="0.00" />
+              <input className={`${adminInput} !w-full`} inputMode="decimal" value={form.total} onChange={(e) => setForm({ ...form, total: e.target.value })} placeholder="0.00" />
             </label>
-            <label className="space-y-1">
+            <label className="space-y-1 flex-1 min-w-[9rem]">
               <span className="block text-xs font-bold text-slate-600">{tr("Invoice date", "Date de la facture")}</span>
-              <input type="date" className={`${adminInput} !w-40`} value={form.issuedOn} onChange={(e) => setForm({ ...form, issuedOn: e.target.value })} />
+              <input type="date" className={`${adminInput} !w-full`} value={form.issuedOn} onChange={(e) => setForm({ ...form, issuedOn: e.target.value })} />
             </label>
             <button type="button" disabled={busy !== ""} onClick={addInvoice} className="cursor-pointer rounded-lg bg-[#0B2545] px-4 py-2 text-xs font-bold text-white disabled:opacity-50">
               {tr("Add", "Ajouter")}
@@ -155,7 +155,7 @@ export default function AdminExpressDhlInvoicesPage() {
           </div>
         </section>
 
-        <section className="rounded-2xl border border-slate-200 bg-white">
+        <section className="rounded-2xl border border-slate-200 bg-white xl:col-span-2 xl:col-start-1 xl:row-span-2 xl:row-start-1">
           <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-5 py-3">
             <h2 className="text-sm font-bold text-[#0B2545]">{tr("Invoices", "Factures")}</h2>
             <span className="text-xs font-semibold text-slate-600">
@@ -210,7 +210,7 @@ export default function AdminExpressDhlInvoicesPage() {
           )}
         </section>
 
-        <section className="rounded-2xl border border-slate-200 bg-white p-5 space-y-3">
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 space-y-3 xl:col-start-3 xl:row-start-2">
           <h2 className="text-sm font-bold text-[#0B2545]">{tr("Import charges from a DHL invoice file", "Importer les coûts d'un fichier de facture DHL")}</h2>
           <p className="text-xs text-slate-600">
             {tr(
@@ -219,9 +219,9 @@ export default function AdminExpressDhlInvoicesPage() {
             )}
           </p>
           <div className="flex flex-wrap items-end gap-3">
-            <label className="space-y-1">
+            <label className="space-y-1 flex-1 min-w-[9rem]">
               <span className="block text-xs font-bold text-slate-600">{tr("DHL invoice number", "Numéro de facture DHL")}</span>
-              <input className={`${adminInput} !w-48`} value={importNumber} onChange={(e) => setImportNumber(e.target.value)} />
+              <input className={`${adminInput} !w-full`} value={importNumber} onChange={(e) => setImportNumber(e.target.value)} />
             </label>
             <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50">
               <Upload className="h-3.5 w-3.5" />
@@ -272,6 +272,7 @@ export default function AdminExpressDhlInvoicesPage() {
             </div>
           )}
         </section>
+        </div>
       </div>
     </PermissionGuard>
   );
