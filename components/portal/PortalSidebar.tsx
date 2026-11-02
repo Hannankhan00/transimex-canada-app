@@ -188,8 +188,8 @@ export default function PortalSidebar({
   const sidebarContent = (
     <div className="h-full flex flex-col bg-[#0B2545] text-slate-200 select-none overflow-hidden">
       {/* Upper Sticky Logo Card */}
-      <div className="shrink-0 sticky top-0 z-10 bg-[#0B2545] border-b border-white/10 p-5 flex items-center justify-between">
-        <Link href="/dashboard" className="flex items-center gap-2">
+      <div className="shrink-0 sticky top-0 z-10 bg-[#0B2545] border-b border-white/10 px-3 py-3 flex items-center justify-between">
+        <Link href="/dashboard" className="flex flex-1 items-center justify-center">
           <TransimexLogo variant="sidebar" />
         </Link>
         {onCloseMobile && (

@@ -95,9 +95,9 @@ export default function ExpressSidebar({ mobileOpen, onClose, user, fallbackName
   const content = (
     <div className="flex h-full select-none flex-col overflow-hidden bg-[#0B2545] text-slate-200">
       {/* Brand */}
-      <div className="shrink-0 border-b border-white/10 px-5 pb-4 pt-5">
-        <div className="flex items-start justify-between">
-          <Link href="/express" onClick={onClose} aria-label="Transimex Express">
+      <div className="shrink-0 border-b border-white/10 px-3 py-3">
+        <div className="flex items-center justify-between">
+          <Link href="/express" onClick={onClose} aria-label="Transimex Express" className="flex flex-1 items-center justify-center">
             <TransimexLogo variant="sidebar" />
           </Link>
           <button

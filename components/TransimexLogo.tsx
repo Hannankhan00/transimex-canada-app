@@ -23,10 +23,10 @@ export default function TransimexLogo({
     return (
       <div className={`inline-flex items-center select-none flex-shrink-0 ${className}`}>
         <Image
-          src="/assets/logo-blue.png"
+          src="/assets/logo-blue-trim.png"
           alt="Transimex Canada"
-          width={2078}
-          height={757}
+          width={1778}
+          height={519}
           priority
           className="h-14 w-auto"
         />
