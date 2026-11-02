@@ -2,7 +2,7 @@ import React from "react";
 import Image from "next/image";
 
 interface TransimexLogoProps {
-  variant?: "light" | "dark";
+  variant?: "light" | "dark" | "sidebar";
   size?: "sm" | "md" | "lg";
   className?: string;
 }
@@ -17,6 +17,22 @@ export default function TransimexLogo({
   className = "",
 }: TransimexLogoProps) {
   const isDark = variant === "dark";
+
+  // Transparent logo with white lettering, made for dark-blue sidebars.
+  if (variant === "sidebar") {
+    return (
+      <div className={`inline-flex items-center select-none flex-shrink-0 ${className}`}>
+        <Image
+          src="/assets/logo-blue.png"
+          alt="Transimex Canada"
+          width={2078}
+          height={757}
+          priority
+          className="h-14 w-auto"
+        />
+      </div>
+    );
+  }
 
   const heightMap = {
     sm: "h-10",

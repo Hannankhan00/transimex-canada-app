@@ -98,7 +98,7 @@ export default function ExpressSidebar({ mobileOpen, onClose, user, fallbackName
       <div className="shrink-0 border-b border-white/10 px-5 pb-4 pt-5">
         <div className="flex items-start justify-between">
           <Link href="/express" onClick={onClose} aria-label="Transimex Express">
-            <TransimexLogo variant="dark" size="sm" />
+            <TransimexLogo variant="sidebar" />
           </Link>
           <button
             type="button"

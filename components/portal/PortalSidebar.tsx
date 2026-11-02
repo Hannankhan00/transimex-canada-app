@@ -190,7 +190,7 @@ export default function PortalSidebar({
       {/* Upper Sticky Logo Card */}
       <div className="shrink-0 sticky top-0 z-10 bg-[#0B2545] border-b border-white/10 p-5 flex items-center justify-between">
         <Link href="/dashboard" className="flex items-center gap-2">
-          <TransimexLogo variant="dark" size="sm" />
+          <TransimexLogo variant="sidebar" />
         </Link>
         {onCloseMobile && (
           <button
