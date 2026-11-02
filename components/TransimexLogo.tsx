@@ -28,7 +28,7 @@ export default function TransimexLogo({
           width={1778}
           height={519}
           priority
-          className="h-14 w-auto"
+          className="h-11 w-auto"
         />
       </div>
     );
