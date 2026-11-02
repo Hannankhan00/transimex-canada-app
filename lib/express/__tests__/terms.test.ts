@@ -31,7 +31,7 @@ describe("terms content validation", () => {
   });
 });
 
-describe("Express emails are off by default", () => {
+describe("Express emails are on by default", () => {
   afterEach(() => {
     delete process.env.EXPRESS_EMAILS_ENABLED;
     vi.clearAllMocks();
@@ -40,19 +40,18 @@ describe("Express emails are off by default", () => {
   const decision = { to: "c@example.test", name: "C", language: "fr" as const, decision: "approved" as const };
   const alert = { companyName: "A", contactName: "B", phone: "1", country: "CA", businessType: "x", expectedMonthlyVolume: "5", accountId: "1" };
 
-  it("sends nothing unless EXPRESS_EMAILS_ENABLED is exactly true", async () => {
-    expect(expressEmailsEnabled()).toBe(false);
-    expect(await sendExpressDecisionEmail(decision)).toMatchObject({ skipped: true });
-    expect(await sendExpressApplicationAdminAlert(alert)).toMatchObject({ skipped: true });
-    process.env.EXPRESS_EMAILS_ENABLED = "yes";
-    await sendExpressDecisionEmail(decision);
-    expect(sendEmail).not.toHaveBeenCalled();
-  });
-
-  it("sends once enabled", async () => {
-    process.env.EXPRESS_EMAILS_ENABLED = "true";
+  it("sends with no setting at all", async () => {
+    expect(expressEmailsEnabled()).toBe(true);
     await sendExpressDecisionEmail(decision);
     await sendExpressApplicationAdminAlert(alert);
     expect(sendEmail).toHaveBeenCalledTimes(2);
+  });
+
+  it("sends nothing only when EXPRESS_EMAILS_ENABLED is false", async () => {
+    process.env.EXPRESS_EMAILS_ENABLED = "false";
+    expect(expressEmailsEnabled()).toBe(false);
+    expect(await sendExpressDecisionEmail(decision)).toMatchObject({ skipped: true });
+    expect(await sendExpressApplicationAdminAlert(alert)).toMatchObject({ skipped: true });
+    expect(sendEmail).not.toHaveBeenCalled();
   });
 });

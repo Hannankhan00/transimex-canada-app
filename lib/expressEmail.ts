@@ -4,19 +4,19 @@ import { optionLabel, type Category, type PaymentPreference, type Restricted, ty
 type Lang = "en" | "fr";
 
 /**
- * Express emails are OFF until EXPRESS_EMAILS_ENABLED=true, so nothing is sent
- * to real people while the feature is being built and tested. In-app
- * notifications are unaffected.
+ * Express emails are ON by default. Set EXPRESS_EMAILS_ENABLED=false to switch
+ * them all off (for example on a test machine). In-app notifications are
+ * unaffected.
  */
 export function expressEmailsEnabled(): boolean {
-  return process.env.EXPRESS_EMAILS_ENABLED === "true";
+  return process.env.EXPRESS_EMAILS_ENABLED?.trim().toLowerCase() !== "false";
 }
 
 type SendParams = Parameters<typeof sendEmail>[0];
 
 async function sendExpressEmail(params: SendParams): Promise<{ success: boolean; skipped?: boolean; messageId?: string }> {
   if (!expressEmailsEnabled()) {
-    console.info(`[Express] Email disabled (EXPRESS_EMAILS_ENABLED is not true); not sending "${params.subject}".`);
+    console.info(`[Express] Email disabled (EXPRESS_EMAILS_ENABLED is false); not sending "${params.subject}".`);
     return { success: false, skipped: true };
   }
   return sendEmail(params);
