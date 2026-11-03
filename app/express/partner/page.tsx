@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { AlertTriangle, Check, Copy, Loader2, PackagePlus, Plus, RefreshCw } from "lucide-react";
+import { AlertTriangle, Check, Copy, Loader2, PackagePlus, Plus, RefreshCw, X } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { useExpressAccount } from "@/components/express/useExpressAccount";
 import PartnerCollectionCard from "@/components/express/PartnerCollectionCard";
@@ -246,11 +246,32 @@ export default function ExpressPartnerPage() {
       {summary && <p className="text-xs text-slate-500">{p.earnedNote}</p>}
 
       {form && (
-        <form onSubmit={submit} noValidate className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5">
-          <h2 className="font-bold text-[#0B2545]">{form.id ? p.edit : p.add}</h2>
+        <div
+          className="fixed inset-0 z-[60] flex items-end justify-center overflow-y-auto bg-slate-900/60 backdrop-blur-[2px] sm:items-center sm:p-6"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget && !saving) setForm(null);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Escape" && !saving) setForm(null);
+          }}
+        >
+        <form
+          onSubmit={submit}
+          noValidate
+          role="dialog"
+          aria-modal="true"
+          aria-label={form.id ? p.edit : p.add}
+          className="max-h-[94vh] w-full max-w-2xl space-y-4 overflow-y-auto rounded-t-2xl bg-white p-5 shadow-2xl sm:max-h-[90vh] sm:rounded-2xl sm:p-6"
+        >
+          <div className="flex items-start justify-between gap-4">
+            <h2 className="text-lg font-extrabold text-[#0B2545]">{form.id ? p.edit : p.add}</h2>
+            <button type="button" onClick={() => setForm(null)} disabled={saving} aria-label={p.cancel} className="cursor-pointer rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 disabled:opacity-40">
+              <X className="h-5 w-5" />
+            </button>
+          </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <Label text={p.name}>
-              <input className={inputClass} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} maxLength={120} />
+              <input autoFocus className={inputClass} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} maxLength={120} />
             </Label>
             <Label text={p.email}>
               <input className={inputClass} type="email" value={form.email} disabled={Boolean(form.id)} onChange={(e) => setForm({ ...form, email: e.target.value })} maxLength={160} />
@@ -294,6 +315,7 @@ export default function ExpressPartnerPage() {
             </button>
           </div>
         </form>
+        </div>
       )}
 
       {actionError && (

@@ -2,6 +2,7 @@ import mongoose, { Document, Model, Schema } from "mongoose";
 import {
   CATEGORY_VALUES,
   CLIENT_COUNT_VALUES,
+  DIRECTION_VALUES,
   PAYMENT_VALUES,
   RESTRICTED_VALUES,
   SHIPS_FOR_VALUES,
@@ -123,6 +124,7 @@ const ExpressAccountSchema = new Schema<IExpressAccount>(
           shipsFor: { type: String, enum: SHIPS_FOR_VALUES, required: true },
           clientCount: { type: String, enum: CLIENT_COUNT_VALUES },
           clientsDescription: { type: String, trim: true, maxlength: 300 },
+          direction: { type: String, enum: DIRECTION_VALUES },
           destinations: { type: String, required: true, trim: true, maxlength: 200 },
           typicalWeight: { type: String, enum: WEIGHT_VALUES, required: true },
           typicalValue: { type: String, enum: VALUE_VALUES, required: true },

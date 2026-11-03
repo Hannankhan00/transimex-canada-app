@@ -40,12 +40,12 @@ export default function AdminExpressSimulatorPage() {
   const [form, setForm] = useState({
     accountId: "",
     contentType: "goods" as "goods" | "documents",
-    originCountry: "CA",
-    originPostal: "M5V 2T6",
-    originCity: "Toronto",
-    country: "CM",
-    destPostal: "00237",
-    destCity: "Douala",
+    originCountry: "",
+    originPostal: "",
+    originCity: "",
+    country: "",
+    destPostal: "",
+    destCity: "",
     weight: "2",
     length: "20",
     width: "20",
@@ -82,6 +82,10 @@ export default function AdminExpressSimulatorPage() {
     if (declaredCents == null || declaredCents < 0) return setError(tr("Enter the declared value in CAD.", "Entrez la valeur déclarée en CAD."));
     if ([num(form.weight), num(form.length), num(form.width), num(form.height)].some((n) => !Number.isFinite(n))) {
       return setError(tr("Enter the weight and the three dimensions.", "Entrez le poids et les trois dimensions."));
+    }
+
+    if (!form.originCountry || !form.country) {
+      return setError(tr("Choose the origin and destination countries.", "Choisissez les pays d'origine et de destination."));
     }
 
     let markup: unknown = null;
@@ -205,7 +209,7 @@ export default function AdminExpressSimulatorPage() {
             <FormSection title={tr("3. From and to", "3. D'où et vers où")} hint={tr("Any two countries DHL serves. Postal codes are optional where a country has none.", "Deux pays quelconques desservis par DHL. Le code postal est facultatif si le pays n'en a pas.")}>
               <div className="space-y-2">
                 <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">{tr("From (pickup)", "De (ramassage)")}</p>
-                <CountrySelect className={adminInput} value={form.originCountry} onChange={(code) => setForm((f) => ({ ...f, originCountry: code }))} ariaLabel={tr("Origin country", "Pays d'origine")} />
+                <CountrySelect className={adminInput} value={form.originCountry} placeholder={tr("Select a country", "Choisir un pays")} onChange={(code) => setForm((f) => ({ ...f, originCountry: code }))} ariaLabel={tr("Origin country", "Pays d'origine")} />
                 <div className="grid grid-cols-2 gap-3">
                   <input className={adminInput} value={form.originCity} onChange={set("originCity")} placeholder={tr("City", "Ville")} aria-label={tr("Origin city", "Ville d'origine")} />
                   <input className={adminInput} value={form.originPostal} onChange={set("originPostal")} placeholder={tr("Postal code", "Code postal")} aria-label={tr("Origin postal code", "Code postal d'origine")} />
@@ -213,7 +217,7 @@ export default function AdminExpressSimulatorPage() {
               </div>
               <div className="space-y-2">
                 <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">{tr("To (delivery)", "Vers (livraison)")}</p>
-                <CountrySelect className={adminInput} value={form.country} onChange={(code) => setForm((f) => ({ ...f, country: code }))} ariaLabel={tr("Destination country", "Pays de destination")} />
+                <CountrySelect className={adminInput} value={form.country} placeholder={tr("Select a country", "Choisir un pays")} onChange={(code) => setForm((f) => ({ ...f, country: code }))} ariaLabel={tr("Destination country", "Pays de destination")} />
                 <div className="grid grid-cols-2 gap-3">
                   <input className={adminInput} value={form.destCity} onChange={set("destCity")} placeholder={tr("City", "Ville")} aria-label={tr("Destination city", "Ville de destination")} />
                   <input className={adminInput} value={form.destPostal} onChange={set("destPostal")} placeholder={tr("Postal code", "Code postal")} aria-label={tr("Destination postal code", "Code postal de destination")} />

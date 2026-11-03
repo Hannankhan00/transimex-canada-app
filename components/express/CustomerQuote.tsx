@@ -147,6 +147,14 @@ export default function CustomerQuote() {
               </>
             )}
           </p>
+          <div className="divide-y divide-slate-100 rounded-xl border border-slate-200 text-sm">
+            {quote.lines.map((l) => (
+              <div key={l.code} className="flex justify-between px-4 py-2.5">
+                <span className="text-slate-600">{l.code === "FREIGHT" ? (language === "fr" ? "Transport" : "Shipping") : l.name}</span>
+                <span className="font-semibold tabular-nums">{formatCad(l.amountCents, language)}</span>
+              </div>
+            ))}
+          </div>
           <p className="flex items-baseline justify-between gap-3 text-[#0B2545]">
             <span className="font-bold">{p.customerQuoteTotal}</span>
             <span className="text-3xl font-extrabold tabular-nums">{formatCad(quote.totalCents, language)}</span>

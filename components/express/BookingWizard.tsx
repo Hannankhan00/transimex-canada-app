@@ -97,6 +97,7 @@ interface AddressLabels {
   region: string;
   postal: string;
   country: string;
+  selectCountry: string;
   phone: string;
   email: string;
   emailOptional: string;
@@ -143,7 +144,7 @@ function AddressFields({
       </Field>
       {withCountry ? (
         <Field label={labels.country}>
-          <CountrySelect className={inputClass} value={value.countryCode} onChange={(code) => onChange({ ...value, countryCode: code })} ariaLabel={labels.country} />
+          <CountrySelect className={inputClass} placeholder={labels.selectCountry} value={value.countryCode} onChange={(code) => onChange({ ...value, countryCode: code })} ariaLabel={labels.country} />
         </Field>
       ) : (
         <Field label={labels.country}>
@@ -167,7 +168,7 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
   const countryLabel = (c: { code: string; name: string; nameFr: string }) => (language === "fr" ? c.nameFr : c.name);
   const addressLabels: AddressLabels = {
     name: b.name, company: b.company, line1: b.line1, line2: b.line2, city: b.city, region: b.region,
-    postal: b.postal, country: b.country, phone: b.phone, email: b.email, emailOptional: b.emailOptional,
+    postal: b.postal, country: b.country, selectCountry: language === "fr" ? "Choisir un pays" : "Select a country", phone: b.phone, email: b.email, emailOptional: b.emailOptional,
   };
 
   const [step, setStep] = useState(1);
@@ -181,8 +182,8 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
   const wUnit = weightUnit(units);
   const docMaxText = `${weightFromKg(docMaxKg, units)} ${wUnit}`;
   const documents = contentType === "documents";
-  const [shipper, setShipper] = useState<AddressForm>(emptyAddress("CA"));
-  const [recipient, setRecipient] = useState<AddressForm>(emptyAddress("CM"));
+  const [shipper, setShipper] = useState<AddressForm>(emptyAddress(""));
+  const [recipient, setRecipient] = useState<AddressForm>(emptyAddress(""));
   const [parcels, setParcels] = useState<ParcelForm[]>([emptyParcel()]);
   const [items, setItems] = useState<ItemForm[]>([emptyItem()]);
   const [pickup, setPickup] = useState(false);
@@ -319,7 +320,7 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
     if (s === 1) {
       // Postal codes are optional: some countries have none, and DHL says if a lane needs one.
       const need = (a: AddressForm, email: boolean) =>
-        [a.name, a.line1, a.city, a.phone].every((v) => v.trim()) && (!email || emailOk(a.email)) && (!a.email.trim() || emailOk(a.email));
+        [a.name, a.line1, a.city, a.phone, a.countryCode].every((v) => v.trim()) && (!email || emailOk(a.email)) && (!a.email.trim() || emailOk(a.email));
       return need(shipper, true) && need(recipient, false) ? null : b.required;
     }
     if (s === 2) {
@@ -845,6 +846,14 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
                       {b.delivery}: <b className="text-slate-800">{new Intl.DateTimeFormat(language === "fr" ? "fr-CA" : "en-CA", { dateStyle: "medium" }).format(new Date(quote.service.estimatedDelivery))}</b>
                     </>
                   )}
+                </div>
+                <div className="divide-y divide-slate-100 rounded-xl border border-slate-200">
+                  {(quote as unknown as CustomerQuoteDTO).lines.map((l) => (
+                    <div key={l.code} className="flex justify-between px-4 py-2.5">
+                      <span className="text-slate-600">{l.code === "FREIGHT" ? (language === "fr" ? "Transport" : "Shipping") : l.name}</span>
+                      <span className="font-semibold tabular-nums">{m(l.amountCents)}</span>
+                    </div>
+                  ))}
                 </div>
                 <p className="flex items-baseline justify-between gap-3 rounded-xl bg-slate-50 px-4 py-3 text-[#0B2545]">
                   <span className="font-bold">{b.total}</span>

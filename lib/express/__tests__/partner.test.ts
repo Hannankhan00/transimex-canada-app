@@ -4,7 +4,7 @@ vi.mock("@/lib/mongoose", () => ({ default: async () => undefined }));
 
 import { effectiveMarkupPct, generateCustomerPassword, isActivePartner, partnerCustomerCreateSchema, partnerCustomerUpdateSchema, partnerSettingsSchema } from "../partner";
 import { priceShipment } from "../pricing";
-import { toClientQuoteDTO, toCustomerQuoteDTO } from "../quoteDto";
+import { allocateCents, toClientQuoteDTO, toCustomerQuoteDTO } from "../quoteDto";
 import { toClientShipmentDTO, toCustomerShipmentDTO } from "../shipmentDto";
 import { toPartnerCustomerDTO } from "../partnerDto";
 import { toClientAccountDTO } from "../accountDto";
@@ -108,11 +108,19 @@ describe("what each side may see", () => {
     expect(dto.partner).toEqual({ customerId: "c1", customerName: "Ada", markupPct: 25, markupCents: 2000, customerTotalCents: 10000 });
   });
 
-  it("the customer sees one price and nothing about discount, markup or Transimex cost", () => {
+  it("the customer sees the full breakdown adding up to their price, but no public price, discount or markup", () => {
     const dto = toCustomerQuoteDTO(quote);
     expect(dto.totalCents).toBe(10000);
+    expect(dto.lines.length).toBeGreaterThan(0);
+    expect(dto.lines.reduce((sum, l) => sum + l.amountCents, 0)).toBe(10000);
     const json = JSON.stringify(dto);
-    for (const leak of ["discount", "markup", "publicBase", "account", "profit", "8000", "4000"]) expect(json.toLowerCase()).not.toContain(leak.toLowerCase());
+    for (const leak of ["discount", "markup", "publicBase", "account", "profit"]) expect(json.toLowerCase()).not.toContain(leak.toLowerCase());
+  });
+
+  it("splits cents in proportion and always adds up", () => {
+    expect(allocateCents(10001, [5000, 3000, 1000, 1000]).reduce((a, n) => a + n, 0)).toBe(10001);
+    expect(allocateCents(100, [1, 1, 1])).toEqual([34, 33, 33]);
+    expect(allocateCents(500, [0, 0])).toEqual([500, 0]);
   });
 
   const shipment = {

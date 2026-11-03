@@ -74,6 +74,7 @@ export function toAdminAccountDTO(doc: Doc, user?: AccountUserInfo | null) {
           shipsFor: doc.shippingProfile.shipsFor,
           clientCount: doc.shippingProfile.clientCount ?? null,
           clientsDescription: doc.shippingProfile.clientsDescription ?? "",
+          direction: doc.shippingProfile.direction ?? null,
           destinations: doc.shippingProfile.destinations,
           typicalWeight: doc.shippingProfile.typicalWeight,
           typicalValue: doc.shippingProfile.typicalValue,

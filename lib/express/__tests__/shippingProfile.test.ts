@@ -18,6 +18,7 @@ const profile = {
   goodsDescription: "Women's clothing and phone accessories",
   shipsFor: "own",
   destinations: "Cameroon, Ivory Coast",
+  direction: "export",
   typicalWeight: "medium",
   typicalValue: "100_500",
   restrictedGoods: ["none"],
@@ -35,7 +36,7 @@ describe("business shipping profile", () => {
   });
 
   it("requires the questions staff need to decide", () => {
-    for (const key of ["categories", "goodsDescription", "shipsFor", "destinations", "typicalWeight", "typicalValue", "restrictedGoods", "paymentPreference"]) {
+    for (const key of ["categories", "goodsDescription", "shipsFor", "direction", "destinations", "typicalWeight", "typicalValue", "restrictedGoods", "paymentPreference"]) {
       const { [key]: _omit, ...rest } = profile as Record<string, unknown>;
       expect(shippingProfileSchema.safeParse(rest).success, `missing ${key}`).toBe(false);
     }

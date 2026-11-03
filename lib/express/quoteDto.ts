@@ -61,12 +61,37 @@ export function toClientQuoteDTO(doc: QuoteDoc, now: Date = new Date()) {
 }
 
 /**
- * What a partner's CUSTOMER may see: the service, delivery date and one final
- * price. No Transimex price, no discount, no markup, no breakdown: the partner
- * decides how much of that the customer sees.
+ * Splits `total` across `weights` in proportion, in whole cents, so the parts always add up to `total` exactly
+ * (largest remainder). Used to fold a partner's markup into each price line without showing it as a line.
+ */
+export function allocateCents(total: number, weights: number[]): number[] {
+  const sum = weights.reduce((a, w) => a + w, 0);
+  if (weights.length === 0) return [];
+  if (sum <= 0) return weights.map((_, i) => (i === 0 ? total : 0));
+  const exact = weights.map((w) => (total * w) / sum);
+  const parts = exact.map(Math.floor);
+  let left = total - parts.reduce((a, n) => a + n, 0);
+  const order = exact.map((e, i) => ({ i, r: e - Math.floor(e) })).sort((a, b) => b.r - a.r);
+  for (let k = 0; left > 0; k = (k + 1) % order.length, left--) parts[order[k].i] += 1;
+  return parts;
+}
+
+/**
+ * What a partner's CUSTOMER may see: the service, delivery date and the full
+ * price breakdown (shipping, fuel surcharge, Go Green and so on) adding up to
+ * their final price. No DHL public price, no Transimex discount, and no
+ * separate markup line: the partner's markup is spread across the lines, so
+ * the lines always add up to what the customer pays.
  */
 export function toCustomerQuoteDTO(doc: QuoteDoc, now: Date = new Date()) {
   const expiresAt = iso(doc.expiresAt);
+  const client = doc.pricing.client;
+  const lines = [
+    { code: "FREIGHT", name: "Shipping", amountCents: client.baseFreightCents },
+    ...client.surcharges.map((s) => ({ code: s.code, name: s.name, amountCents: s.amountCents })),
+  ];
+  const shares = allocateCents(doc.pricing.customerTotalCents, lines.map((l) => l.amountCents));
+  const priced = lines.map((l, i) => ({ ...l, amountCents: shares[i] }));
   return {
     id: String(doc._id),
     createdAt: iso(doc.createdAt),
@@ -80,6 +105,7 @@ export function toCustomerQuoteDTO(doc: QuoteDoc, now: Date = new Date()) {
       postalCode: doc.request?.destination.postalCode || "",
     },
     pickupRequested: Boolean(doc.request?.pickupRequested),
+    lines: priced,
     totalCents: doc.pricing.customerTotalCents,
   };
 }

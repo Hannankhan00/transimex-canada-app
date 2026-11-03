@@ -18,7 +18,17 @@ export class StripeConnectClient implements ConnectClient {
 
   async createAccount(params: { email?: string; expressAccountId: string }) {
     try {
-      const account = await this.stripe.accounts.create({ type: "standard", email: params.email, metadata: { expressAccountId: params.expressAccountId } });
+      // Accounts v2 (Stripe no longer accepts v1 `type: "standard"` for new integrations). A "full" dashboard with
+      // Stripe collecting fees and covering losses is the v2 equivalent of a Standard account: the partner owns it,
+      // is the merchant of record, and keeps their own Stripe dashboard.
+      const account = await this.stripe.v2.core.accounts.create({
+        contact_email: params.email,
+        identity: { country: "CA" },
+        dashboard: "full",
+        configuration: { merchant: { capabilities: { card_payments: { requested: true } } } },
+        defaults: { responsibilities: { fees_collector: "stripe", losses_collector: "stripe" } },
+        metadata: { expressAccountId: params.expressAccountId },
+      });
       return { id: account.id };
     } catch (error: any) {
       throw new PaymentError("provider", "Could not create the Stripe account.", error?.message);
@@ -27,7 +37,13 @@ export class StripeConnectClient implements ConnectClient {
 
   async createOnboardingLink(accountId: string, refreshUrl: string, returnUrl: string) {
     try {
-      const link = await this.stripe.accountLinks.create({ account: accountId, refresh_url: refreshUrl, return_url: returnUrl, type: "account_onboarding" });
+      const link = await this.stripe.v2.core.accountLinks.create({
+        account: accountId,
+        use_case: {
+          type: "account_onboarding",
+          account_onboarding: { refresh_url: refreshUrl, return_url: returnUrl },
+        },
+      });
       return link.url;
     } catch (error: any) {
       throw new PaymentError("provider", "Could not open Stripe's setup page.", error?.message);

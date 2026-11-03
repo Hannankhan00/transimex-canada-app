@@ -213,6 +213,7 @@ export default function AdminExpressAccountPage() {
         [tr("Ships for", "Expédie pour"), optionLabel("shipsFor", sp.shipsFor, L)],
         ...(sp.clientCount ? ([[tr("Number of clients", "Nombre de clients"), optionLabel("clientCount", sp.clientCount, L)]] as [string, React.ReactNode][]) : []),
         ...(sp.clientsDescription ? ([[tr("Their clients", "Leurs clients"), sp.clientsDescription]] as [string, React.ReactNode][]) : []),
+        ...(sp.direction ? ([[tr("Import / export", "Importation / exportation"), optionLabel("direction", sp.direction, L)]] as [string, React.ReactNode][]) : []),
         [tr("Destinations", "Destinations"), sp.destinations],
         [tr("Typical parcel", "Colis habituel"), optionLabel("typicalWeight", sp.typicalWeight, L)],
         [tr("Typical value", "Valeur habituelle"), optionLabel("typicalValue", sp.typicalValue, L)],

@@ -3,6 +3,7 @@ import { COUNTRIES } from "@/lib/data/countries";
 import {
   CATEGORY_VALUES,
   CLIENT_COUNT_VALUES,
+  DIRECTION_VALUES,
   PAYMENT_VALUES,
   RESTRICTED_VALUES,
   SHIPS_FOR_VALUES,
@@ -54,6 +55,7 @@ export const shippingProfileSchema = z
     shipsFor: z.enum(SHIPS_FOR_VALUES, { errorMap: () => ({ message: "Tell us who you ship for" }) }),
     clientCount: z.enum(CLIENT_COUNT_VALUES).optional(),
     clientsDescription: optionalText(300),
+    direction: z.enum(DIRECTION_VALUES, { errorMap: () => ({ message: "Tell us if you import, export or both" }) }),
     destinations: z.string({ required_error: "Tell us where you ship to" }).trim().min(2, "Tell us where you ship to").max(200),
     typicalWeight: z.enum(WEIGHT_VALUES, { errorMap: () => ({ message: "Choose a typical parcel weight" }) }),
     typicalValue: z.enum(VALUE_VALUES, { errorMap: () => ({ message: "Choose a typical shipment value" }) }),

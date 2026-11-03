@@ -12,6 +12,7 @@ export interface L {
 
 export const CATEGORY_VALUES = ["clothing", "electronics", "food", "cosmetics", "documents", "auto_parts", "industrial", "household", "books", "other"] as const;
 export const SHIPS_FOR_VALUES = ["own", "clients", "both"] as const;
+export const DIRECTION_VALUES = ["export", "import", "both"] as const;
 export const CLIENT_COUNT_VALUES = ["1_5", "6_20", "21_50", "50_plus"] as const;
 export const WEIGHT_VALUES = ["light", "medium", "heavy", "mixed"] as const;
 export const VALUE_VALUES = ["under_100", "100_500", "500_2000", "over_2000"] as const;
@@ -20,6 +21,7 @@ export const PAYMENT_VALUES = ["pay_at_booking", "weekly_invoice"] as const;
 
 export type Category = (typeof CATEGORY_VALUES)[number];
 export type ShipsFor = (typeof SHIPS_FOR_VALUES)[number];
+export type Direction = (typeof DIRECTION_VALUES)[number];
 export type ClientCount = (typeof CLIENT_COUNT_VALUES)[number];
 export type TypicalWeight = (typeof WEIGHT_VALUES)[number];
 export type TypicalValue = (typeof VALUE_VALUES)[number];
@@ -33,6 +35,8 @@ export interface ShippingProfile {
   /** Only when they ship for clients. */
   clientCount?: ClientCount;
   clientsDescription?: string;
+  /** Whether they send goods out of Canada, bring goods in, or both. Older applications lack it. */
+  direction?: Direction;
   destinations: string;
   typicalWeight: TypicalWeight;
   typicalValue: TypicalValue;
@@ -61,6 +65,11 @@ export const OPTIONS = {
     clients: { en: "For my clients (I ship on their behalf)", fr: "Pour mes clients (j'expédie en leur nom)" },
     both: { en: "Both my own goods and my clients'", fr: "Mes propres marchandises et celles de mes clients" },
   } satisfies Record<ShipsFor, L>,
+  direction: {
+    export: { en: "Export (sending from Canada)", fr: "Exportation (envoi depuis le Canada)" },
+    import: { en: "Import (receiving into Canada)", fr: "Importation (réception au Canada)" },
+    both: { en: "Both import and export", fr: "Importation et exportation" },
+  } satisfies Record<Direction, L>,
   clientCount: {
     "1_5": { en: "1 to 5", fr: "1 à 5" },
     "6_20": { en: "6 to 20", fr: "6 à 20" },
@@ -104,7 +113,8 @@ export const QUESTIONS = {
   clientCount: { en: "About how many clients do you ship for?", fr: "Pour environ combien de clients expédiez-vous?" },
   clientsDescription: { en: "Who are your clients? (optional)", fr: "Qui sont vos clients? (facultatif)" },
   clientsDescriptionHint: { en: "For example: small shops, families sending parcels home, other businesses.", fr: "Par exemple : petits commerces, familles qui envoient des colis, autres entreprises." },
-  destinations: { en: "Main destination countries in Africa", fr: "Principaux pays de destination en Afrique" },
+  direction: { en: "Do you import, export, or both?", fr: "Importez-vous, exportez-vous, ou les deux?" },
+  destinations: { en: "Main destination countries", fr: "Principaux pays de destination" },
   destinationsHint: { en: "For example: Cameroon, Ivory Coast, Senegal.", fr: "Par exemple : Cameroun, Côte d'Ivoire, Sénégal." },
   typicalWeight: { en: "Typical parcel weight", fr: "Poids habituel d'un colis" },
   typicalValue: { en: "Typical value of a shipment", fr: "Valeur habituelle d'un envoi" },

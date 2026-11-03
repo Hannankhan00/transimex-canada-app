@@ -10,6 +10,7 @@ import type { TermsContent } from "@/lib/express/terms";
 import {
   CATEGORY_VALUES,
   CLIENT_COUNT_VALUES,
+  DIRECTION_VALUES,
   PAYMENT_VALUES,
   RESTRICTED_VALUES,
   SHIPS_FOR_VALUES,
@@ -65,6 +66,7 @@ const emptyProfile = {
   shipsFor: "",
   clientCount: "",
   clientsDescription: "",
+  direction: "",
   destinations: "",
   typicalWeight: "",
   typicalValue: "",
@@ -224,6 +226,7 @@ export default function ExpressApplyModal({ onClose }: { onClose: () => void }) 
     if (profile.goodsDescription.trim().length < 5) e.goodsDescription = need;
     if (!profile.shipsFor) e.shipsFor = need;
     if (profile.shipsFor && profile.shipsFor !== "own" && !profile.clientCount) e.clientCount = need;
+    if (!profile.direction) e.direction = need;
     if (profile.destinations.trim().length < 2) e.destinations = need;
     if (!profile.typicalWeight) e.typicalWeight = need;
     if (!profile.typicalValue) e.typicalValue = need;
@@ -286,6 +289,7 @@ export default function ExpressApplyModal({ onClose }: { onClose: () => void }) 
               goodsDescription: profile.goodsDescription.trim(),
               shipsFor: profile.shipsFor,
               ...(profile.shipsFor !== "own" ? { clientCount: profile.clientCount, clientsDescription: profile.clientsDescription.trim() } : {}),
+              direction: profile.direction,
               destinations: profile.destinations.trim(),
               typicalWeight: profile.typicalWeight,
               typicalValue: profile.typicalValue,
@@ -516,6 +520,12 @@ export default function ExpressApplyModal({ onClose }: { onClose: () => void }) 
             </Field>
           </div>
         )}
+
+        <Question label={q("direction", L)} error={err("direction")} required>
+          <div role="radiogroup" aria-label={q("direction", L)} className="space-y-2">
+            {DIRECTION_VALUES.map((v) => optionCard(v, profile.direction === v, () => setP("direction", v), optionLabel("direction", v, L), "radio"))}
+          </div>
+        </Question>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="sm:col-span-2">

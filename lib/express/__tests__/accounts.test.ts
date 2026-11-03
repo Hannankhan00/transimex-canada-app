@@ -16,6 +16,7 @@ const shippingProfile = {
   goodsDescription: "Women's clothing",
   shipsFor: "own",
   destinations: "Cameroon",
+  direction: "export",
   typicalWeight: "light",
   typicalValue: "under_100",
   restrictedGoods: ["none"],

@@ -90,15 +90,16 @@ describe("Stripe Connect payments", () => {
 });
 
 describe("partner Stripe onboarding", () => {
-  it("creates a Standard account and an onboarding link", async () => {
-    const accounts = { create: vi.fn(async (_p: any) => ({ id: "acct_1" })), retrieve: vi.fn(async (_id: string) => ({ charges_enabled: true, payouts_enabled: false, details_submitted: true })) };
-    const accountLinks = { create: vi.fn(async (_p: any) => ({ url: "https://connect.stripe.test/setup" })) };
-    const client = new StripeConnectClient("sk_test_x", { accounts, accountLinks } as unknown as Stripe);
+  it("creates a full-dashboard v2 account and an onboarding link", async () => {
+    const accounts = { retrieve: vi.fn(async (_id: string) => ({ charges_enabled: true, payouts_enabled: false, details_submitted: true })) };
+    const v2Accounts = { create: vi.fn(async (_p: any) => ({ id: "acct_1" })) };
+    const v2AccountLinks = { create: vi.fn(async (_p: any) => ({ url: "https://connect.stripe.test/setup" })) };
+    const client = new StripeConnectClient("sk_test_x", { accounts, v2: { core: { accounts: v2Accounts, accountLinks: v2AccountLinks } } } as unknown as Stripe);
 
     expect(await client.createAccount({ email: "p@example.com", expressAccountId: "ea1" })).toEqual({ id: "acct_1" });
-    expect(accounts.create.mock.calls[0][0]).toMatchObject({ type: "standard", email: "p@example.com", metadata: { expressAccountId: "ea1" } });
+    expect(v2Accounts.create.mock.calls[0][0]).toMatchObject({ contact_email: "p@example.com", dashboard: "full", identity: { country: "CA" }, metadata: { expressAccountId: "ea1" } });
     expect(await client.createOnboardingLink("acct_1", "https://a/refresh", "https://a/return")).toBe("https://connect.stripe.test/setup");
-    expect(accountLinks.create.mock.calls[0][0]).toMatchObject({ account: "acct_1", type: "account_onboarding" });
+    expect(v2AccountLinks.create.mock.calls[0][0]).toMatchObject({ account: "acct_1", use_case: { type: "account_onboarding", account_onboarding: { refresh_url: "https://a/refresh", return_url: "https://a/return" } } });
     expect(await client.retrieveAccount("acct_1")).toEqual({ chargesEnabled: true, payoutsEnabled: false, detailsSubmitted: true });
   });
 
