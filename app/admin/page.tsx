@@ -298,22 +298,19 @@ export default function AdminOperationsPage() {
         {/* Card 1: New Quotes */}
         <div className="bg-white rounded-xl p-4 border border-slate-200/90 shadow-2xs hover:shadow-md transition group">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+            <span className="text-xs font-semibold text-slate-500">
               {language === "fr" ? "Nouvelles Soumissions" : "New Quotes"}
             </span>
-            <div className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0">
-              <FileText className="w-3.5 h-3.5" />
-            </div>
           </div>
-          <div className="mt-2 flex items-baseline gap-1.5">
-            <span className="text-2xl font-bold text-[#0B2545]">{metrics.newQuotesCount}</span>
+          <div className="mt-3 flex items-baseline gap-2">
+            <span className="text-4xl font-bold leading-none text-[#0B2545]">{metrics.newQuotesCount}</span>
             {metrics.newQuotesToday > 0 && (
-              <span className="text-[11px] font-semibold text-emerald-600 flex items-center gap-0.5">
+              <span className="text-xs font-semibold text-emerald-600 flex items-center gap-0.5">
                 <TrendingUp className="w-3 h-3" /> +{metrics.newQuotesToday}
               </span>
             )}
           </div>
-          <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between gap-2 text-[11px]">
+          <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between gap-2 text-xs">
             <span className="text-slate-500 truncate min-w-0">
               {metrics.newQuotesValueCad > 0
                 ? `$${metrics.newQuotesValueCad.toLocaleString("en-US", { maximumFractionDigits: 0 })} CAD`
@@ -333,17 +330,14 @@ export default function AdminOperationsPage() {
         {/* Card 2: Active Shipments */}
         <div className="bg-white rounded-xl p-4 border border-slate-200/90 shadow-2xs hover:shadow-md transition group">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+            <span className="text-xs font-semibold text-slate-500">
               {language === "fr" ? "Fret en Transit" : "Active Shipments"}
             </span>
-            <div className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0">
-              <Truck className="w-3.5 h-3.5" />
-            </div>
           </div>
-          <div className="mt-2 flex items-baseline gap-1.5">
-            <span className="text-2xl font-bold text-[#0B2545]">{metrics.activeShipmentsCount}</span>
+          <div className="mt-3 flex items-baseline gap-2">
+            <span className="text-4xl font-bold leading-none text-[#0B2545]">{metrics.activeShipmentsCount}</span>
           </div>
-          <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between gap-2 text-[11px]">
+          <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between gap-2 text-xs">
             <span className="text-slate-500 truncate min-w-0">
               {metrics.activeCorridorsCount} {language === "fr" ? "corridors" : "corridors"}
             </span>
@@ -364,22 +358,15 @@ export default function AdminOperationsPage() {
         >
           <div className="flex items-center justify-between">
             <span
-              className={`text-[10px] font-bold uppercase tracking-wider ${
+              className={`text-xs font-semibold ${
                 metrics.customsHoldsCount > 0 ? "text-red-700" : "text-slate-500"
               }`}
             >
               {language === "fr" ? "Blocages Douanes" : "Customs Holds"}
             </span>
-            <div
-              className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                metrics.customsHoldsCount > 0 ? "bg-red-100 text-[#d21f27]" : "bg-slate-100 text-slate-400"
-              }`}
-            >
-              <AlertTriangle className="w-3.5 h-3.5" />
-            </div>
           </div>
-          <div className="mt-2 flex items-baseline gap-1.5">
-            <span className={`text-2xl font-bold ${metrics.customsHoldsCount > 0 ? "text-[#d21f27]" : "text-[#0B2545]"}`}>
+          <div className="mt-3 flex items-baseline gap-2">
+            <span className={`text-4xl font-bold leading-none ${metrics.customsHoldsCount > 0 ? "text-[#d21f27]" : "text-[#0B2545]"}`}>
               {metrics.customsHoldsCount}
             </span>
             {metrics.customsHoldsCount > 0 && (
@@ -389,7 +376,7 @@ export default function AdminOperationsPage() {
             )}
           </div>
           <div
-            className={`mt-2 pt-2 border-t flex items-center justify-between gap-2 text-[11px] ${
+            className={`mt-2 pt-2 border-t flex items-center justify-between gap-2 text-xs ${
               metrics.customsHoldsCount > 0 ? "border-red-100" : "border-slate-100"
             }`}
           >
@@ -417,17 +404,14 @@ export default function AdminOperationsPage() {
         {/* Card 4: Unread Inquiries */}
         <div className="bg-white rounded-xl p-4 border border-slate-200/90 shadow-2xs hover:shadow-md transition group">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+            <span className="text-xs font-semibold text-slate-500">
               {language === "fr" ? "Demandes Non Lues" : "Unread Inquiries"}
             </span>
-            <div className="w-7 h-7 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center flex-shrink-0">
-              <Mail className="w-3.5 h-3.5" />
-            </div>
           </div>
-          <div className="mt-2 flex items-baseline gap-1.5">
-            <span className="text-2xl font-bold text-[#0B2545]">{metrics.unreadInquiriesCount}</span>
+          <div className="mt-3 flex items-baseline gap-2">
+            <span className="text-4xl font-bold leading-none text-[#0B2545]">{metrics.unreadInquiriesCount}</span>
           </div>
-          <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between gap-2 text-[11px]">
+          <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between gap-2 text-xs">
             <span className="text-slate-500 truncate min-w-0">
               {metrics.unreadFreightQuoteCount}{" "}
               {language === "fr" ? "demandes de fret" : "freight RFQs"}
@@ -444,22 +428,19 @@ export default function AdminOperationsPage() {
         {/* Card 5: Open Tickets */}
         <div className="bg-white rounded-xl p-4 border border-slate-200/90 shadow-2xs hover:shadow-md transition group">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+            <span className="text-xs font-semibold text-slate-500">
               {language === "fr" ? "Billets de Support" : "Open Tickets"}
             </span>
-            <div className="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center flex-shrink-0">
-              <LifeBuoy className="w-3.5 h-3.5" />
-            </div>
           </div>
-          <div className="mt-2 flex items-baseline gap-1.5">
-            <span className="text-2xl font-bold text-[#0B2545]">{metrics.openTicketsCount}</span>
+          <div className="mt-3 flex items-baseline gap-2">
+            <span className="text-4xl font-bold leading-none text-[#0B2545]">{metrics.openTicketsCount}</span>
             {metrics.urgentTicketsCount > 0 && (
-              <span className="text-[11px] font-semibold text-amber-600">
+              <span className="text-xs font-semibold text-amber-600">
                 {metrics.urgentTicketsCount} {language === "fr" ? "urgent(s)" : "urgent"}
               </span>
             )}
           </div>
-          <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
+          <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
             <Link
               href="/admin/support"
               className="text-[#0B2545] font-bold hover:underline flex items-center gap-0.5 ml-auto"

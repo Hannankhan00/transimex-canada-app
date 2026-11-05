@@ -121,14 +121,14 @@ export function emailTemplateWrapper(contentHtml: string, previewText: string = 
   <div class="wrapper">
     <div class="container">
       <div class="header">
-        <div class="logo-text">Transimex</div>
-        <div class="logo-sub">Canada Logistics Inc.</div>
+        <div class="logo-text">Transimex Canada</div>
+        <div class="logo-sub">Where logistics meet excellence</div>
       </div>
       <div class="body-content">
         ${contentHtml}
       </div>
       <div class="footer">
-        <p style="margin: 0 0 6px 0;"><strong>Transimex Canada Logistics Inc.</strong> &bull; Montreal &bull; Toronto &bull; Vancouver</p>
+        <p style="margin: 0 0 6px 0;"><strong>Transimex Canada</strong> &bull; Montreal &bull; Toronto &bull; Vancouver</p>
         <p style="margin: 0;">Institutional Logistics &amp; Cross-Border CBSA / PIP Compliance. This is an automated notification.</p>
       </div>
     </div>
@@ -237,7 +237,7 @@ export async function sendVerificationEmail({
     : `${appUrl}/login`;
 
   const content = `
-    <h1 class="h1">Verify Your Corporate Logistics Account</h1>
+    <h1 class="h1">Verify Your Account</h1>
     <p>Dear <strong>${escapeHtml(name)}</strong>,</p>
     <p>Thank you for submitting a commercial registration for <strong>${escapeHtml(companyName)}</strong> with Transimex Canada Logistics.</p>
     <p>To confirm your email address and verify your dispatch permissions, please click the verification button below:</p>
@@ -258,7 +258,7 @@ export async function sendVerificationEmail({
 
   return sendEmail({
     to,
-    subject: "Verify Your Transimex Canada Logistics Account",
+    subject: "Verify Your Transimex Canada Account",
     html: emailTemplateWrapper(content, "Verify your corporate email for Transimex Canada"),
     text: `Verify your Transimex account by visiting: ${verifyUrl}`,
     category: "email-verification",

@@ -9,8 +9,6 @@ import NewQuoteModal from "@/components/portal/NewQuoteModal";
 import {
   Truck,
   FileSpreadsheet,
-  CheckCircle2,
-  FileText,
   FolderOpen,
   HelpCircle,
   Plus,
@@ -268,90 +266,50 @@ export default function DashboardPage() {
       )}
 
       {/* 4 Primary Metric Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
-        {/* 1. Active Shipments */}
-        <Link
-          href="/dashboard/shipments"
-          className="bg-white rounded-2xl p-5 border border-slate-200 hover:border-slate-300 hover:shadow-sm transition flex flex-col justify-between h-28 group cursor-pointer"
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold tracking-wider text-slate-500 uppercase">
-              {language === "fr" ? "EXPÉDITIONS ACTIVES" : "ACTIVE SHIPMENTS"}
-            </span>
-            <div className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center text-[#d21f27]">
-              <Truck className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="flex items-baseline justify-between">
-            <span className="text-3xl font-bold text-[#0B2545] tracking-tight">{activeShipments}</span>
-            <span className="text-xs text-slate-400">
-              {language === "fr" ? "En transit" : "In transit"}
-            </span>
-          </div>
-        </Link>
-
-        {/* 2. Pending Quotes */}
-        <Link
-          href="/dashboard/quotes"
-          className="bg-white rounded-2xl p-5 border border-slate-200 hover:border-slate-300 hover:shadow-sm transition flex flex-col justify-between h-28 group cursor-pointer"
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold tracking-wider text-slate-500 uppercase">
-              {language === "fr" ? "SOUMISSIONS EN COURS" : "PENDING QUOTES"}
-            </span>
-            <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
-              <FileSpreadsheet className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="flex items-baseline justify-between">
-            <span className="text-3xl font-bold text-[#0B2545] tracking-tight">{pendingQuotes}</span>
-            <span className="text-xs text-slate-400">
-              {pendingQuotes > 0
-                ? language === "fr" ? "En attente" : "Awaiting review"
-                : language === "fr" ? "À jour" : "All caught up"}
-            </span>
-          </div>
-        </Link>
-
-        {/* 3. Delivered Total */}
-        <Link
-          href="/dashboard/shipments?status=delivered"
-          className="bg-white rounded-2xl p-5 border border-slate-200 hover:border-slate-300 hover:shadow-sm transition flex flex-col justify-between h-28 group cursor-pointer"
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold tracking-wider text-slate-500 uppercase">
-              {language === "fr" ? "TOTAL LIVRAISONS" : "DELIVERED TOTAL"}
-            </span>
-            <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600">
-              <CheckCircle2 className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="flex items-baseline justify-between">
-            <span className="text-3xl font-bold text-[#0B2545] tracking-tight">{deliveredTotal}</span>
-            <span className="text-xs text-slate-400">{language === "fr" ? "Total" : "All time"}</span>
-          </div>
-        </Link>
-
-        {/* 4. Documents Available */}
-        <Link
-          href="/dashboard/documents"
-          className="bg-white rounded-2xl p-5 border border-slate-200 hover:border-slate-300 hover:shadow-sm transition flex flex-col justify-between h-28 group cursor-pointer"
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold tracking-wider text-slate-500 uppercase">
-              {language === "fr" ? "DOCUMENTS DOUANIERS" : "CBSA DOCUMENTS"}
-            </span>
-            <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
-              <FileText className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="flex items-baseline justify-between">
-            <span className="text-3xl font-bold text-[#0B2545] tracking-tight">{documentsCount}</span>
-            <span className="text-xs text-slate-400">
-              {language === "fr" ? "Disponibles" : "Available"}
-            </span>
-          </div>
-        </Link>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        {[
+          {
+            href: "/dashboard/shipments",
+            label: language === "fr" ? "Expéditions actives" : "Active shipments",
+            value: activeShipments,
+            note: language === "fr" ? "En transit" : "In transit",
+            accent: activeShipments > 0 ? "bg-[#d21f27]" : "bg-slate-200",
+          },
+          {
+            href: "/dashboard/quotes",
+            label: language === "fr" ? "Soumissions en cours" : "Pending quotes",
+            value: pendingQuotes,
+            note: pendingQuotes > 0
+              ? language === "fr" ? "En attente de révision" : "Awaiting review"
+              : language === "fr" ? "À jour" : "All caught up",
+            accent: pendingQuotes > 0 ? "bg-amber-500" : "bg-slate-200",
+          },
+          {
+            href: "/dashboard/shipments?status=delivered",
+            label: language === "fr" ? "Total livraisons" : "Delivered",
+            value: deliveredTotal,
+            note: language === "fr" ? "Depuis le début" : "All time",
+            accent: "bg-emerald-500",
+          },
+          {
+            href: "/dashboard/documents",
+            label: language === "fr" ? "Documents douaniers" : "CBSA documents",
+            value: documentsCount,
+            note: language === "fr" ? "Disponibles" : "Available",
+            accent: "bg-[#0B2545]",
+          },
+        ].map((m) => (
+          <Link
+            key={m.href}
+            href={m.href}
+            className="relative bg-white rounded-xl border border-slate-200 hover:border-slate-400 transition p-4 sm:p-5 flex flex-col gap-3 overflow-hidden cursor-pointer"
+          >
+            <span className={`absolute left-0 top-0 bottom-0 w-1 ${m.accent}`} aria-hidden="true" />
+            <span className="text-sm font-semibold text-slate-600">{m.label}</span>
+            <span className="text-4xl font-bold text-[#0B2545] tracking-tight leading-none">{m.value}</span>
+            <span className="text-xs text-slate-500">{m.note}</span>
+          </Link>
+        ))}
       </div>
 
       {/* 2-Column Split: Activity Stream & Quick Actions */}
