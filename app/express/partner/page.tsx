@@ -181,6 +181,28 @@ export default function ExpressPartnerPage() {
     </div>
   );
 
+  const rowActions = (c: PartnerCustomerDTO) => (
+          <div className="flex flex-wrap justify-end gap-1.5">
+            {!c.archived && (
+              <Link href={`/express/book?customer=${c.id}`} className="inline-flex items-center gap-1 rounded-lg bg-[#0B2545] px-2.5 py-1.5 text-xs font-bold text-white hover:bg-[#12315c]">
+                <PackagePlus className="w-3.5 h-3.5" />
+                {p.bookFor}
+              </Link>
+            )}
+            <button type="button" onClick={() => startEdit(c)} className="rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-bold text-slate-700 cursor-pointer">
+              {p.edit}
+            </button>
+            {!c.archived && (
+              <button type="button" disabled={busyId === c.id} onClick={() => createOrReset(c)} className="rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-bold text-slate-700 disabled:opacity-60 cursor-pointer">
+                {c.hasLogin ? p.resetLoginBtn : p.createLoginBtn}
+              </button>
+            )}
+            <button type="button" disabled={busyId === c.id} onClick={() => setArchived(c, !c.archived)} className="rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-bold text-slate-700 disabled:opacity-60 cursor-pointer">
+              {c.archived ? p.restore : p.archive}
+            </button>
+          </div>
+  );
+
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -223,7 +245,7 @@ export default function ExpressPartnerPage() {
               <dd className="font-mono font-bold break-all select-all">{credentials.password}</dd>
             </div>
           </dl>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <button type="button" onClick={copy} className="inline-flex items-center gap-2 rounded-lg border border-emerald-300 bg-white px-3.5 py-2 text-xs font-bold text-emerald-900 cursor-pointer">
               {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
               {copied ? p.copied : p.copy}
@@ -305,7 +327,7 @@ export default function ExpressPartnerPage() {
               {formError}
             </p>
           )}
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <button type="submit" disabled={saving} className="inline-flex items-center gap-2 rounded-xl bg-[#D21F27] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#b91a21] disabled:opacity-60 cursor-pointer">
               {saving && <Loader2 className="w-4 h-4 animate-spin" />}
               {saving ? p.saving : p.save}
@@ -335,7 +357,40 @@ export default function ExpressPartnerPage() {
       {state === "ready" && customers.length === 0 && <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-600">{p.empty}</div>}
 
       {state === "ready" && customers.length > 0 && (
-        <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
+        <>
+        <ul className="space-y-3 md:hidden">
+          {customers.map((c) => (
+            <li key={c.id} className={`space-y-3 rounded-2xl border border-slate-200 p-4 ${c.archived ? "bg-slate-50 text-slate-500" : "bg-white"}`}>
+              <div className="min-w-0">
+                <p className="break-words font-semibold text-slate-900">
+                  {c.name}
+                  {c.archived && <span className="ml-2 rounded-full border border-slate-300 px-2 py-0.5 text-[10px] font-bold text-slate-600">{p.archived}</span>}
+                </p>
+                <p className="break-all text-xs text-slate-500">
+                  {c.email}
+                  {c.company ? ` · ${c.company}` : ""}
+                </p>
+              </div>
+              <dl className="grid grid-cols-3 gap-2 text-xs">
+                <div>
+                  <dt className="text-slate-500">{p.colMarkup}</dt>
+                  <dd className="font-semibold tabular-nums">{c.effectiveMarkupPct}%</dd>
+                </div>
+                <div>
+                  <dt className="text-slate-500">{p.colShipments}</dt>
+                  <dd className="font-semibold tabular-nums">{c.stats.shipments}</dd>
+                </div>
+                <div>
+                  <dt className="text-slate-500">{p.colEarned}</dt>
+                  <dd className="font-semibold tabular-nums">{m(c.stats.markupCents)}</dd>
+                </div>
+              </dl>
+              <p className="text-xs">{c.hasLogin ? <span className="font-bold text-emerald-700">{p.hasLogin}</span> : <span className="text-slate-500">{p.noLogin}</span>}</p>
+              {rowActions(c)}
+            </li>
+          ))}
+        </ul>
+        <div className="hidden overflow-x-auto rounded-2xl border border-slate-200 bg-white md:block">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-slate-100 text-left text-[11px] uppercase tracking-wide text-slate-500">
@@ -367,31 +422,14 @@ export default function ExpressPartnerPage() {
                   <td className="px-4 py-3 text-right font-semibold tabular-nums">{m(c.stats.markupCents)}</td>
                   <td className="px-4 py-3 text-xs">{c.hasLogin ? <span className="font-bold text-emerald-700">{p.hasLogin}</span> : <span className="text-slate-500">{p.noLogin}</span>}</td>
                   <td className="px-4 py-3">
-                    <div className="flex flex-wrap justify-end gap-1.5">
-                      {!c.archived && (
-                        <Link href={`/express/book?customer=${c.id}`} className="inline-flex items-center gap-1 rounded-lg bg-[#0B2545] px-2.5 py-1.5 text-xs font-bold text-white hover:bg-[#12315c]">
-                          <PackagePlus className="w-3.5 h-3.5" />
-                          {p.bookFor}
-                        </Link>
-                      )}
-                      <button type="button" onClick={() => startEdit(c)} className="rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-bold text-slate-700 cursor-pointer">
-                        {p.edit}
-                      </button>
-                      {!c.archived && (
-                        <button type="button" disabled={busyId === c.id} onClick={() => createOrReset(c)} className="rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-bold text-slate-700 disabled:opacity-60 cursor-pointer">
-                          {c.hasLogin ? p.resetLoginBtn : p.createLoginBtn}
-                        </button>
-                      )}
-                      <button type="button" disabled={busyId === c.id} onClick={() => setArchived(c, !c.archived)} className="rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-bold text-slate-700 disabled:opacity-60 cursor-pointer">
-                        {c.archived ? p.restore : p.archive}
-                      </button>
-                    </div>
+                    {rowActions(c)}
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
+        </>
       )}
     </div>
   );

@@ -23,7 +23,7 @@ export default function ExpressStatusBanner({ account }: { account: ClientAccoun
   return (
     <div role="status" className={`rounded-2xl border p-5 flex gap-4 ${c.style}`}>
       <Icon className={`w-6 h-6 flex-shrink-0 mt-0.5 ${c.iconStyle}`} />
-      <div className="space-y-1.5">
+      <div className="min-w-0 space-y-1.5 break-words">
         <h2 className="font-bold">{c.title}</h2>
         <p className="text-sm leading-relaxed">{c.body}</p>
         {c.reason && (

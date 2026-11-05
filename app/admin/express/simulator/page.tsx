@@ -230,7 +230,7 @@ export default function AdminExpressSimulatorPage() {
               hint={tr("DHL charges on the greater of actual and volumetric weight. Add one parcel here.", "DHL facture selon le plus élevé du poids réel et du poids volumétrique. Ajoutez un colis ici.")}
               action={<UnitToggle value={units} onChange={setUnits} />}
             >
-              <div className="grid grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 {([["weight", tr("Weight (kg)", "Poids (kg)")], ["length", tr("Length (cm)", "Long. (cm)")], ["width", tr("Width (cm)", "Larg. (cm)")], ["height", tr("Height (cm)", "Haut. (cm)")]] as [keyof typeof form, string][]).map(([k, label]) => (
                   <label key={k} className="block space-y-1">
                     <span className="text-xs font-bold text-slate-700">{unitLabel(label, units)}</span>
@@ -255,7 +255,7 @@ export default function AdminExpressSimulatorPage() {
             </FormSection>
 
             <p className="pt-3 border-t border-slate-100 text-sm font-bold text-[#0B2545]">{tr("6. What-if (optional)", "6. Hypothèses (facultatif)")}</p>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               <label className="block space-y-1">
                 <span className="text-xs font-bold text-slate-700">{tr("What-if discount %", "Rabais hypothétique %")}</span>
                 <input className={adminInput} value={form.override} onChange={set("override")} inputMode="decimal" placeholder={tr("none", "aucun")} />

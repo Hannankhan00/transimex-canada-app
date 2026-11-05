@@ -94,7 +94,7 @@ export default function AdminExpressApplicationsPage() {
               <option value="b2b">B2B</option>
               <option value="b2c">B2C</option>
             </select>
-            <div className="relative">
+            <div className="relative min-w-0 flex-1">
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 className={`${adminInput} pl-9`}

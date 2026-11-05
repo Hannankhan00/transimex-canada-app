@@ -77,7 +77,7 @@ export default function ExpressNotificationsPage() {
         )}
       </div>
 
-      <div className="flex gap-1.5" role="tablist">
+      <div className="flex flex-wrap gap-1.5" role="tablist">
         {(["all", "unread"] as const).map((f) => (
           <button
             key={f}

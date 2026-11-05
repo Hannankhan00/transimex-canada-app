@@ -370,7 +370,7 @@ export default function AdminExpressAccountPage() {
                       : tr("Reason for suspension (the client will see this)", "Motif de la suspension (le client le verra)")}
                   </label>
                   <textarea className={adminInput} rows={3} value={reason} onChange={(e) => setReason(e.target.value)} maxLength={1000} />
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <button
                       type="button"
                       disabled={busy || reason.trim().length < 3}

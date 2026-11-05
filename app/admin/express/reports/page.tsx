@@ -146,7 +146,7 @@ export default function AdminExpressProfitReportPage() {
             ))}
           </div>
           {preset === "custom" && (
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <input type="date" className={`${adminInput} !w-40`} value={custom.from} onChange={(e) => setCustom((c) => ({ ...c, from: e.target.value }))} aria-label={tr("From", "Du")} />
               <span className="text-slate-400">→</span>
               <input type="date" className={`${adminInput} !w-40`} value={custom.to} onChange={(e) => setCustom((c) => ({ ...c, to: e.target.value }))} aria-label={tr("To", "Au")} />

@@ -540,7 +540,7 @@ export default function AdminExpressShipmentPage() {
                         <input className={adminInput} value={refund} onChange={(e) => setRefund(e.target.value)} inputMode="decimal" />
                       </label>
                     )}
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                       <button type="button" onClick={cancel} disabled={!!busy} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#D21F27] text-white text-xs font-bold disabled:opacity-60 cursor-pointer">
                         {busy === "cancel" && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                         {canRetryRefund ? tr("Retry refund", "Réessayer le remboursement") : tr("Confirm cancellation", "Confirmer l'annulation")}

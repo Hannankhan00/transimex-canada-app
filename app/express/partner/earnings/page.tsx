@@ -232,7 +232,7 @@ export default function ExpressPartnerEarningsPage() {
 
         {form && (
           <form onSubmit={saveDetails} noValidate className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               {(["etransfer", "bank"] as const).map((method) => (
                 <button key={method} type="button" onClick={() => setForm({ ...form, method })} className={`cursor-pointer rounded-full border px-3 py-1.5 text-xs font-bold ${form.method === method ? "border-[#0B2545] bg-[#0B2545] text-white" : "border-slate-300 bg-white text-slate-600"}`}>
                   {method === "etransfer" ? "Interac e-Transfer" : tr("Canadian bank account", "Compte bancaire canadien")}
@@ -266,7 +266,7 @@ export default function ExpressPartnerEarningsPage() {
             )}
             <p className="text-xs text-slate-600">{tr(`Stored encrypted. After you change these details, payouts are paused for ${rules.coolingHours} hours and we email you, to protect you if someone else got into your account.`, `Stockées chiffrées. Après toute modification, les versements sont suspendus pendant ${rules.coolingHours} heures et nous vous écrivons, pour vous protéger si quelqu'un d'autre accédait à votre compte.`)}</p>
             {formError && <p role="alert" className="text-xs font-semibold text-red-600">{formError}</p>}
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <button type="submit" disabled={busy !== ""} className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-[#0B2545] px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50">
                 {busy === "details" && <Loader2 className="h-4 w-4 animate-spin" />}
                 {tr("Save", "Enregistrer")}

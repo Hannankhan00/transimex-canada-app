@@ -187,7 +187,7 @@ function Detail() {
   }
 
   const addressBlock = (a: ClientShipmentDTO["shipper"]) => (
-    <div className="text-sm text-slate-700 leading-relaxed">
+    <div className="break-words text-sm text-slate-700 leading-relaxed">
       <p className="font-semibold text-slate-900">{a.name}</p>
       {a.company && <p>{a.company}</p>}
       <p>{a.line1}</p>
@@ -250,15 +250,15 @@ function Detail() {
         <section className="bg-white border border-slate-200 rounded-2xl p-5 space-y-2">
           <h2 className="font-bold text-[#0B2545] text-sm">{shipment.partner.customerName}</h2>
           <div className="divide-y divide-slate-100 rounded-xl border border-slate-200 text-sm">
-            <div className="flex justify-between px-4 py-2.5">
+            <div className="flex justify-between gap-3 px-4 py-2.5">
               <span className="text-slate-600">{pt.youPay}</span>
               <span className="font-semibold tabular-nums">{m(shipment.totalCents)}</span>
             </div>
-            <div className="flex justify-between px-4 py-2.5 text-emerald-700">
+            <div className="flex justify-between gap-3 px-4 py-2.5 text-emerald-700">
               <span>{pt.yourMarkup}</span>
               <span className="font-semibold tabular-nums">+{m(shipment.partner.markupCents)}</span>
             </div>
-            <div className="flex justify-between px-4 py-3 bg-slate-50 font-extrabold text-[#0B2545]">
+            <div className="flex justify-between gap-3 px-4 py-3 bg-slate-50 font-extrabold text-[#0B2545]">
               <span>{pt.customerPrice}</span>
               <span className="tabular-nums">{m(shipment.partner.customerTotalCents)}</span>
             </div>
@@ -409,7 +409,7 @@ function Detail() {
           ].map(([k, v]) => (
             <div key={k} className="py-2 grid sm:grid-cols-3 gap-1">
               <dt className="text-slate-500">{k}</dt>
-              <dd className="sm:col-span-2 font-semibold text-slate-800">{v}</dd>
+              <dd className="break-words sm:col-span-2 font-semibold text-slate-800">{v}</dd>
             </div>
           ))}
         </dl>
@@ -451,23 +451,23 @@ function Detail() {
         <h2 className="font-bold text-[#0B2545] text-sm">{s.priceTitle}</h2>
         {quote && !isCustomer ? (
           <div className="divide-y divide-slate-100 rounded-xl border border-slate-200 text-sm">
-            <div className="flex justify-between px-4 py-2.5">
+            <div className="flex justify-between gap-3 px-4 py-2.5">
               <span className="text-slate-600">{book.publicPrice}</span>
               <span className="font-semibold tabular-nums">{m(quote.price.publicBaseFreightCents)}</span>
             </div>
-            <div className="flex justify-between px-4 py-2.5 text-emerald-700">
+            <div className="flex justify-between gap-3 px-4 py-2.5 text-emerald-700">
               <span>
                 {book.yourDiscount} ({quote.price.discountPct}%)
               </span>
               <span className="font-semibold tabular-nums">−{m(quote.price.discountCents)}</span>
             </div>
             {quote.price.surcharges.map((sc) => (
-              <div key={sc.code} className="flex justify-between px-4 py-2.5">
+              <div key={sc.code} className="flex justify-between gap-3 px-4 py-2.5">
                 <span className="text-slate-600">{sc.name}</span>
                 <span className="font-semibold tabular-nums">{m(sc.amountCents)}</span>
               </div>
             ))}
-            <div className="flex justify-between px-4 py-3 bg-slate-50 font-extrabold text-[#0B2545]">
+            <div className="flex justify-between gap-3 px-4 py-3 bg-slate-50 font-extrabold text-[#0B2545]">
               <span>{book.total}</span>
               <span className="tabular-nums">{m(shipment.totalCents)}</span>
             </div>

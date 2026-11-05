@@ -182,9 +182,9 @@ export default function AdminExpressPayoutsPage() {
                       )}
                       {paying?.id === r.id ? (
                         <div className="flex flex-wrap items-end gap-2">
-                          <label className="space-y-1">
+                          <label className="w-full space-y-1 sm:w-auto">
                             <span className="block text-xs font-bold text-slate-600">{paying.mode === "paid" ? tr("Transfer reference", "Référence du virement") : tr("Reason", "Raison")}</span>
-                            <input className={`${adminInput} !w-72`} value={paying.value} onChange={(e) => setPaying({ ...paying, value: e.target.value })} />
+                            <input className={`${adminInput} !w-full sm:!w-72`} value={paying.value} onChange={(e) => setPaying({ ...paying, value: e.target.value })} />
                           </label>
                           <button type="button" onClick={resolve} disabled={busy !== ""} className={`cursor-pointer rounded-lg px-4 py-2 text-xs font-bold text-white disabled:opacity-50 ${paying.mode === "paid" ? "bg-emerald-600" : "bg-red-600"}`}>
                             {paying.mode === "paid" ? tr("Confirm: money sent", "Confirmer : argent envoyé") : tr("Confirm rejection", "Confirmer le rejet")}
@@ -194,7 +194,7 @@ export default function AdminExpressPayoutsPage() {
                           </button>
                         </div>
                       ) : (
-                        <div className="flex gap-2">
+                        <div className="flex flex-wrap gap-2">
                           <button type="button" onClick={() => setPaying({ id: r.id, mode: "paid", value: "" })} className="cursor-pointer rounded-lg bg-[#0B2545] px-3 py-2 text-xs font-bold text-white">
                             {tr("I sent it: mark paid", "Je l'ai envoyé : marquer payé")}
                           </button>
@@ -214,7 +214,7 @@ export default function AdminExpressPayoutsPage() {
               {owed.length === 0 ? (
                 <p className="px-5 py-8 text-center text-sm text-slate-500">{tr("No partner has earnings with Transimex yet.", "Aucun partenaire n'a encore de revenus chez Transimex.")}</p>
               ) : (
-                <table className="w-full text-xs">
+                <div className="overflow-x-auto"><table className="w-full text-xs">
                   <tbody className="divide-y divide-slate-100">
                     {owed.map((o) => (
                       <tr key={o.partnerAccountId}>
@@ -224,7 +224,7 @@ export default function AdminExpressPayoutsPage() {
                       </tr>
                     ))}
                   </tbody>
-                </table>
+                </table></div>
               )}
             </section>
 

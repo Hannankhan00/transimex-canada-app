@@ -266,14 +266,13 @@ export default function DashboardPage() {
       )}
 
       {/* 4 Primary Metric Cards Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {[
           {
             href: "/dashboard/shipments",
             label: language === "fr" ? "Expéditions actives" : "Active shipments",
             value: activeShipments,
             note: language === "fr" ? "En transit" : "In transit",
-            accent: activeShipments > 0 ? "bg-[#d21f27]" : "bg-slate-200",
           },
           {
             href: "/dashboard/quotes",
@@ -282,32 +281,30 @@ export default function DashboardPage() {
             note: pendingQuotes > 0
               ? language === "fr" ? "En attente de révision" : "Awaiting review"
               : language === "fr" ? "À jour" : "All caught up",
-            accent: pendingQuotes > 0 ? "bg-amber-500" : "bg-slate-200",
           },
           {
             href: "/dashboard/shipments?status=delivered",
             label: language === "fr" ? "Total livraisons" : "Delivered",
             value: deliveredTotal,
             note: language === "fr" ? "Depuis le début" : "All time",
-            accent: "bg-emerald-500",
           },
           {
             href: "/dashboard/documents",
             label: language === "fr" ? "Documents douaniers" : "CBSA documents",
             value: documentsCount,
             note: language === "fr" ? "Disponibles" : "Available",
-            accent: "bg-[#0B2545]",
           },
         ].map((m) => (
           <Link
             key={m.href}
             href={m.href}
-            className="relative bg-white rounded-xl border border-slate-200 hover:border-slate-400 transition p-4 sm:p-5 flex flex-col gap-3 overflow-hidden cursor-pointer"
+            className="group rounded-xl border border-slate-200 bg-white px-4 py-3.5 transition hover:border-slate-300 hover:shadow-sm sm:px-5 sm:py-4"
           >
-            <span className={`absolute left-0 top-0 bottom-0 w-1 ${m.accent}`} aria-hidden="true" />
-            <span className="text-sm font-semibold text-slate-600">{m.label}</span>
-            <span className="text-4xl font-bold text-[#0B2545] tracking-tight leading-none">{m.value}</span>
-            <span className="text-xs text-slate-500">{m.note}</span>
+            <p className="text-xs font-semibold text-slate-500 sm:text-[13px]">{m.label}</p>
+            <div className="mt-1.5 flex items-baseline gap-2">
+              <span className="text-3xl font-bold leading-none tracking-tight text-[#0B2545]">{m.value}</span>
+              <span className="truncate text-xs text-slate-400">{m.note}</span>
+            </div>
           </Link>
         ))}
       </div>

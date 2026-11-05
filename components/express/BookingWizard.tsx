@@ -72,7 +72,7 @@ function InfoTip({ children, label }: { children: React.ReactNode; label: string
       <span tabIndex={0} role="img" aria-label={label} className="cursor-help text-slate-400 outline-none transition-colors hover:text-[#0B2545] focus:text-[#0B2545]">
         <Info className="h-3.5 w-3.5" />
       </span>
-      <span role="tooltip" className="invisible absolute left-0 top-full z-30 w-64 pt-2 opacity-0 transition-opacity group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100">
+      <span role="tooltip" className="invisible absolute left-0 top-full z-30 w-64 max-w-[70vw] pt-2 opacity-0 transition-opacity group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100">
         <span className="block rounded-xl bg-[#0B2545] p-3 text-[11px] font-normal leading-relaxed text-white shadow-lg">{children}</span>
       </span>
     </span>
@@ -542,13 +542,16 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
                 >
                   {done ? <Check className="h-4 w-4" /> : n}
                 </span>
-                <span className={`text-xs font-bold ${current ? "inline text-[#0B2545]" : "hidden md:inline"} ${done ? "text-emerald-700" : current ? "" : "text-slate-500"}`}>{name}</span>
+                <span className={`text-xs font-bold ${current ? "hidden text-[#0B2545] sm:inline" : "hidden md:inline"} ${done ? "text-emerald-700" : current ? "" : "text-slate-500"}`}>{name}</span>
               </span>
-              {i < stepNames.length - 1 && <span className={`mx-3 h-0.5 flex-1 rounded ${done ? "bg-emerald-400" : "bg-slate-200"}`} aria-hidden="true" />}
+              {i < stepNames.length - 1 && <span className={`mx-1.5 h-0.5 min-w-2 flex-1 rounded sm:mx-3 ${done ? "bg-emerald-400" : "bg-slate-200"}`} aria-hidden="true" />}
             </li>
           );
         })}
       </ol>
+      <p className="-mt-3 text-xs font-bold text-[#0B2545] sm:hidden" aria-hidden="true">
+        {step} / {stepNames.length} · {stepNames[step - 1]}
+      </p>
 
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
       <div className="min-w-0 space-y-6">
@@ -849,7 +852,7 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
                 </div>
                 <div className="divide-y divide-slate-100 rounded-xl border border-slate-200">
                   {(quote as unknown as CustomerQuoteDTO).lines.map((l) => (
-                    <div key={l.code} className="flex justify-between px-4 py-2.5">
+                    <div key={l.code} className="flex justify-between gap-3 px-4 py-2.5">
                       <span className="text-slate-600">{l.code === "FREIGHT" ? (language === "fr" ? "Transport" : "Shipping") : l.name}</span>
                       <span className="font-semibold tabular-nums">{m(l.amountCents)}</span>
                     </div>
@@ -876,48 +879,48 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
                   )}
                 </div>
                 <div className="divide-y divide-slate-100 rounded-xl border border-slate-200">
-                  <div className="flex justify-between px-4 py-2.5">
+                  <div className="flex justify-between gap-3 px-4 py-2.5">
                     <span className="text-slate-600">{b.publicPrice}</span>
                     <span className="font-semibold tabular-nums">{m(quote.price.publicBaseFreightCents)}</span>
                   </div>
                   {!quote.price.discountWaived && (
                     <>
-                      <div className="flex justify-between px-4 py-2.5 text-emerald-700">
+                      <div className="flex justify-between gap-3 px-4 py-2.5 text-emerald-700">
                         <span>
                           {b.yourDiscount} ({quote.price.discountPct}%)
                         </span>
                         <span className="font-semibold tabular-nums">−{m(quote.price.discountCents)}</span>
                       </div>
-                      <div className="flex justify-between px-4 py-2.5">
+                      <div className="flex justify-between gap-3 px-4 py-2.5">
                         <span className="text-slate-600">{b.baseAfterDiscount}</span>
                         <span className="font-semibold tabular-nums">{m(quote.price.baseFreightCents)}</span>
                       </div>
                     </>
                   )}
                   {quote.price.surcharges.map((s) => (
-                    <div key={s.code} className="flex justify-between px-4 py-2.5">
+                    <div key={s.code} className="flex justify-between gap-3 px-4 py-2.5">
                       <span className="text-slate-600">{s.name}</span>
                       <span className="font-semibold tabular-nums">{m(s.amountCents)}</span>
                     </div>
                   ))}
-                  <div className="flex justify-between px-4 py-3 bg-slate-50 font-extrabold text-[#0B2545]">
+                  <div className="flex justify-between gap-3 px-4 py-3 bg-slate-50 font-extrabold text-[#0B2545]">
                     <span>{b.total}</span>
                     <span className="tabular-nums">{m(quote.price.totalCents)}</span>
                   </div>
                 </div>
                 {quote.partner && (
                   <div className="divide-y divide-slate-100 rounded-xl border border-slate-200">
-                    <div className="flex justify-between px-4 py-2.5">
+                    <div className="flex justify-between gap-3 px-4 py-2.5">
                       <span className="text-slate-600">{t.express.partner.youPay}</span>
                       <span className="font-semibold tabular-nums">{m(quote.price.totalCents)}</span>
                     </div>
-                    <div className="flex justify-between px-4 py-2.5 text-emerald-700">
+                    <div className="flex justify-between gap-3 px-4 py-2.5 text-emerald-700">
                       <span>
                         {t.express.partner.yourMarkup} ({quote.partner.markupPct}%)
                       </span>
                       <span className="font-semibold tabular-nums">+{m(quote.partner.markupCents)}</span>
                     </div>
-                    <div className="flex justify-between px-4 py-3 bg-slate-50 font-extrabold text-[#0B2545]">
+                    <div className="flex justify-between gap-3 px-4 py-3 bg-slate-50 font-extrabold text-[#0B2545]">
                       <span>
                         {t.express.partner.customerPrice} · {quote.partner.customerName}
                       </span>

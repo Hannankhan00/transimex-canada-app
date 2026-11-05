@@ -158,7 +158,7 @@ export default function AdminExpressInvoicePage() {
                     </label>
                     <input className={adminInput} value={text} onChange={(e) => setText(e.target.value)} maxLength={mode === "pay" ? 200 : 500} />
                     {mode === "void" && <p className="text-[11px] text-slate-500">{tr("The bookings and credits on this invoice go back to not invoiced, so the next run bills them again.", "Les réservations et crédits de cette facture redeviennent non facturés; la prochaine exécution les refacturera.")}</p>}
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                       <button
                         type="button"
                         onClick={submit}
