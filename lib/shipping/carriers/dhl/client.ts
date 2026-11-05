@@ -5,7 +5,7 @@ import { withRetry } from "../../core/retry";
 const REQUEST_TIMEOUT_MS = 15_000;
 
 export interface DhlRequest {
-  method: "GET" | "POST";
+  method: "GET" | "POST" | "DELETE";
   path: string;
   query?: Record<string, string>;
   body?: unknown;
@@ -73,6 +73,16 @@ export class DhlHttpClient {
       throw error;
     }
 
+    // DELETE answers 200 with a small JSON message; tolerate an empty body.
+    if (req.method === "DELETE") {
+      const text = await response.text().catch(() => "");
+      if (!text) return {} as T;
+      try {
+        return JSON.parse(text) as T;
+      } catch {
+        return { message: text } as T;
+      }
+    }
     return (await response.json()) as T;
   }
 }

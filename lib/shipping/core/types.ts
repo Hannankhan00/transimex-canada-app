@@ -180,6 +180,20 @@ export interface PickupRequest {
   declaredValueCents?: Cents;
 }
 
+export interface PickupCancelRequest {
+  /** DHL's dispatch confirmation number for the pickup. */
+  confirmationNumber: string;
+  /** Who is cancelling: DHL requires a name. */
+  requestorName: string;
+  /** Why: DHL requires a reason. */
+  reason: string;
+}
+
+export interface PickupCancelResult {
+  /** "already_cancelled" means DHL had already cancelled it or the courier had already come. */
+  status: "cancelled" | "already_cancelled";
+}
+
 export interface PickupResult {
   confirmationNumber: string;
   /** ISO timestamp. */

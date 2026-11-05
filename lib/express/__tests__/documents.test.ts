@@ -45,6 +45,9 @@ const adapterReturning = (...codes: string[]): CarrierAdapter => ({
   bookPickup: async () => {
     throw new Error("unused");
   },
+  cancelPickup: async () => {
+    throw new Error("unused");
+  },
   track: async () => {
     throw new Error("unused");
   },

@@ -48,7 +48,7 @@ function Detail() {
   const payer = !isCustomer || Boolean(shipment?.bookedByViewer);
   const [quote, setQuote] = useState<ClientQuoteDTO | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "missing" | "error">("loading");
-  const [action, setAction] = useState<"" | "pay" | "cancel">("");
+  const [action, setAction] = useState<"" | "pay" | "cancel" | "pickup">("");
   const [actionError, setActionError] = useState("");
   const [polls, setPolls] = useState(0);
 
@@ -133,6 +133,24 @@ function Detail() {
       }
     } catch {
       setActionError(s.cancelError);
+    }
+    setAction("");
+  };
+
+  const cancelPickup = async () => {
+    if (!window.confirm(s.cancelPickupConfirm)) return;
+    setAction("pickup");
+    setActionError("");
+    try {
+      const res = await fetch(`/api/express/shipments/${id}/cancel-pickup`, { method: "POST" });
+      if (res.ok) {
+        await load();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setActionError(data.error || s.cancelPickupError);
+      }
+    } catch {
+      setActionError(s.cancelPickupError);
     }
     setAction("");
   };
@@ -329,6 +347,28 @@ function Detail() {
             <Download className="w-4 h-4" />
             {s.downloadLabel}
           </a>
+        </section>
+      )}
+
+      {shipment.status === "label_ready" && shipment.pickupRequested && (shipment.canCancelPickup || shipment.pickupCancelledAt) && (
+        <section className="bg-white border border-slate-200 rounded-2xl p-5 space-y-3">
+          <h2 className="font-bold text-[#0B2545] text-sm">{s.pickupTitle}</h2>
+          {shipment.pickupCancelledAt ? (
+            <p className="text-sm text-slate-600">{s.pickupCancelledNote}</p>
+          ) : (
+            <>
+              <p className="text-sm text-slate-600">{s.pickupHelp}</p>
+              <button
+                type="button"
+                onClick={cancelPickup}
+                disabled={action !== ""}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-800 text-sm font-bold disabled:opacity-60 cursor-pointer"
+              >
+                {action === "pickup" && <Loader2 className="w-4 h-4 animate-spin" />}
+                {action === "pickup" ? s.cancellingPickup : s.cancelPickup}
+              </button>
+            </>
+          )}
         </section>
       )}
 

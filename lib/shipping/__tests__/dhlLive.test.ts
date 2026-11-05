@@ -239,3 +239,31 @@ describe("DHL tracking mapping", () => {
     expect(result.status).toBe("in_transit");
   });
 });
+
+describe("DHL pickup cancel", () => {
+  it("sends DELETE /pickups/{number} with the requestor name and reason DHL requires", async () => {
+    const fetchMock = vi.fn(async (_url: unknown, _init?: unknown) => json({ instance: "/expressapi/pickups/PRG1", message: "Successfully cancelled." }));
+    const result = await adapterWith(fetchMock).cancelPickup({ confirmationNumber: "PRG211126000382", requestorName: "Ada Obi", reason: "Cancelled by customer" });
+    expect(result).toEqual({ status: "cancelled" });
+    const [url, init] = fetchMock.mock.calls[0] as [URL, RequestInit];
+    expect(init.method).toBe("DELETE");
+    expect(url.pathname).toBe("/pickups/PRG211126000382");
+    expect(url.searchParams.get("requestorName")).toBe("Ada Obi");
+    expect(url.searchParams.get("reason")).toBe("Cancelled by customer");
+  });
+
+  it("DHL's 'already cancelled or completed' answer counts as already cancelled, not a failure", async () => {
+    const adapter = adapterWith(vi.fn(async () => json({ message: "Booking already cancelled or completed." })));
+    expect(await adapter.cancelPickup({ confirmationNumber: "PRG1", requestorName: "A", reason: "x" })).toEqual({ status: "already_cancelled" });
+  });
+
+  it("an empty 200 body is still a success", async () => {
+    const adapter = adapterWith(vi.fn(async () => new Response("", { status: 200 })));
+    expect(await adapter.cancelPickup({ confirmationNumber: "PRG1", requestorName: "A", reason: "x" })).toEqual({ status: "cancelled" });
+  });
+
+  it("an unknown pickup is an error the caller can see", async () => {
+    const adapter = adapterWith(vi.fn(async () => json({ detail: "Requested Pickup was not found", status: "404" }, 404)));
+    await expect(adapter.cancelPickup({ confirmationNumber: "NOPE", requestorName: "A", reason: "x" })).rejects.toMatchObject({ code: "not_found" });
+  });
+});

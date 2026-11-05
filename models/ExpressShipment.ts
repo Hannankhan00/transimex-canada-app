@@ -175,6 +175,11 @@ export interface IExpressShipment extends Document {
   trackingNumber?: string;
   trackingUrl?: string;
   pickupConfirmation?: string;
+  /** Set when the DHL pickup was cancelled (the shipment and its label stay). */
+  pickupCancelledAt?: Date;
+  pickupCancelledBy?: string;
+  /** Why the last attempt to cancel the DHL pickup failed. Staff only. Cleared on success. */
+  pickupCancelError?: string;
   tracking?: IExpressShipmentTracking;
 
   cancellation?: { reason: string; by: string; at: Date; refundCents: number };
@@ -399,6 +404,9 @@ const ExpressShipmentSchema = new Schema<IExpressShipment>(
     trackingNumber: { type: String },
     trackingUrl: { type: String },
     pickupConfirmation: { type: String },
+    pickupCancelledAt: { type: Date },
+    pickupCancelledBy: { type: String },
+    pickupCancelError: { type: String, maxlength: 400 },
     tracking: { type: TrackingSchema },
 
     cancellation: {

@@ -5,6 +5,8 @@ import ExpressShipment, { type IExpressShipment } from "@/models/ExpressShipment
 import { PaymentError, type PaymentProvider } from "./payments/types";
 import { notifyShipmentEvent } from "./shipmentNotify";
 import { creditInvoiceBooking } from "./invoiceBooking";
+import { cancelDhlPickup, type PickupCancelState } from "./pickupCancel";
+import type { CarrierAdapter } from "@/lib/shipping/core/adapter";
 
 export type CancelFailure = {
   ok: false;
@@ -19,6 +21,8 @@ export interface CancelSuccess {
   refundedCents: number;
   /** True when the booking is cancelled but the refund still has to be retried. */
   refundFailed: boolean;
+  /** What happened to the DHL pickup when a booking with a label was cancelled. Absent when there was none. */
+  pickupCancel?: PickupCancelState;
 }
 
 export type CancelResult = CancelSuccess | CancelFailure;
@@ -78,7 +82,8 @@ async function issueRefund(sh: IExpressShipment, amountCents: number, reason: st
  *  - unpaid: just cancelled, nothing to refund (clients and staff).
  *  - paid, no label yet: cancelled and the full payment refunded (staff).
  *  - label already created: staff decide the refund amount. DHL's shipment is
- *    NOT cancelled automatically; staff handle that with DHL.
+ *    NOT cancelled automatically (DHL's API cannot do it; staff handle that with DHL). A booked DHL pickup IS
+ *    cancelled, so a courier does not turn up for a cancelled order.
  */
 export async function cancelShipment(params: {
   shipmentId: string;
@@ -87,6 +92,8 @@ export async function cancelShipment(params: {
   /** Only used when a label exists: how much to refund. */
   refundCents?: number;
   provider: PaymentProvider | null;
+  /** Test hook: the carrier used to cancel the DHL pickup. */
+  adapter?: CarrierAdapter;
 }): Promise<CancelResult> {
   await connectDB();
   const { actor, reason } = params;
@@ -173,8 +180,10 @@ export async function cancelShipment(params: {
     if (!updated) return fail("conflict", 409, "This booking changed while you were cancelling it. Reload and try again.");
 
     const r = await giveBack(updated, amount);
+    // After the money, so a DHL problem can never block a refund.
+    const pickup = await cancelDhlPickup(updated, actor, reason, params.adapter);
     await notifyShipmentEvent(String(sh._id), r.ok && amount > 0 && !onAccount ? "refunded" : "cancelled");
-    return { ok: true, refundedCents: r.ok ? r.amountCents : 0, refundFailed: !r.ok };
+    return { ok: true, refundedCents: r.ok ? r.amountCents : 0, refundFailed: !r.ok, ...(pickup.state !== "none" ? { pickupCancel: pickup.state } : {}) };
   }
 
   return fail("conflict", 409, "This booking cannot be cancelled.");

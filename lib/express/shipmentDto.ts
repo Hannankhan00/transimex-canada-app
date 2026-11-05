@@ -2,6 +2,7 @@ import type { IExpressShipment } from "@/models/ExpressShipment";
 import type { AccountUserInfo } from "./accountDto";
 import { contentTypeOf } from "./contentType";
 import { classifyLabelIssue, type LabelIssueKind } from "./carrierMessages";
+import { hasActivePickup } from "./pickupState";
 
 type ShipmentDoc = Omit<Partial<IExpressShipment>, "_id"> & { _id: unknown };
 
@@ -68,6 +69,9 @@ export function toClientShipmentDTO(doc: ShipmentDoc) {
     declaredValueCents: doc.declaredValueCents ?? 0,
     contentDescription: doc.contentDescription || "",
     pickupRequested: Boolean(doc.pickupRequested),
+    // The owner may cancel a booked DHL pickup (to drop the parcel off instead) until DHL has collected it.
+    canCancelPickup: doc.status === "label_ready" && hasActivePickup(doc as IExpressShipment),
+    pickupCancelledAt: iso(doc.pickupCancelledAt),
     dutiesPayer: doc.dutiesPayer!,
     totalCents: doc.totalCents ?? 0,
     currency: "CAD" as const,
@@ -218,6 +222,10 @@ export function toAdminShipmentDTO(doc: ShipmentDoc, user?: AccountUserInfo | nu
     label: doc.label ? { source: doc.label.source, uploadedAt: iso(doc.label.uploadedAt), bytes: doc.label.bytes } : null,
     invoice: doc.invoice?.key ? { paperless: Boolean(doc.invoice.paperless), bytes: doc.invoice.bytes } : null,
     pickupConfirmation: doc.pickupConfirmation || "",
+    // Staff may cancel the DHL pickup of a labelled booking, or retry it on a cancelled one, until DHL collects the parcel.
+    canCancelPickup: (doc.status === "label_ready" || doc.status === "cancelled") && hasActivePickup(doc as IExpressShipment),
+    pickupCancelledAt: iso(doc.pickupCancelledAt),
+    pickupCancelError: doc.pickupCancelError || "",
     // What DHL really charged (staff only); null until it is recorded or imported from a DHL invoice.
     dhlActual: doc.dhlActual ? { chargeCents: doc.dhlActual.chargeCents, source: doc.dhlActual.source, recordedAt: iso(doc.dhlActual.recordedAt), invoiceNumber: doc.dhlActual.invoiceNumber || "", note: doc.dhlActual.note || "" } : null,
     // Invoice-account detail (staff only): the charge, what was credited back, and the invoice it is on.

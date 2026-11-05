@@ -2,6 +2,8 @@ import type {
   Address,
   AddressValidation,
   CarrierId,
+  PickupCancelRequest,
+  PickupCancelResult,
   PickupRequest,
   PickupResult,
   RateOption,
@@ -32,6 +34,12 @@ export interface CarrierAdapter {
   createShipment(request: ShipmentRequest): Promise<ShipmentResult>;
 
   bookPickup(request: PickupRequest): Promise<PickupResult>;
+
+  /**
+   * Cancels a booked pickup. Safe to repeat: DHL answers "already cancelled" instead of failing. Cancelling
+   * the pickup does NOT cancel the shipment or its label, and DHL may cancel a whole consolidated pickup.
+   */
+  cancelPickup(request: PickupCancelRequest): Promise<PickupCancelResult>;
 
   /**
    * Current status and events. `bookedAt` (ISO) is a hint for test doubles that age a

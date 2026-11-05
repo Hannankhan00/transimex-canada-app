@@ -71,7 +71,17 @@ export async function POST(req: Request, { params }: Ctx) {
       });
     }
 
-    return NextResponse.json({ success: true, refundedCents: result.refundedCents, refundFailed: result.refundFailed });
+    if (result.pickupCancel) {
+      await logAudit({
+        actor: access.actor,
+        action: result.pickupCancel === "failed" ? "EXPRESS_PICKUP_CANCEL_FAILED" : "EXPRESS_PICKUP_CANCELLED",
+        resourceType: "ExpressShipment",
+        resourceId: id,
+        details: `DHL pickup for ${ref}: ${result.pickupCancel}`,
+      });
+    }
+
+    return NextResponse.json({ success: true, refundedCents: result.refundedCents, refundFailed: result.refundFailed, pickupCancel: result.pickupCancel ?? null });
   } catch (error) {
     console.error("Express admin cancel error:", error);
     return NextResponse.json({ error: "Failed to cancel booking" }, { status: 500 });

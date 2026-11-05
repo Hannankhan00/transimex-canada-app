@@ -8,6 +8,8 @@ import type {
   CustomsItem,
   Parcel,
   PickupRequest,
+  PickupCancelRequest,
+  PickupCancelResult,
   PickupResult,
   RateOption,
   RatePrice,
@@ -527,6 +529,16 @@ export class DhlApiAdapter implements CarrierAdapter {
       throw new CarrierError("unknown", "DHL did not return a pickup confirmation.", { outcomeUnknown: true });
     }
     return { confirmationNumber, scheduledFor: request.readyAt };
+  }
+
+  async cancelPickup(request: PickupCancelRequest): Promise<PickupCancelResult> {
+    // DHL answers 200 for both "Successfully cancelled" and "Booking already cancelled or completed".
+    const response = await this.http.request<{ message?: string; detail?: string }>({
+      method: "DELETE",
+      path: `/pickups/${encodeURIComponent(request.confirmationNumber)}`,
+      query: { requestorName: request.requestorName.slice(0, 80), reason: request.reason.slice(0, 80) },
+    });
+    return { status: /already/i.test(response?.message ?? "") ? "already_cancelled" : "cancelled" };
   }
 
   async track(trackingNumber: string): Promise<TrackingResult> {

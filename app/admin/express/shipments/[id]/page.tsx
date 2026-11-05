@@ -118,12 +118,21 @@ export default function AdminExpressShipmentPage() {
     return run("cancel", () => fetch(`/api/admin/express/shipments/${id}/cancel`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }), (d) => {
       setShowCancel(false);
       setReason("");
-      return d.refundFailed
+      const base = d.refundFailed
         ? tr("Cancelled, but the refund FAILED. Use 'Retry refund'.", "Annulé, mais le remboursement a ÉCHOUÉ. Utilisez « Réessayer le remboursement ».")
         : d.refundedCents > 0
           ? tr(`Cancelled and refunded ${m(d.refundedCents)}`, `Annulé et remboursé ${m(d.refundedCents)}`)
           : tr("Cancelled", "Annulé");
+      // The DHL pickup is cancelled with the booking; say how that went.
+      if (d.pickupCancel === "failed") return `${base} ${tr("The DHL pickup could NOT be cancelled: use 'Cancel DHL pickup' or cancel it with DHL.", "Le ramassage DHL n'a PAS pu être annulé : utilisez « Annuler le ramassage DHL » ou annulez-le auprès de DHL.")}`;
+      if (d.pickupCancel) return `${base} ${tr("DHL pickup cancelled.", "Ramassage DHL annulé.")}`;
+      return base;
     });
+  };
+
+  const cancelPickup = () => {
+    if (!window.confirm(tr("Cancel the DHL pickup? The booking and label stay as they are.", "Annuler le ramassage DHL? La réservation et l'étiquette restent inchangées."))) return;
+    return run("pickup", () => fetch(`/api/admin/express/shipments/${id}/cancel-pickup`, { method: "POST" }), () => tr("DHL pickup cancelled", "Ramassage DHL annulé"));
   };
 
   const attentionText: Record<string, string> = {
@@ -221,6 +230,7 @@ export default function AdminExpressShipmentPage() {
                   [tr("Terms accepted", "Conditions acceptées"), shipment.termsVersion],
                   [tr("Tracking", "Suivi"), shipment.trackingNumber || "—"],
                   ...(shipment.pickupConfirmation ? [[tr("DHL pickup confirmation", "Confirmation du ramassage DHL"), shipment.pickupConfirmation] as [string, string]] : []),
+                  ...(shipment.pickupCancelledAt ? [[tr("DHL pickup", "Ramassage DHL"), tr(`Cancelled ${formatDate(shipment.pickupCancelledAt, language)}`, `Annulé le ${formatDate(shipment.pickupCancelledAt, language)}`)] as [string, string]] : []),
                 ].map(([k, v]) => (
                   <div key={k} className="py-2 grid sm:grid-cols-3 gap-1">
                     <dt className="text-slate-500">{k}</dt>
@@ -461,6 +471,33 @@ export default function AdminExpressShipmentPage() {
               </section>
             )}
 
+            {/* DHL pickup */}
+            {(shipment.canCancelPickup || shipment.pickupCancelError) && (
+              <section className="bg-white rounded-2xl border border-slate-200 p-5 space-y-3">
+                <h2 className="font-bold text-[#0B2545] text-sm">{tr("DHL pickup", "Ramassage DHL")}</h2>
+                {shipment.pickupCancelError && !shipment.pickupCancelledAt && (
+                  <p role="alert" className="flex gap-2 text-xs text-red-700 bg-red-50 border border-red-200 rounded-lg p-2">
+                    <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                    {tr("The last attempt to cancel the pickup with DHL failed:", "La dernière tentative d'annulation du ramassage auprès de DHL a échoué :")} {shipment.pickupCancelError}
+                  </p>
+                )}
+                {shipment.canCancelPickup && (
+                  <>
+                    <p className="text-xs text-slate-600">
+                      {tr(
+                        `Cancels only the courier pickup (confirmation ${shipment.pickupConfirmation}). The booking, label and payment stay as they are, and the parcel can be dropped off at DHL. The pickup fee is not refunded here. DHL may cancel other shipments grouped in the same pickup.`,
+                        `Annule seulement le ramassage par le livreur (confirmation ${shipment.pickupConfirmation}). La réservation, l'étiquette et le paiement restent inchangés, et le colis peut être déposé chez DHL. Les frais de ramassage ne sont pas remboursés ici. DHL peut annuler d'autres envois regroupés dans le même ramassage.`
+                      )}
+                    </p>
+                    <button type="button" onClick={cancelPickup} disabled={!!busy} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-300 text-xs font-bold text-slate-700 disabled:opacity-60 cursor-pointer">
+                      {busy === "pickup" && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                      {tr("Cancel DHL pickup", "Annuler le ramassage DHL")}
+                    </button>
+                  </>
+                )}
+              </section>
+            )}
+
             {/* Cancel / refund */}
             {(canCancel || canRetryRefund) && (
               <section className="bg-white rounded-2xl border border-slate-200 p-5 space-y-3">
@@ -484,13 +521,13 @@ export default function AdminExpressShipmentPage() {
                       {shipment.status === "paid" && !onAccount && tr(`The full payment (${m(left)}) will be refunded to the client's card.`, `Le paiement complet (${m(left)}) sera remboursé sur la carte du client.`)}
                       {shipment.status === "label_ready" && onAccount &&
                         tr(
-                          "A label already exists. Choose how much to credit back to the account (on the next invoice if this one is already invoiced). The DHL shipment is NOT cancelled automatically: handle that with DHL.",
-                          "Une étiquette existe déjà. Choisissez le montant à créditer au compte (sur la prochaine facture si celle-ci est déjà facturée). L'envoi DHL n'est PAS annulé automatiquement : réglez cela avec DHL."
+                          "A label already exists. Choose how much to credit back to the account (on the next invoice if this one is already invoiced). The DHL shipment is NOT cancelled automatically: handle that with DHL. A booked DHL pickup is cancelled for you.",
+                          "Une étiquette existe déjà. Choisissez le montant à créditer au compte (sur la prochaine facture si celle-ci est déjà facturée). L'envoi DHL n'est PAS annulé automatiquement : réglez cela avec DHL. Un ramassage DHL réservé est annulé pour vous."
                         )}
                       {shipment.status === "label_ready" && !onAccount &&
                         tr(
-                          "A label already exists. Choose how much to refund. The DHL shipment is NOT cancelled automatically: handle that with DHL.",
-                          "Une étiquette existe déjà. Choisissez le montant à rembourser. L'envoi DHL n'est PAS annulé automatiquement : réglez cela avec DHL."
+                          "A label already exists. Choose how much to refund. The DHL shipment is NOT cancelled automatically: handle that with DHL. A booked DHL pickup is cancelled for you.",
+                          "Une étiquette existe déjà. Choisissez le montant à rembourser. L'envoi DHL n'est PAS annulé automatiquement : réglez cela avec DHL. Un ramassage DHL réservé est annulé pour vous."
                         )}
                       {canRetryRefund && tr("The booking is already cancelled; this repeats the failed refund.", "La réservation est déjà annulée; ceci répète le remboursement échoué.")}
                     </p>

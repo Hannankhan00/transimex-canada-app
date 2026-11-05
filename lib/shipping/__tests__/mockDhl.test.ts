@@ -125,3 +125,13 @@ describe("MockDhlAdapter shipments", () => {
     expect((await dhl.validateAddress({ ...shipment.recipient, countryCode: "SS" })).serviceable).toBe(false);
   });
 });
+
+describe("mock DHL pickup cancel", () => {
+  it("cancels once, then answers already cancelled, like DHL", async () => {
+    const dhl = new MockDhlAdapter();
+    const req = { confirmationNumber: "PUMOCK123456", requestorName: "Ada", reason: "x" };
+    expect((await dhl.cancelPickup(req)).status).toBe("cancelled");
+    expect((await dhl.cancelPickup(req)).status).toBe("already_cancelled");
+    await expect(dhl.cancelPickup({ ...req, confirmationNumber: "XX1" })).rejects.toMatchObject({ code: "not_found" });
+  });
+});

@@ -6,6 +6,8 @@ import type {
   Address,
   AddressValidation,
   PickupRequest,
+  PickupCancelRequest,
+  PickupCancelResult,
   PickupResult,
   RateOption,
   RateRequest,
@@ -205,6 +207,16 @@ export class MockDhlAdapter implements CarrierAdapter {
       confirmationNumber: `PUMOCK${hash(request.reference).slice(0, 6).toUpperCase()}`,
       scheduledFor: request.readyAt,
     };
+  }
+
+  /** Pickups cancelled so far, so repeating one answers "already cancelled" like DHL does. */
+  private readonly cancelledPickups = new Set<string>();
+
+  async cancelPickup(request: PickupCancelRequest): Promise<PickupCancelResult> {
+    if (!request.confirmationNumber.startsWith("PUMOCK")) throw new CarrierError("not_found", `Unknown pickup ${request.confirmationNumber}.`);
+    const already = this.cancelledPickups.has(request.confirmationNumber);
+    this.cancelledPickups.add(request.confirmationNumber);
+    return { status: already ? "already_cancelled" : "cancelled" };
   }
 
   async track(trackingNumber: string, hints: { bookedAt?: string } = {}): Promise<TrackingResult> {
