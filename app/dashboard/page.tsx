@@ -298,12 +298,12 @@ export default function DashboardPage() {
           <Link
             key={m.href}
             href={m.href}
-            className="group rounded-xl border border-slate-200 bg-white px-4 py-3.5 transition hover:border-slate-300 hover:shadow-sm sm:px-5 sm:py-4"
+            className="group flex min-h-[132px] flex-col justify-between rounded-xl border border-slate-200 bg-white p-5 transition hover:border-slate-300 hover:shadow-sm sm:min-h-[148px] sm:p-6"
           >
-            <p className="text-xs font-semibold text-slate-500 sm:text-[13px]">{m.label}</p>
-            <div className="mt-1.5 flex items-baseline gap-2">
-              <span className="text-3xl font-bold leading-none tracking-tight text-[#0B2545]">{m.value}</span>
-              <span className="truncate text-xs text-slate-400">{m.note}</span>
+            <p className="text-[13px] font-semibold text-slate-600 sm:text-sm">{m.label}</p>
+            <div className="mt-4 space-y-1.5">
+              <p className="text-4xl font-bold leading-none tracking-tight text-[#0B2545] sm:text-[40px]">{m.value}</p>
+              <p className="truncate text-xs text-slate-500 sm:text-[13px]">{m.note}</p>
             </div>
           </Link>
         ))}

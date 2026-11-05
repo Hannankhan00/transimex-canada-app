@@ -553,7 +553,7 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
         {step} / {stepNames.length} · {stepNames[step - 1]}
       </p>
 
-      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+      <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
       <div className="min-w-0 space-y-6">
       {step === 1 && (
         <div className="space-y-5">
@@ -592,7 +592,7 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
               <p className="text-xs text-slate-500">{t.express.partner.bookingForHelp}</p>
             </section>
           )}
-          <div className="grid items-start gap-5 xl:grid-cols-2">
+          <div className="grid items-start gap-5 min-[1700px]:grid-cols-2">
           <section className="bg-white border border-slate-200 rounded-2xl p-5 sm:p-6 space-y-4">
             <h2 className="font-bold text-[#0B2545]">{b.sender}</h2>
             <AddressFields value={shipper} onChange={setShipper} withCountry emailRequired labels={addressLabels} countryLabel={countryLabel} />
@@ -757,7 +757,7 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
       )}
 
       {step === 4 && (
-        <div className="grid items-start gap-5 xl:grid-cols-2">
+        <div className="grid items-start gap-5 min-[1700px]:grid-cols-2">
           <section className="bg-white border border-slate-200 rounded-2xl p-5 sm:p-6 space-y-3">
             <h2 className="font-bold text-[#0B2545]">{b.pickupTitle}</h2>
             {[
@@ -1037,7 +1037,7 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
       </div>
       </div>
 
-      <aside className="space-y-4 lg:sticky lg:top-24">
+      <aside className="space-y-4 xl:sticky xl:top-24">
         <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
           <h2 className="text-sm font-bold text-[#0B2545]">{b.summary}</h2>
           <dl className="mt-3 divide-y divide-slate-100 text-sm">
