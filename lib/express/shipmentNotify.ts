@@ -39,6 +39,10 @@ const TEXT: Record<ExpressShipmentEmailKind, { en: [string, string]; fr: [string
     en: ["Delivery issue", "DHL reported an issue with your parcel. Open the shipment for details."],
     fr: ["Problème de livraison", "DHL a signalé un problème avec votre colis. Ouvrez l'envoi pour les détails."],
   },
+  details_updated: {
+    en: ["Shipment details updated", "Our team updated your booking. Open the shipment to see what changed."],
+    fr: ["Détails de l'envoi mis à jour", "Notre équipe a mis à jour votre réservation. Ouvrez l'envoi pour voir ce qui a changé."],
+  },
   returned: {
     en: ["Being returned", "DHL is returning your parcel to the sender."],
     fr: ["Retourné", "DHL retourne votre colis à l'expéditeur."],

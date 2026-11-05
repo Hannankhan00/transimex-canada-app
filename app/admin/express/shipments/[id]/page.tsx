@@ -3,8 +3,9 @@
 import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { AlertTriangle, ArrowLeft, Download, Loader2 } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Download, Loader2, Pencil } from "lucide-react";
 import PermissionGuard from "@/components/admin/PermissionGuard";
+import ShipmentEditor from "@/components/admin/express/ShipmentEditor";
 import { ContentTypeBadge, ExpressAdminTabs, ShipmentStatusBadge, adminInput, dollarsToCents, formatDate, useTr } from "@/components/admin/express/expressAdminShared";
 import { formatCad } from "@/lib/shipping/core/money";
 import { COUNTRIES } from "@/lib/data/countries";
@@ -23,6 +24,7 @@ export default function AdminExpressShipmentPage() {
   const [error, setError] = useState<string | null>(null);
 
   const [busy, setBusy] = useState("");
+  const [editing, setEditing] = useState(false);
   const [toast, setToast] = useState<{ text: string; error?: boolean } | null>(null);
   const [showCancel, setShowCancel] = useState(false);
   const [reason, setReason] = useState("");
@@ -135,6 +137,13 @@ export default function AdminExpressShipmentPage() {
     return run("pickup", () => fetch(`/api/admin/express/shipments/${id}/cancel-pickup`, { method: "POST" }), () => tr("DHL pickup cancelled", "Ramassage DHL annulé"));
   };
 
+  const editBlockText: Record<string, string> = {
+    has_label: tr("DHL already has this parcel, so it can no longer be edited. Cancel the booking and make a new one to change it.", "DHL a déjà ce colis; il ne peut plus être modifié. Annulez la réservation et faites-en une nouvelle pour le changer."),
+    cancelled: tr("A cancelled booking cannot be edited.", "Une réservation annulée ne peut pas être modifiée."),
+    in_progress: tr("The label is being created right now. Editing is possible again in a minute.", "L'étiquette est en cours de création. La modification sera possible dans une minute."),
+    outcome_unknown: tr("DHL may already have booked this parcel. Settle that with DHL first; editing is locked until then.", "DHL a peut-être déjà réservé ce colis. Réglez cela avec DHL d'abord; la modification est verrouillée d'ici là."),
+  };
+
   const attentionText: Record<string, string> = {
     label_failed: tr("Label creation failed. Retry it, or upload the label by hand.", "La création de l'étiquette a échoué. Réessayez, ou téléversez l'étiquette à la main."),
     outcome_unknown: tr("DHL did not answer clearly and may have booked this shipment. Check with DHL, then enter its tracking number and label by hand. Do NOT retry or refund blindly.", "DHL n'a pas répondu clairement et a peut-être réservé cet envoi. Vérifiez auprès de DHL, puis entrez son numéro de suivi et son étiquette à la main. Ne PAS réessayer ni rembourser à l'aveugle."),
@@ -144,6 +153,7 @@ export default function AdminExpressShipmentPage() {
     dispute: tr("The customer's bank opened a dispute (chargeback) on this payment. Respond to it in the payment provider before the deadline.", "La banque du client a ouvert un litige (rétrofacturation) sur ce paiement. Répondez-y chez le fournisseur de paiement avant l'échéance."),
     delivery_exception: tr("DHL reported a delivery exception (failed attempt, customs hold or similar). Check the tracking events below and follow up with DHL.", "DHL a signalé une exception de livraison (tentative échouée, retenue douanière ou autre). Consultez les événements de suivi ci-dessous et faites le suivi avec DHL."),
     tracking_failing: tr("Checking DHL tracking keeps failing. See the error below.", "La vérification du suivi DHL échoue de façon répétée. Voir l'erreur ci-dessous."),
+    pickup_not_booked: tr("DHL refused the courier pickup, so the label was booked without one. The customer was told to drop the parcel off. Arrange the pickup with DHL if you can; the reason is below.", "DHL a refusé le ramassage, alors l'étiquette a été créée sans lui. Le client a été invité à déposer le colis. Organisez le ramassage avec DHL si possible; la raison est ci-dessous."),
     no_scan: tr("DHL has no scan for this parcel more than 10 days after the label was created. Check that it was handed over.", "DHL n'a aucun scan pour ce colis plus de 10 jours après la création de l'étiquette. Vérifiez qu'il a bien été remis."),
   };
 
@@ -199,11 +209,28 @@ export default function AdminExpressShipmentPage() {
                 <li key={a}>{attentionText[a]}</li>
               ))}
             </ul>
-            {(ful.lastError || pay.refundError || pay.mismatchNote || shipment.trackingCheck.lastError) && (
-              <p className="text-xs font-mono bg-white/60 rounded p-2 break-words">{ful.lastError || pay.refundError || pay.mismatchNote || shipment.trackingCheck.lastError}</p>
+            {(ful.lastError || pay.refundError || pay.mismatchNote || shipment.trackingCheck.lastError || shipment.pickupError) && (
+              <p className="text-xs font-mono bg-white/60 rounded p-2 break-words">{ful.lastError || pay.refundError || pay.mismatchNote || shipment.trackingCheck.lastError || shipment.pickupError}</p>
             )}
           </div>
         )}
+
+        <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3">
+          {shipment.editBlock === null ? (
+            <button type="button" onClick={() => setEditing(true)} className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-[#0B2545] px-4 py-2 text-xs font-bold text-white hover:bg-slate-800">
+              <Pencil className="h-3.5 w-3.5" />
+              {tr("Edit shipment", "Modifier l'envoi")}
+            </button>
+          ) : (
+            <span className="inline-flex items-center gap-2 text-xs text-slate-500">
+              <Pencil className="h-3.5 w-3.5" />
+              {editBlockText[shipment.editBlock]}
+            </span>
+          )}
+          {shipment.editBlock === null && (
+            <span className="text-xs text-slate-500">{tr("Fix an address, pickup or drop-off, or the ship date before the label is created. Every change is logged and the client is told.", "Corrigez une adresse, le ramassage ou le dépôt, ou la date avant la création de l'étiquette. Chaque modification est consignée et le client en est informé.")}</span>
+          )}
+        </div>
 
         <div className="grid lg:grid-cols-5 gap-5">
           <div className="lg:col-span-3 space-y-5">
@@ -600,8 +627,45 @@ export default function AdminExpressShipmentPage() {
                 ))}
               </ul>
             </section>
+
+            {shipment.adminEdits.length > 0 && (
+              <section className="bg-white rounded-2xl border border-slate-200 p-5">
+                <h2 className="font-bold text-[#0B2545] text-sm mb-2">{tr("Edit history", "Historique des modifications")}</h2>
+                <ul className="space-y-3">
+                  {shipment.adminEdits.map((e, i) => (
+                    <li key={i} className="rounded-xl bg-slate-50 p-3 text-xs space-y-1.5">
+                      <p className="font-bold text-slate-800">
+                        {formatDate(e.at, language)} · {e.by}
+                      </p>
+                      <p className="text-slate-600">
+                        <span className="font-semibold">{tr("Reason", "Motif")}:</span> {e.reason}
+                      </p>
+                      <ul className="list-disc space-y-0.5 pl-4 text-slate-700">
+                        {e.changes.map((c, j) => (
+                          <li key={j} className="break-words">
+                            <span className="font-semibold">{c.field}</span>: {c.from} → {c.to}
+                          </li>
+                        ))}
+                      </ul>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
           </div>
         </div>
+
+        {editing && (
+          <ShipmentEditor
+            shipment={shipment}
+            onClose={() => setEditing(false)}
+            onSaved={(message) => {
+              setEditing(false);
+              flash(message, false);
+              load();
+            }}
+          />
+        )}
       </div>
     );
   };

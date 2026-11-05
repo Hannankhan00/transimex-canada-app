@@ -105,7 +105,7 @@ export async function fulfilShipment(shipmentId: string, deps: FulfilDeps = {}):
   // Save the tracking number first, so a storage problem can never lead to a second DHL booking.
   await ExpressShipment.updateOne(
     { _id: shipmentId },
-    { $set: { trackingNumber: result.trackingNumber, trackingUrl: result.trackingUrl, ...(result.pickupConfirmation ? { pickupConfirmation: result.pickupConfirmation } : {}) } }
+    { $set: { trackingNumber: result.trackingNumber, trackingUrl: result.trackingUrl, ...(result.pickupConfirmation ? { pickupConfirmation: result.pickupConfirmation } : {}), ...(result.pickupError ? { pickupError: result.pickupError.slice(0, 400) } : {}) } }
   );
 
   const pdf = Buffer.from(result.label.contentBase64, "base64");

@@ -120,6 +120,16 @@ export interface IExpressShipmentBilling {
   billedCents?: number;
 }
 
+/** One staff correction to a booking before DHL had the parcel: who, when, why and exactly what changed. */
+export interface IExpressAdminEdit {
+  at: Date;
+  by: string;
+  byName: string;
+  byEmail: string;
+  reason: string;
+  changes: { field: string; from: string; to: string }[];
+}
+
 export interface IExpressShipment extends Document {
   /** Human-readable reference shown to clients and staff, e.g. EX-261015-K7QZ4. */
   reference: string;
@@ -175,6 +185,10 @@ export interface IExpressShipment extends Document {
   trackingNumber?: string;
   trackingUrl?: string;
   pickupConfirmation?: string;
+  /** Staff corrections made before the label existed, oldest first. */
+  adminEdits?: IExpressAdminEdit[];
+  /** DHL refused the pickup, so the label was booked without one. Why (staff only). The client was told to drop off. */
+  pickupError?: string;
   /** Set when the DHL pickup was cancelled (the shipment and its label stay). */
   pickupCancelledAt?: Date;
   pickupCancelledBy?: string;
@@ -404,6 +418,26 @@ const ExpressShipmentSchema = new Schema<IExpressShipment>(
     trackingNumber: { type: String },
     trackingUrl: { type: String },
     pickupConfirmation: { type: String },
+    adminEdits: {
+      type: [
+        new Schema(
+          {
+            at: { type: Date, required: true },
+            by: { type: String, required: true },
+            byName: { type: String, default: "" },
+            byEmail: { type: String, default: "" },
+            reason: { type: String, required: true, maxlength: 300 },
+            changes: {
+              type: [new Schema({ field: { type: String, required: true }, from: { type: String, default: "" }, to: { type: String, default: "" } }, { _id: false })],
+              default: [],
+            },
+          },
+          { _id: false }
+        ),
+      ],
+      default: [],
+    },
+    pickupError: { type: String, maxlength: 400 },
     pickupCancelledAt: { type: Date },
     pickupCancelledBy: { type: String },
     pickupCancelError: { type: String, maxlength: 400 },

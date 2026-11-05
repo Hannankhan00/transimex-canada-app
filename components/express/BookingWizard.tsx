@@ -65,6 +65,21 @@ const emailOk = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
 const hsOk = (v: string) => /^\d{6,10}$/.test(v.replace(/[\s.\-]/g, ""));
 const optional = (v: string) => (v.trim() === "" ? undefined : v.trim());
 
+/**
+ * The days a parcel can ship: weekdays from the next business day up to 30 days out. Built in UTC to match the
+ * server, which rejects past dates, weekends and anything beyond 30 days.
+ */
+function shipDateOptions(now: Date = new Date()): string[] {
+  const days: string[] = [];
+  const d = new Date(now.getTime() + 86_400_000);
+  const last = now.getTime() + 30 * 86_400_000;
+  while (d.getTime() <= last) {
+    if (d.getUTCDay() !== 0 && d.getUTCDay() !== 6) days.push(d.toISOString().slice(0, 10));
+    d.setUTCDate(d.getUTCDate() + 1);
+  }
+  return days;
+}
+
 /** A small (i) icon that shows a help bubble on hover or keyboard focus. The bubble can hold links. */
 function InfoTip({ children, label }: { children: React.ReactNode; label: string }) {
   return (
@@ -187,6 +202,10 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
   const [parcels, setParcels] = useState<ParcelForm[]>([emptyParcel()]);
   const [items, setItems] = useState<ItemForm[]>([emptyItem()]);
   const [pickup, setPickup] = useState(false);
+  // Defaults to the next business day; only weekdays from then on can be chosen.
+  const shipDates = useMemo(() => shipDateOptions(), []);
+  const [shipDate, setShipDate] = useState(() => shipDateOptions()[0]);
+  const dateText = (d: string) => new Intl.DateTimeFormat(language === "fr" ? "fr-CA" : "en-CA", { weekday: "long", month: "long", day: "numeric", year: "numeric", timeZone: "UTC" }).format(new Date(`${d}T12:00:00Z`));
   const [duties, setDuties] = useState<"recipient" | "sender">("recipient");
   // Partners can book for one of their customers ("" = their own shipment).
   const [customers, setCustomers] = useState<PartnerCustomerDTO[]>([]);
@@ -287,7 +306,7 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
   useEffect(() => {
     setError(null);
     setServerIssues([]);
-  }, [shipper, recipient, parcels, items, pickup, duties, contentType, docDescription, docDeclared]);
+  }, [shipper, recipient, parcels, items, pickup, shipDate, duties, contentType, docDescription, docDeclared]);
 
   const inputsKey = JSON.stringify({
     o: [shipper.countryCode, shipper.postalCode, shipper.city],
@@ -297,6 +316,7 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
     t: contentType,
     v: documents ? 0 : itemsTotalCents,
     u: pickup,
+    s: shipDate,
     c: forCustomer,
   });
 
@@ -376,6 +396,7 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
           declaredValueCents: documents ? 0 : itemsTotalCents,
           isCustomsDeclarable: !documents,
           pickupRequested: pickup,
+          plannedShipDate: shipDate,
           ...(forCustomer ? { partnerCustomerId: forCustomer } : {}),
         }),
       });
@@ -772,6 +793,17 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
                 </span>
               </label>
             ))}
+            <div className="space-y-1.5 border-t border-slate-100 pt-4">
+              <label htmlFor="ship-date" className="block text-sm font-bold text-slate-900">{b.shipDateTitle}</label>
+              <select id="ship-date" value={shipDate} onChange={(e) => setShipDate(e.target.value)} className={inputClass}>
+                {shipDates.map((d, i) => (
+                  <option key={d} value={d}>
+                    {dateText(d)}{i === 0 ? ` (${b.shipDateNext})` : ""}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-slate-600">{b.shipDateHelp}</p>
+            </div>
           </section>
           {documents ? (
             <p className="rounded-2xl border border-slate-200 bg-white px-5 py-4 text-sm text-slate-600">{b.docsNoDuties}</p>
@@ -806,6 +838,7 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
                 [b.parcelsTitle, `${parcels.length} · ${weightFromKg(parcelWeight, units)} ${wUnit}`],
                 ...(documents ? [] : [[b.declaredTotal, m(itemsTotalCents)]]),
                 [b.pickupLabel, pickup ? b.pickupYes : b.pickupNo],
+                [b.shipDateLabel, dateText(shipDate)],
                 ...(documents ? [] : [[b.dutiesLabel, duties === "recipient" ? b.dutiesRecipientShort : b.dutiesSenderShort]]),
               ].map(([k, v]) => (
                 <div key={k} className="py-2 grid sm:grid-cols-3 gap-1">
@@ -1046,6 +1079,7 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
               [b.typeTitle, documents ? b.typeDocuments : b.typeGoods],
               [b.parcelsTitle, `${parcels.length} · ${weightFromKg(parcelWeight, units)} ${wUnit}`],
               [b.pickupLabel, pickup ? b.pickupYes : b.pickupNo],
+              [b.shipDateLabel, dateText(shipDate)],
             ].map(([k, v]) => (
               <div key={k} className="flex items-start justify-between gap-3 py-2.5">
                 <dt className="text-slate-500">{k}</dt>

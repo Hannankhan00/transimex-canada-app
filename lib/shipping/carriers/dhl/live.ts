@@ -104,14 +104,35 @@ function packagesPayload(parcels: Parcel[]) {
   }));
 }
 
+/** DHL accepts at most 45 characters on each of three address lines. */
+const DHL_LINE_MAX = 45;
+
+/** Fits the street address into DHL's three 45-character lines, breaking at spaces, so a long address is wrapped instead of refused. */
+export function dhlAddressLines(line1?: string, line2?: string): string[] {
+  const lines: string[] = [];
+  for (const part of [line1, line2]) {
+    let rest = (part || "").trim().replace(/s+/g, " ");
+    while (rest.length > DHL_LINE_MAX && lines.length < 2) {
+      let cut = rest.lastIndexOf(" ", DHL_LINE_MAX);
+      if (cut < 10) cut = DHL_LINE_MAX;
+      lines.push(rest.slice(0, cut).trim());
+      rest = rest.slice(cut).trim();
+    }
+    if (rest) lines.push(rest.slice(0, DHL_LINE_MAX));
+  }
+  return lines.slice(0, 3);
+}
+
 function postalAddress(a: Pick<Address, "line1" | "line2" | "city" | "region" | "postalCode" | "countryCode">) {
+  const [l1, l2, l3] = dhlAddressLines(a.line1, a.line2);
   return {
     // DHL requires this key even for countries without postal codes: an empty string is accepted.
     postalCode: a.postalCode || "",
     cityName: a.city,
     countryCode: a.countryCode.toUpperCase(),
-    ...(a.line1 ? { addressLine1: a.line1 } : {}),
-    ...(a.line2 ? { addressLine2: a.line2 } : {}),
+    ...(l1 ? { addressLine1: l1 } : {}),
+    ...(l2 ? { addressLine2: l2 } : {}),
+    ...(l3 ? { addressLine3: l3 } : {}),
     ...(a.region ? { provinceCode: a.region } : {}),
   };
 }
@@ -406,20 +427,37 @@ export class DhlApiAdapter implements CarrierAdapter {
     }
   }
 
-  async createShipment(request: ShipmentRequest): Promise<ShipmentResult> {
-    const documents = request.contentType === "documents";
-    // Goods go Paperless Trade (WY) when DHL offers it on the lane. DHL refuses WY on some lanes (for example
-    // Nigeria, Egypt, Morocco) before booking anything, so asking again without it cannot create a second parcel.
-    let paperless = !documents;
-    let response: DhlShipmentResponse;
+  /** Books the shipment; goods go Paperless Trade (WY) when DHL offers it on the lane. */
+  private async sendWithPaperlessFallback(request: ShipmentRequest): Promise<{ response: DhlShipmentResponse; paperless: boolean }> {
+    // DHL refuses WY on some lanes (for example Nigeria, Egypt, Morocco) before booking anything, so asking again
+    // without it cannot create a second parcel.
+    let paperless = request.contentType !== "documents";
     try {
-      response = await this.sendShipment(request, paperless);
+      return { response: await this.sendShipment(request, paperless), paperless };
     } catch (error) {
-      const refusedPaperless = paperless && error instanceof CarrierError && error.code === "rejected" && !error.outcomeUnknown && /\bWY\b|special service/i.test(error.detail || "");
+      const refusedPaperless = paperless && error instanceof CarrierError && error.code === "rejected" && !error.outcomeUnknown && /WY|special service/i.test(error.detail || "");
       if (!refusedPaperless) throw error;
       paperless = false;
-      response = await this.sendShipment(request, false);
+      return { response: await this.sendShipment(request, false), paperless };
     }
+  }
+
+  async createShipment(request: ShipmentRequest): Promise<ShipmentResult> {
+    const documents = request.contentType === "documents";
+    let booked: { response: DhlShipmentResponse; paperless: boolean };
+    let pickupError: string | undefined;
+    try {
+      booked = await this.sendWithPaperlessFallback(request);
+    } catch (error) {
+      // A pickup DHL cannot book (for example "202401: No billing address found" on the account, or "998: Booking Pickup
+      // Failed") must not stop the label. DHL answers 422 before creating anything, so booking again without the
+      // pickup cannot make a second parcel. Staff are told the pickup is missing.
+      const pickupRefused = request.pickupRequested && error instanceof CarrierError && error.code === "rejected" && !error.outcomeUnknown && /pickup|202401|billing address|998/i.test(error.detail || "");
+      if (!pickupRefused) throw error;
+      pickupError = (error as CarrierError).detail || (error as CarrierError).message;
+      booked = await this.sendWithPaperlessFallback({ ...request, pickupRequested: false });
+    }
+    const { response, paperless } = booked;
 
     const labelDoc = response.documents?.find((d) => d.typeCode === "label");
     if (!labelDoc?.content) {
@@ -436,7 +474,8 @@ export class DhlApiAdapter implements CarrierAdapter {
       trackingUrl: response.trackingUrl || `${TRACKING_URL}${response.shipmentTrackingNumber}`,
       packageTrackingNumbers: response.packages?.map((p) => p.trackingNumber) ?? [response.shipmentTrackingNumber],
       label: { contentBase64: labelDoc.content, format: "pdf" },
-      pickupConfirmation: request.pickupRequested ? response.dispatchConfirmationNumber : undefined,
+      pickupConfirmation: request.pickupRequested && !pickupError ? response.dispatchConfirmationNumber : undefined,
+      ...(pickupError ? { pickupError } : {}),
       ...(invoiceDoc?.content ? { invoice: { contentBase64: invoiceDoc.content } } : {}),
       ...(documents ? {} : { paperless }),
     };

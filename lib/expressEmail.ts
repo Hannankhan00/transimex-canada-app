@@ -155,7 +155,7 @@ export async function sendExpressDecisionEmail(params: {
   });
 }
 
-export type ExpressShipmentEmailKind = "payment_received" | "label_ready" | "cancelled" | "refunded" | "in_transit" | "out_for_delivery" | "delivered" | "delivery_exception" | "returned";
+export type ExpressShipmentEmailKind = "payment_received" | "label_ready" | "cancelled" | "refunded" | "in_transit" | "out_for_delivery" | "delivered" | "delivery_exception" | "returned" | "details_updated";
 
 const SHIPMENT_COPY: Record<Lang, Record<ExpressShipmentEmailKind, { subject: string; heading: string; body: string }>> = {
   en: {
@@ -198,6 +198,11 @@ const SHIPMENT_COPY: Record<Lang, Record<ExpressShipmentEmailKind, { subject: st
       subject: "There is a delay with your Express shipment",
       heading: "A delivery issue needs attention",
       body: "DHL reported an issue with your parcel, such as a delivery attempt that failed or a customs hold. Open your shipment page for the latest update. Our team is following it with DHL.",
+    },
+    details_updated: {
+      subject: "Your Express shipment details were updated",
+      heading: "Your shipment details were updated",
+      body: "Our team updated your booking after speaking with you or DHL. Please check the changes below. If anything looks wrong, contact us before the label is created.",
     },
     returned: {
       subject: "Your Express shipment is being returned",
@@ -245,6 +250,11 @@ const SHIPMENT_COPY: Record<Lang, Record<ExpressShipmentEmailKind, { subject: st
       subject: "Un retard touche votre envoi Express",
       heading: "Un problème de livraison demande votre attention",
       body: "DHL a signalé un problème avec votre colis, par exemple une tentative de livraison échouée ou une retenue douanière. Ouvrez la page de votre envoi pour la dernière mise à jour. Notre équipe suit le dossier avec DHL.",
+    },
+    details_updated: {
+      subject: "Les détails de votre envoi Express ont été mis à jour",
+      heading: "Les détails de votre envoi ont été mis à jour",
+      body: "Notre équipe a mis à jour votre réservation après avoir parlé avec vous ou avec DHL. Veuillez vérifier les changements ci-dessous. Si quelque chose semble incorrect, communiquez avec nous avant la création de l'étiquette.",
     },
     returned: {
       subject: "Votre envoi Express est retourné",

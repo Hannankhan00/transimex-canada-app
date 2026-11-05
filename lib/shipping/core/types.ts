@@ -152,6 +152,11 @@ export interface ShipmentResult {
   label: ShipmentLabel;
   /** Present when the carrier confirmed a pickup together with the shipment. */
   pickupConfirmation?: string;
+  /**
+   * Set when pickup was requested but the carrier refused only that part, so the shipment and label were booked
+   * WITHOUT a pickup. Holds the carrier's reason (staff only).
+   */
+  pickupError?: string;
   /** The commercial invoice for a goods shipment, when the carrier produced one. */
   invoice?: { contentBase64: string };
   /**

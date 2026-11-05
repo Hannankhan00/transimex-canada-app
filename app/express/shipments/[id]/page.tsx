@@ -350,6 +350,13 @@ function Detail() {
         </section>
       )}
 
+      {shipment.status === "label_ready" && shipment.pickupNotBooked && (
+        <p role="status" className="flex items-start gap-2 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-900">
+          <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+          {s.pickupNotBookedNote}
+        </p>
+      )}
+
       {shipment.status === "label_ready" && shipment.pickupRequested && (shipment.canCancelPickup || shipment.pickupCancelledAt) && (
         <section className="bg-white border border-slate-200 rounded-2xl p-5 space-y-3">
           <h2 className="font-bold text-[#0B2545] text-sm">{s.pickupTitle}</h2>

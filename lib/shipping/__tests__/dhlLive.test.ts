@@ -267,3 +267,57 @@ describe("DHL pickup cancel", () => {
     await expect(adapter.cancelPickup({ confirmationNumber: "NOPE", requestorName: "A", reason: "x" })).rejects.toMatchObject({ code: "not_found" });
   });
 });
+
+describe("DHL booking with a pickup", () => {
+  const shipment = (over: Record<string, unknown> = {}) => ({
+    reference: "EX-1",
+    contentType: "documents" as const,
+    serviceCode: "D",
+    shipper: { line1: "4629 Rue Louis B-Mayer", city: "Laval", postalCode: "H7P6G5", countryCode: "CA" },
+    recipient: { line1: "2 Main St", city: "New York", postalCode: "10001", countryCode: "US" },
+    parcels: rateRequest.parcels,
+    items: [],
+    declaredValueCents: 100,
+    contentDescription: "Papers",
+    plannedShipDate: "2026-11-06",
+    dutiesPayer: "recipient" as const,
+    pickupRequested: true,
+    ...over,
+  });
+  const booked = { shipmentTrackingNumber: "TRK1", dispatchConfirmationNumber: "PRG123", documents: [{ typeCode: "label", content: "UERG" }] };
+  const pickupRefusal = { title: "Validation error", detail: "Multiple problems found", additionalDetails: ["202401: No billing address found", "998: Booking Pickup Failed. Please try again another time."], status: "422" };
+
+  it("books the label without the pickup when DHL refuses only the pickup, and says so", async () => {
+    const fetchImpl = vi.fn().mockResolvedValueOnce(json(pickupRefusal, 422)).mockResolvedValueOnce(json(booked));
+    const result = await adapterWith(fetchImpl).createShipment(shipment());
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    const bodies = (fetchImpl.mock.calls as unknown as [unknown, RequestInit][]).map(([, init]) => JSON.parse(String(init.body)));
+    expect(bodies[0].pickup.isRequested).toBe(true);
+    expect(bodies[1].pickup.isRequested).toBe(false);
+    expect(result.trackingNumber).toBe("TRK1");
+    expect(result.pickupConfirmation).toBeUndefined();
+    expect(result.pickupError).toMatch(/pickup|billing address/i);
+  });
+
+  it("keeps the pickup confirmation when DHL accepts the pickup", async () => {
+    const fetchImpl = vi.fn().mockResolvedValueOnce(json(booked));
+    const result = await adapterWith(fetchImpl).createShipment(shipment());
+    expect(result.pickupConfirmation).toBe("PRG123");
+    expect(result.pickupError).toBeUndefined();
+  });
+
+  it("does not retry without a pickup for other refusals", async () => {
+    const fetchImpl = vi.fn().mockResolvedValueOnce(json({ title: "Validation error", detail: "postalCode is invalid", status: "422" }, 422));
+    await expect(adapterWith(fetchImpl).createShipment(shipment())).rejects.toMatchObject({ code: "rejected" });
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+  });
+
+  it("wraps an address line longer than DHL's 45 characters instead of sending it whole", async () => {
+    const { dhlAddressLines } = await import("../carriers/dhl/live");
+    const lines = dhlAddressLines("452 Rue de la Couronne Québec, QC G1K 6E6 Canada", "");
+    expect(lines.length).toBe(2);
+    expect(lines.every((l) => l.length <= 45)).toBe(true);
+    expect(lines.join(" ")).toBe("452 Rue de la Couronne Québec, QC G1K 6E6 Canada");
+    expect(dhlAddressLines("12 Short St", "Suite 4")).toEqual(["12 Short St", "Suite 4"]);
+  });
+});

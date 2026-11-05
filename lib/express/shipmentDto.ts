@@ -3,6 +3,7 @@ import type { AccountUserInfo } from "./accountDto";
 import { contentTypeOf } from "./contentType";
 import { classifyLabelIssue, type LabelIssueKind } from "./carrierMessages";
 import { hasActivePickup } from "./pickupState";
+import { editBlockReason } from "./adminEdit";
 
 type ShipmentDoc = Omit<Partial<IExpressShipment>, "_id"> & { _id: unknown };
 
@@ -72,6 +73,8 @@ export function toClientShipmentDTO(doc: ShipmentDoc) {
     // The owner may cancel a booked DHL pickup (to drop the parcel off instead) until DHL has collected it.
     canCancelPickup: doc.status === "label_ready" && hasActivePickup(doc as IExpressShipment),
     pickupCancelledAt: iso(doc.pickupCancelledAt),
+    // The label was booked, but DHL would not take the pickup: the client drops the parcel off instead.
+    pickupNotBooked: Boolean(doc.pickupRequested && doc.pickupError && !doc.pickupConfirmation && !doc.pickupCancelledAt),
     dutiesPayer: doc.dutiesPayer!,
     totalCents: doc.totalCents ?? 0,
     currency: "CAD" as const,
@@ -158,7 +161,7 @@ export function toOwnShipmentDTO(doc: ShipmentDoc, accountType: string | undefin
   return (accountType === "customer" ? toCustomerOwnShipmentDTO(doc) : toClientShipmentDTO(doc)) as ClientShipmentDTO;
 }
 
-export type AttentionReason = "label_failed" | "outcome_unknown" | "label_overdue" | "amount_mismatch" | "refund_failed" | "dispute" | "delivery_exception" | "tracking_failing" | "no_scan";
+export type AttentionReason = "label_failed" | "outcome_unknown" | "label_overdue" | "amount_mismatch" | "refund_failed" | "dispute" | "delivery_exception" | "tracking_failing" | "no_scan" | "pickup_not_booked";
 
 /** Consecutive failed DHL tracking checks before staff are told. */
 export const TRACKING_FAILURE_ALERT = 5;
@@ -180,6 +183,7 @@ export function attentionReasons(doc: ShipmentDoc, now: Date = new Date()): Atte
   if (doc.payment?.refundState === "failed") reasons.push("refund_failed");
   if (doc.payment?.dispute) reasons.push("dispute");
   if (doc.status === "label_ready") {
+    if (doc.pickupRequested && doc.pickupError && !doc.pickupConfirmation && !doc.pickupCancelledAt && !["in_transit", "out_for_delivery", "delivered", "exception", "returned"].includes(doc.tracking?.status ?? "")) reasons.push("pickup_not_booked");
     if (doc.tracking?.status === "exception") reasons.push("delivery_exception");
     if ((doc.tracking?.failures ?? 0) >= TRACKING_FAILURE_ALERT) reasons.push("tracking_failing");
     const labelAt = doc.statusHistory?.find((h) => h.status === "label_ready")?.at;
@@ -221,7 +225,11 @@ export function toAdminShipmentDTO(doc: ShipmentDoc, user?: AccountUserInfo | nu
     },
     label: doc.label ? { source: doc.label.source, uploadedAt: iso(doc.label.uploadedAt), bytes: doc.label.bytes } : null,
     invoice: doc.invoice?.key ? { paperless: Boolean(doc.invoice.paperless), bytes: doc.invoice.bytes } : null,
+    // Staff may correct a booking until DHL has the parcel (null = editable); every correction is listed, newest first.
+    editBlock: editBlockReason({ status: doc.status!, trackingNumber: doc.trackingNumber, pickupConfirmation: doc.pickupConfirmation, fulfilment: doc.fulfilment! }),
+    adminEdits: [...(doc.adminEdits || [])].reverse().map((e) => ({ at: iso(e.at), by: e.byName || e.byEmail || e.by, byEmail: e.byEmail || "", reason: e.reason, changes: e.changes })),
     pickupConfirmation: doc.pickupConfirmation || "",
+    pickupError: doc.pickupError || "",
     // Staff may cancel the DHL pickup of a labelled booking, or retry it on a cancelled one, until DHL collects the parcel.
     canCancelPickup: (doc.status === "label_ready" || doc.status === "cancelled") && hasActivePickup(doc as IExpressShipment),
     pickupCancelledAt: iso(doc.pickupCancelledAt),
