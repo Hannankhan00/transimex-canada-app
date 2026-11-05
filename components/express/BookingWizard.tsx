@@ -11,6 +11,7 @@ import UnitToggle from "./UnitToggle";
 import { quoteErrorText } from "@/lib/express/quoteErrorText";
 import { lengthToCm, unitLabel, weightFromKg, weightToKg, weightUnit, type UnitSystem } from "@/lib/express/units";
 import { formatCad } from "@/lib/shipping/core/money";
+import { shipDateOptions, shipDateText } from "@/lib/express/shipDates";
 import type { TermsContent } from "@/lib/express/terms";
 import type { ClientQuoteDTO, CustomerQuoteDTO } from "@/lib/express/quoteDto";
 import type { ClientAccountDTO } from "@/lib/express/accountDto";
@@ -64,21 +65,6 @@ const cents = (v: string) => {
 const emailOk = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
 const hsOk = (v: string) => /^\d{6,10}$/.test(v.replace(/[\s.\-]/g, ""));
 const optional = (v: string) => (v.trim() === "" ? undefined : v.trim());
-
-/**
- * The days a parcel can ship: weekdays from the next business day up to 30 days out. Built in UTC to match the
- * server, which rejects past dates, weekends and anything beyond 30 days.
- */
-function shipDateOptions(now: Date = new Date()): string[] {
-  const days: string[] = [];
-  const d = new Date(now.getTime() + 86_400_000);
-  const last = now.getTime() + 30 * 86_400_000;
-  while (d.getTime() <= last) {
-    if (d.getUTCDay() !== 0 && d.getUTCDay() !== 6) days.push(d.toISOString().slice(0, 10));
-    d.setUTCDate(d.getUTCDate() + 1);
-  }
-  return days;
-}
 
 /** A small (i) icon that shows a help bubble on hover or keyboard focus. The bubble can hold links. */
 function InfoTip({ children, label }: { children: React.ReactNode; label: string }) {
@@ -205,7 +191,7 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
   // Defaults to the next business day; only weekdays from then on can be chosen.
   const shipDates = useMemo(() => shipDateOptions(), []);
   const [shipDate, setShipDate] = useState(() => shipDateOptions()[0]);
-  const dateText = (d: string) => new Intl.DateTimeFormat(language === "fr" ? "fr-CA" : "en-CA", { weekday: "long", month: "long", day: "numeric", year: "numeric", timeZone: "UTC" }).format(new Date(`${d}T12:00:00Z`));
+  const dateText = (d: string) => shipDateText(d, language);
   const [duties, setDuties] = useState<"recipient" | "sender">("recipient");
   // Partners can book for one of their customers ("" = their own shipment).
   const [customers, setCustomers] = useState<PartnerCustomerDTO[]>([]);

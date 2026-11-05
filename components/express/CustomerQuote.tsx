@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { AlertTriangle, Loader2 } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import CountrySelect from "./CountrySelect";
@@ -8,6 +8,7 @@ import UnitToggle from "./UnitToggle";
 import { quoteErrorText } from "@/lib/express/quoteErrorText";
 import { lengthToCm, unitLabel, weightToKg, type UnitSystem } from "@/lib/express/units";
 import { formatCad } from "@/lib/shipping/core/money";
+import { shipDateOptions, shipDateText } from "@/lib/express/shipDates";
 import type { CustomerQuoteDTO } from "@/lib/express/quoteDto";
 
 const inputClass =
@@ -24,6 +25,9 @@ export default function CustomerQuote() {
   const p = t.express.partner;
   const b = t.express.book;
   const [f, setF] = useState({ fromCountry: "CA", fromCity: "", fromPostal: "", country: "", toCity: "", toPostal: "", weight: "", length: "", width: "", height: "", value: "", pickup: false });
+  // Defaults to the next business day; only weekdays from then on can be chosen.
+  const shipDates = useMemo(() => shipDateOptions(), []);
+  const [shipDate, setShipDate] = useState(() => shipDateOptions()[0]);
   const [units, setUnits] = useState<UnitSystem>("imperial");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -57,6 +61,7 @@ export default function CustomerQuote() {
           declaredValueCents: value,
           isCustomsDeclarable: true,
           pickupRequested: f.pickup,
+          plannedShipDate: shipDate,
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -116,6 +121,27 @@ export default function CustomerQuote() {
           {field(unitLabel(b.width, units), <input className={inputClass} inputMode="decimal" value={f.width} onChange={(e) => set("width", e.target.value)} />)}
           {field(unitLabel(b.height, units), <input className={inputClass} inputMode="decimal" value={f.height} onChange={(e) => set("height", e.target.value)} />)}
           {field(p.customerQuoteValue, <input className={inputClass} inputMode="decimal" value={f.value} onChange={(e) => set("value", e.target.value)} />)}
+        </div>
+
+        <div className="max-w-md space-y-1">
+          <label htmlFor="quote-ship-date" className="block text-xs font-bold text-slate-700">{b.shipDateTitle}</label>
+          <select
+            id="quote-ship-date"
+            className={inputClass}
+            value={shipDate}
+            onChange={(e) => {
+              setShipDate(e.target.value);
+              setQuote(null);
+              setError("");
+            }}
+          >
+            {shipDates.map((d, i) => (
+              <option key={d} value={d}>
+                {shipDateText(d, language)}
+                {i === 0 ? ` (${b.shipDateNext})` : ""}
+              </option>
+            ))}
+          </select>
         </div>
 
         <label className="flex items-center gap-2 text-sm">

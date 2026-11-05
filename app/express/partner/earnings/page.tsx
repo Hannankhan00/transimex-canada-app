@@ -35,6 +35,8 @@ export default function ExpressPartnerEarningsPage() {
   const [formError, setFormError] = useState("");
   const [amount, setAmount] = useState("");
   const [busy, setBusy] = useState("");
+  // The clock is read when the earnings load (an impure call must not run while rendering).
+  const [now, setNow] = useState(() => Date.now());
   const [message, setMessage] = useState<{ text: string; error?: boolean } | null>(null);
 
   const m = (c: number) => formatCad(c, language);
@@ -47,6 +49,7 @@ export default function ExpressPartnerEarningsPage() {
       const body = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(body.error || "error");
       setData(body);
+      setNow(Date.now());
       setState("ready");
     } catch {
       setState("error");
@@ -156,7 +159,7 @@ export default function ExpressPartnerEarningsPage() {
   const { summary, rules } = data;
   const openRequest = data.payouts.find((p) => p.status === "requested");
   const coolingUntil = data.payoutDetails ? new Date(new Date(data.payoutDetails.updatedAt).getTime() + rules.coolingHours * 3_600_000) : null;
-  const cooling = Boolean(coolingUntil && coolingUntil.getTime() > Date.now());
+  const cooling = Boolean(coolingUntil && coolingUntil.getTime() > now);
   const canRequest = Boolean(data.payoutDetails) && !cooling && !openRequest && summary.withdrawableCents >= rules.minPayoutCents;
   const typeLabel = { earning: tr("Earning", "Revenu"), reversal: tr("Refund taken back", "Remboursement repris"), payout: tr("Payout", "Versement"), adjustment: tr("Adjustment", "Ajustement") };
   const statusLabel = { requested: tr("Waiting", "En attente"), paid: tr("Paid", "Versé"), rejected: tr("Not sent", "Non envoyé"), cancelled: tr("Cancelled", "Annulé") };
