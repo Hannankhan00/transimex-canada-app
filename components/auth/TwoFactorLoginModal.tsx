@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { ShieldCheck, X } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import RecoveryCodes from "@/components/auth/RecoveryCodes";
+import OtpBoxes from "@/components/auth/OtpBoxes";
 
 interface Props {
   /** "verify": user already has 2FA, asks for a code. "enroll": staff must set it up before signing in. */
@@ -19,6 +20,7 @@ export default function TwoFactorLoginModal({ mode, challengeToken, onDone, onCa
 
   const [code, setCode] = useState("");
   const [useRecovery, setUseRecovery] = useState(false);
+  const [shake, setShake] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [enrollment, setEnrollment] = useState<{ secret: string; qrDataUrl: string } | null>(null);
@@ -58,6 +60,10 @@ export default function TwoFactorLoginModal({ mode, challengeToken, onDone, onCa
       const data = await res.json();
       if (!res.ok) {
         setError(data.error || (fr ? "Code invalide" : "Invalid code"));
+        if (!useRecovery) {
+          setCode("");
+          setShake((n) => n + 1);
+        }
         if (data.code === "CHALLENGE_EXPIRED") setTimeout(onCancel, 1500);
         return;
       }
@@ -123,22 +129,24 @@ export default function TwoFactorLoginModal({ mode, challengeToken, onDone, onCa
               </p>
             )}
 
-            <input
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              inputMode={useRecovery ? "text" : "numeric"}
-              autoComplete="one-time-code"
-              autoFocus
-              maxLength={useRecovery ? 12 : 7}
-              placeholder={useRecovery ? "xxxxx-xxxxx" : "123456"}
-              className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-center font-mono text-lg tracking-widest text-slate-900 outline-none focus:border-[#d21f27]"
-            />
+            {useRecovery ? (
+              <input
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                autoComplete="one-time-code"
+                autoFocus
+                maxLength={12}
+                className="w-full rounded-xl border-2 border-slate-200 px-3 py-3 text-center font-mono text-lg tracking-widest text-slate-900 outline-none transition-colors focus:border-[#d21f27]"
+              />
+            ) : (
+              <OtpBoxes value={code} onChange={setCode} disabled={busy} shakeSignal={shake} invalid={!!error} autoFocus />
+            )}
 
-            {error && <p className="text-[12px] font-semibold text-red-600">{error}</p>}
+            {error && <p className="text-center text-[12px] font-semibold text-red-600">{error}</p>}
 
             <button
               type="submit"
-              disabled={busy || !code.trim() || (mode === "enroll" && !enrollment)}
+              disabled={busy || (useRecovery ? !code.trim() : code.length !== 6) || (mode === "enroll" && !enrollment)}
               className="w-full rounded-xl bg-[#d21f27] px-4 py-2.5 text-sm font-bold text-white disabled:opacity-40"
             >
               {busy ? (fr ? "Vérification…" : "Verifying…") : mode === "enroll" ? (fr ? "Activer et se connecter" : "Enable and sign in") : fr ? "Vérifier" : "Verify"}
