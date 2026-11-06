@@ -74,3 +74,9 @@ PUBLIC_TRACKING_DOCUMENTATION.md
 SECURITY_AUDIT_REPORT.md
 
 
+.codex/
+CODEX.md
+.aider*
+.continue/
+.clinerules
+.github/copilot-instructions.md
