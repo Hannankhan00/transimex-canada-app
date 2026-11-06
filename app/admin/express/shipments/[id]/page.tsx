@@ -344,6 +344,46 @@ export default function AdminExpressShipmentPage() {
               </div>
             </section>
             )}
+
+            <section className="bg-white rounded-2xl border border-slate-200 p-5">
+              <h2 className="font-bold text-[#0B2545] text-sm mb-2">{tr("History", "Historique")}</h2>
+              <ul className="text-xs divide-y divide-slate-100">
+                {[...shipment.statusHistory].reverse().map((h, i) => (
+                  <li key={i} className="py-2 flex justify-between gap-3">
+                    <span className="flex flex-col gap-0.5">
+                      <ShipmentStatusBadge status={h.status} />
+                      {h.note && <span className="text-slate-500">{h.note}</span>}
+                    </span>
+                    <span className="text-slate-500 whitespace-nowrap">{formatDate(h.at, language)}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+
+            {shipment.adminEdits.length > 0 && (
+              <section className="bg-white rounded-2xl border border-slate-200 p-5">
+                <h2 className="font-bold text-[#0B2545] text-sm mb-2">{tr("Edit history", "Historique des modifications")}</h2>
+                <ul className="space-y-3">
+                  {shipment.adminEdits.map((e, i) => (
+                    <li key={i} className="rounded-xl bg-slate-50 p-3 text-xs space-y-1.5">
+                      <p className="font-bold text-slate-800">
+                        {formatDate(e.at, language)} · {e.by}
+                      </p>
+                      <p className="text-slate-600">
+                        <span className="font-semibold">{tr("Reason", "Motif")}:</span> {e.reason}
+                      </p>
+                      <ul className="list-disc space-y-0.5 pl-4 text-slate-700">
+                        {e.changes.map((c, j) => (
+                          <li key={j} className="break-words">
+                            <span className="font-semibold">{c.field}</span>: {c.from} → {c.to}
+                          </li>
+                        ))}
+                      </ul>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
           </div>
 
           <div className="lg:col-span-2 space-y-5">
@@ -613,45 +653,6 @@ export default function AdminExpressShipmentPage() {
               </section>
             )}
 
-            <section className="bg-white rounded-2xl border border-slate-200 p-5">
-              <h2 className="font-bold text-[#0B2545] text-sm mb-2">{tr("History", "Historique")}</h2>
-              <ul className="text-xs divide-y divide-slate-100">
-                {[...shipment.statusHistory].reverse().map((h, i) => (
-                  <li key={i} className="py-2 flex justify-between gap-3">
-                    <span className="flex flex-col gap-0.5">
-                      <ShipmentStatusBadge status={h.status} />
-                      {h.note && <span className="text-slate-500">{h.note}</span>}
-                    </span>
-                    <span className="text-slate-500 whitespace-nowrap">{formatDate(h.at, language)}</span>
-                  </li>
-                ))}
-              </ul>
-            </section>
-
-            {shipment.adminEdits.length > 0 && (
-              <section className="bg-white rounded-2xl border border-slate-200 p-5">
-                <h2 className="font-bold text-[#0B2545] text-sm mb-2">{tr("Edit history", "Historique des modifications")}</h2>
-                <ul className="space-y-3">
-                  {shipment.adminEdits.map((e, i) => (
-                    <li key={i} className="rounded-xl bg-slate-50 p-3 text-xs space-y-1.5">
-                      <p className="font-bold text-slate-800">
-                        {formatDate(e.at, language)} · {e.by}
-                      </p>
-                      <p className="text-slate-600">
-                        <span className="font-semibold">{tr("Reason", "Motif")}:</span> {e.reason}
-                      </p>
-                      <ul className="list-disc space-y-0.5 pl-4 text-slate-700">
-                        {e.changes.map((c, j) => (
-                          <li key={j} className="break-words">
-                            <span className="font-semibold">{c.field}</span>: {c.from} → {c.to}
-                          </li>
-                        ))}
-                      </ul>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            )}
           </div>
         </div>
 
