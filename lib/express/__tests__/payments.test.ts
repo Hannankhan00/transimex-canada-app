@@ -64,6 +64,7 @@ describe("Stripe provider", () => {
     expect(params.line_items[0].price_data.currency).toBe("cad");
     expect(params.line_items[0].price_data.unit_amount).toBe(16476);
     expect(params.allowed_payment_method_types).toEqual(["card"]);
+    expect(params.adaptive_pricing).toEqual({ enabled: false });
     expect(params.metadata).toMatchObject({ shipmentId: "abc123", reference: "EX-261015-K7QZ4" });
     expect(params.payment_intent_data.metadata.shipmentId).toBe("abc123");
     expect(params.client_reference_id).toBe("abc123");

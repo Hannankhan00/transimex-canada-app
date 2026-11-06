@@ -87,6 +87,8 @@ export class StripePaymentProvider implements PaymentProvider {
           mode: "payment",
           // Cards only at launch.
           allowed_payment_method_types: ["card"],
+          // Everyone pays in CAD: switch off Stripe's "pay in your local currency" choice (for example PKR).
+          adaptive_pricing: { enabled: false },
           line_items: [
             {
               quantity: 1,
