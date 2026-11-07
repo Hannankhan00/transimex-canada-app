@@ -1,3 +1,4 @@
+import { findWeakness, WEAK_TEXT } from "@/lib/passwordPolicy";
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongoose";
 import User from "@/models/User";
@@ -45,6 +46,11 @@ export async function POST(req: Request) {
         { error: "This reset link is invalid or has expired. Please request a new one." },
         { status: 400 }
       );
+    }
+
+    const weak = findWeakness(password, { name: user.name, email: user.email });
+    if (weak) {
+      return NextResponse.json({ error: WEAK_TEXT[weak].en, code: "weak_password", reason: weak }, { status: 400 });
     }
 
     user.password = await hashPassword(password);

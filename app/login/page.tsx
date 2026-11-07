@@ -3,8 +3,9 @@
 import React, { useState, Suspense, useEffect } from "react";
 import { sanitizePhone, phoneKeyDown } from "@/lib/phone";
 import TwoFactorLoginModal from "@/components/auth/TwoFactorLoginModal";
-import Image from "next/image";
-import TransimexLogo from "@/components/TransimexLogo";
+import AuthShell from "@/components/auth/AuthShell";
+import PasswordHints, { passwordProblem } from "@/components/auth/PasswordHints";
+import { findWeakness } from "@/lib/passwordPolicy";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
@@ -17,8 +18,6 @@ import {
   Mail,
   Lock,
   ArrowRight,
-  Shield,
-  Globe2,
   CheckCircle2,
   Phone,
   MapPin,
@@ -29,7 +28,7 @@ function AuthComponent() {
   const searchParams = useSearchParams();
   const initialTab = searchParams.get("tab") === "signup" ? "signup" : "login";
   const urlError = searchParams.get("error");
-  const { t, language, toggleLanguage } = useLanguage();
+  const { t, language } = useLanguage();
 
   const [activeTab, setActiveTab] = useState<"login" | "signup">(initialTab);
   const [showPassword, setShowPassword] = useState(false);
@@ -71,7 +70,9 @@ function AuthComponent() {
     return score;
   };
 
-  const strength = getPasswordStrength(password);
+  const fullNameForCheck = `${firstName} ${lastName}`.trim();
+  const isWeakPassword = activeTab === "signup" && !!password && !!findWeakness(password, { name: fullNameForCheck, email });
+  const strength = isWeakPassword ? Math.min(1, getPasswordStrength(password)) : getPasswordStrength(password);
   const strengthLabels = ["Weak", "Fair", "Good", "Strong"];
   const strengthColors = ["bg-red-500", "bg-amber-500", "bg-blue-500", "bg-emerald-500"];
 
@@ -161,8 +162,9 @@ function AuthComponent() {
       return;
     }
 
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters");
+    const passwordIssue = passwordProblem(password, language === "fr", { name: `${firstName} ${lastName}`.trim(), email });
+    if (passwordIssue) {
+      setError(passwordIssue);
       return;
     }
 
@@ -207,75 +209,14 @@ function AuthComponent() {
   };
 
   return (
-    <div className="bg-[#f9f9ff] text-[#111c2d] min-h-screen flex antialiased">
-      <div className="flex flex-col md:flex-row w-full min-h-screen">
-        {/* Left Side: Hero Image & Branding */}
-        <div className="hidden md:flex md:w-1/2 relative bg-[#0B2545] overflow-hidden flex-col justify-between">
-          <div className="absolute inset-0 z-0">
-            <Image
-              src="/assets/login-hero.webp"
-              alt="Transimex Canada Ocean Freight and Port Terminal Logistics"
-              fill
-              priority
-              sizes="50vw"
-              className="object-cover object-center"
-            />
-          </div>
-
-          {/* Elegant Blue Fade & Ambient Vignette */}
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0B2545] via-[#0B2545]/75 to-[#0B2545]/40 z-10" />
-          <div className="absolute inset-0 bg-[#0B2545]/20 mix-blend-multiply z-10" />
-
-          <div className="relative z-20 flex flex-col justify-between h-full p-10 lg:p-14">
-            {/* Logo and Brand */}
-            <div>
-              <TransimexLogo variant="dark" size="lg" />
-            </div>
-
-            {/* Core Value Statement */}
-            <div className="max-w-xl pb-6">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-white text-[11px] font-semibold uppercase tracking-wider mb-4">
-                <Shield className="w-3.5 h-3.5 text-[#d21f27]" />
-                Institutional Logistics Portal
-              </span>
-              <h2
-                className="text-4xl lg:text-[44px] font-bold text-white mb-4 text-balance leading-[1.1] tracking-[-0.02em]"
-                style={{
-                  fontFamily: "var(--font-playfair), 'Playfair Display', serif",
-                }}
-              >
-                Global Reach. Personal Touch.
-              </h2>
-              <p className="text-slate-300 text-sm leading-relaxed max-w-md">
-                Institutional-grade freight management, cross-border customs compliance, and full visibility cargo logistics across North America.
-              </p>
-            </div>
-
-            {/* Bottom Footer */}
-            <div className="pt-6 border-t border-white/10 text-xs text-slate-400">
-              <span>&copy; {new Date().getFullYear()} Transimex Canada</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Right Side: Authentication Form */}
-        <div className="w-full md:w-1/2 flex items-center justify-center p-4 sm:p-8 md:p-14 bg-white overflow-y-auto min-h-screen">
-          <div className="w-full max-w-[420px] my-auto py-6">
-            {/* Top Bar on Mobile & Language Switcher */}
-            <div className="flex items-center justify-between mb-8">
-              <div className="md:hidden">
-                <TransimexLogo size="sm" />
-              </div>
-              <button
-                type="button"
-                onClick={toggleLanguage}
-                className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-xs font-semibold text-slate-700 transition shadow-xs cursor-pointer"
-              >
-                <Globe2 className="w-3.5 h-3.5 text-[#0B2545]" />
-                <span>{language.toUpperCase()}</span>
-              </button>
-            </div>
-
+    <AuthShell
+      title={language === "fr" ? "Portée mondiale. Contact personnel." : "Global Reach. Personal Touch."}
+      text={
+        language === "fr"
+          ? "Gestion du fret de calibre institutionnel, conformité douanière transfrontalière et visibilité complète de la cargaison à travers l'Amérique du Nord."
+          : "Institutional-grade freight management, cross-border customs compliance, and full visibility cargo logistics across North America."
+      }
+    >
             {registerSuccess ? (
               /* Success State Screen */
               <div className="text-center py-8 space-y-5 animate-in fade-in zoom-in-95">
@@ -508,14 +449,16 @@ function AuthComponent() {
                       {/* Company Name */}
                       <div>
                         <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                          {t.auth.companyName} *
+                          {t.auth.companyName}{" "}
+                          <span className="font-semibold normal-case tracking-normal text-slate-400">
+                            ({language === "fr" ? "facultatif" : "optional"})
+                          </span>
                         </label>
                         <div className="relative flex items-center">
                           <Building2 className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                           <input
                             type="text"
-                            required={activeTab === "signup"}
-                            placeholder="e.g. Laurentian Global Logistics Ltd."
+                            placeholder={language === "fr" ? "Si vous n'avez pas d'entreprise, laissez vide" : "Leave empty if you have no business"}
                             value={companyName}
                             onChange={(e) => setCompanyName(e.target.value)}
                             className="w-full bg-[#f8fafc] border border-slate-200 focus:border-[#d21f27] focus:bg-white focus:ring-2 focus:ring-[#d21f27]/10 rounded-xl pl-10 pr-3.5 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-all"
@@ -604,6 +547,10 @@ function AuthComponent() {
                         {showPassword ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                       </button>
                     </div>
+
+                    {activeTab === "signup" && (
+                      <PasswordHints password={password} name={fullNameForCheck} email={email} fr={language === "fr"} className="mt-2" />
+                    )}
 
                     {/* Password Strength Indicator (in Create Account) */}
                     {activeTab === "signup" && password.length > 0 && (
@@ -747,10 +694,7 @@ function AuthComponent() {
                 </button>
               </>
             )}
-          </div>
-        </div>
-      </div>
-    </div>
+    </AuthShell>
   );
 }
 

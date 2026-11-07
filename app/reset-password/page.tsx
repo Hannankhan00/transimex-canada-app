@@ -1,5 +1,6 @@
 "use client";
 
+import PasswordHints, { findPatternWeakness } from "@/components/auth/PasswordHints";
 import React, { useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -50,7 +51,8 @@ function ResetPasswordForm() {
     return score;
   };
 
-  const strengthScore = getPasswordStrength(passwordValue);
+  // A sequence, keyboard run, repeat or common word always counts as weak, whatever its length.
+  const strengthScore = findPatternWeakness(passwordValue) ? Math.min(1, getPasswordStrength(passwordValue)) : getPasswordStrength(passwordValue);
 
   const onSubmit = async (data: ResetPasswordFormData) => {
     setServerError(null);
@@ -173,6 +175,7 @@ function ResetPasswordForm() {
                       ))}
                     </div>
                   )}
+                  <PasswordHints password={passwordValue} fr={language === "fr"} className="mt-2" />
                   {errors.password && (
                     <p className="text-[11px] text-red-600 mt-1">{errors.password.message}</p>
                   )}

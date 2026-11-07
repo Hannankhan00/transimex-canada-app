@@ -1,3 +1,4 @@
+import { findWeakness, WEAK_TEXT } from "@/lib/passwordPolicy";
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongoose";
 import User from "@/models/User";
@@ -48,6 +49,10 @@ export async function DELETE(req: Request) {
         { error: "Set a password of at least 8 characters first, so you can still sign in.", code: "PASSWORD_REQUIRED" },
         { status: 400 }
       );
+    }
+    const weak = findWeakness(newPassword, { name: user.name, email: user.email });
+    if (weak) {
+      return NextResponse.json({ error: WEAK_TEXT[weak].en, code: "weak_password", reason: weak }, { status: 400 });
     }
     user.password = await hashPassword(newPassword);
   }

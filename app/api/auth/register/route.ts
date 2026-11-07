@@ -1,3 +1,4 @@
+import { findWeakness, WEAK_TEXT } from "@/lib/passwordPolicy";
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongoose";
 import User from "@/models/User";
@@ -52,6 +53,11 @@ export async function POST(req: Request) {
         { error: "Password must be at least 8 characters" },
         { status: 400 }
       );
+    }
+
+    const weak = findWeakness(password, { name: parsedName, email });
+    if (weak) {
+      return NextResponse.json({ error: WEAK_TEXT[weak].en, code: "weak_password", reason: weak }, { status: 400 });
     }
 
     if (phone && !/^[0-9+]{0,20}$/.test(String(phone).trim())) {

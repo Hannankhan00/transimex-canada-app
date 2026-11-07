@@ -193,13 +193,8 @@ export async function GET(req: Request) {
       if (!user.googleId) user.googleId = googleUser.sub;
       if (googleUser.picture && !user.avatar) user.avatar = googleUser.picture;
 
-      // If key profile details are missing or have temporary defaults, mark incomplete
-      const hasMissingDetails =
-        !user.companyName ||
-        !user.phone ||
-        !user.address ||
-        user.companyName.includes("'s Company") ||
-        user.isProfileComplete === false;
+      // A business name is optional, so only phone, address and the profile flag decide if details are missing.
+      const hasMissingDetails = !user.phone || !user.address || user.isProfileComplete === false;
 
       if (hasMissingDetails) {
         user.isProfileComplete = false;

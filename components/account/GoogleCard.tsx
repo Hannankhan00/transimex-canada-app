@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Link2, Link2Off } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
+import PasswordHints, { passwordProblem } from "@/components/auth/PasswordHints";
 
 interface Status {
   connected: boolean;
@@ -62,7 +63,8 @@ export default function GoogleCard() {
     setError(null);
     if (!status) return;
     if (!status.hasPassword) {
-      if (password.length < 8) return setError(fr ? "Le mot de passe doit contenir au moins 8 caractères." : "The password must be at least 8 characters.");
+      const problem = passwordProblem(password, fr);
+      if (problem) return setError(problem);
       if (password !== confirm) return setError(fr ? "Les mots de passe ne correspondent pas." : "The passwords do not match.");
     }
     setBusy(true);
@@ -146,6 +148,7 @@ export default function GoogleCard() {
               <input type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder={fr ? "Confirmer le mot de passe" : "Confirm password"} autoComplete="new-password" className={input} />
             )}
           </div>
+          {!status.hasPassword && <PasswordHints password={password} fr={fr} />}
           {error && <p className="text-xs font-semibold text-red-600">{error}</p>}
           <div className="flex gap-2">
             <button type="submit" disabled={busy || !password} className="px-4 py-2.5 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-xs font-bold rounded-xl transition cursor-pointer">

@@ -1,9 +1,11 @@
 "use client";
 
+/* The Google avatar is a remote image that next/image cannot proxy here, so a plain img is used. */
+/* eslint-disable @next/next/no-img-element */
+
 import React, { useState, useEffect, Suspense } from "react";
 import { sanitizePhone, phoneKeyDown } from "@/lib/phone";
-import Image from "next/image";
-import TransimexLogo from "@/components/TransimexLogo";
+import AuthShell from "@/components/auth/AuthShell";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { api } from "@/lib/api";
@@ -13,8 +15,6 @@ import {
   MapPin,
   Briefcase,
   Shield,
-  CheckCircle2,
-  Globe2,
   ArrowRight,
   Check,
   AlertCircle,
@@ -50,7 +50,7 @@ const INDUSTRIES = [
 
 function CompleteProfileContent() {
   const router = useRouter();
-  const { t, language, toggleLanguage } = useLanguage();
+  const { t, language } = useLanguage();
 
   const [pageLoading, setPageLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -125,15 +125,6 @@ function CompleteProfileContent() {
     const trimmedPhone = phone.trim();
     const trimmedAddress = address.trim();
 
-    if (!trimmedCompany) {
-      setError(
-        language === "fr"
-          ? "Veuillez entrer le nom légal de votre entreprise."
-          : "Please enter your legal company or commercial entity name."
-      );
-      return;
-    }
-
     if (!trimmedPhone || trimmedPhone.length < 7) {
       setError(
         language === "fr"
@@ -199,122 +190,36 @@ function CompleteProfileContent() {
   }
 
   return (
-    <div className="bg-[#f9f9ff] text-[#111c2d] min-h-screen flex antialiased">
-      <div className="flex flex-col md:flex-row w-full min-h-screen">
-        {/* Left Side: Hero Image & Branding */}
-        <div className="hidden md:flex md:w-5/12 lg:w-1/2 relative bg-[#0B2545] overflow-hidden flex-col justify-between">
-          <div className="absolute inset-0 z-0">
-            <Image
-              src="/freight-hero.png"
-              alt="Transimex Freight and Logistics Cargo Ship"
-              fill
-              priority
-              sizes="50vw"
-              className="object-cover opacity-30 filter grayscale-[20%]"
-            />
+    <AuthShell
+      widthClass="max-w-[480px]"
+      title={language === "fr" ? "Une dernière étape pour activer vos services." : "One last step to unlock enterprise freight."}
+      text={
+        language === "fr"
+          ? "En tant que courtier en douane et transitaire agréé par l'ASFC, Transimex exige des informations précises pour la conformité et la tarification."
+          : "As a CBSA-compliant customs broker and freight forwarder, Transimex requires a few verified details to generate active rates, BOLs, and container tracking."
+      }
+      extra={
+        <div className="pt-6 space-y-3">
+          <div className="flex items-center gap-3">
+            <div className="w-7 h-7 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-400 flex items-center justify-center text-xs font-bold">
+              <Check className="w-4 h-4" />
+            </div>
+            <div className="text-xs">
+              <p className="text-white font-semibold">{language === "fr" ? "1. Authentification Google" : "1. Google Authentication"}</p>
+              <p className="text-slate-400 text-[11px]">{googleUser?.email || "Verified"}</p>
+            </div>
           </div>
-
-          {/* Heavy Navy Overlay */}
-          <div className="absolute inset-0 bg-[#0B2545]/90 z-10" />
-
-          <div className="relative z-20 flex flex-col justify-between h-full p-10 lg:p-14">
-            {/* Logo and Brand */}
-            <div>
-              <TransimexLogo variant="dark" size="lg" />
-            </div>
-
-            {/* Core Value Statement */}
-            <div className="max-w-md pb-6 space-y-4">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-white text-[11px] font-semibold uppercase tracking-wider">
-                <Shield className="w-3.5 h-3.5 text-[#d21f27]" />
-                {language === "fr" ? "Portail Institutionnel" : "Institutional Logistics Portal"}
-              </span>
-              <h2
-                className="text-3xl lg:text-[40px] font-bold text-white text-balance leading-[1.15] tracking-[-0.02em]"
-                style={{
-                  fontFamily: "var(--font-playfair), 'Playfair Display', serif",
-                }}
-              >
-                {language === "fr"
-                  ? "Une dernière étape pour activer vos services."
-                  : "One last step to unlock enterprise freight."}
-              </h2>
-              <p className="text-slate-300 text-sm leading-relaxed">
-                {language === "fr"
-                  ? "En tant que courtier en douane et transitaire agréé par l'ASFC, Transimex exige des informations commerciales précises pour la conformité et la tarification."
-                  : "As a CBSA-compliant customs broker and freight forwarder, Transimex requires verified corporate details to generate active rates, BOLs, and container tracking."}
-              </p>
-
-              {/* Progress Stepper on Desktop */}
-              <div className="pt-4 space-y-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-7 h-7 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-400 flex items-center justify-center text-xs font-bold">
-                    <Check className="w-4 h-4" />
-                  </div>
-                  <div className="text-xs">
-                    <p className="text-white font-semibold">
-                      {language === "fr" ? "1. Authentification Google" : "1. Google Authentication"}
-                    </p>
-                    <p className="text-slate-400 text-[11px]">
-                      {googleUser?.email || "Verified"}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="w-0.5 h-4 bg-white/20 ml-3.5" />
-
-                <div className="flex items-center gap-3">
-                  <div className="w-7 h-7 rounded-full bg-[#d21f27] text-white flex items-center justify-center text-xs font-bold shadow-sm ring-4 ring-[#d21f27]/20">
-                    2
-                  </div>
-                  <div className="text-xs">
-                    <p className="text-white font-semibold">
-                      {language === "fr" ? "2. Profil Commercial & Entité" : "2. Commercial Entity Profile"}
-                    </p>
-                    <p className="text-[#d21f27] text-[11px] font-medium">
-                      {language === "fr" ? "En cours de configuration" : "In Progress"}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Bottom Footer */}
-            <div className="pt-6 border-t border-white/10 text-xs text-slate-400">
-              <span>&copy; {new Date().getFullYear()} Transimex Canada</span>
+          <div className="w-0.5 h-4 bg-white/20 ml-3.5" />
+          <div className="flex items-center gap-3">
+            <div className="w-7 h-7 rounded-full bg-[#d21f27] text-white flex items-center justify-center text-xs font-bold shadow-sm ring-4 ring-[#d21f27]/20">2</div>
+            <div className="text-xs">
+              <p className="text-white font-semibold">{language === "fr" ? "2. Votre profil" : "2. Your Profile"}</p>
+              <p className="text-slate-400 text-[11px]">{language === "fr" ? "En cours de configuration" : "In progress"}</p>
             </div>
           </div>
         </div>
-
-        {/* Right Side: Form Container */}
-        <div className="w-full md:w-7/12 lg:w-1/2 flex items-center justify-center p-4 sm:p-8 lg:p-12 bg-white overflow-y-auto min-h-screen">
-          <div className="w-full max-w-[480px] my-auto py-6">
-            {/* Top Bar with Mobile Brand and Language Switcher */}
-            <div className="flex items-center justify-between mb-6">
-              <div className="md:hidden">
-                <TransimexLogo size="sm" />
-              </div>
-
-              <button
-                type="button"
-                onClick={toggleLanguage}
-                className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-xs font-semibold text-slate-700 transition shadow-xs cursor-pointer"
-              >
-                <Globe2 className="w-3.5 h-3.5 text-[#0B2545]" />
-                <span>{language.toUpperCase()}</span>
-              </button>
-            </div>
-
-            {/* Step Pill */}
-            <div className="mb-4 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200/80 text-emerald-800 text-[11px] font-semibold">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-              <span>
-                {language === "fr"
-                  ? "Compte Google vérifié avec succès"
-                  : "Google Account Verified Successfully"}
-              </span>
-            </div>
-
+      }
+    >
             {/* Title & Description */}
             <div className="mb-6">
               <h2
@@ -337,12 +242,13 @@ function CompleteProfileContent() {
               <div className="mb-6 p-3.5 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3 min-w-0">
                   {googleUser.avatar ? (
-                    <Image
+                    <img
                       src={googleUser.avatar}
                       alt={googleUser.name}
                       width={38}
                       height={38}
-                      className="rounded-full border border-white shadow-xs shrink-0"
+                      referrerPolicy="no-referrer"
+                      className="h-[38px] w-[38px] rounded-full border border-white object-cover shadow-xs shrink-0"
                     />
                   ) : (
                     <div className="w-9 h-9 rounded-full bg-[#0B2545] text-white font-bold flex items-center justify-center text-xs shrink-0">
@@ -402,14 +308,16 @@ function CompleteProfileContent() {
               {/* Company Name */}
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                  {language === "fr" ? "Nom de l'entreprise *" : "Company Legal Name *"}
+                  {language === "fr" ? "Nom de l'entreprise" : "Company Name"}{" "}
+                  <span className="font-semibold normal-case tracking-normal text-slate-400">
+                    ({language === "fr" ? "facultatif" : "optional"})
+                  </span>
                 </label>
                 <div className="relative flex items-center">
                   <Building2 className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                   <input
                     type="text"
-                    required
-                    placeholder="e.g. Laurentian Global Logistics Ltd."
+                    placeholder={language === "fr" ? "Si vous n'avez pas d'entreprise, laissez vide" : "Leave empty if you have no business"}
                     value={companyName}
                     onChange={(e) => setCompanyName(e.target.value)}
                     className="w-full bg-[#f8fafc] border border-slate-200 focus:border-[#d21f27] focus:bg-white focus:ring-2 focus:ring-[#d21f27]/10 rounded-xl pl-10 pr-3.5 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-all"
@@ -579,10 +487,7 @@ function CompleteProfileContent() {
                 </p>
               </div>
             </form>
-          </div>
-        </div>
-      </div>
-    </div>
+    </AuthShell>
   );
 }
 

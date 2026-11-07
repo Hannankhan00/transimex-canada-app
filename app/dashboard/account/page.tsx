@@ -15,6 +15,7 @@ import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { api } from "@/lib/api";
 import TwoFactorCard from "@/components/account/TwoFactorCard";
 import GoogleCard from "@/components/account/GoogleCard";
+import PasswordHints, { passwordProblem } from "@/components/auth/PasswordHints";
 import { EmailPreferences } from "@/lib/portalTypes";
 
 const DEFAULT_PREFERENCES: EmailPreferences = {
@@ -93,6 +94,7 @@ export default function AccountSettingsPage() {
     register: registerPassword,
     handleSubmit: handleSubmitPassword,
     reset: resetPassword,
+    watch: watchPassword,
     formState: { errors: passwordErrors, isSubmitting: isSubmittingPassword },
   } = useForm<PasswordChangeFormData>({
     resolver: zodResolver(passwordChangeSchema) as any,
@@ -211,6 +213,8 @@ export default function AccountSettingsPage() {
 
   const handlePasswordSubmit = async (data: PasswordChangeFormData) => {
     try {
+      const weak = passwordProblem(data.newPassword, language === "fr", { name: currentUser.name, email: currentUser.email });
+      if (weak) throw new Error(weak);
       const res = await fetch("/api/account/password", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -649,6 +653,8 @@ export default function AccountSettingsPage() {
             </div>
           </div>
   
+          <PasswordHints password={watchPassword("newPassword") || ""} name={currentUser.name} email={currentUser.email} fr={language === "fr"} />
+
           <div className="pt-2 flex items-center justify-end">
             <button
               type="submit"

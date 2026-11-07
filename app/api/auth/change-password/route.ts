@@ -38,7 +38,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "The temporary password is not correct.", code: "wrong_current" }, { status: 401 });
     }
 
-    const problem = checkNewPassword({ current: currentPassword, next: newPassword, email: user.email });
+    const problem = checkNewPassword({ current: currentPassword, next: newPassword, email: user.email, name: user.name });
     if (problem) return NextResponse.json({ error: PASSWORD_PROBLEM_TEXT[problem].en, code: problem }, { status: 422 });
 
     user.password = await hashPassword(newPassword);

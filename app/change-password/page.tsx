@@ -99,7 +99,7 @@ export default function ChangePasswordPage() {
             {show ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
             {show ? tr("Hide passwords", "Masquer les mots de passe") : tr("Show passwords", "Afficher les mots de passe")}
           </button>
-          <p className="text-xs text-slate-500">{tr(`At least ${NEW_PASSWORD_MIN_LENGTH} characters, with a letter and a number.`, `Au moins ${NEW_PASSWORD_MIN_LENGTH} caractères, avec une lettre et un chiffre.`)}</p>
+          <p className="text-xs text-slate-500">{tr(`At least ${NEW_PASSWORD_MIN_LENGTH} characters, with a letter and a number. No sequences (1234, abcd, qwerty), repeated characters, or your name or email.`, `Au moins ${NEW_PASSWORD_MIN_LENGTH} caractères, avec une lettre et un chiffre. Aucune suite (1234, abcd, qwerty), caractère répété, ni votre nom ou courriel.`)}</p>
 
           {error && (
             <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-3.5 py-2.5 text-sm font-semibold text-red-700">

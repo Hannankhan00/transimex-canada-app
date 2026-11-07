@@ -30,13 +30,6 @@ export async function POST(req: Request) {
     const trimmedPhone = (phone || "").trim();
     const trimmedAddress = (address || "").trim();
 
-    if (!trimmedCompany) {
-      return NextResponse.json(
-        { error: "Company Name is required for commercial logistics operations." },
-        { status: 400 }
-      );
-    }
-
     if (!trimmedPhone || trimmedPhone.length < 7) {
       return NextResponse.json(
         { error: "A valid corporate contact phone number is required." },
@@ -69,7 +62,8 @@ export async function POST(req: Request) {
     }
 
     // Update commercial profile details
-    user.companyName = trimmedCompany;
+    // A business name is optional; without one the account shows the person's own name, as it does after a manual sign-up.
+    user.companyName = trimmedCompany || `${user.name}'s Company`;
     user.phone = trimmedPhone;
     user.address = trimmedAddress;
     if (city?.trim()) user.city = city.trim();

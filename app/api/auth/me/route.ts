@@ -37,7 +37,7 @@ export async function GET() {
             department: dbUser.department || "",
             avatar: dbUser.avatar || "",
             provider: dbUser.provider || "credentials",
-            isProfileComplete: dbUser.isProfileComplete ?? Boolean(dbUser.companyName && dbUser.phone && dbUser.address && !dbUser.companyName.includes("'s Company")),
+            isProfileComplete: dbUser.isProfileComplete ?? Boolean(dbUser.phone && dbUser.address),
           },
         });
       }

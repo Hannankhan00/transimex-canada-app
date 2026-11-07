@@ -1,3 +1,4 @@
+import { findPatternWeakness, WEAK_TEXT } from "@/lib/passwordPolicy";
 import { z } from "zod";
 
 export const profileUpdateSchema = z.object({
@@ -30,7 +31,11 @@ export const passwordChangeSchema = z
       .string()
       .min(8, "Password must be at least 8 characters")
       .regex(/[A-Z]/, "Must contain at least one uppercase letter")
-      .regex(/[0-9]/, "Must contain at least one number"),
+      .regex(/[0-9]/, "Must contain at least one number")
+      .superRefine((v, ctx) => {
+        const w = findPatternWeakness(v);
+        if (w) ctx.addIssue({ code: "custom", message: WEAK_TEXT[w].en });
+      }),
     confirmPassword: z
       .string()
       .min(1, "Please confirm your new password"),
