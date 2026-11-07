@@ -126,13 +126,27 @@ function AuthComponent() {
     }
   };
 
+  // After a resend the button waits 60s (the server's own cooldown), then can be used again.
+  const [resendCooldown, setResendCooldown] = useState(0);
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setTimeout(() => {
+      setResendCooldown((s) => s - 1);
+      if (resendCooldown === 1) setResendStatus("idle");
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [resendCooldown]);
+
   const handleResendVerification = async () => {
-    if (!email) return;
+    if (!email || resendCooldown > 0) return;
     setResendStatus("sending");
     try {
-      await api.auth.resendVerification(email);
-    } finally {
+      await api.auth.resendVerification(email.trim());
       setResendStatus("sent");
+      setResendCooldown(60);
+    } catch (err: any) {
+      setResendStatus("idle");
+      setError(err.message || "Could not send the email. Please try again.");
     }
   };
 
@@ -278,6 +292,25 @@ function AuthComponent() {
                     {t.auth.checkEmailDesc} <strong>{email}</strong>. {t.auth.checkEmailInfo}
                   </p>
                 </div>
+                <div className="text-xs text-slate-600">
+                  {resendStatus === "sent" ? (
+                    <span className="font-medium text-emerald-700">
+                      A new verification email has been sent{resendCooldown > 0 ? `. You can request another in ${resendCooldown}s.` : "."}
+                    </span>
+                  ) : (
+                    <>
+                      Didn&apos;t get the email? Check your spam folder or{" "}
+                      <button
+                        type="button"
+                        onClick={handleResendVerification}
+                        disabled={resendStatus === "sending"}
+                        className="font-semibold text-[#0B2545] hover:text-[#d21f27] underline disabled:opacity-60 cursor-pointer"
+                      >
+                        {resendStatus === "sending" ? "Sending..." : "resend it"}
+                      </button>
+                    </>
+                  )}
+                </div>
                 <button
                   type="button"
                   onClick={() => {
@@ -393,7 +426,7 @@ function AuthComponent() {
                       <div className="mt-2 pt-2 border-t border-red-200/70">
                         {resendStatus === "sent" ? (
                           <span className="text-emerald-700 font-medium">
-                            If that account exists, a new verification email has been sent.
+                            If that account exists, a new verification email has been sent. You can request another in {resendCooldown}s.
                           </span>
                         ) : (
                           <button

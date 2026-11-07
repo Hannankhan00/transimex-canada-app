@@ -14,6 +14,7 @@ import {
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { api } from "@/lib/api";
 import TwoFactorCard from "@/components/account/TwoFactorCard";
+import GoogleCard from "@/components/account/GoogleCard";
 import { EmailPreferences } from "@/lib/portalTypes";
 
 const DEFAULT_PREFERENCES: EmailPreferences = {
@@ -658,6 +659,8 @@ export default function AccountSettingsPage() {
             </button>
           </div>
         </form>
+
+        <GoogleCard />
 
         <TwoFactorCard />
 

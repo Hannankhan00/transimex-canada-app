@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -16,6 +16,29 @@ export default function ForgotPasswordPage() {
   const [noAccount, setNoAccount] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [submittedEmail, setSubmittedEmail] = useState("");
+  const [cooldown, setCooldown] = useState(60);
+  const [resending, setResending] = useState(false);
+  const [resendNote, setResendNote] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isSuccess || cooldown <= 0) return;
+    const timer = setTimeout(() => setCooldown((s) => s - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [isSuccess, cooldown]);
+
+  const resend = async () => {
+    setResending(true);
+    setResendNote(null);
+    try {
+      await api.auth.forgotPassword({ email: submittedEmail });
+      setCooldown(60);
+      setResendNote(language === "fr" ? "Un nouveau lien a été envoyé." : "A new link has been sent.");
+    } catch (err: any) {
+      setResendNote(err.message || "Could not resend. Please try again.");
+    } finally {
+      setResending(false);
+    }
+  };
 
   const {
     register,
@@ -104,6 +127,18 @@ export default function ForgotPasswordPage() {
                 <p className="text-xs text-slate-600 mb-4 leading-relaxed">
                   {t.auth.resetSentDesc} (<strong>{submittedEmail}</strong>).
                 </p>
+
+                <p className="mb-4 text-xs text-slate-500">
+                  {language === "fr" ? "Rien reçu? Vérifiez vos pourriels, ou " : "Nothing arrived? Check your spam folder, or "}
+                  {cooldown > 0 ? (
+                    <span>{language === "fr" ? `renvoyez dans ${cooldown} s` : `resend in ${cooldown}s`}</span>
+                  ) : (
+                    <button type="button" onClick={resend} disabled={resending} className="font-semibold text-[#0B2545] underline hover:text-[#d21f27] disabled:opacity-60 cursor-pointer">
+                      {resending ? "…" : language === "fr" ? "renvoyer le lien" : "send it again"}
+                    </button>
+                  )}
+                </p>
+                {resendNote && <p className="mb-3 text-xs font-medium text-emerald-700">{resendNote}</p>}
 
                 <div className="flex flex-col gap-2">
                   <Link

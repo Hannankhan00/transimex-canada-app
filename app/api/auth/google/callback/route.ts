@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import connectDB from "@/lib/mongoose";
 import User from "@/models/User";
 import { signToken } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/session";
 import { isStaffRole } from "@/lib/rbac";
 import { createUserSession } from "@/lib/authSession";
 import { recordLoginDevice } from "@/lib/accountSecurity";
@@ -108,7 +109,50 @@ export async function GET(req: Request) {
     // 3. Connect to Database & Find/Create User
     await connectDB();
 
-    let user = await User.findOne({ email: googleUser.email.toLowerCase() });
+    // Connecting Google from account settings: attach it to the signed-in account, never sign in as someone else.
+    if (cookieStore.get("oauth_link")?.value === "1") {
+      const back = (q: string) => {
+        const r = NextResponse.redirect(new URL(`/dashboard/account?${q}`, req.url));
+        r.cookies.delete("oauth_state");
+        r.cookies.delete("oauth_link");
+        return r;
+      };
+      const current = await getCurrentUser();
+      if (!current) {
+        const r = NextResponse.redirect(new URL("/login", req.url));
+        r.cookies.delete("oauth_state");
+        r.cookies.delete("oauth_link");
+        return r;
+      }
+      const me = await User.findById(current.userId);
+      if (!me) return back("google=error&reason=missing");
+      if (isStaffRole(me.role) || me.twoFactorEnabled) return back("google=error&reason=unavailable");
+      const taken = await User.findOne({ googleId: googleUser.sub, _id: { $ne: me._id } }).select("_id").lean();
+      if (taken) return back("google=error&reason=taken");
+
+      me.googleId = googleUser.sub;
+      me.googleSignInDisabled = false;
+      if (googleUser.picture && !me.avatar) me.avatar = googleUser.picture;
+      await me.save();
+      return back("google=connected");
+    }
+
+    // The Google account id wins over the email, so a connected account whose Google email differs still signs in.
+    let user =
+      (googleUser.sub ? await User.findOne({ googleId: googleUser.sub }) : null) ||
+      (await User.findOne({ email: googleUser.email.toLowerCase() }));
+
+    if (user?.googleSignInDisabled) {
+      const r = NextResponse.redirect(
+        new URL(
+          "/login?error=" +
+            encodeURIComponent("Google sign-in was turned off for this account. Sign in with your email and password, then reconnect Google in Account settings."),
+          req.url
+        )
+      );
+      r.cookies.delete("oauth_state");
+      return r;
+    }
 
     if (!user) {
       const displayName = googleUser.name || "Client User";
@@ -196,6 +240,7 @@ export async function GET(req: Request) {
     });
 
     response.cookies.delete("oauth_state");
+    response.cookies.delete("oauth_link");
     return response;
   } catch (err: any) {
     console.error("Google Auth Callback Exception:", err);

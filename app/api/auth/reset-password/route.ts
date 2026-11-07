@@ -50,6 +50,9 @@ export async function POST(req: Request) {
     user.password = await hashPassword(password);
     user.resetToken = undefined;
     user.resetTokenExpires = undefined;
+    // A reset signs out every existing session, so anyone holding the old password is locked out.
+    user.tokenVersion = (user.tokenVersion || 0) + 1;
+    user.mustChangePassword = false;
     if (user.accountStatus === "pending") {
       user.accountStatus = "active";
     }
