@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, Suspense, useEffect } from "react";
+import { sanitizePhone, phoneKeyDown } from "@/lib/phone";
 import TwoFactorLoginModal from "@/components/auth/TwoFactorLoginModal";
 import Image from "next/image";
 import TransimexLogo from "@/components/TransimexLogo";
@@ -532,9 +533,11 @@ function AuthComponent() {
                           <input
                             type="tel"
                             required={activeTab === "signup"}
-                            placeholder="+1 (514) 555-0199"
+                            placeholder="+15145550199"
                             value={phone}
-                            onChange={(e) => setPhone(e.target.value)}
+                            onChange={(e) => setPhone(sanitizePhone(e.target.value))}
+                            onKeyDown={phoneKeyDown}
+                            maxLength={20}
                             className="w-full bg-[#f8fafc] border border-slate-200 focus:border-[#d21f27] focus:bg-white focus:ring-2 focus:ring-[#d21f27]/10 rounded-xl pl-10 pr-3.5 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-all"
                           />
                         </div>
