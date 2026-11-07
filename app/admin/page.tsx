@@ -511,7 +511,7 @@ export default function AdminOperationsPage() {
             </div>
 
             {/* Activities List: fixed height, scrolls inside the card */}
-            <div className="mt-3 -mx-2 flex-1 min-h-0 overflow-y-auto overscroll-contain px-2 pr-3 space-y-2 [scrollbar-width:thin] [scrollbar-color:#cbd5e1_transparent]">
+            <div className="mt-3 -mx-2 flex-1 min-h-0 overflow-y-auto overscroll-contain px-2 pr-3 divide-y divide-slate-100 [scrollbar-width:thin] [scrollbar-color:#cbd5e1_transparent]">
               {filteredActivities.length === 0 ? (
                 <div className="py-12 text-center text-slate-400 text-xs">
                   {language === "fr" ? "Aucune activité trouvée pour ce filtre." : "No activity logs match this filter."}
@@ -522,20 +522,19 @@ export default function AdminOperationsPage() {
                   const isWarning = act.statusType === "warning";
                   const isSuccess = act.statusType === "success";
                   const tone = isDanger
-                    ? { icon: "bg-red-50 text-[#d21f27]", bar: "bg-[#d21f27]", pill: "bg-red-50 text-red-700 border-red-200" }
+                    ? { pill: "bg-red-50 text-red-700 border-red-200" }
                     : isWarning
-                    ? { icon: "bg-amber-50 text-amber-700", bar: "bg-amber-500", pill: "bg-amber-50 text-amber-800 border-amber-200" }
+                    ? { pill: "bg-amber-50 text-amber-800 border-amber-200" }
                     : isSuccess
-                    ? { icon: "bg-emerald-50 text-emerald-700", bar: "bg-emerald-500", pill: "bg-emerald-50 text-emerald-800 border-emerald-200" }
-                    : { icon: "bg-blue-50 text-blue-700", bar: "bg-blue-500", pill: "bg-blue-50 text-blue-800 border-blue-200" };
+                    ? { pill: "bg-emerald-50 text-emerald-800 border-emerald-200" }
+                    : { pill: "bg-blue-50 text-blue-800 border-blue-200" };
 
                   return (
                     <div
                       key={act.id}
-                      className="relative flex items-center gap-3 overflow-hidden rounded-xl border border-slate-200/80 bg-white py-2.5 pl-4 pr-3 transition hover:border-slate-300 hover:bg-slate-50/60"
+                      className="flex items-center gap-3 rounded-lg px-2 py-3 transition hover:bg-slate-50"
                     >
-                      <span className={`absolute inset-y-0 left-0 w-1 ${tone.bar}`} aria-hidden="true" />
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${tone.icon}`}>
+                      <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-slate-100 text-slate-600">
                         {act.category === "customs" ? (
                           <AlertTriangle className="w-4 h-4" />
                         ) : act.category === "quote" ? (
