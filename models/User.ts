@@ -13,6 +13,8 @@ export interface IUser extends Document {
   role?: string;
   permissions?: string[];
   googleId?: string;
+  /** Set when the client disconnects Google: Google sign-in is refused for this account until they reconnect. */
+  googleSignInDisabled?: boolean;
   avatar?: string;
   provider?: string;
   isVerified?: boolean;
@@ -114,6 +116,10 @@ const UserSchema = new Schema<IUser>(
     googleId: {
       type: String,
       sparse: true,
+    },
+    googleSignInDisabled: {
+      type: Boolean,
+      default: false,
     },
     avatar: {
       type: String,

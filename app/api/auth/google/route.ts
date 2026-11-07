@@ -1,11 +1,17 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
+import { getCurrentUser } from "@/lib/session";
 
 export async function GET(req: Request) {
   const googleClientId = process.env.GOOGLE_CLIENT_ID;
 
   const url = new URL(req.url);
   const origin = url.origin;
+  // ?link=1 means a signed-in client is connecting Google from their account settings.
+  const linking = url.searchParams.get("link") === "1";
+  if (linking && !(await getCurrentUser())) {
+    return NextResponse.redirect(new URL("/login", req.url));
+  }
   const redirectUri = `${origin}/api/auth/google/callback`;
 
   // If credentials are not yet configured in .env.local
@@ -38,6 +44,18 @@ export async function GET(req: Request) {
     maxAge: 60 * 10, // 10 minutes
     path: "/",
   });
+  // Always set or clear, so a stale link flag can never turn a normal sign-in into a link.
+  if (linking) {
+    response.cookies.set("oauth_link", "1", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 60 * 10,
+      path: "/",
+    });
+  } else {
+    response.cookies.delete("oauth_link");
+  }
 
   return response;
 }

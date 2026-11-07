@@ -17,6 +17,39 @@ function VerifyEmailContent() {
   const [success, setSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  const [resendEmail, setResendEmail] = useState("");
+  const [resendStatus, setResendStatus] = useState<"idle" | "sending" | "sent">("idle");
+  const [cooldown, setCooldown] = useState(0);
+  const [resendError, setResendError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const timer = setTimeout(() => setCooldown((s) => s - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [cooldown]);
+
+  const resend = async () => {
+    if (!resendEmail.trim() || cooldown > 0) return;
+    setResendStatus("sending");
+    setResendError(null);
+    try {
+      const res = await fetch("/api/auth/resend-verification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: resendEmail.trim() }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Could not send the email. Please try again.");
+      }
+      setResendStatus("sent");
+      setCooldown(60);
+    } catch (err: any) {
+      setResendStatus("idle");
+      setResendError(err.message);
+    }
+  };
+
   useEffect(() => {
     if (!token) {
       setLoading(false);
@@ -126,6 +159,29 @@ function VerifyEmailContent() {
                     Verification Issue
                   </h2>
                   <p className="text-xs text-red-600 mt-2">{errorMessage}</p>
+                </div>
+                <div className="space-y-2 text-left">
+                  <p className="text-xs font-semibold text-slate-700">Need a new link? Enter your email and we&apos;ll send one.</p>
+                  <input
+                    type="email"
+                    value={resendEmail}
+                    onChange={(e) => setResendEmail(e.target.value)}
+                    placeholder="you@company.com"
+                    autoComplete="email"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm text-slate-900 outline-none focus:border-[#0B2545]"
+                  />
+                  <button
+                    type="button"
+                    onClick={resend}
+                    disabled={resendStatus === "sending" || cooldown > 0 || !resendEmail.trim()}
+                    className="w-full py-3 bg-[#0B2545] hover:bg-[#123661] disabled:opacity-50 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition cursor-pointer"
+                  >
+                    {resendStatus === "sending" ? "Sending..." : cooldown > 0 ? `Request another in ${cooldown}s` : "Send me a new verification link"}
+                  </button>
+                  {resendError && <p className="text-xs font-medium text-red-600">{resendError}</p>}
+                  {resendStatus === "sent" && (
+                    <p className="text-xs font-medium text-emerald-700">If an unverified account exists for this email, a new verification link has been sent.</p>
+                  )}
                 </div>
                 <Link
                   href="/login"

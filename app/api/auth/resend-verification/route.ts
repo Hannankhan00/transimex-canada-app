@@ -32,6 +32,7 @@ export async function POST(req: Request) {
     }
 
     const emailLower = email.toLowerCase().trim();
+    let sendFailed = false;
 
     try {
       await connectDB();
@@ -56,10 +57,20 @@ export async function POST(req: Request) {
           token: verificationToken,
         }).catch((emailErr) => {
           console.error("Failed to resend verification email:", emailErr);
+          sendFailed = true;
         });
       }
     } catch (dbErr) {
       console.error("Database error during resend-verification:", dbErr);
+    }
+
+    // The mail provider failing is the one case worth telling the user about. It only happens
+    // for an existing unverified account, so this is a small trade against enumeration (still rate limited).
+    if (sendFailed) {
+      return NextResponse.json(
+        { error: "We could not send the email right now. Please try again in a few minutes." },
+        { status: 502 }
+      );
     }
 
     // Always return the same neutral response, whether or not the account exists
