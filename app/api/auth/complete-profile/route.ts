@@ -44,6 +44,13 @@ export async function POST(req: Request) {
       );
     }
 
+    if (!/^[0-9+]{7,20}$/.test(trimmedPhone)) {
+      return NextResponse.json(
+        { error: "Phone number can only contain digits and +" },
+        { status: 400 }
+      );
+    }
+
     if (!trimmedAddress || trimmedAddress.length < 5) {
       return NextResponse.json(
         { error: "A complete physical business address is required." },

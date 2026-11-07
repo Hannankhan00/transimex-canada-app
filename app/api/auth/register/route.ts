@@ -54,6 +54,13 @@ export async function POST(req: Request) {
       );
     }
 
+    if (phone && !/^[0-9+]{0,20}$/.test(String(phone).trim())) {
+      return NextResponse.json(
+        { error: "Phone number can only contain digits and +" },
+        { status: 400 }
+      );
+    }
+
     const targetCompany = (companyName || "").trim() || `${parsedName}'s Company`;
     const verificationToken = "vtx-" + crypto.randomBytes(24).toString("hex");
 
