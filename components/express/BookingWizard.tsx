@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Info, Loader2, Plus, Trash2 } from "lucide-react";
+import { AlertTriangle, Check, Info, Loader2, Plus, Trash2 } from "lucide-react";
 import { api } from "@/lib/api";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { COUNTRIES } from "@/lib/data/countries";
@@ -153,7 +153,19 @@ function AddressFields({
         </Field>
       )}
       <Field label={labels.phone}>
-        <input className={inputClass} value={value.phone} onChange={set("phone")} inputMode="tel" autoComplete="tel" maxLength={25} />
+        <input
+          className={inputClass}
+          value={value.phone}
+          // Only digits and "+" can be typed (also applies to paste).
+          onChange={(e) => onChange({ ...value, phone: e.target.value.replace(/[^0-9+]/g, "") })}
+          onKeyDown={(e) => {
+            if (e.ctrlKey || e.metaKey || e.key.length > 1) return;
+            if (!/[0-9+]/.test(e.key)) e.preventDefault();
+          }}
+          inputMode="tel"
+          autoComplete="tel"
+          maxLength={25}
+        />
       </Field>
       <Field label={emailRequired ? labels.email : labels.emailOptional}>
         <input className={inputClass} value={value.email} onChange={set("email")} inputMode="email" autoComplete="email" maxLength={160} />
@@ -203,6 +215,7 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
   const [payMethod, setPayMethod] = useState<"card" | "invoice">(canCard ? "card" : "invoice");
   const [credit, setCredit] = useState<CreditSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [dialog, setDialog] = useState<"same" | "nodiscount" | null>(null);
 
   // A partner's customer is quoted one final price (no breakdown); the server sends them a different quote shape.
   const isCustomer = account.type === "customer";
@@ -360,11 +373,46 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
     return null;
   };
 
-  const goNext = () => {
-    const problem = validateStep(step);
-    setError(problem);
-    if (!problem) setStep(step + 1);
+  const norm = (v: string) => v.toLowerCase().replace(/[^a-z0-9]/g, "");
+  const sameAddress =
+    !!shipper.line1.trim() &&
+    norm(shipper.line1) === norm(recipient.line1) &&
+    norm(shipper.line2) === norm(recipient.line2) &&
+    norm(shipper.city) === norm(recipient.city) &&
+    norm(shipper.postalCode) === norm(recipient.postalCode) &&
+    shipper.countryCode === recipient.countryCode;
+  const noCanada = !!shipper.countryCode && !!recipient.countryCode && shipper.countryCode !== "CA" && recipient.countryCode !== "CA";
+
+  const pendingStep = useRef(2);
+
+  // Moves to `target`. Going back is always allowed; going forward needs every step on the way to be complete.
+  const goTo = (target: number) => {
+    if (confirming || target === step) return;
+    if (target < step) {
+      setError(null);
+      setStep(target);
+      return;
+    }
+    for (let s = step; s < target; s++) {
+      const problem = validateStep(s);
+      if (problem) {
+        setStep(s);
+        setError(problem);
+        return;
+      }
+      if (s === 1) {
+        if (sameAddress) return setDialog("same");
+        if (noCanada) {
+          pendingStep.current = target;
+          return setDialog("nodiscount");
+        }
+      }
+    }
+    setError(null);
+    setStep(target);
   };
+
+  const goNext = () => goTo(step + 1);
 
   const fetchQuote = useCallback(async () => {
     setQuoteLoading(true);
@@ -527,8 +575,52 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
   const termsText = terms?.content[language];
   const quoteTotalCents = quote ? (isCustomer ? (quote as unknown as CustomerQuoteDTO).totalCents : quote.price.totalCents) : 0;
 
+  const fr = language === "fr";
+  const closeDialog = () => setDialog(null);
+
   return (
     <div className="space-y-6">
+      {dialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4" onClick={closeDialog}>
+          <div role="alertdialog" aria-modal="true" className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className={`mb-3 grid h-11 w-11 place-items-center rounded-full ${dialog === "same" ? "bg-red-50 text-red-600" : "bg-amber-50 text-amber-600"}`}>
+              {dialog === "same" ? <AlertTriangle className="h-5 w-5" /> : <Info className="h-5 w-5" />}
+            </div>
+            <h2 className="text-lg font-extrabold text-[#0B2545]">
+              {dialog === "same"
+                ? fr ? "Les adresses sont identiques" : "Sender and recipient are the same"
+                : fr ? "Aucun rabais pour cet envoi" : "No discount on this shipment"}
+            </h2>
+            <p className="mt-2 text-sm leading-relaxed text-slate-600">
+              {dialog === "same"
+                ? fr
+                  ? "L'adresse de l'expéditeur et celle du destinataire sont les mêmes. Veuillez les corriger avant de continuer."
+                  : "The sender address and the recipient address are the same. Please correct one of them before you continue."
+                : fr
+                  ? "Cet envoi ne vient pas du Canada et ne va pas vers le Canada. Les rabais ne s'appliquent qu'aux envois à destination ou en provenance du Canada : vous paierez donc les prix d'origine."
+                  : "This shipment is neither to nor from Canada. Discounts apply only to shipments going to or from Canada, so you will pay the original prices."}
+            </p>
+            <div className="mt-5 flex justify-end gap-2">
+              {dialog === "nodiscount" && (
+                <button type="button" onClick={closeDialog} className="cursor-pointer rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-slate-700">
+                  {fr ? "Modifier les adresses" : "Change addresses"}
+                </button>
+              )}
+              <button
+                type="button"
+                autoFocus
+                onClick={() => {
+                  if (dialog === "nodiscount") setStep(pendingStep.current);
+                  closeDialog();
+                }}
+                className="cursor-pointer rounded-xl bg-[#0B2545] px-5 py-2.5 text-sm font-bold text-white hover:bg-slate-800"
+              >
+                {dialog === "same" ? (fr ? "Corriger" : "Fix addresses") : fr ? "Je comprends, continuer" : "I understand, continue"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <div>
         <h1 className="text-2xl font-extrabold text-[#0B2545]">{b.title}</h1>
         <p className="mt-1 text-sm text-slate-600">{b.subtitle}</p>
@@ -541,7 +633,7 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
           const current = n === step;
           return (
             <li key={name} aria-current={current ? "step" : undefined} className={`flex items-center ${i < stepNames.length - 1 ? "flex-1" : ""}`}>
-              <span className="flex items-center gap-2.5">
+              <button type="button" onClick={() => goTo(n)} disabled={confirming} aria-label={name} className="flex cursor-pointer items-center gap-2.5 rounded-lg text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0B2545]/30">
                 <span
                   className={`grid h-8 w-8 flex-shrink-0 place-items-center rounded-full text-xs font-bold ${
                     current ? "bg-[#0B2545] text-white ring-4 ring-[#0B2545]/10" : done ? "bg-emerald-500 text-white" : "bg-slate-100 text-slate-500"
@@ -550,7 +642,7 @@ export default function BookingWizard({ account }: { account: ClientAccountDTO }
                   {done ? <Check className="h-4 w-4" /> : n}
                 </span>
                 <span className={`text-xs font-bold ${current ? "hidden text-[#0B2545] sm:inline" : "hidden md:inline"} ${done ? "text-emerald-700" : current ? "" : "text-slate-500"}`}>{name}</span>
-              </span>
+              </button>
               {i < stepNames.length - 1 && <span className={`mx-1.5 h-0.5 min-w-2 flex-1 rounded sm:mx-3 ${done ? "bg-emerald-400" : "bg-slate-200"}`} aria-hidden="true" />}
             </li>
           );
